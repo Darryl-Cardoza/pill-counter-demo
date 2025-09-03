@@ -4,7 +4,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -27,7 +26,6 @@ import com.example.pillcountingnewmodels.ui.theme.AppTheme
 fun OTPTextField(
     otp: String,
     onOtpChange: (String) -> Unit,
-    modifier: Modifier = Modifier,
     boxCount: Int = 4,
     boxSize: Dp = 56.dp,
     cornerRadius: Dp = 8.dp,
@@ -35,7 +33,6 @@ fun OTPTextField(
     textColor: Color = AppTheme.extendedColors.textColor,
     isPassword: Boolean = false
 ) {
-    val focusManager = LocalFocusManager.current
     val focusRequesters = remember { List(boxCount) { FocusRequester() } }
 
     Row(

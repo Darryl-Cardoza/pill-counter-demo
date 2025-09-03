@@ -24,8 +24,6 @@ import com.example.pillcountingnewmodels.navigation.AppNavGraph
 import com.example.pillcountingnewmodels.navigation.Routes
 import com.example.pillcountingnewmodels.ui.theme.ExtendedColors
 import com.example.pillcountingnewmodels.ui.theme.PillCountingNewModelsTheme
-import com.example.pillcountingnewmodels.ui.theme.primaryDark
-import com.example.pillcountingnewmodels.ui.theme.secondaryDark
 import com.example.pillcountingnewmodels.viewmodel.PillViewModel
 import dagger.hilt.android.AndroidEntryPoint
 
