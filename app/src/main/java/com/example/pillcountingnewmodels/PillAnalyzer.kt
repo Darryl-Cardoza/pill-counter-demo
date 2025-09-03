@@ -122,83 +122,82 @@ class PillAnalyzer(
         }
     }
 
-    // Converts raw model outputs → bounding boxes & centroids in preview coordinates
     private fun parseCentroids(
-        det: Array<FloatArray>,
-        imageWidth: Int,
-        imageHeight: Int,
-        rotationDegrees: Int,
-        viewWidth: Int,
-        viewHeight: Int
+        det: Array<FloatArray>,          // Model output: detection tensor [classes + box info]
+        imageWidth: Int,                 // Width of original camera frame
+        imageHeight: Int,                // Height of original camera frame
+        rotationDegrees: Int,            // Rotation of the camera frame (0, 90, 180, 270)
+        viewWidth: Int,                  // Width of the PreviewView
+        viewHeight: Int                  // Height of the PreviewView
     ): List<Detection> {
-        // Extract model outputs for center-x, center-y, width, height
-        val cxArr = det[IDX_CX]
-        val cyArr = det[IDX_CY]
-        val wArr = det[IDX_W]
-        val hArr = det[IDX_H]
 
-        val raw = ArrayList<Detection>()
-        val imgW = imageWidth.toFloat()
-        val imgH = imageHeight.toFloat()
+        val cxArr = det[IDX_CX]         // Array of normalized x-center coordinates of detected boxes
+        val cyArr = det[IDX_CY]         // Array of normalized y-center coordinates
+        val wArr = det[IDX_W]           // Array of normalized box widths
+        val hArr = det[IDX_H]           // Array of normalized box heights
 
-        for (i in cxArr.indices) {
-            // Find best class score for current detection
+        val raw = ArrayList<Detection>()   // List to store processed detections
+        val imgW = imageWidth.toFloat()    // Original image width as float
+        val imgH = imageHeight.toFloat()   // Original image height as float
+
+        for (i in cxArr.indices) {         // Loop over each detected box
+            // Pick best class confidence for this detection
             var bestScore = Float.NEGATIVE_INFINITY
             for (ci in 0 until NUM_CLASSES) {
-                val score = det[CLASS_START + ci][i]
+                val score = det[CLASS_START + ci][i]  // Class score for class ci
                 if (score > bestScore) bestScore = score
             }
 
             // Skip low-confidence detections
             if (bestScore < CONFIDENCE_THRESHOLD) continue
 
-            // Convert normalized coordinates → original image pixels
+            // Convert normalized coordinates to original image pixels
             val origX = cxArr[i] * imgW
             val origY = cyArr[i] * imgH
             val boxW = wArr[i] * imgW
             val boxH = hArr[i] * imgH
 
-            // Rotate bounding box center according to device orientation
-            val (rotX, rotY, rotW, rotH) = when ((rotationDegrees % 360 + 360) % 360) {
-                0 -> Quad(origX, origY, imgW, imgH)
-                90 -> Quad(origY, imgW - origX, imgH, imgW)    // Portrait rotation fix
-                180 -> Quad(imgW - origX, imgH - origY, imgW, imgH)
-                270 -> Quad(imgH - origY, origX, imgH, imgW)   // Portrait rotation fix
-                else -> Quad(origX, origY, imgW, imgH)
+            // Rotate bounding box center according to camera rotation
+            val (rotX, rotY) = when ((rotationDegrees % 360 + 360) % 360) {
+                0 -> Pair(origX, origY)                     // No rotation
+                90 -> Pair(origY, imgW - origX)            // Rotate 90° clockwise
+                180 -> Pair(imgW - origX, imgH - origY)    // Rotate 180°
+                270 -> Pair(imgH - origY, origX)           // Rotate 270° clockwise
+                else -> Pair(origX, origY)
             }
 
-            // Scale to match PreviewView size (center-cropped)
-            val scale = max(viewWidth / rotW, viewHeight / rotH)
-            val dispW = rotW * scale
-            val dispH = rotH * scale
+            // Compute scaling to fit PreviewView (center-crop)
+            val scale = max(viewWidth / imgW, viewHeight / imgH)  // Scale factor
+            val dispW = imgW * scale                               // Scaled width
+            val dispH = imgH * scale                               // Scaled height
+            val offsetX = (dispW - viewWidth) / 2f                // Center crop offset X
+            val offsetY = (dispH - viewHeight) / 2f               // Center crop offset Y
 
-            // Calculate offsets for center-cropping
-            val offsetX = (dispW - viewWidth) / 2f
-            val offsetY = (dispH - viewHeight) / 2f
+            // Map rotated coordinates to preview coordinates
+            val px = rotX * scale - offsetX
+            val py = rotY * scale - offsetY
 
-            // Map center coordinates to preview space
-            val px = (rotX * scale) - offsetX
-            val py = (rotY * scale) - offsetY
-
-            // Map bounding box to preview space
+            // Scale bounding box for preview coordinates
             val boxWPreview = boxW * scale
             val boxHPreview = boxH * scale
-            val left = (px - boxWPreview / 2f).coerceAtLeast(0f)
-            val top = (py - boxHPreview / 2f).coerceAtLeast(0f)
-            val right = (px + boxWPreview / 2f).coerceAtMost(viewWidth.toFloat())
-            val bottom = (py + boxHPreview / 2f).coerceAtMost(viewHeight.toFloat())
+            val left = (px - boxWPreview / 2f).coerceAtLeast(0f)   // Left bound, clamped
+            val top = (py - boxHPreview / 2f).coerceAtLeast(0f)    // Top bound, clamped
+            val right = (px + boxWPreview / 2f).coerceAtMost(viewWidth.toFloat())  // Right bound
+            val bottom = (py + boxHPreview / 2f).coerceAtMost(viewHeight.toFloat()) // Bottom bound
 
-            // Calculate centroid in preview space after clamping
+            // Compute the final centroid for green dot
             val centerX = ((left + right) / 2f).coerceIn(0f, viewWidth.toFloat())
             val centerY = ((top + bottom) / 2f).coerceIn(0f, viewHeight.toFloat())
 
-            // Save detection result
+            // Add this detection to the list
             raw.add(Detection(RectF(left, top, right, bottom), bestScore, centerX, centerY))
         }
 
         // Apply Non-Maximum Suppression to remove overlapping boxes
         return nonMaxSuppression(raw, 0.5f)
     }
+
+
 
     // Non-Maximum Suppression to filter overlapping detections
     private fun nonMaxSuppression(detections: List<Detection>, iouThreshold: Float): List<Detection> {

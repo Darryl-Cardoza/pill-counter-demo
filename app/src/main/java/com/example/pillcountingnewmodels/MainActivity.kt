@@ -18,9 +18,7 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.remember
 import androidx.core.content.ContextCompat
-import androidx.navigation.compose.rememberNavController
 import com.example.pillcountingnewmodels.core.utils.toColor
-import com.example.pillcountingnewmodels.navigation.AppNavGraph
 import com.example.pillcountingnewmodels.ui.theme.ExtendedColors
 import com.example.pillcountingnewmodels.ui.theme.PillCountingNewModelsTheme
 import com.example.pillcountingnewmodels.viewmodel.PillViewModel
@@ -169,10 +167,10 @@ class MainActivity : ComponentActivity() {
                 lightExtendedColors = extendedDynamicLight,
                 darkExtendedColors = extendedDynamicDark
             ) {
-                val navController = rememberNavController()
-                AppNavGraph(navController = navController)
-                navController.navigate("login")
-//                HomeScreen(pillViewModel = pillViewModel)
+//                val navController = rememberNavController()
+//                AppNavGraph(navController = navController)
+//                navController.navigate("login")
+                HomeScreen(pillViewModel = pillViewModel)
             }
         }
     }
