@@ -172,8 +172,7 @@ class MainActivity : ComponentActivity() {
             ) {
                 val navController = rememberNavController()
                 AppNavGraph(navController = navController)
-//                navController.navigate(Routes.LOGIN)
-                navController.navigate("${Routes.OTP_VERIFY}/dev@example.com")
+                navController.navigate(Routes.LOGIN)
                 //HomeScreen(pillViewModel = pillViewModel)
             }
         }
