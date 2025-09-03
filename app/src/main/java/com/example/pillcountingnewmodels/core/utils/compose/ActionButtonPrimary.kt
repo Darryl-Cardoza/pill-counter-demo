@@ -13,7 +13,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun HollowWhiteButton(
+fun ActionButtonPrimary(
     text: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
@@ -23,10 +23,10 @@ fun HollowWhiteButton(
         modifier = modifier
             .height(56.dp),
         colors = ButtonDefaults.buttonColors(
-            containerColor = Color.White,
-            contentColor = MaterialTheme.colorScheme.tertiary
+            containerColor = MaterialTheme.colorScheme.primary,
+            contentColor = Color.White
         ),
-        shape = RoundedCornerShape(8.dp),
+        shape = RoundedCornerShape(40.dp),
         contentPadding = PaddingValues(horizontal = 60.dp)
     ) {
         Text(text)

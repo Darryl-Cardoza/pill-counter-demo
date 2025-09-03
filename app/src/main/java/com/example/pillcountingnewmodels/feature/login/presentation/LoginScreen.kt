@@ -1,6 +1,7 @@
 package com.example.pillcountingnewmodels.feature.login.presentation
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -42,9 +43,11 @@ import androidx.navigation.NavController
 import com.example.pillcountingnewmodels.R
 import com.example.pillcountingnewmodels.core.utils.compose.AppInfo
 import com.example.pillcountingnewmodels.core.utils.compose.DrawableIconTextField
-import com.example.pillcountingnewmodels.core.utils.compose.HollowWhiteButton
+import com.example.pillcountingnewmodels.core.utils.compose.ActionButtonPrimary
 import com.example.pillcountingnewmodels.core.utils.compose.SplitResponsive
 import com.example.pillcountingnewmodels.feature.login.viewmodel.LoginViewModel
+import com.example.pillcountingnewmodels.navigation.Routes
+import com.example.pillcountingnewmodels.ui.theme.AppTheme
 
 
 @Composable
@@ -65,7 +68,7 @@ fun LoginScreen(
         modifier = Modifier
             .fillMaxSize()
             .systemBarsPadding()
-            .background(MaterialTheme.colorScheme.background)
+            .background(AppTheme.extendedColors.secondaryBackground)
     ) {
         SplitResponsive(
             topOrLeft = {
@@ -90,6 +93,7 @@ fun LoginScreen(
                             onValueChange = { username = it },
                             placeholder = "Email",
                             iconRes = R.drawable.profile,
+                            iconColor = MaterialTheme.colorScheme.secondary,
                             keyboardType = KeyboardType.Email,
                             imeAction = ImeAction.Next,
                             onImeAction = { focusManager.moveFocus(FocusDirection.Down) }
@@ -103,6 +107,7 @@ fun LoginScreen(
                             onValueChange = { password = it },
                             placeholder = "Password",
                             iconRes = R.drawable.password,
+                            iconColor = MaterialTheme.colorScheme.secondary,
                             keyboardType = KeyboardType.Password,
                             isPassword = true,
                             imeAction = ImeAction.Done
@@ -118,10 +123,15 @@ fun LoginScreen(
                             Box(
                                 modifier = Modifier
                                     .size(16.dp) // same size as Checkbox
+                                    .border(
+                                        width = 0.5.dp,
+                                        color = AppTheme.extendedColors.textColor, // border color
+                                        shape = RoundedCornerShape(3.dp)
+                                    )
                                     .background(
                                         Color.White,
                                         shape = RoundedCornerShape(3.dp)
-                                    ) // white background
+                                    )// white background
                             ) {
                                 Checkbox(
                                     checked = rememberMe,
@@ -138,27 +148,27 @@ fun LoginScreen(
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
                                 text = "Remember me",
-                                color = Color.White,
+                                color = AppTheme.extendedColors.textColor,
                                 style = MaterialTheme.typography.bodyMedium,
                             )
                         }
 
-                        Spacer(Modifier.height(15.dp))
+                        Spacer(Modifier.height(20.dp))
 
                         //Login Button
-                        HollowWhiteButton(
+                        ActionButtonPrimary(
                             text = "LOGIN",
                             onClick = { viewModel.login(username, password) },
                             modifier = Modifier.align(Alignment.CenterHorizontally)
                         )
 
-//                        if (loginState == "SUCCESS") {
+                        if (loginState == "SUCCESS") {
                             LaunchedEffect(Unit) {
                                 navController.navigate("dashboard") {
                                     popUpTo("dashboard") { inclusive = true }
                                 }
                             }
-//                        }
+                        }
                         if (loginState == "FAILED") {
                             Text("Invalid credentials", color = Color.Red)
                         }
@@ -174,15 +184,15 @@ fun LoginScreen(
                     ) {
                         Text(
                             text = "Register",
-                            color = Color.White,
+                            color = AppTheme.extendedColors.textColor,
                             style = MaterialTheme.typography.bodyMedium,
                             modifier = Modifier.clickable {
-                                navController.navigate("register")
+                                navController.navigate(Routes.REGISTER)
                             }
                         )
                         Text(
                             text = "Forgot Password?",
-                            color = Color.White,
+                            color = AppTheme.extendedColors.textColor,
                             style = MaterialTheme.typography.bodyMedium
                         )
                     }

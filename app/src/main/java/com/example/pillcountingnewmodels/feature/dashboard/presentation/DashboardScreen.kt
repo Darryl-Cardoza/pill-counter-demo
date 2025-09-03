@@ -24,32 +24,13 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.pillcountingnewmodels.R
 import com.example.pillcountingnewmodels.core.utils.compose.SplitResponsive
-import com.example.pillcountingnewmodels.feature.login.viewmodel.LoginViewModel
 
 @Composable
-fun DashboardScreen(navController: NavController,
-                    viewModel: LoginViewModel = hiltViewModel()) {
+fun DashboardScreen(navController: NavController) {
     SplitResponsive(
-        topLeftContent = {
-            // Logo on left split
-            Image(
-                painter = painterResource(id = R.drawable.logo),
-                contentDescription = "Logo",
-                modifier = Modifier.size(40.dp)
-            )
-        },
-        topRightContent = {
-            // Hamburger on right split
-            Image(
-                painter = painterResource(id = R.drawable.menu_white), // replace with your image
-                contentDescription = "Pill Counting Logo",
-                modifier = Modifier.size(30.dp)
-            )
-        },
         topOrLeft = { FixedCountSection() },
         bottomOrRight = { RegularCountSection() },
         cornerRadius = 40.dp,

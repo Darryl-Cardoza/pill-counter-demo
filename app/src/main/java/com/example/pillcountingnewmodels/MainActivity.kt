@@ -21,7 +21,11 @@ import androidx.core.content.ContextCompat
 import androidx.navigation.compose.rememberNavController
 import com.example.pillcountingnewmodels.core.utils.toColor
 import com.example.pillcountingnewmodels.navigation.AppNavGraph
+import com.example.pillcountingnewmodels.navigation.Routes
+import com.example.pillcountingnewmodels.ui.theme.ExtendedColors
 import com.example.pillcountingnewmodels.ui.theme.PillCountingNewModelsTheme
+import com.example.pillcountingnewmodels.ui.theme.primaryDark
+import com.example.pillcountingnewmodels.ui.theme.secondaryDark
 import com.example.pillcountingnewmodels.viewmodel.PillViewModel
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -31,17 +35,22 @@ class MainActivity : ComponentActivity() {
     // ViewModel scoped to Activity lifecycle
     private val pillViewModel: PillViewModel by viewModels()
 
-    private val primaryLightColor = "#01BBD3"
-    private val secondaryLightColor = "#FD82B5"
-    private val tertiaryLightColor = "#515E61"
-    private val surfaceLightColor = "#FFFFFF"
-    private val backgroundLightColor = "#FFFFFF"
+    private val primaryColorLight = "#01BBD3"
+    private val secondaryColorLight = "#FD82B5"
+    private val primaryBackgroundLight = "#EDEEEE"
+    private val secondaryBackgroundLight = "#FFFFFF"
+    private val textColorLight = "#666666"
+    private val inputBackgroundLight = "#FFFFFF"
 
-    private val primaryDarkColor = "#01BBD3"
-    private val secondaryDarkColor = "#FD82B5"
-    private val tertiaryDarkColor = "#515E61"
-    private val surfaceDarkColor = "#FFFFFF"
-    private val backgroundDarkColor = "#FFFFFF"
+
+    private val primaryColorDark = "#01BBD3"
+    private val secondaryColorDark = "#FD82B5"
+    private val primaryBackgroundDark = "#333333"
+    private val secondaryBackgroundDark = "#191919"
+    private val textColorDark = "#EDEEEE"
+    private val inputBackgroundDark = "#191919"
+
+
     // Permission launcher
     private val requestCameraPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -130,31 +139,43 @@ class MainActivity : ComponentActivity() {
 
             val lightColorSchemeDynamic = remember {
                 lightColorScheme(
-                    primary = primaryLightColor.toColor(),
-                    secondary = secondaryLightColor.toColor(),
-                    tertiary = tertiaryLightColor.toColor(),
-                    surface = surfaceLightColor.toColor(),
-                    background = backgroundLightColor.toColor()
+                    primary = primaryColorLight.toColor(),
+                    secondary = secondaryColorLight.toColor()
                 )
             }
 
             val darkColorSchemeDynamic = remember {
                 darkColorScheme(
-                    primary = primaryDarkColor.toColor(),
-                    secondary = secondaryDarkColor.toColor(),
-                    tertiary = tertiaryDarkColor.toColor(),
-                    surface = surfaceDarkColor.toColor(),
-                    background = backgroundDarkColor.toColor()
+                    primary = primaryColorDark.toColor(),
+                    secondary = secondaryColorDark.toColor()
                 )
             }
 
+            val extendedDynamicLight = ExtendedColors(
+                primaryBackground = primaryBackgroundLight.toColor(),  // your light bg
+                secondaryBackground = secondaryBackgroundLight.toColor(),
+                textColor = textColorLight.toColor(),
+                inputBackground = inputBackgroundLight.toColor()
+
+            )
+            val extendedDynamicDark = ExtendedColors(
+                primaryBackground = primaryBackgroundDark.toColor(),  // your light bg
+                secondaryBackground = secondaryBackgroundDark.toColor(),
+                textColor = textColorDark.toColor(),
+                inputBackground = inputBackgroundDark.toColor()
+            )
+
+
             PillCountingNewModelsTheme(
                 lightColors = lightColorSchemeDynamic,
-                darkColors = darkColorSchemeDynamic
+                darkColors = darkColorSchemeDynamic,
+                lightExtendedColors = extendedDynamicLight,
+                darkExtendedColors = extendedDynamicDark
             ) {
                 val navController = rememberNavController()
                 AppNavGraph(navController = navController)
-                navController.navigate("login")
+//                navController.navigate(Routes.LOGIN)
+                navController.navigate("${Routes.OTP_VERIFY}/dev@example.com")
                 //HomeScreen(pillViewModel = pillViewModel)
             }
         }

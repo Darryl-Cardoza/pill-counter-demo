@@ -6,17 +6,22 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.example.pillcountingnewmodels.feature.dashboard.presentation.DashboardScreen
 import com.example.pillcountingnewmodels.feature.login.presentation.LoginScreen
+import com.example.pillcountingnewmodels.feature.register.presentation.OTPScreen
 import com.example.pillcountingnewmodels.feature.register.presentation.RegisterScreen
 
 @Composable
 fun AppNavGraph(navController: NavHostController) {
     NavHost(
         navController = navController,
-        startDestination = "login"
+        startDestination = Routes.LOGIN
     ) {
-        composable("login") { LoginScreen(navController) }
-        composable("register") { RegisterScreen(navController) }
-        composable("dashboard") { DashboardScreen(navController) }
+        composable(Routes.LOGIN) { LoginScreen(navController) }
+        composable(Routes.REGISTER) { RegisterScreen(navController) }
+        composable(Routes.DASHBOARD) { DashboardScreen(navController) }
+        composable("${Routes.OTP_VERIFY}/{email}") { backStackEntry ->
+            val email = backStackEntry.arguments?.getString("email") ?: ""
+            OTPScreen(navController, email)
+        }
         //composable("home") { HomeScreen(navController) }
     }
 }

@@ -19,6 +19,7 @@ import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -37,6 +38,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.example.pillcountingnewmodels.ui.theme.AppTheme
 
 @Composable
 fun DrawableIconTextField(
@@ -44,10 +46,11 @@ fun DrawableIconTextField(
     onValueChange: (String) -> Unit,
     placeholder: String,
     @DrawableRes iconRes: Int,
+    iconColor: Color = MaterialTheme.colorScheme.primary,
     modifier: Modifier = Modifier,
     cornerRadius: Dp = 8.dp,
     height: Dp = 56.dp,
-    cursorColor: Color = MaterialTheme.colorScheme.primary,
+    cursorColor: Color = AppTheme.extendedColors.textColor,
     isPassword: Boolean = false,
     keyboardType: KeyboardType = KeyboardType.Text,
     imeAction: ImeAction = ImeAction.Done,
@@ -59,7 +62,7 @@ fun DrawableIconTextField(
         modifier = modifier
             .fillMaxWidth()
             .height(height)
-            .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(cornerRadius))
+            .background(AppTheme.extendedColors.inputBackground, RoundedCornerShape(cornerRadius))
             .padding(horizontal = 15.dp),
         contentAlignment = Alignment.CenterStart
     ) {
@@ -67,8 +70,8 @@ fun DrawableIconTextField(
             Icon(
                 painter = painterResource(id = iconRes),
                 contentDescription = null,
-                tint = Color.Unspecified,
-                modifier = Modifier.size(20.dp)
+                tint = iconColor,
+                modifier = Modifier.size(30.dp)
             )
             Spacer(modifier = Modifier.width(15.dp))
             Box(
@@ -90,13 +93,14 @@ fun DrawableIconTextField(
                         keyboardType = keyboardType,
                         imeAction = imeAction
                     ),
+                    textStyle = LocalTextStyle.current.copy(color = AppTheme.extendedColors.textColor),
                     decorationBox = { innerTextField ->
                         Box(
                             modifier = Modifier.fillMaxHeight(),
                             contentAlignment = Alignment.CenterStart
                         ) {
                             if (value.isEmpty()) {
-                                Text(placeholder, color = MaterialTheme.colorScheme.tertiary)
+                                Text(placeholder, color = AppTheme.extendedColors.textColor)
                             }
                             innerTextField()
                         }
