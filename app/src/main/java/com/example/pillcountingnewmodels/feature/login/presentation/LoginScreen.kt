@@ -55,7 +55,7 @@ fun LoginScreen(
     navController: NavController,
     viewModel: LoginViewModel = hiltViewModel()
 ) {
-    var username by remember { mutableStateOf("") }
+    var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var rememberMe by remember { mutableStateOf(false) }
 
@@ -89,8 +89,8 @@ fun LoginScreen(
 
                         //Email
                         DrawableIconTextField(
-                            value = username,
-                            onValueChange = { username = it },
+                            value = email,
+                            onValueChange = { email = it },
                             placeholder = "Email",
                             iconRes = R.drawable.profile,
                             iconColor = MaterialTheme.colorScheme.secondary,
@@ -158,7 +158,7 @@ fun LoginScreen(
                         //Login Button
                         ActionButtonPrimary(
                             text = "LOGIN",
-                            onClick = { viewModel.login(username, password) },
+                            onClick = { viewModel.login(email, password) },
                             modifier = Modifier.align(Alignment.CenterHorizontally)
                         )
 
@@ -193,7 +193,10 @@ fun LoginScreen(
                         Text(
                             text = "Forgot Password?",
                             color = AppTheme.extendedColors.textColor,
-                            style = MaterialTheme.typography.bodyMedium
+                            style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier.clickable {
+                                navController.navigate(Routes.FORGOT_PASSWORD)
+                            }
                         )
                     }
 
