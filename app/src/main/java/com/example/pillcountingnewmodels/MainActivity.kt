@@ -21,7 +21,6 @@ import androidx.core.content.ContextCompat
 import androidx.navigation.compose.rememberNavController
 import com.example.pillcountingnewmodels.core.utils.toColor
 import com.example.pillcountingnewmodels.navigation.AppNavGraph
-import com.example.pillcountingnewmodels.navigation.Routes
 import com.example.pillcountingnewmodels.ui.theme.ExtendedColors
 import com.example.pillcountingnewmodels.ui.theme.PillCountingNewModelsTheme
 import com.example.pillcountingnewmodels.viewmodel.PillViewModel
@@ -172,8 +171,8 @@ class MainActivity : ComponentActivity() {
             ) {
                 val navController = rememberNavController()
                 AppNavGraph(navController = navController)
-                navController.navigate(Routes.LOGIN)
-                //HomeScreen(pillViewModel = pillViewModel)
+                navController.navigate("login")
+//                HomeScreen(pillViewModel = pillViewModel)
             }
         }
     }
