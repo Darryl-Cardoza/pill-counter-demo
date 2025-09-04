@@ -12,150 +12,170 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.pillcountingnewmodels.R
 import com.example.pillcountingnewmodels.core.utils.compose.SplitResponsive
+import com.example.pillcountingnewmodels.ui.theme.AppTheme
 
 @Composable
 fun DashboardScreen(navController: NavController) {
-    SplitResponsive(
-        topOrLeft = { FixedCountSection() },
-        bottomOrRight = { RegularCountSection() },
-        cornerRadius = 40.dp,
-        innerPadding = 24.dp
 
-    )
+    var completedFixedCount by remember { mutableStateOf("0") }
+    var partialFixedCount by remember { mutableStateOf("0") }
+    var completedRegularCount by remember { mutableStateOf("0") }
+    var partialRegularCount by remember { mutableStateOf("0") }
+
+    Box(modifier = Modifier.background(AppTheme.extendedColors.secondaryBackground)) {
+        SplitResponsive(
+            topOrLeft = {
+                FixedCountSection(
+                    completedFixedCount = completedFixedCount,
+                    partialFixedCount = partialFixedCount
+                )
+            },
+            bottomOrRight = {
+                RegularCountSection(
+                    completedRegularCount = completedRegularCount,
+                    partialRegularCount = partialRegularCount
+                )
+            },
+        )
+    }
 }
 
 @Composable
-fun FixedCountSection() {
+fun FixedCountSection(completedFixedCount: String, partialFixedCount: String) {
+    val context = LocalContext.current
+
+
     Column(
         modifier = Modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+        verticalArrangement = Arrangement.Center,
     ) {
         // Icon inside circle
-        Box(
-            modifier = Modifier
-                .size(350.dp)
-                .clip(CircleShape)
-                .background(Color.Transparent),
-            contentAlignment = Alignment.Center
-        ) {
-            Image(
-                painter = painterResource(id = R.drawable.fixed_count), // replace with your image
-                contentDescription = "Pill Counting Logo",
-            )
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Title
-        Text(
-            text = "Fixed Count",
-            fontSize = 32.sp,
-            fontWeight = FontWeight.Bold,
-            color = Color(0xFFE91E63)
+        Image(
+            painter = painterResource(id = R.drawable.fixed_count),
+            contentDescription = "Pill Counting Logo",
         )
 
-        // Subtitle
+        Spacer(modifier = Modifier.height(24.dp))
+
         Text(
-            text = "For counting fixed quantities",
-            fontSize = 22.sp,
-            color = Color.Gray
+            text = context.getString(R.string.fixed_count),
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.secondary
+        )
+        Spacer(modifier = Modifier.height(10.dp))
+        Text(
+            text = context.getString(R.string.fixed_count_desc),
+            style = MaterialTheme.typography.bodyLarge,
+            color = AppTheme.extendedColors.textColor
         )
 
-        Spacer(modifier = Modifier.height(64.dp))
+        Spacer(modifier = Modifier.height(40.dp))
 
         // Status Row
         Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween, // 👈 Spreads items across full width
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 10.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
             StatusChip(
-                text = "45 completed",
-                color = Color.Red,
-                imageRes = R.drawable.tick_pink
+                text = "$completedFixedCount ${context.getString(R.string.completed)}",
+                backgroundColor = Color.Transparent,
+                textColor = MaterialTheme.colorScheme.secondary,
+                iconRes = R.drawable.tick,
+                iconTint = MaterialTheme.colorScheme.secondary
             )
 
             StatusChip(
-                text = "8 partial",
-                color = Color.Red,
-                imageRes = R.drawable.partial_pink
+                text = "$partialFixedCount ${context.getString(R.string.partial)}",
+                backgroundColor = AppTheme.extendedColors.statusChipBackgroundOnSecondary,
+                textColor = MaterialTheme.colorScheme.secondary,
+                iconRes = R.drawable.partial,
+                iconTint = MaterialTheme.colorScheme.secondary
             )
         }
     }
 }
 
 @Composable
-fun RegularCountSection() {
+fun RegularCountSection(completedRegularCount: String, partialRegularCount: String) {
+    val context = LocalContext.current
+
     Column(
         modifier = Modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+        verticalArrangement = Arrangement.Center,
     ) {
         // Icon inside circle
-        Box(
-            modifier = Modifier
-                .size(350.dp)
-                .clip(CircleShape)
-                .background(Color.Transparent),
-            contentAlignment = Alignment.Center
-        ) {
-            Image(
-                painter = painterResource(id = R.drawable.regular_count), // replace with your image
-                contentDescription = "Pill Counting Logo",
-//                modifier = Modifier.size(200.dp)
-            )
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Title
-        Text(
-            text = "Regular Count",
-            fontSize = 32.sp,
-            fontWeight = FontWeight.Bold,
-            color = Color.White
-        )
-
-        // Subtitle
-        Text(
-            text = "For day to day regular counts",
-            fontSize = 22.sp,
-            color = Color.White.copy(alpha = 0.7f)
+        Image(
+            painter = painterResource(id = R.drawable.regular_count),
+            contentDescription = "Pill Counting Logo",
         )
 
         Spacer(modifier = Modifier.height(24.dp))
 
+        Text(
+            text = context.getString(R.string.regular_count),
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.primary
+        )
+
+        Spacer(modifier = Modifier.height(10.dp))
+
+        Text(
+            text = context.getString(R.string.regular_count_desc),
+            style = MaterialTheme.typography.bodyMedium,
+            color = AppTheme.extendedColors.textColor
+        )
+
+        Spacer(modifier = Modifier.height(40.dp))
+
         // Status Row
         Row(
-            horizontalArrangement = Arrangement.spacedBy(20.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 10.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
             StatusChip(
-                text = "45 completed",
-                color = Color.White,
-                imageRes = R.drawable.tick_green
+                text = "$completedRegularCount ${context.getString(R.string.completed)}",
+                backgroundColor = Color.Transparent,
+                textColor = AppTheme.extendedColors.textColor,
+                iconRes = R.drawable.tick,
+                iconTint = MaterialTheme.colorScheme.primary
             )
 
             StatusChip(
-                text = "8 partial",
-                color = Color.White.copy(alpha = 0.7f),
-                imageRes = R.drawable.partial_pink
+                text = "$partialRegularCount ${context.getString(R.string.partial)}",
+                backgroundColor = AppTheme.extendedColors.statusChipBackgroundOnPrimary,
+                textColor = AppTheme.extendedColors.textColor,
+                iconRes = R.drawable.partial,
+                iconTint = MaterialTheme.colorScheme.primary
             )
         }
     }
@@ -164,33 +184,34 @@ fun RegularCountSection() {
 @Composable
 fun StatusChip(
     text: String,
-    color: Color,
-    imageRes: Int // pass drawable resource here
+    backgroundColor: Color,
+    textColor: Color,
+    iconRes: Int,
+    iconTint: Color?
 ) {
-    Box(
+    Row(
         modifier = Modifier
-            .clip(RoundedCornerShape(50))
-//            .background(color.copy(alpha = 0.1f))
-            .padding(horizontal = 16.dp, vertical = 8.dp),
-        contentAlignment = Alignment.Center
+            .background(color = backgroundColor, shape = RoundedCornerShape(50))
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(6.dp)
-        ) {
-            Image(
-                painter = painterResource(id = imageRes),
-                contentDescription = null,
-                modifier = Modifier.size(26.dp) // adjust size as needed
-            )
-            Spacer(modifier = Modifier.height(22.dp))
-            Text(
-                text = text,
-                color = color,
-                fontSize = 20.sp
-            )
-        }
+        Spacer(modifier = Modifier.width(3.dp))
+        Image(
+            painter = painterResource(id = iconRes),
+            contentDescription = null,
+            modifier = Modifier.size(25.dp),
+            colorFilter = iconTint?.let { ColorFilter.tint(it) }
+        )
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(
+            text = text,
+            color = textColor,
+            style = MaterialTheme.typography.bodyMedium
+        )
+        Spacer(modifier = Modifier.width(3.dp))
     }
 }
+
 
 

@@ -78,6 +78,7 @@ fun LoginScreen(
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
+                        .padding(horizontal = 16.dp)
                 ) {
                     Column(
                         modifier = Modifier
@@ -91,7 +92,7 @@ fun LoginScreen(
                         DrawableIconTextField(
                             value = email,
                             onValueChange = { email = it },
-                            placeholder = "Email",
+                            placeholder = context.getString(R.string.email),
                             iconRes = R.drawable.profile,
                             iconColor = MaterialTheme.colorScheme.secondary,
                             keyboardType = KeyboardType.Email,
@@ -105,7 +106,7 @@ fun LoginScreen(
                         DrawableIconTextField(
                             value = password,
                             onValueChange = { password = it },
-                            placeholder = "Password",
+                            placeholder = context.getString(R.string.password),
                             iconRes = R.drawable.password,
                             iconColor = MaterialTheme.colorScheme.secondary,
                             keyboardType = KeyboardType.Password,
@@ -147,7 +148,7 @@ fun LoginScreen(
                             }
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                text = "Remember me",
+                                text = context.getString(R.string.remember_me),
                                 color = AppTheme.extendedColors.textColor,
                                 style = MaterialTheme.typography.bodyMedium,
                             )
@@ -164,8 +165,8 @@ fun LoginScreen(
 
                         if (loginState == "SUCCESS") {
                             LaunchedEffect(Unit) {
-                                navController.navigate("dashboard") {
-                                    popUpTo("dashboard") { inclusive = true }
+                                navController.navigate(Routes.DASHBOARD) {
+                                    popUpTo(Routes.DASHBOARD) { inclusive = true }
                                 }
                             }
                         }
@@ -183,7 +184,7 @@ fun LoginScreen(
                             .fillMaxWidth(),
                     ) {
                         Text(
-                            text = "Register",
+                            text = context.getString(R.string.register),
                             color = AppTheme.extendedColors.textColor,
                             style = MaterialTheme.typography.bodyMedium,
                             modifier = Modifier.clickable {
@@ -191,7 +192,7 @@ fun LoginScreen(
                             }
                         )
                         Text(
-                            text = "Forgot Password?",
+                            text = context.getString(R.string.forgot_password),
                             color = AppTheme.extendedColors.textColor,
                             style = MaterialTheme.typography.bodyMedium,
                             modifier = Modifier.clickable {

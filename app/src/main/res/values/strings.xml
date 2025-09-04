@@ -1,4 +1,35 @@
 <resources>
     <string name="app_name">PillCountingNewModels</string>
+
+    <!--App info-->
     <string name="rite_title">RITE TECHNOLOGIES</string>
+    <string name="version">Version</string>
+
+    <!--login and register-->
+    <string name="email">Email</string>
+    <string name="password">Password</string>
+    <string name="remember_me">Remember me</string>
+    <string name="register">Register</string>
+    <string name="forgot_password">Forgot Password?\n</string>
+    <string name="confirm_password">Confirm Password</string>
+    <string name="code_sent_to">Security code has been sent to</string>
+    <string name="pre_resend_code">Resend code in %1$d s</string>
+    <string name="resend_code">Resend code</string>
+    <string name="verify">Verify</string>
+
+    <!--forgot password-->
+    <string name="password_recovery">Password Recovery</string>
+    <string name="password_recovery_desc">Enter your registered email ID and we will send instructions on how to reset it.</string>
+    <string name="your_registered_email">Your registered email</string>
+    <string name="send_otp">Send OTP</string>
+
+    <!--dashboard-->
+    <string name="fixed_count">Fixed Count</string>
+    <string name="fixed_count_desc">For counting fixed quantities</string>
+    <string name="regular_count">Regular Count</string>
+    <string name="regular_count_desc">For day to day regular counts</string>
+    <string name="completed">completed</string>
+    <string name="partial">partial</string>
+
+
 </resources>

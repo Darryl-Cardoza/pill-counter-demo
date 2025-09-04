@@ -28,12 +28,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.pillcountingnewmodels.R
 import com.example.pillcountingnewmodels.core.utils.compose.AppInfo
 import com.example.pillcountingnewmodels.core.utils.compose.ActionButtonPrimary
+import com.example.pillcountingnewmodels.core.utils.compose.BackButton
 import com.example.pillcountingnewmodels.core.utils.compose.OTPTextField
 import com.example.pillcountingnewmodels.core.utils.compose.SplitResponsive
 import com.example.pillcountingnewmodels.ui.theme.AppTheme
@@ -66,18 +68,7 @@ fun OTPScreen(
             .systemBarsPadding()
             .background(AppTheme.extendedColors.secondaryBackground)
     ) {
-        IconButton(
-            onClick = { navController.popBackStack() },
-            modifier = Modifier
-                .align(Alignment.TopStart)
-                .padding(15.dp)
-        ) {
-            Icon(
-                painter = painterResource(id = R.drawable.back),
-                contentDescription = "Back",
-                tint = MaterialTheme.colorScheme.primary
-            )
-        }
+        BackButton(navController)
         SplitResponsive(
             topOrLeft = {
                 AppInfo(context)
@@ -86,13 +77,14 @@ fun OTPScreen(
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
-                        .verticalScroll(rememberScrollState()),
+                        .verticalScroll(rememberScrollState())
+                        .padding(horizontal = 16.dp),
                     verticalArrangement = Arrangement.Center,
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
 
                     Text(
-                        text = "Security code has been sent to \n$userEmail",
+                        text = "${context.getString(R.string.code_sent_to)} \n$userEmail",
                         color = AppTheme.extendedColors.textColor,
                         style = MaterialTheme.typography.bodyMedium,
                         textAlign = TextAlign.Center,
@@ -112,7 +104,10 @@ fun OTPScreen(
                     Spacer(Modifier.height(50.dp))
 
                     Text(
-                        text = if (isTimerRunning) "Resend code in $secRemaining s" else "Resend code",
+                        text = if (isTimerRunning) stringResource(
+                            R.string.pre_resend_code,
+                            secRemaining
+                        ) else context.getString(R.string.resend_code),
                         color = if (isTimerRunning) AppTheme.extendedColors.textColor else MaterialTheme.colorScheme.secondary,
                         style = MaterialTheme.typography.bodyMedium,
                         modifier = if (!isTimerRunning) {
@@ -130,7 +125,7 @@ fun OTPScreen(
 
                     //Login Button
                     ActionButtonPrimary(
-                        text = "VERIFY",
+                        text = context.getString(R.string.verify).uppercase(),
                         onClick = {
 
                         },

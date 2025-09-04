@@ -8,6 +8,8 @@ data class ExtendedColors(
     val secondaryBackground: Color,
     val textColor: Color,
     val inputBackground: Color,
+    val statusChipBackgroundOnPrimary: Color,
+    val statusChipBackgroundOnSecondary: Color,
 )
 
 val LocalExtendedColors = staticCompositionLocalOf {
@@ -15,6 +17,8 @@ val LocalExtendedColors = staticCompositionLocalOf {
         primaryBackground = PrimaryBackground,
         secondaryBackground = SecondaryBackground,
         textColor = TextColor,
-        inputBackground = inputBackground
+        inputBackground = inputBackground,
+        statusChipBackgroundOnPrimary = statusChipBackgroundOnPrimary,
+        statusChipBackgroundOnSecondary = statusChipBackgroundOnSecondary
     )
 }

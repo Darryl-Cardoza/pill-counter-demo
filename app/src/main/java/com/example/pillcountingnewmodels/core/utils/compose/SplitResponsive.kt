@@ -23,7 +23,6 @@ fun SplitResponsive(
     topOrLeft: @Composable () -> Unit,
     bottomOrRight: @Composable () -> Unit,
     cornerRadius: Dp = 16.dp,
-    innerPadding: Dp = 16.dp
 ) {
     val isLandscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
 
@@ -43,7 +42,6 @@ fun SplitResponsive(
                     .fillMaxHeight()
                     .clip(RoundedCornerShape(topStart = cornerRadius, bottomStart = cornerRadius))
                     .background(AppTheme.extendedColors.primaryBackground)
-                    .padding(innerPadding)
             ) { bottomOrRight() }
         }
     } else {
@@ -67,7 +65,6 @@ fun SplitResponsive(
                             topEnd = cornerRadius
                         )
                     )
-                    .padding(innerPadding)
             ) { bottomOrRight() }
         }
     }

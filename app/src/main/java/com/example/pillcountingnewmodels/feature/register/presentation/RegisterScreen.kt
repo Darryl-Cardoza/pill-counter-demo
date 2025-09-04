@@ -36,6 +36,7 @@ import com.example.pillcountingnewmodels.core.utils.ToastUtils
 import com.example.pillcountingnewmodels.core.utils.compose.AppInfo
 import com.example.pillcountingnewmodels.core.utils.compose.DrawableIconTextField
 import com.example.pillcountingnewmodels.core.utils.compose.ActionButtonPrimary
+import com.example.pillcountingnewmodels.core.utils.compose.BackButton
 import com.example.pillcountingnewmodels.core.utils.compose.SplitResponsive
 import com.example.pillcountingnewmodels.navigation.Routes
 import com.example.pillcountingnewmodels.ui.theme.AppTheme
@@ -61,17 +62,7 @@ fun RegisterScreen(
             .systemBarsPadding()
             .background(AppTheme.extendedColors.secondaryBackground)
     ) {
-        IconButton(
-            onClick = { navController.popBackStack() },
-            modifier = Modifier.align(Alignment.TopStart)
-                .padding(15.dp)
-        ) {
-            Icon(
-                painter = painterResource(id = R.drawable.back),
-                contentDescription = "Back",
-                tint = MaterialTheme.colorScheme.primary
-            )
-        }
+        BackButton(navController)
 
         SplitResponsive(
             topOrLeft = {
@@ -81,7 +72,8 @@ fun RegisterScreen(
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
-                        .verticalScroll(rememberScrollState()),
+                        .verticalScroll(rememberScrollState())
+                        .padding(horizontal = 16.dp),
                     verticalArrangement = Arrangement.Center
                 ) {
 
@@ -89,7 +81,7 @@ fun RegisterScreen(
                     DrawableIconTextField(
                         value = email,
                         onValueChange = { email = it },
-                        placeholder = "Email",
+                        placeholder = context.getString(R.string.email),
                         iconRes = R.drawable.profile,
                         iconColor = MaterialTheme.colorScheme.secondary,
                         keyboardType = KeyboardType.Email,
@@ -104,7 +96,7 @@ fun RegisterScreen(
                     DrawableIconTextField(
                         value = password,
                         onValueChange = { password = it },
-                        placeholder = "Password",
+                        placeholder = context.getString(R.string.password),
                         iconRes = R.drawable.password,
                         iconColor = MaterialTheme.colorScheme.secondary,
                         keyboardType = KeyboardType.Password,
@@ -120,7 +112,7 @@ fun RegisterScreen(
                     DrawableIconTextField(
                         value = confirmPassword,
                         onValueChange = { confirmPassword = it },
-                        placeholder = "Confirm Password",
+                        placeholder = context.getString(R.string.confirm_password),
                         iconRes = R.drawable.password,
                         iconColor = MaterialTheme.colorScheme.secondary,
                         keyboardType = KeyboardType.Password,
@@ -134,7 +126,7 @@ fun RegisterScreen(
 
                     //Login Button
                     ActionButtonPrimary(
-                        text = "REGISTER",
+                        text = context.getString(R.string.register).uppercase(),
                         onClick = {
                             when {
                                 !Patterns.EMAIL_ADDRESS.matcher(email).matches() -> {

@@ -33,6 +33,7 @@ import androidx.navigation.NavController
 import com.example.pillcountingnewmodels.R
 import com.example.pillcountingnewmodels.core.utils.compose.ActionButtonPrimary
 import com.example.pillcountingnewmodels.core.utils.compose.AppInfo
+import com.example.pillcountingnewmodels.core.utils.compose.BackButton
 import com.example.pillcountingnewmodels.core.utils.compose.DrawableIconTextField
 import com.example.pillcountingnewmodels.core.utils.compose.SplitResponsive
 import com.example.pillcountingnewmodels.ui.theme.AppTheme
@@ -50,17 +51,7 @@ fun ForgotPasswordScreen(
             .systemBarsPadding()
             .background(AppTheme.extendedColors.secondaryBackground)
     ) {
-        IconButton(
-            onClick = { navController.popBackStack() },
-            modifier = Modifier.align(Alignment.TopStart)
-                .padding(15.dp)
-        ) {
-            Icon(
-                painter = painterResource(id = R.drawable.back),
-                contentDescription = "Back",
-                tint = MaterialTheme.colorScheme.primary
-            )
-        }
+        BackButton(navController)
 
         SplitResponsive(
             topOrLeft = {
@@ -70,13 +61,14 @@ fun ForgotPasswordScreen(
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
-                        .verticalScroll(rememberScrollState()),
+                        .verticalScroll(rememberScrollState())
+                        .padding(horizontal = 16.dp),
                     verticalArrangement = Arrangement.Center,
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
 
                     Text(
-                        text = "Password Recovery",
+                        text = context.getString(R.string.password_recovery),
                         color = AppTheme.extendedColors.textColor,
                         style = MaterialTheme.typography.titleMedium
                     )
@@ -85,7 +77,7 @@ fun ForgotPasswordScreen(
 
                     Text(
 
-                        text = "Enter your registered email ID and we will send instructions on how to reset it.",
+                        text = context.getString(R.string.password_recovery_desc),
                         color = AppTheme.extendedColors.textColor,
                         style = MaterialTheme.typography.bodyMedium,
                         textAlign = TextAlign.Center
@@ -97,7 +89,7 @@ fun ForgotPasswordScreen(
                     DrawableIconTextField(
                         value = email,
                         onValueChange = { email = it },
-                        placeholder = "Your registered email",
+                        placeholder = context.getString(R.string.your_registered_email),
                         iconRes = R.drawable.profile,
                         iconColor = MaterialTheme.colorScheme.secondary,
                         keyboardType = KeyboardType.Email,
@@ -108,7 +100,7 @@ fun ForgotPasswordScreen(
 
                     //Send otp
                     ActionButtonPrimary(
-                        text = "SEND OTP",
+                        text = context.getString(R.string.send_otp).uppercase(),
                         onClick = {
                         },
                         modifier = Modifier.align(Alignment.CenterHorizontally)

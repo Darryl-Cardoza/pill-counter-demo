@@ -18,7 +18,10 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.remember
 import androidx.core.content.ContextCompat
+import androidx.navigation.compose.rememberNavController
 import com.example.pillcountingnewmodels.core.utils.toColor
+import com.example.pillcountingnewmodels.navigation.AppNavGraph
+import com.example.pillcountingnewmodels.navigation.Routes
 import com.example.pillcountingnewmodels.ui.theme.ExtendedColors
 import com.example.pillcountingnewmodels.ui.theme.PillCountingNewModelsTheme
 import com.example.pillcountingnewmodels.viewmodel.PillViewModel
@@ -36,6 +39,8 @@ class MainActivity : ComponentActivity() {
     private val secondaryBackgroundLight = "#FFFFFF"
     private val textColorLight = "#666666"
     private val inputBackgroundLight = "#FFFFFF"
+    private val statusChipBackgroundOnPrimaryLight = "#FFFFFF"
+    private val statusChipBackgroundOnSecondaryLight = "#F5F4F4"
 
 
     private val primaryColorDark = "#01BBD3"
@@ -44,6 +49,8 @@ class MainActivity : ComponentActivity() {
     private val secondaryBackgroundDark = "#191919"
     private val textColorDark = "#EDEEEE"
     private val inputBackgroundDark = "#191919"
+    private val statusChipBackgroundOnPrimaryDark = "#191919"
+    private val statusChipBackgroundOnSecondaryDark = "#333333"
 
 
     // Permission launcher
@@ -150,14 +157,18 @@ class MainActivity : ComponentActivity() {
                 primaryBackground = primaryBackgroundLight.toColor(),  // your light bg
                 secondaryBackground = secondaryBackgroundLight.toColor(),
                 textColor = textColorLight.toColor(),
-                inputBackground = inputBackgroundLight.toColor()
+                inputBackground = inputBackgroundLight.toColor(),
+                statusChipBackgroundOnPrimary = statusChipBackgroundOnPrimaryLight.toColor(),
+                statusChipBackgroundOnSecondary = statusChipBackgroundOnSecondaryLight.toColor()
 
             )
             val extendedDynamicDark = ExtendedColors(
                 primaryBackground = primaryBackgroundDark.toColor(),  // your light bg
                 secondaryBackground = secondaryBackgroundDark.toColor(),
                 textColor = textColorDark.toColor(),
-                inputBackground = inputBackgroundDark.toColor()
+                inputBackground = inputBackgroundDark.toColor(),
+                statusChipBackgroundOnPrimary = statusChipBackgroundOnPrimaryDark.toColor(),
+                statusChipBackgroundOnSecondary = statusChipBackgroundOnSecondaryDark.toColor()
             )
 
 
@@ -167,10 +178,10 @@ class MainActivity : ComponentActivity() {
                 lightExtendedColors = extendedDynamicLight,
                 darkExtendedColors = extendedDynamicDark
             ) {
-//                val navController = rememberNavController()
-//                AppNavGraph(navController = navController)
-//                navController.navigate("login")
-                HomeScreen(pillViewModel = pillViewModel)
+                val navController = rememberNavController()
+                AppNavGraph(navController = navController)
+                navController.navigate(Routes.DASHBOARD)
+                //HomeScreen(pillViewModel = pillViewModel)
             }
         }
     }

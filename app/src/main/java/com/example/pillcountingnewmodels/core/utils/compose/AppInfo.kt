@@ -50,7 +50,7 @@ fun AppInfo(
         Spacer(modifier = Modifier.height(10.dp))
 
         Text(
-            text = "Version ${context.getString(R.string.app_version_name)}",
+            text = "${context.getString(R.string.version)} ${context.getString(R.string.app_version_name)}",
             style = MaterialTheme.typography.bodySmall,
             letterSpacing = 1.sp,
             color = AppTheme.extendedColors.textColor
