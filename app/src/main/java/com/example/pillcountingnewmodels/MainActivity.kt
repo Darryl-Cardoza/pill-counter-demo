@@ -180,7 +180,7 @@ class MainActivity : ComponentActivity() {
             ) {
                 val navController = rememberNavController()
                 AppNavGraph(navController = navController)
-                navController.navigate(Routes.DASHBOARD)
+                navController.navigate(Routes.LOGIN)
                 //HomeScreen(pillViewModel = pillViewModel)
             }
         }

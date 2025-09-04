@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -22,41 +21,45 @@ import com.example.pillcountingnewmodels.ui.theme.AppTheme
 fun SplitResponsive(
     topOrLeft: @Composable () -> Unit,
     bottomOrRight: @Composable () -> Unit,
+    portraitRatio: Pair<Float, Float> = 0.5f to 0.5f, // (top, bottom)
+    landscapeRatio: Pair<Float, Float> = 0.5f to 0.5f, // (left, right)
     cornerRadius: Dp = 16.dp,
 ) {
     val isLandscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
 
     if (isLandscape) {
+        val (leftWeight, rightWeight) = landscapeRatio
         Row(Modifier.fillMaxSize()) {
-            // Left Box (flat)
+            // Left Box
             Box(
                 modifier = Modifier
-                    .weight(1f)
+                    .weight(leftWeight)
                     .fillMaxHeight()
             ) { topOrLeft() }
 
             // Right Box with inner corners rounded
             Box(
                 modifier = Modifier
-                    .weight(1f)
+                    .weight(rightWeight)
                     .fillMaxHeight()
                     .clip(RoundedCornerShape(topStart = cornerRadius, bottomStart = cornerRadius))
                     .background(AppTheme.extendedColors.primaryBackground)
             ) { bottomOrRight() }
         }
     } else {
+        val (topWeight, bottomWeight) = portraitRatio
         Column(Modifier.fillMaxSize()) {
-            // Top Box (flat)
+            // Top Box
             Box(
                 modifier = Modifier
-                    .weight(1f)
+                    .weight(topWeight)
                     .fillMaxWidth()
             ) { topOrLeft() }
 
             // Bottom Box with inner corners rounded
             Box(
                 modifier = Modifier
-                    .weight(1f)
+                    .weight(bottomWeight)
                     .fillMaxWidth()
                     .background(
                         color = AppTheme.extendedColors.primaryBackground,
