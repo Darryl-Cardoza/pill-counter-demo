@@ -2,6 +2,7 @@ package com.example.pillcountingnewmodels.feature.dashboard.presentation
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -31,7 +32,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.pillcountingnewmodels.R
+import com.example.pillcountingnewmodels.core.utils.AppConstants.FIXED_COUNT
+import com.example.pillcountingnewmodels.core.utils.AppConstants.REGULAR_COUNT
+import com.example.pillcountingnewmodels.core.utils.compose.BackButton
+import com.example.pillcountingnewmodels.core.utils.compose.MenuButton
 import com.example.pillcountingnewmodels.core.utils.compose.SplitResponsive
+import com.example.pillcountingnewmodels.navigation.Routes.SCAN_BARCODE
 import com.example.pillcountingnewmodels.ui.theme.AppTheme
 
 @Composable
@@ -47,21 +53,29 @@ fun DashboardScreen(navController: NavController) {
             topOrLeft = {
                 FixedCountSection(
                     completedFixedCount = completedFixedCount,
-                    partialFixedCount = partialFixedCount
+                    partialFixedCount = partialFixedCount,
+                    navController = navController
                 )
             },
             bottomOrRight = {
                 RegularCountSection(
                     completedRegularCount = completedRegularCount,
-                    partialRegularCount = partialRegularCount
+                    partialRegularCount = partialRegularCount,
+                    navController = navController
                 )
             },
+        )
+
+        MenuButton(
+            navController,
+            modifier = Modifier
+                .align(Alignment.TopEnd)
         )
     }
 }
 
 @Composable
-fun FixedCountSection(completedFixedCount: String, partialFixedCount: String) {
+fun FixedCountSection(completedFixedCount: String, partialFixedCount: String, navController: NavController) {
     val context = LocalContext.current
 
 
@@ -74,6 +88,9 @@ fun FixedCountSection(completedFixedCount: String, partialFixedCount: String) {
         Image(
             painter = painterResource(id = R.drawable.fixed_count),
             contentDescription = "Pill Counting Logo",
+            modifier = Modifier.clickable {
+                startScan(navController, FIXED_COUNT)
+            }
         )
 
         Spacer(modifier = Modifier.height(24.dp))
@@ -82,13 +99,19 @@ fun FixedCountSection(completedFixedCount: String, partialFixedCount: String) {
             text = context.getString(R.string.fixed_count),
             style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.SemiBold,
-            color = MaterialTheme.colorScheme.secondary
+            color = MaterialTheme.colorScheme.secondary,
+            modifier = Modifier.clickable{
+                startScan(navController, FIXED_COUNT)
+            }
         )
         Spacer(modifier = Modifier.height(10.dp))
         Text(
             text = context.getString(R.string.fixed_count_desc),
             style = MaterialTheme.typography.bodyLarge,
-            color = AppTheme.extendedColors.textColor
+            color = AppTheme.extendedColors.textColor,
+            modifier = Modifier.clickable{
+                startScan(navController, FIXED_COUNT)
+            }
         )
 
         Spacer(modifier = Modifier.height(40.dp))
@@ -120,8 +143,16 @@ fun FixedCountSection(completedFixedCount: String, partialFixedCount: String) {
     }
 }
 
+fun startScan(navController: NavController, countType: String) {
+    navController.navigate("${SCAN_BARCODE}/${countType}")
+}
+
 @Composable
-fun RegularCountSection(completedRegularCount: String, partialRegularCount: String) {
+fun RegularCountSection(
+    completedRegularCount: String,
+    partialRegularCount: String,
+    navController: NavController
+) {
     val context = LocalContext.current
 
     Column(
@@ -133,6 +164,9 @@ fun RegularCountSection(completedRegularCount: String, partialRegularCount: Stri
         Image(
             painter = painterResource(id = R.drawable.regular_count),
             contentDescription = "Pill Counting Logo",
+            modifier = Modifier.clickable {
+                startScan(navController, REGULAR_COUNT)
+            }
         )
 
         Spacer(modifier = Modifier.height(24.dp))
@@ -141,7 +175,10 @@ fun RegularCountSection(completedRegularCount: String, partialRegularCount: Stri
             text = context.getString(R.string.regular_count),
             style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.SemiBold,
-            color = MaterialTheme.colorScheme.primary
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.clickable {
+                startScan(navController, REGULAR_COUNT)
+            }
         )
 
         Spacer(modifier = Modifier.height(10.dp))
@@ -149,7 +186,10 @@ fun RegularCountSection(completedRegularCount: String, partialRegularCount: Stri
         Text(
             text = context.getString(R.string.regular_count_desc),
             style = MaterialTheme.typography.bodyMedium,
-            color = AppTheme.extendedColors.textColor
+            color = AppTheme.extendedColors.textColor,
+            modifier = Modifier.clickable {
+                startScan(navController, REGULAR_COUNT)
+            }
         )
 
         Spacer(modifier = Modifier.height(40.dp))

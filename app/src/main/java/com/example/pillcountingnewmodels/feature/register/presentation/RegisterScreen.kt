@@ -39,6 +39,7 @@ import com.example.pillcountingnewmodels.core.utils.compose.ActionButtonPrimary
 import com.example.pillcountingnewmodels.core.utils.compose.BackButton
 import com.example.pillcountingnewmodels.core.utils.compose.SplitResponsive
 import com.example.pillcountingnewmodels.navigation.Routes
+import com.example.pillcountingnewmodels.navigation.Routes.OTP_VERIFY
 import com.example.pillcountingnewmodels.ui.theme.AppTheme
 
 @Composable
@@ -146,7 +147,7 @@ fun RegisterScreen(
                                     confirmPasswordFocusRequester.requestFocus()
                                 }
                                 else -> {
-                                    navController.navigate("${Routes.OTP_VERIFY}/$email")
+                                    navController.navigate("${OTP_VERIFY}/$email")
                                 }
                             }
                         },

@@ -47,6 +47,9 @@ import com.example.pillcountingnewmodels.core.utils.compose.ActionButtonPrimary
 import com.example.pillcountingnewmodels.core.utils.compose.SplitResponsive
 import com.example.pillcountingnewmodels.feature.login.viewmodel.LoginViewModel
 import com.example.pillcountingnewmodels.navigation.Routes
+import com.example.pillcountingnewmodels.navigation.Routes.DASHBOARD
+import com.example.pillcountingnewmodels.navigation.Routes.FORGOT_PASSWORD
+import com.example.pillcountingnewmodels.navigation.Routes.REGISTER
 import com.example.pillcountingnewmodels.ui.theme.AppTheme
 
 
@@ -165,8 +168,8 @@ fun LoginScreen(
 
                         if (loginState == "SUCCESS") {
                             LaunchedEffect(Unit) {
-                                navController.navigate(Routes.DASHBOARD) {
-                                    popUpTo(Routes.DASHBOARD) { inclusive = true }
+                                navController.navigate(DASHBOARD) {
+                                    popUpTo(DASHBOARD) { inclusive = true }
                                 }
                             }
                         }
@@ -188,7 +191,7 @@ fun LoginScreen(
                             color = AppTheme.extendedColors.textColor,
                             style = MaterialTheme.typography.bodyMedium,
                             modifier = Modifier.clickable {
-                                navController.navigate(Routes.REGISTER)
+                                navController.navigate(REGISTER)
                             }
                         )
                         Text(
@@ -196,7 +199,7 @@ fun LoginScreen(
                             color = AppTheme.extendedColors.textColor,
                             style = MaterialTheme.typography.bodyMedium,
                             modifier = Modifier.clickable {
-                                navController.navigate(Routes.FORGOT_PASSWORD)
+                                navController.navigate(FORGOT_PASSWORD)
                             }
                         )
                     }

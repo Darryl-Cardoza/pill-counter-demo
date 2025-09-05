@@ -7,23 +7,38 @@ import androidx.navigation.compose.composable
 import com.example.pillcountingnewmodels.feature.dashboard.presentation.DashboardScreen
 import com.example.pillcountingnewmodels.feature.forgot_password.presentation.ForgotPasswordScreen
 import com.example.pillcountingnewmodels.feature.login.presentation.LoginScreen
+import com.example.pillcountingnewmodels.feature.pill_count.presentation.ScanBarCodeScreen
 import com.example.pillcountingnewmodels.feature.register.presentation.OTPScreen
 import com.example.pillcountingnewmodels.feature.register.presentation.RegisterScreen
+import com.example.pillcountingnewmodels.navigation.Routes.DASHBOARD
+import com.example.pillcountingnewmodels.navigation.Routes.FORGOT_PASSWORD
+import com.example.pillcountingnewmodels.navigation.Routes.LOGIN
+import com.example.pillcountingnewmodels.navigation.Routes.OTP_VERIFY
+import com.example.pillcountingnewmodels.navigation.Routes.REGISTER
+import com.example.pillcountingnewmodels.navigation.Routes.SCAN_BARCODE
 
 @Composable
 fun AppNavGraph(navController: NavHostController) {
     NavHost(
         navController = navController,
-        startDestination = Routes.LOGIN
+        startDestination = LOGIN
     ) {
-        composable(Routes.LOGIN) { LoginScreen(navController) }
-        composable(Routes.REGISTER) { RegisterScreen(navController) }
-        composable(Routes.DASHBOARD) { DashboardScreen(navController) }
-        composable("${Routes.OTP_VERIFY}/{email}") { backStackEntry ->
+        composable(LOGIN) { LoginScreen(navController) }
+        composable(REGISTER) { RegisterScreen(navController) }
+        composable(DASHBOARD) { DashboardScreen(navController) }
+
+        composable("${OTP_VERIFY}/{email}") { backStackEntry ->
             val email = backStackEntry.arguments?.getString("email") ?: ""
             OTPScreen(navController, email)
         }
-        composable(Routes.FORGOT_PASSWORD) { ForgotPasswordScreen(navController) }
-        //composable("home") { HomeScreen(navController) }
+
+        composable(FORGOT_PASSWORD) { ForgotPasswordScreen(navController) }
+
+        composable(
+            route = "$SCAN_BARCODE/{type}"
+        ) { backStackEntry ->
+            val type = backStackEntry.arguments?.getString("type")
+            ScanBarCodeScreen(navController, scanType = type ?: "regular")
+        }
     }
 }
