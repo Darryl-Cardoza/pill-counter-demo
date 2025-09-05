@@ -31,5 +31,8 @@
     <string name="completed">completed</string>
     <string name="partial">partial</string>
 
+    <!--barcode scan-->
+    <string name="barcode_scan">Barcode Scan</string>
+
 
 </resources>

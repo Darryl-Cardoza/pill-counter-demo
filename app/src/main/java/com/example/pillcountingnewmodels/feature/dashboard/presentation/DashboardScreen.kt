@@ -34,7 +34,6 @@ import androidx.navigation.NavController
 import com.example.pillcountingnewmodels.R
 import com.example.pillcountingnewmodels.core.utils.AppConstants.FIXED_COUNT
 import com.example.pillcountingnewmodels.core.utils.AppConstants.REGULAR_COUNT
-import com.example.pillcountingnewmodels.core.utils.compose.BackButton
 import com.example.pillcountingnewmodels.core.utils.compose.MenuButton
 import com.example.pillcountingnewmodels.core.utils.compose.SplitResponsive
 import com.example.pillcountingnewmodels.navigation.Routes.SCAN_BARCODE

@@ -13,4 +13,5 @@ object Dimens {
     val huge = 50.dp
 
     val appBarIconsPadding = 15.dp
+    val pagePadding = 16.dp
 }

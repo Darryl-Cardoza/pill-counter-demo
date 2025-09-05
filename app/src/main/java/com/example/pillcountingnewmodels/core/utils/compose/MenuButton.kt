@@ -18,7 +18,7 @@ fun MenuButton(
     backIcon: Int = R.drawable.menu,
 ) {
     IconButton(
-        onClick = { navController.popBackStack() },
+        onClick = { },
         modifier = modifier.padding(appBarIconsPadding)
     ) {
         Icon(
