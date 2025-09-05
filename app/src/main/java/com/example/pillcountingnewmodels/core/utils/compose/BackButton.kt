@@ -7,9 +7,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.pillcountingnewmodels.R
+import com.example.pillcountingnewmodels.core.utils.compose.Dimens.appBarIconsPadding
 
 @Composable
 fun BackButton(
@@ -19,7 +19,7 @@ fun BackButton(
 ) {
     IconButton(
         onClick = { navController.popBackStack() },
-        modifier = modifier.padding(15.dp)
+        modifier = modifier.padding(appBarIconsPadding)
     ) {
         Icon(
             painter = painterResource(id = backIcon),
