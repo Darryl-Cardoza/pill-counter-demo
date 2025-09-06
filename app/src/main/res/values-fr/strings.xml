@@ -1,0 +1,31 @@
+<resources>
+    <string name="app_name">PillCountingNewModels</string>
+
+    <string name="rite_title">RITE TECHNOLOGIES</string>
+    <string name="version">Version</string>
+
+    <string name="email">E-mail</string>
+    <string name="password">Mot de passe</string>
+    <string name="remember_me">Se souvenir de moi</string>
+    <string name="register">S\'inscrire</string>
+    <string name="forgot_password">Mot de passe oublié ?</string>
+    <string name="confirm_password">Confirmer le mot de passe</string>
+    <string name="code_sent_to">Un code de sécurité a été envoyé à</string>
+    <string name="pre_resend_code">Renvoyer le code dans %1$d s</string>
+    <string name="resend_code">Renvoyer le code</string>
+    <string name="verify">Vérifier</string>
+
+    <string name="password_recovery">Récupération de mot de passe</string>
+    <string name="password_recovery_desc">Entrez votre e-mail enregistré et nous vous enverrons des instructions pour le réinitialiser.</string>
+    <string name="your_registered_email">Votre e-mail enregistré</string>
+    <string name="send_otp">Envoyer l\'OTP</string>
+
+    <string name="fixed_count">Comptage Fixe</string>
+    <string name="fixed_count_desc">Pour compter des quantités fixes</string>
+    <string name="regular_count">Comptage Régulier</string>
+    <string name="regular_count_desc">Pour les comptages réguliers quotidiens</string>
+    <string name="completed">terminé</string>
+    <string name="partial">partiel</string>
+
+    <string name="barcode_scan">Scan de code-barres</string>
+</resources>
