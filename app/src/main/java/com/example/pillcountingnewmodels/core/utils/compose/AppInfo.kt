@@ -19,6 +19,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.pillcountingnewmodels.R
+import androidx.compose.ui.res.stringResource
 import com.example.pillcountingnewmodels.ui.theme.AppTheme
 
 @Composable
@@ -41,7 +42,7 @@ fun AppInfo(
         }
 
         Text(
-            text = context.getString(R.string.rite_title),
+            text = stringResource(R.string.rite_title),
             style = MaterialTheme.typography.bodySmall,
             letterSpacing = 1.sp,
             color = AppTheme.extendedColors.textColor
@@ -50,7 +51,7 @@ fun AppInfo(
         Spacer(modifier = Modifier.height(10.dp))
 
         Text(
-            text = "${context.getString(R.string.version)} ${context.getString(R.string.app_version_name)}",
+            text = "${stringResource(R.string.version)} ${stringResource(R.string.app_version_name)}",
             style = MaterialTheme.typography.bodySmall,
             letterSpacing = 1.sp,
             color = AppTheme.extendedColors.textColor

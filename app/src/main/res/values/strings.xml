@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">PillCountingNewModels</string>
+    <string name="app_name">Pill Counting</string>
 
     <!--App info-->
     <string name="rite_title">RITE TECHNOLOGIES</string>
@@ -33,6 +33,40 @@
 
     <!--barcode scan-->
     <string name="barcode_scan">Barcode Scan</string>
+
+    <string name="back_content_description">Navigate back</string>
+
+    <string name="settings_title" translatable="false">SETTINGS</string>
+    <string name="setting_barcode_scan_first">Always do Barcode Scan first</string>
+    <string name="setting_ask_to_add_notes">Always ask to add Notes</string>
+    <string name="setting_save_history_for">Save history for</string>
+
+    <string-array name="history_options">
+        <item>1 Week (Default)</item>
+        <item>15 days</item>
+        <item>1 Month</item>
+        <item>2 Months</item>
+        <item>3 Months</item>
+    </string-array>
+
+    <string name="history_title">HISTORY</string>
+    <string name="counts_label">%d counts</string>
+    <string name="export_content_description">Export</string>
+    <string name="delete_content_description">Delete</string>
+    <string name="filter_content_description">Filter</string>
+    <string name="search_content_description">Search</string>
+
+    <!-- Validation Error Messages -->
+    <string name="error_email_empty">Email cannot be empty.</string>
+    <string name="error_email_invalid">Please enter a valid email address.</string>
+    <string name="error_password_too_short">Password must be at least 8 characters long.</string>
+    <string name="error_password_no_uppercase">Password must contain at least one uppercase letter.</string>
+    <string name="error_password_no_lowercase">Password must contain at least one lowercase letter.</string>
+    <string name="error_password_no_digit">Password must contain at least one number.</string>
+    <string name="error_password_no_special">Password must contain at least one special character.</string>
+    <string name="error_passwords_do_not_match">Entered password does not match.</string>
+    <string name="error_unknown">Something went wrong.</string>
+    <string name="error_invalid_otp">Invalid Pin entered.</string>
 
 
 </resources>

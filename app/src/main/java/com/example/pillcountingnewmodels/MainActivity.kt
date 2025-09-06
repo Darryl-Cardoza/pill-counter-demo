@@ -14,14 +14,19 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.rememberNavController
-import com.example.pillcountingnewmodels.core.utils.toColor
+import com.example.pillcountingnewmodels.feature.settings.presentation.viewmodel.ApplicationSettingsViewModel
 import com.example.pillcountingnewmodels.navigation.AppNavGraph
-import com.example.pillcountingnewmodels.navigation.Routes
 import com.example.pillcountingnewmodels.ui.theme.ExtendedColors
 import com.example.pillcountingnewmodels.ui.theme.PillCountingNewModelsTheme
 import com.example.pillcountingnewmodels.viewmodel.PillViewModel
@@ -32,26 +37,8 @@ class MainActivity : ComponentActivity() {
 
     // ViewModel scoped to Activity lifecycle
     private val pillViewModel: PillViewModel by viewModels()
-
-    private val primaryColorLight = "#01BBD3"
-    private val secondaryColorLight = "#FD82B5"
-    private val primaryBackgroundLight = "#EDEEEE"
-    private val secondaryBackgroundLight = "#FFFFFF"
-    private val textColorLight = "#666666"
-    private val inputBackgroundLight = "#FFFFFF"
-    private val statusChipBackgroundOnPrimaryLight = "#FFFFFF"
-    private val statusChipBackgroundOnSecondaryLight = "#F5F4F4"
-
-
-    private val primaryColorDark = "#01BBD3"
-    private val secondaryColorDark = "#FD82B5"
-    private val primaryBackgroundDark = "#333333"
-    private val secondaryBackgroundDark = "#191919"
-    private val textColorDark = "#EDEEEE"
-    private val inputBackgroundDark = "#191919"
-    private val statusChipBackgroundOnPrimaryDark = "#191919"
-    private val statusChipBackgroundOnSecondaryDark = "#333333"
-
+    // Inject the settings ViewModel
+    private val settingsViewModel: ApplicationSettingsViewModel by viewModels()
 
     // Permission launcher
     private val requestCameraPermissionLauncher = registerForActivityResult(
@@ -89,8 +76,6 @@ class MainActivity : ComponentActivity() {
                 View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or
                         View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
         }
-
-
         checkCameraPermission()
     }
 
@@ -138,50 +123,58 @@ class MainActivity : ComponentActivity() {
 
     private fun startApp() {
         setContent {
+            // Collect UI state from the ViewModel in a lifecycle-aware way
+            val settingsState by settingsViewModel.uiState.collectAsStateWithLifecycle()
+            val colorSettings = settingsState.colorSettings
 
-            val lightColorSchemeDynamic = remember {
-                lightColorScheme(
-                    primary = primaryColorLight.toColor(),
-                    secondary = secondaryColorLight.toColor()
+            // Show a loading indicator while fetching settings or if settings are null
+            if (settingsState.isLoading || colorSettings == null) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator()
+                }
+            } else {
+                // Once settings are loaded, build the theme dynamically
+                val lightColorSchemeDynamic = lightColorScheme(
+                    primary = colorSettings.light.primary,
+                    secondary = colorSettings.light.secondary
                 )
-            }
 
-            val darkColorSchemeDynamic = remember {
-                darkColorScheme(
-                    primary = primaryColorDark.toColor(),
-                    secondary = secondaryColorDark.toColor()
+                val darkColorSchemeDynamic = darkColorScheme(
+                    primary = colorSettings.dark.primary,
+                    secondary = colorSettings.dark.secondary
                 )
-            }
 
-            val extendedDynamicLight = ExtendedColors(
-                primaryBackground = primaryBackgroundLight.toColor(),  // your light bg
-                secondaryBackground = secondaryBackgroundLight.toColor(),
-                textColor = textColorLight.toColor(),
-                inputBackground = inputBackgroundLight.toColor(),
-                statusChipBackgroundOnPrimary = statusChipBackgroundOnPrimaryLight.toColor(),
-                statusChipBackgroundOnSecondary = statusChipBackgroundOnSecondaryLight.toColor()
+                val extendedDynamicLight = ExtendedColors(
+                    primaryBackground = colorSettings.light.primaryBackground,
+                    secondaryBackground = colorSettings.light.secondaryBackground,
+                    textColor = colorSettings.light.textColor,
+                    inputBackground = colorSettings.light.inputBackground,
+                    statusChipBackgroundOnPrimary = colorSettings.light.statusChipBackgroundOnPrimary,
+                    statusChipBackgroundOnSecondary = colorSettings.light.statusChipBackgroundOnSecondary
+                )
+                val extendedDynamicDark = ExtendedColors(
+                    primaryBackground = colorSettings.dark.primaryBackground,
+                    secondaryBackground = colorSettings.dark.secondaryBackground,
+                    textColor = colorSettings.dark.textColor,
+                    inputBackground = colorSettings.dark.inputBackground,
+                    statusChipBackgroundOnPrimary = colorSettings.dark.statusChipBackgroundOnPrimary,
+                    statusChipBackgroundOnSecondary = colorSettings.dark.statusChipBackgroundOnSecondary
+                )
 
-            )
-            val extendedDynamicDark = ExtendedColors(
-                primaryBackground = primaryBackgroundDark.toColor(),  // your light bg
-                secondaryBackground = secondaryBackgroundDark.toColor(),
-                textColor = textColorDark.toColor(),
-                inputBackground = inputBackgroundDark.toColor(),
-                statusChipBackgroundOnPrimary = statusChipBackgroundOnPrimaryDark.toColor(),
-                statusChipBackgroundOnSecondary = statusChipBackgroundOnSecondaryDark.toColor()
-            )
+                PillCountingNewModelsTheme(
+                    lightColors = lightColorSchemeDynamic,
+                    darkColors = darkColorSchemeDynamic,
+                    lightExtendedColors = extendedDynamicLight,
+                    darkExtendedColors = extendedDynamicDark
+                ) {
+                    val navController = rememberNavController()
+                    AppNavGraph(navController = navController)
 
-
-            PillCountingNewModelsTheme(
-                lightColors = lightColorSchemeDynamic,
-                darkColors = darkColorSchemeDynamic,
-                lightExtendedColors = extendedDynamicLight,
-                darkExtendedColors = extendedDynamicDark
-            ) {
-                val navController = rememberNavController()
-                AppNavGraph(navController = navController)
-                navController.navigate(Routes.DASHBOARD)
-                //HomeScreen(pillViewModel = pillViewModel)
+                    navController.navigate(Screen.Login.route)
+                }
             }
         }
     }

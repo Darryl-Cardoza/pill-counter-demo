@@ -1,3 +1,5 @@
+// file: navigation/AppNavGraph.kt
+
 package com.example.pillcountingnewmodels.navigation
 
 import androidx.compose.runtime.Composable
@@ -5,40 +7,48 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.example.pillcountingnewmodels.feature.dashboard.presentation.DashboardScreen
-import com.example.pillcountingnewmodels.feature.forgot_password.presentation.ForgotPasswordScreen
-import com.example.pillcountingnewmodels.feature.login.presentation.LoginScreen
+import com.example.pillcountingnewmodels.feature.history.presentation.compose.HistoryScreen
+import com.example.pillcountingnewmodels.feature.menu.presentation.compose.MenuScreen
 import com.example.pillcountingnewmodels.feature.pill_count.presentation.ScanBarCodeScreen
-import com.example.pillcountingnewmodels.feature.register.presentation.OTPScreen
-import com.example.pillcountingnewmodels.feature.register.presentation.RegisterScreen
-import com.example.pillcountingnewmodels.navigation.Routes.DASHBOARD
-import com.example.pillcountingnewmodels.navigation.Routes.FORGOT_PASSWORD
-import com.example.pillcountingnewmodels.navigation.Routes.LOGIN
-import com.example.pillcountingnewmodels.navigation.Routes.OTP_VERIFY
-import com.example.pillcountingnewmodels.navigation.Routes.REGISTER
-import com.example.pillcountingnewmodels.navigation.Routes.SCAN_BARCODE
+import com.example.pillcountingnewmodels.feature.settings.presentation.SettingsScreen // Placeholder
+import com.example.pillcountingnewmodels.navigatio.authGraph
+
+// Define constants for nested graph routes for better organization
+const val AUTH_GRAPH_ROUTE = "auth"
 
 @Composable
 fun AppNavGraph(navController: NavHostController) {
     NavHost(
         navController = navController,
-        startDestination = LOGIN
+        startDestination = AUTH_GRAPH_ROUTE
     ) {
-        composable(LOGIN) { LoginScreen(navController) }
-        composable(REGISTER) { RegisterScreen(navController) }
-        composable(DASHBOARD) { DashboardScreen(navController) }
+        // Nested graph for all authentication-related screens
+        authGraph(navController)
 
-        composable("${OTP_VERIFY}/{email}") { backStackEntry ->
-            val email = backStackEntry.arguments?.getString("email") ?: ""
-            OTPScreen(navController, email)
+        // Main app screens (post-login)
+        composable(route = Screen.Dashboard.route) {
+            DashboardScreen(navController)
         }
 
-        composable(FORGOT_PASSWORD) { ForgotPasswordScreen(navController) }
-
         composable(
-            route = "$SCAN_BARCODE/{type}"
+            route = Screen.ScanBarcode.route,
+            arguments = Screen.ScanBarcode.navArguments
         ) { backStackEntry ->
-            val type = backStackEntry.arguments?.getString("type")
+            val type = backStackEntry.arguments?.getString(Screen.ScanBarcode.ARG_TYPE)
             ScanBarCodeScreen(navController, scanType = type ?: "regular")
+        }
+
+
+        composable(route = Screen.Menu.route) {
+            MenuScreen(navController)
+        }
+
+        composable(route = Screen.Settings.route) {
+            SettingsScreen(navController)
+        }
+
+        composable(route = Screen.History.route) {
+            HistoryScreen(navController)
         }
     }
 }
