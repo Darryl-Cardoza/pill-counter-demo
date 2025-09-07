@@ -3,9 +3,12 @@ package com.example.pillcountingnewmodels.feature.forgotPassword.domain.model
 import com.google.gson.annotations.SerializedName
 
 /**
- * Represents the data structure for a forgot password API request.
+ * Request payload for initiating the "Forgot Password" flow.
  *
- * @property email The user's registered email address.
+ * This model is serialized into JSON and sent to the backend API
+ * when the user requests an OTP (One-Time Password) for password recovery.
+ *
+ * @property email The registered email address of the user requesting password recovery.
  */
 data class ForgotPasswordRequest(
     @SerializedName("email")

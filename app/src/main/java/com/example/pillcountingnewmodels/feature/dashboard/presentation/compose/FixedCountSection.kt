@@ -3,15 +3,7 @@ package com.example.pillcountingnewmodels.feature.dashboard.presentation.compose
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -28,9 +20,23 @@ import com.example.pillcountingnewmodels.R
 import com.example.pillcountingnewmodels.core.utils.AppConstants.FIXED_COUNT
 import com.example.pillcountingnewmodels.ui.theme.AppTheme
 
+/**
+ * Dashboard section for displaying the "Fixed Count" workflow.
+ *
+ * This composable renders:
+ * - A fixed count icon that navigates to the barcode scanning screen.
+ * - Title and description labels (both clickable for navigation).
+ * - Status chips showing completed and partial counts.
+ *
+ * @param completedFixedCount The number of completed fixed counts (as string for direct UI rendering).
+ * @param partialFixedCount The number of partially completed fixed counts.
+ * @param navController Navigation controller used for screen transitions.
+ */
 @Composable
 fun FixedCountSection(
-    completedFixedCount: String, partialFixedCount: String, navController: NavController
+    completedFixedCount: String,
+    partialFixedCount: String,
+    navController: NavController
 ) {
     Column(
         modifier = Modifier.fillMaxSize(),
@@ -39,34 +45,52 @@ fun FixedCountSection(
     ) {
         Spacer(modifier = Modifier.height(24.dp))
 
-        Image(painter = painterResource(id = R.drawable.fixed_count),
-            contentDescription = "Fixed Count",
-            modifier = Modifier.clickable(indication = null,
-                interactionSource = remember { MutableInteractionSource() }) {
+        // Fixed count icon leading to ScanBarcode screen
+        Image(
+            painter = painterResource(id = R.drawable.fixed_count),
+            contentDescription = stringResource(R.string.fixed_count),
+            modifier = Modifier.clickable(
+                indication = null,
+                interactionSource = remember { MutableInteractionSource() }
+            ) {
                 navController.navigate(Screen.ScanBarcode.createRoute(FIXED_COUNT))
-            })
+            }
+        )
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        Text(text = stringResource(R.string.fixed_count),
+        // Fixed Count title (clickable -> ScanBarcode)
+        Text(
+            text = stringResource(R.string.fixed_count),
             style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.SemiBold,
             color = MaterialTheme.colorScheme.secondary,
-            modifier = Modifier.clickable(indication = null,
-                interactionSource = remember { MutableInteractionSource() }) {
+            modifier = Modifier.clickable(
+                indication = null,
+                interactionSource = remember { MutableInteractionSource() }
+            ) {
                 navController.navigate(Screen.ScanBarcode.createRoute(FIXED_COUNT))
-            })
+            }
+        )
+
         Spacer(modifier = Modifier.height(10.dp))
-        Text(text = stringResource(R.string.fixed_count_desc),
+
+        // Description text (clickable -> ScanBarcode)
+        Text(
+            text = stringResource(R.string.fixed_count_desc),
             style = MaterialTheme.typography.bodyLarge,
             color = AppTheme.extendedColors.textColor,
-            modifier = Modifier.clickable(indication = null,
-                interactionSource = remember { MutableInteractionSource() }) {
+            modifier = Modifier.clickable(
+                indication = null,
+                interactionSource = remember { MutableInteractionSource() }
+            ) {
                 navController.navigate(Screen.ScanBarcode.createRoute(FIXED_COUNT))
-            })
+            }
+        )
 
         Spacer(modifier = Modifier.height(60.dp))
 
+        // Row of status chips for Completed & Partial
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -74,6 +98,7 @@ fun FixedCountSection(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
+            // Completed status (static, non-clickable)
             StatusChip(
                 text = "$completedFixedCount ${stringResource(R.string.completed)}",
                 backgroundColor = Color.Transparent,
@@ -82,10 +107,12 @@ fun FixedCountSection(
                 iconTint = MaterialTheme.colorScheme.secondary
             )
 
-            // Updated to navigate to the correct partial counts screen
+            // Partial status (clickable -> ResumeFixedCounts screen)
             Box(
-                modifier = Modifier.clickable(indication = null,
-                    interactionSource = remember { MutableInteractionSource() }) {
+                modifier = Modifier.clickable(
+                    indication = null,
+                    interactionSource = remember { MutableInteractionSource() }
+                ) {
                     navController.navigate(Screen.ResumeFixedCounts.createRoute(FIXED_COUNT))
                 }
             ) {

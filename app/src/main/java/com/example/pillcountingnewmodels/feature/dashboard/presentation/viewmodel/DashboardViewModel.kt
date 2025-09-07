@@ -6,18 +6,42 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 
+/**
+ * ViewModel responsible for managing and exposing the state of the Dashboard screen.
+ *
+ * Responsibilities:
+ * - Holds the current [DashboardUiState].
+ * - Fetches and updates dashboard metrics (completed/partial counts).
+ * - Exposes immutable state to the UI layer via [uiState].
+ *
+ * Note:
+ * In a production environment, data would typically be fetched from a repository
+ * (network, database, or a combination). Currently, it uses mock values.
+ */
 class DashboardViewModel : ViewModel() {
 
+    // Backing state for the Dashboard screen
     private val _uiState = MutableStateFlow(DashboardUiState())
-    val uiState = _uiState.asStateFlow() // Expose as an immutable StateFlow
+
+    /**
+     * Publicly exposed immutable state for UI consumption.
+     * UI layers should collect this StateFlow to render updates reactively.
+     */
+    val uiState = _uiState.asStateFlow()
 
     init {
-        // In a real application, you would fetch data from a repository here.
+        // Initialize dashboard data when ViewModel is created
         loadDashboardData()
     }
 
+    /**
+     * Loads dashboard data.
+     *
+     * TODO:
+     * Replace with repository calls or use cases when integrating with real data sources.
+     */
     private fun loadDashboardData() {
-        // Simulate fetching data from a source
+        // Mocked data (for now). Replace with actual repository call.
         _uiState.update {
             it.copy(
                 completedFixedCount = "12",

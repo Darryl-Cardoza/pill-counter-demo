@@ -25,7 +25,7 @@ import javax.inject.Inject
  */
 @HiltViewModel
 class CountsViewModel @Inject constructor(
-    // private val repository: ICountsRepository
+    // private val dao: ProductDao  //TODO(All to take from the database and operations)
 ) : ViewModel() {
 
     // ---------------- State Flows ----------------

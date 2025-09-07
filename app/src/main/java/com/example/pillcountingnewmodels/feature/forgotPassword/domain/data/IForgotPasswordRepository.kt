@@ -3,14 +3,24 @@ package com.example.pillcountingnewmodels.feature.forgotPassword.domain.data
 import com.example.pillcountingnewmodels.feature.forgotPassword.domain.model.ForgotPasswordResponse
 
 /**
- * Defines the contract for password recovery data operations.
+ * Contract for the Forgot Password feature's data operations.
+ *
+ * This repository interface abstracts the process of initiating
+ * a password recovery request by sending an OTP (One-Time Password)
+ * to the user's registered email address.
+ *
+ * Implementations of this interface should handle the interaction
+ * with remote data sources (e.g., a REST API).
  */
 interface IForgotPasswordRepository {
+
     /**
-     * Sends a request to the remote API to initiate password recovery for the given email.
+     * Initiates the password recovery process by sending an OTP to the given email.
      *
-     * @param email The user's registered email address.
-     * @return A [Result] wrapper containing the [ForgotPasswordResponse] on success or an exception on failure.
+     * @param email The registered email address of the user requesting the OTP.
+     * @return A [Result] containing:
+     *   - [ForgotPasswordResponse] on success.
+     *   - [Exception] on failure, wrapped in [Result.failure].
      */
     suspend fun sendOtp(email: String): Result<ForgotPasswordResponse>
 }

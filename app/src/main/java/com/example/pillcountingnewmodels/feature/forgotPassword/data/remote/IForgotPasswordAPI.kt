@@ -1,19 +1,26 @@
 package com.example.pillcountingnewmodels.feature.forgotPassword.data.remote
 
-import com.example.pillcountingnewmodels.feature.forgotPassword.domain.model.ForgotPasswordResponse
 import com.example.pillcountingnewmodels.feature.forgotPassword.domain.model.ForgotPasswordRequest
+import com.example.pillcountingnewmodels.feature.forgotPassword.domain.model.ForgotPasswordResponse
 import retrofit2.http.Body
 import retrofit2.http.POST
 
 /**
- * Defines the network endpoints for user authentication using Retrofit.
+ * Retrofit service for handling "Forgot Password" related network requests.
  */
 interface IForgotPasswordAPI {
+
     /**
-     * Sends user details to the remote server to create a new account.
-     * @param request A data object containing the user's email and password.
-     * @return A [ForgotPasswordResponse] containing a success message.
+     * Triggers the forgot password process for the given user.
+     *
+     * Typically, this endpoint sends a password reset link or OTP
+     * to the user's registered email/phone.
+     *
+     * @param request A [ForgotPasswordRequest] containing the user's identifier (e.g., email).
+     * @return A [ForgotPasswordResponse] containing the server response (success/failure).
      */
-    @POST("v1/register") // TODO(Replace with your actual register endpoint)
-    suspend fun forgotPassword(@Body request: ForgotPasswordRequest): ForgotPasswordResponse
+    @POST("v1/forgot-password")
+    suspend fun forgotPassword(
+        @Body request: ForgotPasswordRequest
+    ): ForgotPasswordResponse
 }

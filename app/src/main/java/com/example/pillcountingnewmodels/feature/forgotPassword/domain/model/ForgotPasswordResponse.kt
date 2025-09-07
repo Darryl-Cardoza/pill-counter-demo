@@ -3,9 +3,13 @@ package com.example.pillcountingnewmodels.feature.forgotPassword.domain.model
 import com.google.gson.annotations.SerializedName
 
 /**
- * Represents the data structure for a successful forgot password API response.
+ * Response payload returned by the backend after initiating the "Forgot Password" flow.
  *
- * @property message A success message from the server (e.g., "OTP sent successfully").
+ * This model represents the server's confirmation that an OTP (One-Time Password)
+ * or password recovery link has been successfully sent to the user's email.
+ *
+ * @property message A human-readable success message from the server
+ * (e.g., "OTP sent successfully").
  */
 data class ForgotPasswordResponse(
     @SerializedName("message")

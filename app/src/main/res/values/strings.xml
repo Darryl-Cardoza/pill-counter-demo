@@ -21,6 +21,7 @@
     <string name="password_recovery">Password Recovery</string>
     <string name="password_recovery_desc">Enter your registered email ID and we will send instructions on how to reset it.</string>
     <string name="your_registered_email">Your registered email</string>
+    <string name="error_invalid_email">Entered email is not valid</string>
     <string name="send_otp">Send OTP</string>
 
     <!--dashboard-->

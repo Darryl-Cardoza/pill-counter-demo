@@ -17,17 +17,34 @@ import com.example.pillcountingnewmodels.feature.dashboard.presentation.compose.
 import com.example.pillcountingnewmodels.feature.dashboard.presentation.viewmodel.DashboardViewModel
 import com.example.pillcountingnewmodels.ui.theme.AppTheme
 
+/**
+ * Dashboard screen entry point.
+ *
+ * Displays:
+ * - [FixedCountSection] on the top/left.
+ * - [RegularCountSection] on the bottom/right.
+ * - [MenuButton] for navigation.
+ *
+ * The layout adapts responsively based on available space via [SplitResponsive].
+ *
+ * @param navController Used for navigation actions from dashboard sections.
+ * @param viewModel ViewModel responsible for providing dashboard data/state.
+ */
 @Composable
 fun DashboardScreen(
     navController: NavController,
     viewModel: DashboardViewModel = hiltViewModel()
 ) {
+    // Prevent navigating back from dashboard screen
+    BackHandler(enabled = true) { /* Intentionally left blank */ }
 
-    BackHandler { }
-
+    // Collect dashboard UI state reactively
     val uiState by viewModel.uiState.collectAsState()
 
-    Box(modifier = Modifier.background(AppTheme.extendedColors.secondaryBackground)) {
+    Box(
+        modifier = Modifier.background(AppTheme.extendedColors.secondaryBackground)
+    ) {
+        // Split screen layout: fixed counts vs regular counts
         SplitResponsive(
             topOrLeft = {
                 FixedCountSection(
@@ -45,10 +62,10 @@ fun DashboardScreen(
             },
         )
 
+        // Global navigation menu button (top-right aligned)
         MenuButton(
             navController,
             modifier = Modifier.align(Alignment.TopEnd)
         )
     }
 }
-

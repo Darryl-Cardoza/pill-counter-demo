@@ -9,12 +9,12 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import com.example.pillcountingnewmodels.feature.counts.presentation.viewmodel.CountsViewModel
-import com.example.pillcountingnewmodels.feature.dashboard.presentation.DashboardScreen
-import com.example.pillcountingnewmodels.feature.history.presentation.compose.HistoryScreen
-import com.example.pillcountingnewmodels.feature.menu.presentation.compose.MenuScreen
 import com.example.pillcountingnewmodels.feature.countResume.presentation.FixedCountResumeScreen
 import com.example.pillcountingnewmodels.feature.countResume.presentation.RegularCountResumeScreen
+import com.example.pillcountingnewmodels.feature.counts.presentation.viewmodel.CountsViewModel
+import com.example.pillcountingnewmodels.feature.dashboard.presentation.DashboardScreen
+import com.example.pillcountingnewmodels.feature.history.presentation.HistoryScreen
+import com.example.pillcountingnewmodels.feature.menu.presentation.compose.MenuScreen
 import com.example.pillcountingnewmodels.feature.pillCount.presentation.ScanBarCodeScreen
 import com.example.pillcountingnewmodels.feature.settings.presentation.SettingsScreen
 import com.example.pillcountingnewmodels.navigatio.authGraph
@@ -57,7 +57,7 @@ fun AppNavGraph(navController: NavHostController) {
             val viewModel: CountsViewModel = hiltViewModel()
             val uiState by viewModel.fixedUiState.collectAsState()
             FixedCountResumeScreen(
-                navController =  navController,
+                navController = navController,
                 uiState = uiState,
                 onEvent = viewModel::onFixedEvent
             )
@@ -67,14 +67,16 @@ fun AppNavGraph(navController: NavHostController) {
             val viewModel: CountsViewModel = hiltViewModel()
             val uiState by viewModel.regularUiState.collectAsState()
             RegularCountResumeScreen(
-                navController =  navController,
+                navController = navController,
                 uiState = uiState,
                 onEvent = viewModel::onRegularEvent
             )
         }
 
         composable(route = Screen.History.route) {
-            HistoryScreen(navController)
+            HistoryScreen(onBackClick = {
+                navController.popBackStack()
+            })
         }
     }
 }
