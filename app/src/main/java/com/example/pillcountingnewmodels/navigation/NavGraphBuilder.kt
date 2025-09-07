@@ -4,7 +4,7 @@ import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
 import androidx.navigation.navigation
-import com.example.pillcountingnewmodels.feature.forgotpassword.presentation.compose.ForgotPasswordScreen
+import com.example.pillcountingnewmodels.feature.forgotPassword.presentation.compose.ForgotPasswordScreen
 import com.example.pillcountingnewmodels.feature.login.presentation.LoginScreen
 import com.example.pillcountingnewmodels.feature.otp.presentation.compose.OTPScreen
 import com.example.pillcountingnewmodels.feature.register.presentation.RegisterScreen

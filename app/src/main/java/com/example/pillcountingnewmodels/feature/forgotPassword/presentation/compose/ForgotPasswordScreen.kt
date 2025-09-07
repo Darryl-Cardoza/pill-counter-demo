@@ -1,4 +1,4 @@
-package com.example.pillcountingnewmodels.feature.forgotpassword.presentation.compose
+package com.example.pillcountingnewmodels.feature.forgotPassword.presentation.compose
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement

@@ -106,22 +106,29 @@ private fun CalendarSection(
             .background(appTheme.extendedColors.secondaryBackground)
             .padding(16.dp)
     ) {
-        // Header with back button & title
-        Row(verticalAlignment = Alignment.CenterVertically) {
+
+
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 16.dp)
+        ) {
             Icon(
                 painter = painterResource(R.drawable.back),
                 contentDescription = stringResource(R.string.back_content_description),
                 tint = MaterialTheme.colorScheme.primary,
                 modifier = Modifier
                     .size(24.dp)
-                    .clickable { onBackClick() }
+                    .clickable {  }
             )
-            Spacer(Modifier.width(8.dp))
+
+            Spacer(Modifier.width(24.dp))
+
             Text(
                 text = stringResource(R.string.history_title),
-                fontSize = 18.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = appTheme.extendedColors.textColor
+                fontSize = 16.sp,
+                color = extendedColors.textColor
             )
         }
 
@@ -289,7 +296,7 @@ private fun CountsSection(
  * Row item representing a single medicine count entry.
  */
 @Composable
-private fun CountRow(
+fun CountRow(
     name: String,
     count: Int,
     iconRes: Int,

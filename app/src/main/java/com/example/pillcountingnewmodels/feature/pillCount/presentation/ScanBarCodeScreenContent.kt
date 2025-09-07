@@ -1,0 +1,85 @@
+package com.example.pillcountingnewmodels.feature.pillCount.presentation
+
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.systemBarsPadding
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.navigation.NavController
+import com.example.pillcountingnewmodels.core.utils.compose.LoadingIndicator
+import com.example.pillcountingnewmodels.core.utils.compose.SplitResponsive
+import com.example.pillcountingnewmodels.feature.pillCount.domain.data.ScanBarcodeEvent
+import com.example.pillcountingnewmodels.feature.pillCount.domain.model.ScanBarcodeUiState
+import com.example.pillcountingnewmodels.feature.pillCount.presentation.composables.InformationPanel
+import com.example.pillcountingnewmodels.feature.pillCount.presentation.composables.PermissionDeniedView
+import com.example.pillcountingnewmodels.feature.pillCount.presentation.composables.ScannerView
+
+/**
+ * The stateless presentation component for the barcode scanning screen. It is responsible for
+ * laying out the UI based on the provided state and forwarding user events.
+ *
+ * @param navController The navigation controller.
+ * @param uiState The current state of the UI to be displayed.
+ * @param hasCameraPermission Whether the camera permission has been granted.
+ * @param onRequestPermission Lambda to request camera permission.
+ * @param onEvent A lambda to call when a user action occurs.
+ */
+@Composable
+fun ScanBarCodeScreenContent(
+    navController: NavController,
+    uiState: ScanBarcodeUiState,
+    hasCameraPermission: Boolean,
+    onRequestPermission: () -> Unit,
+    onEvent: (ScanBarcodeEvent) -> Unit
+) {
+    Scaffold(
+        modifier = Modifier
+            .fillMaxSize()
+            .systemBarsPadding(),
+        containerColor = MaterialTheme.colorScheme.surface
+    ) { paddingValues ->
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+        ) {
+            SplitResponsive(
+                portraitRatio = 0.5f to 0.5f,
+                landscapeRatio = 0.65f to 0.35f,
+                topOrLeft = {
+                    if (hasCameraPermission) {
+                        ScannerView(
+                            isScannerActive = uiState.isScannerActive,
+                            onBarcodeScanned = { barcodeValue ->
+                                onEvent(ScanBarcodeEvent.BarcodeScanned(barcodeValue))
+                            },
+                            onError = { exception ->
+                                onEvent(ScanBarcodeEvent.ScannerError(exception))
+                            }
+                        )
+                    } else {
+                        PermissionDeniedView(onRequestPermission)
+                    }
+                },
+                bottomOrRight = {
+                    Box(modifier = Modifier.fillMaxSize()) {
+                        InformationPanel(
+                            navController = navController,
+                            drugName = uiState.drugName,
+                            ndc = uiState.ndc,
+                            onEvent = onEvent
+                        )
+
+                        // Show loading indicator as an overlay when isLoading is true
+                        if (uiState.isLoading) {
+                            LoadingIndicator()
+                        }
+                    }
+                }
+            )
+        }
+    }
+}

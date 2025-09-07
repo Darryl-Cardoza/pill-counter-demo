@@ -1,4 +1,4 @@
-// file: navigation/Screen.kt
+
 
 import androidx.navigation.NamedNavArgument
 import androidx.navigation.NavType
@@ -71,4 +71,32 @@ sealed interface Screen {
 
         fun createRoute(scanType: String) = "$ROUTE_PREFIX/$scanType"
     }
+
+    data object ResumeFixedCounts : Screen {
+        private const val ROUTE_PREFIX = "resume_fixed_counts"
+        const val ARG_TYPE = "type"
+
+        override val route: String = "$ROUTE_PREFIX/{$ARG_TYPE}"
+
+        val navArguments: List<NamedNavArgument> = listOf(
+            navArgument(ARG_TYPE) { type = NavType.StringType }
+        )
+
+        fun createRoute(type: String) = "$ROUTE_PREFIX/$type"
+    }
+
+    data object ResumeRegularCounts : Screen {
+        private const val ROUTE_PREFIX = "resume_regular_counts"
+        const val ARG_TYPE = "type"
+
+        override val route: String = "$ROUTE_PREFIX/{$ARG_TYPE}"
+
+        val navArguments: List<NamedNavArgument> = listOf(
+            navArgument(ARG_TYPE) { type = NavType.StringType }
+        )
+
+        fun createRoute(type: String) = "$ROUTE_PREFIX/$type"
+    }
+
 }
+

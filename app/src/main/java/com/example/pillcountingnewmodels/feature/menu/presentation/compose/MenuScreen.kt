@@ -5,7 +5,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Divider
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -20,6 +19,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.pillcountingnewmodels.R
+import com.example.pillcountingnewmodels.navigation.AUTH_GRAPH_ROUTE
 import com.example.pillcountingnewmodels.ui.theme.AppTheme.extendedColors
 
 @Composable
@@ -47,7 +47,7 @@ fun MenuScreen(
                 tint = MaterialTheme.colorScheme.primary,
                 modifier = Modifier
                     .size(24.dp)
-                    .clickable { }
+                    .clickable { navController.popBackStack() }
             )
 
             Spacer(Modifier.width(24.dp))
@@ -90,27 +90,23 @@ fun MenuScreen(
 
         HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
 
+
+
         SimpleMenuRow(
             icon = R.drawable.history,
             iconTint = MaterialTheme.colorScheme.secondary,
             title = "History",
-            trailingText = "3 months"
+            trailingText = "3 months",
+            onClick = { navController.navigate(Screen.History.route) }
         )
 
         HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
 
         SimpleMenuRow(
-            icon = R.drawable.profile,
-            iconTint = MaterialTheme.colorScheme.primary,
-            title = "Profile"
-        )
-
-        Divider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
-
-        SimpleMenuRow(
             icon = R.drawable.settings,
             iconTint = MaterialTheme.colorScheme.secondary,
-            title = "Settings"
+            title = "Settings",
+            onClick = { navController.navigate(Screen.Settings.route) }
         )
 
         HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
@@ -118,10 +114,16 @@ fun MenuScreen(
         SimpleMenuRow(
             icon = R.drawable.logout,
             iconTint = MaterialTheme.colorScheme.primary,
-            title = "Logout"
+            title = "Logout",
+            onClick = {
+                navController.navigate(AUTH_GRAPH_ROUTE) {
+                    popUpTo(Screen.Dashboard.route) { inclusive = true }
+                }
+            }
         )
     }
 }
+
 
 @Composable
 fun MenuItemRow(
@@ -251,11 +253,13 @@ fun SimpleMenuRow(
     icon: Int,
     iconTint: androidx.compose.ui.graphics.Color,
     title: String,
-    trailingText: String? = null
+    trailingText: String? = null,
+    onClick: (() -> Unit)? = null
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .clickable(enabled = onClick != null) { onClick?.invoke() }
             .padding(start = 12.dp, top = 12.dp, bottom = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
@@ -280,3 +284,4 @@ fun SimpleMenuRow(
         }
     }
 }
+

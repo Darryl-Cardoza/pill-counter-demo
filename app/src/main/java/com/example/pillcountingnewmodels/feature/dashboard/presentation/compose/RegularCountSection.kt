@@ -2,7 +2,9 @@ package com.example.pillcountingnewmodels.feature.dashboard.presentation.compose
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -13,10 +15,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -32,19 +34,19 @@ fun RegularCountSection(
     partialRegularCount: String,
     navController: NavController
 ) {
-    val context = LocalContext.current
-
     Column(
         modifier = Modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
-        // Icon inside circle
         Image(
             painter = painterResource(id = R.drawable.regular_count),
-            contentDescription = "Pill Counting Logo",
-            modifier = Modifier.clickable {
-                Screen.ScanBarcode.createRoute(REGULAR_COUNT)
+            contentDescription = "Regular Count",
+            modifier = Modifier.clickable(
+                indication = null,
+                interactionSource = remember { MutableInteractionSource() }
+            ) {
+                navController.navigate(Screen.ScanBarcode.createRoute(REGULAR_COUNT))
             }
         )
 
@@ -55,8 +57,11 @@ fun RegularCountSection(
             style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.SemiBold,
             color = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.clickable {
-                Screen.ScanBarcode.createRoute(REGULAR_COUNT)
+            modifier = Modifier.clickable(
+                indication = null,
+                interactionSource = remember { MutableInteractionSource() }
+            ) {
+                navController.navigate(Screen.ScanBarcode.createRoute(REGULAR_COUNT))
             }
         )
 
@@ -66,14 +71,16 @@ fun RegularCountSection(
             text = stringResource(R.string.regular_count_desc),
             style = MaterialTheme.typography.bodyMedium,
             color = AppTheme.extendedColors.textColor,
-            modifier = Modifier.clickable {
-                Screen.ScanBarcode.createRoute(REGULAR_COUNT)
+            modifier = Modifier.clickable(
+                indication = null,
+                interactionSource = remember { MutableInteractionSource() }
+            ) {
+                navController.navigate(Screen.ScanBarcode.createRoute(REGULAR_COUNT))
             }
         )
 
         Spacer(modifier = Modifier.height(40.dp))
 
-        // Status Row
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -89,13 +96,18 @@ fun RegularCountSection(
                 iconTint = MaterialTheme.colorScheme.primary
             )
 
-            StatusChip(
-                text = "$partialRegularCount ${stringResource(R.string.partial)}",
-                backgroundColor = AppTheme.extendedColors.statusChipBackgroundOnPrimary,
-                textColor = AppTheme.extendedColors.textColor,
-                iconRes = R.drawable.partial,
-                iconTint = MaterialTheme.colorScheme.primary
-            )
+            // Updated to navigate to the correct partial counts screen
+            Box(modifier = Modifier.clickable {
+                navController.navigate(Screen.ResumeRegularCounts.createRoute(REGULAR_COUNT))
+            }) {
+                StatusChip(
+                    text = "$partialRegularCount ${stringResource(R.string.partial)}",
+                    backgroundColor = AppTheme.extendedColors.statusChipBackgroundOnPrimary,
+                    textColor = AppTheme.extendedColors.textColor,
+                    iconRes = R.drawable.partial,
+                    iconTint = MaterialTheme.colorScheme.primary
+                )
+            }
         }
     }
 }

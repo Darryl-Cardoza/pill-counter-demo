@@ -4,13 +4,16 @@ import android.content.Context
 import com.chuckerteam.chucker.api.ChuckerInterceptor
 import com.example.pillcountingnewmodels.core.network.IApplicationSettingInterface
 import com.example.pillcountingnewmodels.core.room.dao.UserDao
-import com.example.pillcountingnewmodels.feature.forgotPassword.data.remote.IForgotPasswordAPI
 import com.example.pillcountingnewmodels.feature.forgotPassword.data.ForgotPasswordRepository
+import com.example.pillcountingnewmodels.feature.forgotPassword.data.remote.IForgotPasswordAPI
 import com.example.pillcountingnewmodels.feature.forgotPassword.domain.data.IForgotPasswordRepository
 import com.example.pillcountingnewmodels.feature.login.data.LoginRepository
 import com.example.pillcountingnewmodels.feature.login.data.remote.ILoginApi
 import com.example.pillcountingnewmodels.feature.login.domain.data.ILoginRepository
 import com.example.pillcountingnewmodels.feature.otp.data.VerifyPinRepository
+import com.example.pillcountingnewmodels.feature.pillCount.data.remote.IDrugAPI
+import com.example.pillcountingnewmodels.feature.pillCount.data.repository.DrugRepository
+import com.example.pillcountingnewmodels.feature.pillCount.domain.repository.IDrugRepository
 import com.example.pillcountingnewmodels.feature.register.data.RegisterRepository
 import com.example.pillcountingnewmodels.feature.register.data.remote.IRegisterAPI
 import com.example.pillcountingnewmodels.feature.register.data.remote.IVerifyPinAPI
@@ -45,7 +48,10 @@ import javax.inject.Singleton
 object NetworkModule {
 
     // TODO: Replace with the actual base URL of your production API.
-    private const val BASE_URL = "https://your.api.com/"
+    private const val MAIN_API_BASE_URL = "https://your.api.com/"
+
+    /** The base URL for the openFDA API. */
+    const val DRUG_API_BASE_URL = "https://api.fda.gov/"
 
     // --- Core Network Setup ---
 
@@ -92,15 +98,28 @@ object NetworkModule {
     }
 
     /**
-     * Provides a singleton instance of [Retrofit].
-     * It is configured with the base URL, the custom [OkHttpClient], and a Moshi converter
-     * that is now built with our Kotlin-aware Moshi instance.
+     * Provides a singleton instance of [Retrofit] for the main application API.
      */
     @Provides
     @Singleton
-    fun provideRetrofit(okHttpClient: OkHttpClient, moshi: Moshi): Retrofit {
+    @MainApi
+    fun provideMainRetrofit(okHttpClient: OkHttpClient, moshi: Moshi): Retrofit {
         return Retrofit.Builder()
-            .baseUrl(BASE_URL)
+            .baseUrl(MAIN_API_BASE_URL)
+            .client(okHttpClient)
+            .addConverterFactory(MoshiConverterFactory.create(moshi))
+            .build()
+    }
+
+    /**
+     * Provides a singleton instance of [Retrofit] specifically for the Drug (FDA) API.
+     */
+    @Provides
+    @Singleton
+    @DrugApiQualifier
+    fun provideDrugRetrofit(okHttpClient: OkHttpClient, moshi: Moshi): Retrofit {
+        return Retrofit.Builder()
+            .baseUrl(DRUG_API_BASE_URL)
             .client(okHttpClient)
             .addConverterFactory(MoshiConverterFactory.create(moshi))
             .build()
@@ -113,7 +132,7 @@ object NetworkModule {
      */
     @Provides
     @Singleton
-    fun provideApplicationSettingsApi(retrofit: Retrofit): IApplicationSettingInterface {
+    fun provideApplicationSettingsApi(@MainApi retrofit: Retrofit): IApplicationSettingInterface {
         return retrofit.create(IApplicationSettingInterface::class.java)
     }
 
@@ -122,7 +141,7 @@ object NetworkModule {
      */
     @Provides
     @Singleton
-    fun provideLoginApi(retrofit: Retrofit): ILoginApi {
+    fun provideLoginApi(@MainApi retrofit: Retrofit): ILoginApi {
         return retrofit.create(ILoginApi::class.java)
     }
 
@@ -131,7 +150,7 @@ object NetworkModule {
      */
     @Provides
     @Singleton
-    fun provideRegisterApi(retrofit: Retrofit): IRegisterAPI {
+    fun provideRegisterApi(@MainApi retrofit: Retrofit): IRegisterAPI {
         return retrofit.create(IRegisterAPI::class.java)
     }
 
@@ -140,17 +159,26 @@ object NetworkModule {
      */
     @Provides
     @Singleton
-    fun provideVerifyPinApi(retrofit: Retrofit): IVerifyPinAPI {
+    fun provideVerifyPinApi(@MainApi retrofit: Retrofit): IVerifyPinAPI {
         return retrofit.create(IVerifyPinAPI::class.java)
     }
 
     /**
-     * Creates and provides an implementation of the [IVerifyPinAPI] service for verifying the user registration.
+     * Creates and provides an implementation of the [IForgotPasswordAPI] service for verifying the user registration.
      */
     @Provides
     @Singleton
-    fun provideForgotPasswordApi(retrofit: Retrofit): IForgotPasswordAPI {
+    fun provideForgotPasswordApi(@MainApi retrofit: Retrofit): IForgotPasswordAPI {
         return retrofit.create(IForgotPasswordAPI::class.java)
+    }
+
+    /**
+     * Creates and provides an implementation of the [IDrugAPI] service for verifying the user registration.
+     */
+    @Provides
+    @Singleton
+    fun provideDrugApi(@DrugApiQualifier retrofit: Retrofit): IDrugAPI {
+        return retrofit.create(IDrugAPI::class.java)
     }
 
     /**
@@ -214,6 +242,19 @@ object NetworkModule {
         return ForgotPasswordRepository(
             forgotPasswordAPI = forgotPasswordAPI,
             ioDispatcher = ioDispatcher
+        )
+    }
+
+    /**
+     * Provides the concrete implementation of the [IDrugRepository].
+     */
+    @Provides
+    @Singleton
+    fun provideDrugRepository(
+        drugApi: IDrugAPI
+    ): IDrugRepository {
+        return DrugRepository(
+            api = drugApi
         )
     }
 

@@ -1,5 +1,6 @@
 package com.example.pillcountingnewmodels.feature.dashboard.presentation
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.Composable
@@ -21,6 +22,8 @@ fun DashboardScreen(
     navController: NavController,
     viewModel: DashboardViewModel = hiltViewModel()
 ) {
+
+    BackHandler { }
 
     val uiState by viewModel.uiState.collectAsState()
 

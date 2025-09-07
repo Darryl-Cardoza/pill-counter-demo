@@ -69,4 +69,16 @@
     <string name="error_invalid_otp">Invalid Pin entered.</string>
 
 
+    <string name="partial_count_title">Partial Count</string>
+    <string name="fixed_partial_counts_label">Fixed Partial Counts</string>
+    <string name="regular_partial_counts_label">Regular Partial Counts</string>
+    <string name="partial_icon_description">Partial Fill Icons</string>
+
+    <string name="cd_close_selection">Close Selection</string>
+    <string name="cd_delete_selected">Delete Selected Items</string>
+    <string name="cd_search">Search</string>
+    <string name="cd_select_items_to_delete">Select Items to Delete</string>
+    <string name="cd_delete">Delete</string>
+
+
 </resources>
