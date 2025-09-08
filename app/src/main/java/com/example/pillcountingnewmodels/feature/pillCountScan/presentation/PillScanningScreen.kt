@@ -11,10 +11,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.example.pillcountingnewmodels.core.utils.compose.BackButton
+import com.example.pillcountingnewmodels.core.utils.compose.MenuButton
 import com.example.pillcountingnewmodels.core.utils.compose.SplitResponsive
 import com.example.pillcountingnewmodels.feature.pillCountScan.presentation.compose.CameraPreviewSection
 import com.example.pillcountingnewmodels.feature.pillCountScan.presentation.compose.InformationPanelSection
-import com.example.pillcountingnewmodels.feature.pillCountScan.presentation.viewmodel.FixedCountPillScanningViewModel
+import com.example.pillcountingnewmodels.feature.pillCountScan.presentation.viewmodel.PillScanningViewModel
 import com.example.pillcountingnewmodels.ui.theme.AppTheme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -24,9 +26,10 @@ import kotlinx.coroutines.launch
  * It orchestrates the layout and state management for the feature.
  */
 @Composable
-fun FixedCountPillScanningScreen(
+fun PillScanningScreen(
     navController: NavController,
-    viewModel: FixedCountPillScanningViewModel = hiltViewModel()
+    scanType: String,
+    viewModel: PillScanningViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val modelState by viewModel.modelState.collectAsState()
@@ -46,44 +49,7 @@ fun FixedCountPillScanningScreen(
     ) {
         SplitResponsive(
             topOrLeft = {
-                when (val state = modelState) {
-                    is FixedCountPillScanningViewModel.ModelState.Idle,
-                    is FixedCountPillScanningViewModel.ModelState.Loading -> {
-                        // Loading spinner
-                        Box(
-                            modifier = Modifier.fillMaxSize(),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            CircularProgressIndicator()
-                        }
-                    }
-
-                    is FixedCountPillScanningViewModel.ModelState.Error -> {
-                        Box(
-                            modifier = Modifier.fillMaxSize(),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text("Model failed: ${state.message}")
-                        }
-                    }
-
-                    is FixedCountPillScanningViewModel.ModelState.Ready -> {
-                        // Show camera preview and analyze frames
-                        CameraPreviewSection(
-                            pills = uiState.detectedPills,
-                            modifier = Modifier,
-                            onFrame = { imageProxy ->
-                                coroutineScope.launch(Dispatchers.Default) {
-                                    val analyzer = state.analyzer
-                                    val bitmap = viewModel.imageProxyToBitmap(imageProxy)
-                                    val results = analyzer.analyzeFrame(bitmap)
-                                    viewModel.updateDetectedPills(results)
-                                    imageProxy.close()
-                                }
-                            }
-                        )
-                    }
-                }
+                Box(modifier = Modifier.fillMaxSize())
             },
             bottomOrRight = {
                 InformationPanelSection(
@@ -95,5 +61,9 @@ fun FixedCountPillScanningScreen(
             landscapeRatio = 0.6f to 0.4f,
             portraitRatio = 0.5f to 0.5f
         )
+
+        BackButton(navController)
+        MenuButton(navController,
+            modifier = Modifier.align(Alignment.TopEnd))
     }
 }

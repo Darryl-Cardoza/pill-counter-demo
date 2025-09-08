@@ -162,8 +162,12 @@ fun OTPScreen(
                     ActionButtonPrimary(
                         text = stringResource(R.string.verify).uppercase(),
                         onClick = {
-                            if (verifyPinUiState !is VerifyPinUiState.Loading) {
+                            /*if (verifyPinUiState !is VerifyPinUiState.Loading) {
                                 viewModel.verifyPin(userEmail, otp)
+                            }*/
+                            navController.navigate(Screen.Dashboard.route) {
+                                // Clear the entire back stack up to the dashboard
+                                popUpTo(Screen.Dashboard.route) { inclusive = true }
                             }
                         },
                         modifier = Modifier.align(Alignment.CenterHorizontally)

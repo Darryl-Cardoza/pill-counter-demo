@@ -40,8 +40,6 @@ fun TopAppBar(navController: NavController) {
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Back button (left-aligned)
-            BackButton(navController)
 
             Spacer(modifier = Modifier.weight(1f))
 
@@ -57,9 +55,6 @@ fun TopAppBar(navController: NavController) {
             )
 
             Spacer(modifier = Modifier.weight(1f))
-
-            // Menu button (right-aligned)
-            MenuButton(navController)
         }
     }
 }

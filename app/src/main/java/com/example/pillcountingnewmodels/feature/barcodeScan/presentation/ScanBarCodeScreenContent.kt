@@ -1,5 +1,6 @@
 package com.example.pillcountingnewmodels.feature.barcodeScan.presentation
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -8,6 +9,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.navigation.NavController
 import com.example.pillcountingnewmodels.core.utils.compose.BackButton
 import com.example.pillcountingnewmodels.core.utils.compose.LoadingIndicator
@@ -40,12 +42,12 @@ fun ScanBarCodeScreenContent(
         modifier = Modifier
             .fillMaxSize()
             .systemBarsPadding(),
-        containerColor = MaterialTheme.colorScheme.surface
     ) { paddingValues ->
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
+                .background(Color.Black)
         ) {
             SplitResponsive(
                 portraitRatio = 0.60f to 0.40f,

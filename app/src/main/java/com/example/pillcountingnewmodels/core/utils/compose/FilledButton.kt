@@ -18,7 +18,7 @@ import com.example.pillcountingnewmodels.core.utils.compose.Dimens.buttonInnerHo
 import com.example.pillcountingnewmodels.core.utils.compose.Dimens.small
 
 @Composable
-fun HollowButton(
+fun FilledButton(
     text: String,
     onClick: () -> Unit,
     color: Color,
@@ -34,8 +34,8 @@ fun HollowButton(
                 shape = RoundedCornerShape(buttonCornerRadius)
             ),
         colors = ButtonDefaults.buttonColors(
-            containerColor = Color.Transparent,
-            contentColor = color,
+            containerColor = color,
+            contentColor = Color.White,
         ),
     ) {
         Text(text)

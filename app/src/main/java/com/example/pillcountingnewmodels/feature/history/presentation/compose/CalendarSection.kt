@@ -9,13 +9,17 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
 import com.example.pillcountingnewmodels.R
+import com.example.pillcountingnewmodels.core.utils.compose.BackButton
+import com.example.pillcountingnewmodels.core.utils.compose.Dimens.medium
 import com.example.pillcountingnewmodels.ui.theme.AppTheme
 import com.example.pillcountingnewmodels.ui.theme.AppTheme.extendedColors
 import com.kizitonwose.calendar.compose.VerticalCalendar
@@ -39,31 +43,21 @@ fun CalendarSection(
     calendarState: CalendarState,
     selectedDate: LocalDate,
     onDateSelected: (LocalDate) -> Unit,
-    onBackClick: () -> Unit
+    onBackClick: () -> Unit,
+    navController: NavController
 ) {
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(appTheme.extendedColors.secondaryBackground)
-            .padding(16.dp)
     ) {
         // Top bar: back button + screen title
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(bottom = 16.dp)
         ) {
-            Icon(
-                painter = painterResource(R.drawable.back),
-                contentDescription = stringResource(R.string.back_content_description),
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier
-                    .size(24.dp)
-                    .clickable { onBackClick() }
-            )
-
-            Spacer(Modifier.width(24.dp))
+            BackButton(navController)
 
             Text(
                 text = stringResource(R.string.history_title),
@@ -74,12 +68,10 @@ fun CalendarSection(
             )
         }
 
-        Spacer(Modifier.height(16.dp))
-
         // Vertical calendar → only handles UI rendering
         VerticalCalendar(
             state = calendarState,
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier.fillMaxSize().padding(medium),
             monthHeader = { calendarMonth ->
                 val month = calendarMonth.yearMonth
                 Row(

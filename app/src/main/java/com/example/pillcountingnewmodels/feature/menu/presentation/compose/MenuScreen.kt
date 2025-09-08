@@ -22,6 +22,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.pillcountingnewmodels.R
+import com.example.pillcountingnewmodels.core.utils.compose.BackButton
+import com.example.pillcountingnewmodels.core.utils.compose.Dimens.medium
 import com.example.pillcountingnewmodels.navigation.AUTH_GRAPH_ROUTE
 import com.example.pillcountingnewmodels.ui.theme.AppTheme.extendedColors
 
@@ -33,36 +35,15 @@ fun MenuScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(extendedColors.secondaryBackground)
-            .padding(start = 16.dp, end = 16.dp)
     ) {
-        Spacer(Modifier.height(24.dp))
 
-        // Back arrow + title
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 16.dp)
-        ) {
-            Icon(
-                painter = painterResource(R.drawable.back),
-                contentDescription = stringResource(R.string.back_content_description),
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier
-                    .size(24.dp)
-                    .clickable { navController.popBackStack() }
-            )
-
-            Spacer(Modifier.width(24.dp))
-
-        }
-
-        Spacer(modifier = Modifier.height(8.dp))
+        BackButton(navController)
 
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
+                .padding(start = medium, end = medium)
                 .background(extendedColors.secondaryBackground)
         ) {
             // Menu items

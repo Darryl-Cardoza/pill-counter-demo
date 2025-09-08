@@ -1,11 +1,13 @@
 package com.example.pillcountingnewmodels.feature.pillCountScan.presentation.compose
 
+import android.widget.GridLayout
 import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.example.pillcountingnewmodels.core.utils.compose.Dimens.medium
 import com.example.pillcountingnewmodels.feature.pillCountScan.domain.data.FixedCountPillScanningEvent
 import com.example.pillcountingnewmodels.feature.pillCountScan.domain.model.FixedCountPillScanningUiState
 
@@ -26,23 +28,19 @@ fun InformationPanelSection(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(start = 16.dp, end = 16.dp)
+            .padding(medium)
     ) {
         // Top Bar: Back Arrow, Title, Menu
         TopAppBar(navController)
 
         // Drug Info: Name, Batch, Total
         DrugInformation(uiState)
-
-        // Main Count Display and Add Button
-        CurrentCountDisplay(uiState) { onEvent(FixedCountPillScanningEvent.AddBatchClicked) }
-
-        Spacer(modifier = Modifier.height(10.dp))
-
-        // Horizontal list of previous batch counts
-        Box(modifier = Modifier.weight(1f),
-            contentAlignment = Alignment.Center
-        ) {
+        Column(modifier = Modifier.weight(1f),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.SpaceEvenly){
+            // Main Count Display and Add Button
+            CurrentCountDisplay(uiState) { onEvent(FixedCountPillScanningEvent.AddBatchClicked) }
+            // Horizontal list of previous batch counts
             BatchHistory(uiState.batchHistory)
         }
 

@@ -6,6 +6,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.unit.dp
+import com.example.pillcountingnewmodels.core.utils.compose.Dimens.medium
 import com.example.pillcountingnewmodels.feature.pillCountScan.domain.model.Batch
 
 /**
@@ -22,8 +23,7 @@ fun BatchHistory(
     batches: List<Batch>
 ) {
     LazyRow(
-        horizontalArrangement = Arrangement.spacedBy(16.dp), // spacing between chips
-        contentPadding = PaddingValues(horizontal = 16.dp)  // horizontal padding at start/end
+        horizontalArrangement = Arrangement.spacedBy(medium),
     ) {
         items(batches) { batch ->
             // Each batch is rendered as a Chip with count and batch number

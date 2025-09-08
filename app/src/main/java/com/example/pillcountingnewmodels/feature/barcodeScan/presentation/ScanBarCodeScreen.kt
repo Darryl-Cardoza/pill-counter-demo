@@ -15,6 +15,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.example.pillcountingnewmodels.feature.barcodeScan.domain.data.NavigationEvent
 import com.example.pillcountingnewmodels.feature.barcodeScan.viewmodel.ScanBarcodeViewModel
 
 /**
@@ -27,6 +28,7 @@ import com.example.pillcountingnewmodels.feature.barcodeScan.viewmodel.ScanBarco
 @Composable
 fun ScanBarCodeScreen(
     navController: NavController,
+    scanType: String,
     viewModel: ScanBarcodeViewModel = hiltViewModel(),
 ) {
     val context = LocalContext.current
@@ -50,6 +52,20 @@ fun ScanBarCodeScreen(
     LaunchedEffect(key1 = true) {
         if (!hasCameraPermission) {
             permissionLauncher.launch(Manifest.permission.CAMERA)
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        viewModel.navigationEvent.collect { event ->
+            when (event) {
+                is NavigationEvent.NavigateToPillCount -> {
+                    navController.navigate(Screen.PillCount.createRoute(scanType))
+                }
+
+                NavigationEvent.NavigateBack -> {
+                    navController.popBackStack()
+                }
+            }
         }
     }
 

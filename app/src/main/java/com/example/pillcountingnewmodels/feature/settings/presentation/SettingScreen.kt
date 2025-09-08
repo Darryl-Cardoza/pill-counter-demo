@@ -9,13 +9,17 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringArrayResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
 import com.example.pillcountingnewmodels.R
+import com.example.pillcountingnewmodels.core.utils.compose.BackButton
+import com.example.pillcountingnewmodels.ui.theme.AppTheme
 import com.example.pillcountingnewmodels.ui.theme.LocalExtendedColors
 
 /**
@@ -26,7 +30,7 @@ import com.example.pillcountingnewmodels.ui.theme.LocalExtendedColors
  */
 @Composable
 fun SettingsScreen(
-    onNavigateBack: () -> Unit = {}
+    navController: NavController
 ) {
     // State holders for preferences
     var isBarcodeScanFirst by remember { mutableStateOf(true) }
@@ -42,43 +46,33 @@ fun SettingsScreen(
     val extendedColors = LocalExtendedColors.current
     val colorScheme = MaterialTheme.colorScheme
 
-    Box(
+    Column(
         modifier = Modifier
             .fillMaxSize()
             .background(extendedColors.secondaryBackground)
     ) {
+        // Header with back navigation and title
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 16.dp)
+        ) {
+            BackButton(navController = navController )
+
+            Text(
+                text = stringResource(R.string.settings_title),
+                fontSize = 16.sp,
+                color = extendedColors.textColor
+            )
+        }
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(start = 16.dp, end = 16.dp)
 
         ) {
-            Spacer(Modifier.height(24.dp))
-
-            // Header with back navigation and title
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 16.dp)
-            ) {
-                Icon(
-                    painter = painterResource(R.drawable.back),
-                    contentDescription = stringResource(R.string.back_content_description),
-                    tint = colorScheme.primary,
-                    modifier = Modifier
-                        .size(24.dp)
-                        .clickable { onNavigateBack() }
-                )
-
-                Spacer(Modifier.width(24.dp))
-
-                Text(
-                    text = stringResource(R.string.settings_title),
-                    fontSize = 16.sp,
-                    color = extendedColors.textColor
-                )
-            }
 
             // Toggle: Barcode scan first
             SettingSwitch(
@@ -149,10 +143,13 @@ private fun SettingSwitch(
             checked = checked,
             onCheckedChange = onCheckedChange,
             colors = SwitchDefaults.colors(
-                checkedThumbColor = MaterialTheme.colorScheme.onSecondary,
+                checkedThumbColor = Color.White,
                 checkedTrackColor = MaterialTheme.colorScheme.secondary,
-                uncheckedThumbColor = MaterialTheme.colorScheme.background
-            )
+                uncheckedThumbColor = Color.White,
+                uncheckedBorderColor = Color.Transparent,
+                checkedBorderColor = Color.Transparent
+            ),
+            thumbContent = null
         )
     }
 }

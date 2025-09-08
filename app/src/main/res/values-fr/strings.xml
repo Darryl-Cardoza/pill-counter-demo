@@ -28,4 +28,5 @@
     <string name="partial">partiel</string>
 
     <string name="barcode_scan">Scan de code-barres</string>
+    <string name="add">Add</string>
 </resources>

@@ -60,8 +60,6 @@ fun InformationPanel(
                     .padding(horizontal = 16.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Back button on the left
-//                BackButton(navController)
 
                 Spacer(modifier = Modifier.weight(1f))
 
@@ -80,8 +78,6 @@ fun InformationPanel(
 
                 Spacer(modifier = Modifier.weight(1f))
 
-                // Menu button on the right
-//                MenuButton(navController)
             }
         }
 

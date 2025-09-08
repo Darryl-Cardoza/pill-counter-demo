@@ -46,16 +46,13 @@ fun Chip(
                 .border(
                     width = 1.dp,
                     color = MaterialTheme.colorScheme.secondary,
-                    shape = RoundedCornerShape(16.dp)
-                )
-                .background(Color.Transparent, RoundedCornerShape(16.dp)),
+                    shape = RoundedCornerShape(7.dp)
+                ),
             contentAlignment = Alignment.Center
         ) {
             Text(
                 text = count,
-                color = MaterialTheme.colorScheme.secondary,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Bold
+                color = MaterialTheme.colorScheme.secondary
             )
         }
 
@@ -70,8 +67,7 @@ fun Chip(
             Text(
                 text = batchNumber.toString(),
                 color = Color.White,
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Bold
+                fontSize = 12.sp
             )
         }
     }

@@ -27,11 +27,11 @@ import java.nio.channels.FileChannel
 import javax.inject.Inject
 
 @HiltViewModel
-class FixedCountPillScanningViewModel @Inject constructor(
+class PillScanningViewModel @Inject constructor(
     app: Application
 ) : AndroidViewModel(app) {
 
-    private val logger = AppLogger.create<FixedCountPillScanningViewModel>()
+    private val logger = AppLogger.create<PillScanningViewModel>()
 
     sealed class ModelState {
         object Idle : ModelState()

@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -28,8 +29,8 @@ fun CircularCountIndicator(
     modifier: Modifier = Modifier
 ) {
     // Colors for outer ring and inner circle
-    val indicatorColor = Color(0xFFEC407A)
-    val centerColor = Color(0xFF26C6DA)
+    val indicatorColor = MaterialTheme.colorScheme.secondary
+    val centerColor = MaterialTheme.colorScheme.primary
 
     Box(
         modifier = modifier.size(100.dp),
@@ -40,7 +41,7 @@ fun CircularCountIndicator(
             modifier = Modifier
                 .fillMaxSize()
                 .border(
-                    width = 2.dp, // Thinner border
+                    width = 1.5.dp, // Thinner border
                     color = indicatorColor.copy(alpha = 0.8f),
                     shape = CircleShape
                 )
@@ -57,8 +58,7 @@ fun CircularCountIndicator(
             Text(
                 text = count.toString(),
                 color = Color.White,
-                fontSize = 32.sp,
-                fontWeight = FontWeight.Bold
+                fontSize = 32.sp
             )
         }
     }

@@ -4,8 +4,12 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.example.pillcountingnewmodels.R
 import com.example.pillcountingnewmodels.core.utils.compose.Dimens.medium
+import com.example.pillcountingnewmodels.core.utils.compose.Dimens.small
+import com.example.pillcountingnewmodels.core.utils.compose.FilledButton
 import com.example.pillcountingnewmodels.core.utils.compose.HollowButton
 import com.example.pillcountingnewmodels.feature.pillCountScan.domain.data.FixedCountPillScanningEvent
 
@@ -26,23 +30,23 @@ fun ActionButtons(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(bottom = medium, start = 8.dp, end = 8.dp, top = 10.dp),
-        horizontalArrangement = Arrangement.spacedBy(medium - 7.dp) // automatic spacing
+            .padding(top = medium),
+        horizontalArrangement = Arrangement.spacedBy(small) // automatic spacing
     ) {
         HollowButton(
-            text = "Rescan".uppercase(),
+            text = stringResource(R.string.rescane).uppercase(),
             onClick = { onEvent(FixedCountPillScanningEvent.RescanClicked) },
             color = MaterialTheme.colorScheme.primary,
             modifier = Modifier.weight(1f) // takes equal width
         )
         HollowButton(
-            text = "Pause".uppercase(),
+            text = stringResource(R.string.pause).uppercase(),
             onClick = { onEvent(FixedCountPillScanningEvent.RescanClicked) },
             color = MaterialTheme.colorScheme.primary,
             modifier = Modifier.weight(1f)
         )
-        HollowButton(
-            text = "Done".uppercase(),
+        FilledButton(
+            text = stringResource(R.string.done).uppercase(),
             onClick = { onEvent(FixedCountPillScanningEvent.PauseClicked) },
             color = MaterialTheme.colorScheme.secondary,
             modifier = Modifier.weight(1f)

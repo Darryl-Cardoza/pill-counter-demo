@@ -55,7 +55,7 @@ fun RegularCountSection(
                     indication = null,
                     interactionSource = remember { MutableInteractionSource() }
                 ) {
-                    navController.navigate(Screen.ScanBarcode.createRoute(REGULAR_COUNT))
+                    navigateToBarcodeScanRegularCount(navController)
                 }
         )
 
@@ -71,7 +71,7 @@ fun RegularCountSection(
                 indication = null,
                 interactionSource = remember { MutableInteractionSource() }
             ) {
-                navController.navigate(Screen.ScanBarcode.createRoute(REGULAR_COUNT))
+                navigateToBarcodeScanRegularCount(navController)
             }
         )
 
@@ -86,7 +86,7 @@ fun RegularCountSection(
                 indication = null,
                 interactionSource = remember { MutableInteractionSource() }
             ) {
-                navController.navigate(Screen.ScanBarcode.createRoute(REGULAR_COUNT))
+                navigateToBarcodeScanRegularCount(navController)
             }
         )
 
@@ -128,4 +128,8 @@ fun RegularCountSection(
             }
         }
     }
+}
+
+fun navigateToBarcodeScanRegularCount(navController: NavController) {
+    navController.navigate(Screen.ScanBarcode.createRoute(REGULAR_COUNT))
 }

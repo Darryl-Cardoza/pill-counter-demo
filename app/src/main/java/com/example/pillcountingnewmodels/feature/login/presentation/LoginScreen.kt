@@ -116,14 +116,13 @@ fun LoginScreen(
                             iconRes = R.drawable.profile,
                             iconColor = MaterialTheme.colorScheme.secondary,
                             keyboardType = KeyboardType.Email,
-                            imeAction = ImeAction.Next,
-                            onImeAction = { focusManager.moveFocus(FocusDirection.Down) }
+                            imeAction = ImeAction.Done
                         )
 
                         Spacer(Modifier.height(25.dp))
 
                         // Password Input Field
-                        DrawableIconTextField(
+                        /*DrawableIconTextField(
                             value = password,
                             onValueChange = {
                                 password = it
@@ -138,7 +137,7 @@ fun LoginScreen(
                             onImeAction = { viewModel.login(email, password) }
                         )
 
-                        Spacer(Modifier.height(25.dp))
+                        Spacer(Modifier.height(25.dp))*/
 
                         // "Remember Me" Checkbox
                         Row(
@@ -200,9 +199,9 @@ fun LoginScreen(
                             }
                             is LoginUiState.Success -> {
                                 LaunchedEffect(Unit) {
-                                    navController.navigate(Screen.Dashboard.route) {
+                                    /*navController.navigate(Screen.Dashboard.route) {
                                         popUpTo(AUTH_GRAPH_ROUTE) { inclusive = true }
-                                    }
+                                    }*/
                                 }
                             }
                         }
@@ -211,13 +210,7 @@ fun LoginScreen(
                         ActionButtonPrimary(
                             text = "LOGIN",
                             onClick = {
-//                                if (loginUiState !is LoginUiState.Loading) {
-//                                    viewModel.login(email, password)
-//                                }
-
-                                navController.navigate(Screen.Dashboard.route) {
-                                    popUpTo(AUTH_GRAPH_ROUTE) { inclusive = true }
-                                }
+                                navController.navigate(Screen.OtpVerify.createRoute("email"))
                             },
                             modifier = Modifier.align(Alignment.CenterHorizontally)
                         )

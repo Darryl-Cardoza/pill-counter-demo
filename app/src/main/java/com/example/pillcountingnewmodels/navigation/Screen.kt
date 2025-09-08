@@ -72,6 +72,19 @@ sealed interface Screen {
         fun createRoute(scanType: String) = "$ROUTE_PREFIX/$scanType"
     }
 
+    data object PillCount : Screen {
+        private const val ROUTE_PREFIX = "pill_count"
+        const val ARG_TYPE = "type"
+
+        override val route: String = "$ROUTE_PREFIX/{$ARG_TYPE}"
+
+        val navArguments: List<NamedNavArgument> = listOf(
+            navArgument(ARG_TYPE) { type = NavType.StringType }
+        )
+
+        fun createRoute(scanType: String) = "$ROUTE_PREFIX/$scanType"
+    }
+
     data object ResumeFixedCounts : Screen {
         private const val ROUTE_PREFIX = "resume_fixed_counts"
         const val ARG_TYPE = "type"

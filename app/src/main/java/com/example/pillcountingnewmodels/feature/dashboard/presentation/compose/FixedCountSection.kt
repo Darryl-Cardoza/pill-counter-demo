@@ -55,7 +55,7 @@ fun FixedCountSection(
                     indication = null,
                     interactionSource = remember { MutableInteractionSource() }
                 ) {
-                    navController.navigate(Screen.ScanBarcode.createRoute(FIXED_COUNT))
+                    navigateToBarcodeScanFixedCount(navController)
                 }
         )
 
@@ -71,7 +71,7 @@ fun FixedCountSection(
                 indication = null,
                 interactionSource = remember { MutableInteractionSource() }
             ) {
-                navController.navigate(Screen.ScanBarcode.createRoute(FIXED_COUNT))
+                navigateToBarcodeScanFixedCount(navController)
             }
         )
 
@@ -86,7 +86,7 @@ fun FixedCountSection(
                 indication = null,
                 interactionSource = remember { MutableInteractionSource() }
             ) {
-                navController.navigate(Screen.ScanBarcode.createRoute(FIXED_COUNT))
+                navigateToBarcodeScanFixedCount(navController)
             }
         )
 
@@ -128,4 +128,8 @@ fun FixedCountSection(
             }
         }
     }
+}
+
+fun navigateToBarcodeScanFixedCount(navController: NavController) {
+    navController.navigate(Screen.ScanBarcode.createRoute(FIXED_COUNT))
 }

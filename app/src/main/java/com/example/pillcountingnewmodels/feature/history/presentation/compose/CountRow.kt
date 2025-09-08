@@ -1,6 +1,8 @@
 package com.example.pillcountingnewmodels.feature.history.presentation.compose
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
@@ -12,6 +14,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -40,13 +43,22 @@ fun CountRow(
             verticalAlignment = Alignment.CenterVertically
         ) {
             // Medicine thumbnail/logo
-            Image(
-                painter = painterResource(R.drawable.logo),
-                contentDescription = null,
+            Box(
                 modifier = Modifier
-                    .size(48.dp)
+                    .width(70.dp)
+                    .height(56.dp) // slightly larger to make room for border
                     .clip(RoundedCornerShape(8.dp))
-            )
+                    .border(1.dp, color = colorResource(R.color.border_gray), RoundedCornerShape(8.dp)),
+                contentAlignment = Alignment.Center
+            ) {
+                Image(
+                    painter = painterResource(R.drawable.bottle),
+                    contentDescription = null,
+                    modifier = Modifier
+                        .size(48.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                )
+            }
 
             Spacer(Modifier.width(12.dp))
 

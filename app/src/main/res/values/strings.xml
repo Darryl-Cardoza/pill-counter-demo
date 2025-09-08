@@ -84,7 +84,13 @@
 
 
     <string name="pill_count_title">Pill Count</string>
-
+    <string name="redo">Redo</string>
+    <string name="skip">Skip</string>
+    <string name="scan">Scan</string>
+    <string name="rescane">Rescan</string>
+    <string name="pause">Pause</string>
+    <string name="done">Done</string>
+    <string name="add">Add</string>
 
 
 </resources>

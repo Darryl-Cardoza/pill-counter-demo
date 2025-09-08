@@ -11,6 +11,8 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.pillcountingnewmodels.R
+import com.example.pillcountingnewmodels.core.utils.compose.Dimens.extraSmall
+import com.example.pillcountingnewmodels.core.utils.compose.Dimens.small
 
 @Composable
 fun BackButton(
@@ -20,15 +22,13 @@ fun BackButton(
 ) {
     IconButton(
         onClick = { navController.popBackStack() },
-        modifier = modifier
+        modifier = modifier.padding(small)
     ) {
         Icon(
             painter = painterResource(id = backIcon),
             contentDescription = "Back",
             tint = MaterialTheme.colorScheme.primary,
-            modifier = Modifier
-                .size(width = 35.dp, height = 35.dp)
-                .padding(end = 8.dp, top = 8.dp)
+            modifier = Modifier.padding(extraSmall)
         )
     }
 }

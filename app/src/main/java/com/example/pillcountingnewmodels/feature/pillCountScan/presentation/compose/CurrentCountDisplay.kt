@@ -12,6 +12,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
+import com.example.pillcountingnewmodels.R
+import com.example.pillcountingnewmodels.core.utils.compose.FilledButton
+import com.example.pillcountingnewmodels.feature.pillCountScan.domain.data.FixedCountPillScanningEvent
 import com.example.pillcountingnewmodels.feature.pillCountScan.domain.model.FixedCountPillScanningUiState
 
 /**
@@ -38,26 +42,10 @@ fun CurrentCountDisplay(
         // Circular count indicator
         CircularCountIndicator(count = uiState.currentScanCount)
 
-        // "ADD" button
-        Button(
+        FilledButton(
+            text = stringResource(R.string.add).uppercase(),
             onClick = onAddClicked,
-            modifier = Modifier
-                .size(width = 100.dp, height = 40.dp),
-            shape = RoundedCornerShape(8.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.secondary,
-                contentColor = Color.White
-            ),
-            contentPadding = PaddingValues(0.dp)
-        ) {
-            Text(
-                text = "ADD",
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Normal,
-                fontFamily = FontFamily.Default,
-                textAlign = TextAlign.Center,
-                lineHeight = 20.sp
-            )
-        }
+            color = MaterialTheme.colorScheme.secondary,
+        )
     }
 }

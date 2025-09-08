@@ -16,6 +16,7 @@ import com.example.pillcountingnewmodels.feature.dashboard.presentation.Dashboar
 import com.example.pillcountingnewmodels.feature.history.presentation.HistoryScreen
 import com.example.pillcountingnewmodels.feature.menu.presentation.compose.MenuScreen
 import com.example.pillcountingnewmodels.feature.barcodeScan.presentation.ScanBarCodeScreen
+import com.example.pillcountingnewmodels.feature.pillCountScan.presentation.PillScanningScreen
 import com.example.pillcountingnewmodels.feature.settings.presentation.SettingsScreen
 import com.example.pillcountingnewmodels.navigatio.authGraph
 
@@ -40,8 +41,16 @@ fun AppNavGraph(navController: NavHostController) {
             route = Screen.ScanBarcode.route,
             arguments = Screen.ScanBarcode.navArguments
         ) { backStackEntry ->
-            val type = backStackEntry.arguments?.getString(Screen.ScanBarcode.ARG_TYPE)
-            ScanBarCodeScreen(navController)
+            val scanType = backStackEntry.arguments?.getString(Screen.ScanBarcode.ARG_TYPE) ?: ""
+            ScanBarCodeScreen(navController, scanType)
+        }
+
+        composable(
+            route = Screen.PillCount.route,
+            arguments = Screen.PillCount.navArguments
+        ) { backStackEntry ->
+            val scanType = backStackEntry.arguments?.getString(Screen.PillCount.ARG_TYPE) ?: ""
+            PillScanningScreen(navController, scanType)
         }
 
 
@@ -50,9 +59,7 @@ fun AppNavGraph(navController: NavHostController) {
         }
 
         composable(route = Screen.Settings.route) {
-            SettingsScreen(onNavigateBack = {
-                navController.popBackStack()
-            })
+            SettingsScreen(navController = navController)
         }
 
         composable(route = Screen.ResumeFixedCounts.route) { backStackEntry ->
@@ -76,9 +83,11 @@ fun AppNavGraph(navController: NavHostController) {
         }
 
         composable(route = Screen.History.route) {
-            HistoryScreen(onBackClick = {
-                navController.popBackStack()
-            })
+            HistoryScreen(
+                navController = navController,
+                onBackClick = {
+                    navController.popBackStack()
+                })
         }
     }
 }

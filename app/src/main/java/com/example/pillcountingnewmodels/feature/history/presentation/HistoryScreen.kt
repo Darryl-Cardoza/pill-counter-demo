@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavController
 import com.example.pillcountingnewmodels.core.utils.compose.SplitResponsive
 import com.example.pillcountingnewmodels.feature.history.presentation.compose.CalendarSection
 import com.example.pillcountingnewmodels.feature.history.presentation.compose.CountsSection
@@ -31,6 +32,7 @@ import java.time.YearMonth
  */
 @Composable
 fun HistoryScreen(
+    navController: NavController,
     viewModel: HistoryViewModel = hiltViewModel(),
     onBackClick: () -> Unit = {}
 ) {
@@ -64,7 +66,8 @@ fun HistoryScreen(
                     calendarState = calendarState,
                     selectedDate = selectedDate,
                     onDateSelected = { viewModel.selectDate(it) },
-                    onBackClick = onBackClick
+                    onBackClick = onBackClick,
+                    navController = navController
                 )
             },
             bottomOrRight = {
