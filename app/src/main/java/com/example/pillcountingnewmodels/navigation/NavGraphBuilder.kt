@@ -25,6 +25,7 @@ fun NavGraphBuilder.authGraph(navController: NavHostController) {
     ) {
         composable(route = Screen.Login.route) {
             LoginScreen(navController)
+//            FixedCountPillScanningScreen(navController)
         }
 
         composable(route = Screen.Register.route) {
