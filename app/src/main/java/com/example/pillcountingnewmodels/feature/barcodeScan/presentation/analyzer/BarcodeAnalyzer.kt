@@ -1,4 +1,4 @@
-package com.example.pillcountingnewmodels.feature.pillCount.analyzer
+package com.example.pillcountingnewmodels.feature.barcodeScan.analyzer
 
 import androidx.annotation.OptIn
 import androidx.camera.core.ExperimentalGetImage

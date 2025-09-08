@@ -1,4 +1,4 @@
-package com.example.pillcountingnewmodels.feature.pillCount.presentation
+package com.example.pillcountingnewmodels.feature.barcodeScan.presentation
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -12,11 +12,11 @@ import androidx.navigation.NavController
 import com.example.pillcountingnewmodels.core.utils.compose.BackButton
 import com.example.pillcountingnewmodels.core.utils.compose.LoadingIndicator
 import com.example.pillcountingnewmodels.core.utils.compose.SplitResponsive
-import com.example.pillcountingnewmodels.feature.pillCount.domain.data.ScanBarcodeEvent
-import com.example.pillcountingnewmodels.feature.pillCount.domain.model.ScanBarcodeUiState
-import com.example.pillcountingnewmodels.feature.pillCount.presentation.composables.InformationPanel
-import com.example.pillcountingnewmodels.feature.pillCount.presentation.composables.PermissionDeniedView
-import com.example.pillcountingnewmodels.feature.pillCount.presentation.composables.ScannerView
+import com.example.pillcountingnewmodels.feature.barcodeScan.domain.data.ScanBarcodeEvent
+import com.example.pillcountingnewmodels.feature.barcodeScan.domain.model.ScanBarcodeUiState
+import com.example.pillcountingnewmodels.feature.barcodeScan.presentation.composables.InformationPanel
+import com.example.pillcountingnewmodels.feature.barcodeScan.presentation.composables.PermissionDeniedView
+import com.example.pillcountingnewmodels.feature.barcodeScan.presentation.composables.ScannerView
 
 /**
  * The stateless presentation component for the barcode scanning screen. It is responsible for

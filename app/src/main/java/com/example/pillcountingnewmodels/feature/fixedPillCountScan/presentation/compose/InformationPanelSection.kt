@@ -1,8 +1,12 @@
 package com.example.pillcountingnewmodels.feature.fixedPillCountScan.presentation.compose
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.pillcountingnewmodels.feature.fixedPillCountScan.domain.data.FixedCountPillScanningEvent
@@ -30,7 +34,6 @@ fun InformationPanelSection(
         // Top Bar: Back Arrow, Title, Menu
         TopAppBar(navController)
 
-
         // Drug Info: Name, Batch, Total
         DrugInformation(uiState)
 
@@ -40,10 +43,11 @@ fun InformationPanelSection(
         Spacer(modifier = Modifier.height(10.dp))
 
         // Horizontal list of previous batch counts
-        BatchHistory(uiState.batchHistory)
-
-        // Fill remaining space to push buttons to the bottom
-        Spacer(modifier = Modifier.weight(1f))
+        Box(modifier = Modifier.weight(1f),
+            contentAlignment = Alignment.Center
+        ) {
+            BatchHistory(uiState.batchHistory)
+        }
 
         // Action Buttons: Rescan, Pause, Done
         ActionButtons(onEvent)

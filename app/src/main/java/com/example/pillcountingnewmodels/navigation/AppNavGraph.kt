@@ -15,7 +15,7 @@ import com.example.pillcountingnewmodels.feature.counts.presentation.viewmodel.C
 import com.example.pillcountingnewmodels.feature.dashboard.presentation.DashboardScreen
 import com.example.pillcountingnewmodels.feature.history.presentation.HistoryScreen
 import com.example.pillcountingnewmodels.feature.menu.presentation.compose.MenuScreen
-import com.example.pillcountingnewmodels.feature.pillCount.presentation.ScanBarCodeScreen
+import com.example.pillcountingnewmodels.feature.barcodeScan.presentation.ScanBarCodeScreen
 import com.example.pillcountingnewmodels.feature.settings.presentation.SettingsScreen
 import com.example.pillcountingnewmodels.navigatio.authGraph
 

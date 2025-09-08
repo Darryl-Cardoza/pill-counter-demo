@@ -1,6 +1,6 @@
-package com.example.pillcountingnewmodels.feature.pillCount.data.remote
+package com.example.pillcountingnewmodels.feature.barcodeScan.data.remote
 
-import com.example.pillcountingnewmodels.feature.pillCount.domain.model.DrugDataResponse
+import com.example.pillcountingnewmodels.feature.barcodeScan.domain.model.DrugDataResponse
 import retrofit2.http.GET
 import retrofit2.http.Query
 

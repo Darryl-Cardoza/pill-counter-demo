@@ -1,4 +1,4 @@
-package com.example.pillcountingnewmodels.feature.pillCount.presentation
+package com.example.pillcountingnewmodels.feature.barcodeScan.presentation
 
 import android.Manifest
 import android.content.pm.PackageManager
@@ -15,7 +15,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
-import com.example.pillcountingnewmodels.feature.pillCount.viewmodel.ScanBarcodeViewModel
+import com.example.pillcountingnewmodels.feature.barcodeScan.viewmodel.ScanBarcodeViewModel
 
 /**
  * A stateful composable that manages the logic for camera permissions and collects state

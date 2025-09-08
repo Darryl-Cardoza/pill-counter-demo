@@ -1,4 +1,4 @@
-package com.example.pillcountingnewmodels.feature.pillCount.domain.data
+package com.example.pillcountingnewmodels.feature.barcodeScan.domain.data
 
 /**
  * Defines the user interactions (events) that can occur on the ScanBarCodeScreen.

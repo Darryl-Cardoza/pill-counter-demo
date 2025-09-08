@@ -1,4 +1,4 @@
-package com.example.pillcountingnewmodels.feature.pillCount.domain.data
+package com.example.pillcountingnewmodels.feature.barcodeScan.domain.data
 
 /**
  * Defines one-time navigation events sent from the ViewModel to the UI.

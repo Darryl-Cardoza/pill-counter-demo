@@ -1,4 +1,4 @@
-package com.example.pillcountingnewmodels.feature.pillCount.domain.model
+package com.example.pillcountingnewmodels.feature.barcodeScan.domain.model
 
 
 import com.squareup.moshi.Json

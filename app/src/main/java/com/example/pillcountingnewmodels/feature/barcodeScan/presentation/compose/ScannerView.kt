@@ -1,4 +1,4 @@
-package com.example.pillcountingnewmodels.feature.pillCount.presentation.composables
+package com.example.pillcountingnewmodels.feature.barcodeScan.presentation.composables
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement

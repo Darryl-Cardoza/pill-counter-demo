@@ -11,9 +11,9 @@ import com.example.pillcountingnewmodels.feature.login.data.LoginRepository
 import com.example.pillcountingnewmodels.feature.login.data.remote.ILoginApi
 import com.example.pillcountingnewmodels.feature.login.domain.data.ILoginRepository
 import com.example.pillcountingnewmodels.feature.otp.data.VerifyPinRepository
-import com.example.pillcountingnewmodels.feature.pillCount.data.remote.IDrugAPI
-import com.example.pillcountingnewmodels.feature.pillCount.data.repository.DrugRepository
-import com.example.pillcountingnewmodels.feature.pillCount.domain.repository.IDrugRepository
+import com.example.pillcountingnewmodels.feature.barcodeScan.data.remote.IDrugAPI
+import com.example.pillcountingnewmodels.feature.barcodeScan.data.repository.DrugRepository
+import com.example.pillcountingnewmodels.feature.barcodeScan.domain.repository.IDrugRepository
 import com.example.pillcountingnewmodels.feature.register.data.RegisterRepository
 import com.example.pillcountingnewmodels.feature.register.data.remote.IRegisterAPI
 import com.example.pillcountingnewmodels.feature.register.data.remote.IVerifyPinAPI

@@ -1,9 +1,9 @@
-package com.example.pillcountingnewmodels.feature.pillCount.data.repository
+package com.example.pillcountingnewmodels.feature.barcodeScan.data.repository
 
 import com.example.pillcountingnewmodels.core.utils.AppLogger
-import com.example.pillcountingnewmodels.feature.pillCount.data.remote.IDrugAPI
-import com.example.pillcountingnewmodels.feature.pillCount.domain.model.DrugInfo
-import com.example.pillcountingnewmodels.feature.pillCount.domain.repository.IDrugRepository
+import com.example.pillcountingnewmodels.feature.barcodeScan.data.remote.IDrugAPI
+import com.example.pillcountingnewmodels.feature.barcodeScan.domain.model.DrugInfo
+import com.example.pillcountingnewmodels.feature.barcodeScan.domain.repository.IDrugRepository
 import javax.inject.Inject
 import javax.inject.Singleton
 

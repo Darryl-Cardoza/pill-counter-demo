@@ -1,4 +1,4 @@
-package com.example.pillcountingnewmodels.feature.pillCount.domain.model
+package com.example.pillcountingnewmodels.feature.barcodeScan.domain.model
 
 /**
  * Represents the clean, essential information about a drug for use within the app's domain layer.
