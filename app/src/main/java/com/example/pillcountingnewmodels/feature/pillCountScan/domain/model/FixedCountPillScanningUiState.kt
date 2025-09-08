@@ -1,6 +1,6 @@
-package com.example.pillcountingnewmodels.feature.fixedPillCountScan.domain.model
+package com.example.pillcountingnewmodels.feature.pillCountScan.domain.model
 
-import com.example.pillcountingnewmodels.feature.fixedPillCountScan.domain.data.DetectedPill
+import com.example.pillcountingnewmodels.feature.pillCountScan.domain.data.DetectedPill
 
 data class FixedCountPillScanningUiState(
     val drugName: String = "Crocin 50mg",

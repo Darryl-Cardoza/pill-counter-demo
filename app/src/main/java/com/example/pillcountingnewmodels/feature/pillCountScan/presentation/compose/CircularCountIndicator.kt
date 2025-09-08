@@ -1,4 +1,4 @@
-package com.example.pillcountingnewmodels.feature.fixedPillCountScan.presentation.compose
+package com.example.pillcountingnewmodels.feature.pillCountScan.presentation.compose
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border

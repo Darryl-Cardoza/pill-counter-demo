@@ -1,4 +1,4 @@
-package com.example.pillcountingnewmodels.feature.fixedPillCountScan.presentation.logic
+package com.example.pillcountingnewmodels.feature.pillCountScan.presentation.logic
 
 import android.graphics.Bitmap
 import android.graphics.Color

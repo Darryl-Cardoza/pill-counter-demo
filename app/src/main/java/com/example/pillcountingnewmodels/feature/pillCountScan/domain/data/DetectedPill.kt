@@ -1,4 +1,4 @@
-package com.example.pillcountingnewmodels.feature.fixedPillCountScan.domain.data
+package com.example.pillcountingnewmodels.feature.pillCountScan.domain.data
 
 /**
  * Represents a pill detected in a camera frame.

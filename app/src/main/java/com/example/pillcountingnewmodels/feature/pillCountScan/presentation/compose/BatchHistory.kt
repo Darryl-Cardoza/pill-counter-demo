@@ -1,4 +1,4 @@
-package com.example.pillcountingnewmodels.feature.fixedPillCountScan.presentation.compose
+package com.example.pillcountingnewmodels.feature.pillCountScan.presentation.compose
 
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Arrangement
@@ -6,7 +6,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.unit.dp
-import com.example.pillcountingnewmodels.feature.fixedPillCountScan.domain.model.Batch
+import com.example.pillcountingnewmodels.feature.pillCountScan.domain.model.Batch
 
 /**
  * Horizontal scrollable row displaying a history of counted batches.

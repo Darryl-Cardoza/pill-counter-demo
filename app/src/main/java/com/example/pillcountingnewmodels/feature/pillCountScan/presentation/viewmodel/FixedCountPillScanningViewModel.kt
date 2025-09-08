@@ -1,4 +1,4 @@
-package com.example.pillcountingnewmodels.feature.fixedPillCountScan.presentation.viewmodel
+package com.example.pillcountingnewmodels.feature.pillCountScan.presentation.viewmodel
 
 import android.app.Application
 import android.graphics.Bitmap
@@ -10,10 +10,10 @@ import androidx.camera.core.ImageProxy
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.pillcountingnewmodels.core.utils.AppLogger
-import com.example.pillcountingnewmodels.feature.fixedPillCountScan.domain.data.DetectedPill
-import com.example.pillcountingnewmodels.feature.fixedPillCountScan.domain.data.FixedCountPillScanningEvent
-import com.example.pillcountingnewmodels.feature.fixedPillCountScan.domain.model.FixedCountPillScanningUiState
-import com.example.pillcountingnewmodels.feature.fixedPillCountScan.presentation.logic.PillAnalyzer
+import com.example.pillcountingnewmodels.feature.pillCountScan.domain.data.DetectedPill
+import com.example.pillcountingnewmodels.feature.pillCountScan.domain.data.FixedCountPillScanningEvent
+import com.example.pillcountingnewmodels.feature.pillCountScan.domain.model.FixedCountPillScanningUiState
+import com.example.pillcountingnewmodels.feature.pillCountScan.presentation.logic.PillAnalyzer
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow

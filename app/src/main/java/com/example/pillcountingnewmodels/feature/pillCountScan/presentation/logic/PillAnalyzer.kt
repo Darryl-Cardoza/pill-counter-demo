@@ -1,8 +1,8 @@
-package com.example.pillcountingnewmodels.feature.fixedPillCountScan.presentation.logic
+package com.example.pillcountingnewmodels.feature.pillCountScan.presentation.logic
 
 import android.graphics.Bitmap
 import com.example.pillcountingnewmodels.core.utils.AppLogger
-import com.example.pillcountingnewmodels.feature.fixedPillCountScan.domain.data.DetectedPill
+import com.example.pillcountingnewmodels.feature.pillCountScan.domain.data.DetectedPill
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext

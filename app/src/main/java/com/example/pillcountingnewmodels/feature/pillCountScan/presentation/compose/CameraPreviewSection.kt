@@ -1,4 +1,4 @@
-package com.example.pillcountingnewmodels.feature.fixedPillCountScan.presentation.compose
+package com.example.pillcountingnewmodels.feature.pillCountScan.presentation.compose
 
 import androidx.camera.view.PreviewView
 import androidx.compose.foundation.Canvas
@@ -14,8 +14,8 @@ import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
-import com.example.pillcountingnewmodels.feature.fixedPillCountScan.domain.data.DetectedPill
-import com.example.pillcountingnewmodels.feature.fixedPillCountScan.presentation.logic.CameraHelper
+import com.example.pillcountingnewmodels.feature.pillCountScan.domain.data.DetectedPill
+import com.example.pillcountingnewmodels.feature.pillCountScan.presentation.logic.CameraHelper
 import kotlinx.coroutines.launch
 
 /**

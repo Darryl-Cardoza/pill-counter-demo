@@ -1,4 +1,4 @@
-package com.example.pillcountingnewmodels.feature.fixedPillCountScan.presentation
+package com.example.pillcountingnewmodels.feature.pillCountScan.presentation
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -12,9 +12,9 @@ import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.pillcountingnewmodels.core.utils.compose.SplitResponsive
-import com.example.pillcountingnewmodels.feature.fixedPillCountScan.presentation.compose.CameraPreviewSection
-import com.example.pillcountingnewmodels.feature.fixedPillCountScan.presentation.compose.InformationPanelSection
-import com.example.pillcountingnewmodels.feature.fixedPillCountScan.presentation.viewmodel.FixedCountPillScanningViewModel
+import com.example.pillcountingnewmodels.feature.pillCountScan.presentation.compose.CameraPreviewSection
+import com.example.pillcountingnewmodels.feature.pillCountScan.presentation.compose.InformationPanelSection
+import com.example.pillcountingnewmodels.feature.pillCountScan.presentation.viewmodel.FixedCountPillScanningViewModel
 import com.example.pillcountingnewmodels.ui.theme.AppTheme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
