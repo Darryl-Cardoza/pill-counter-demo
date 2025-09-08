@@ -15,7 +15,6 @@ import androidx.compose.ui.res.stringArrayResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.navigation.NavController
 import com.example.pillcountingnewmodels.R
 import com.example.pillcountingnewmodels.ui.theme.LocalExtendedColors
 
@@ -27,7 +26,6 @@ import com.example.pillcountingnewmodels.ui.theme.LocalExtendedColors
  */
 @Composable
 fun SettingsScreen(
-    navController: NavController,
     onNavigateBack: () -> Unit = {}
 ) {
     // State holders for preferences
@@ -52,7 +50,7 @@ fun SettingsScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(16.dp)
+                .padding(start = 16.dp, end = 16.dp)
 
         ) {
             Spacer(Modifier.height(24.dp))

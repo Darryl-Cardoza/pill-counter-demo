@@ -3,6 +3,7 @@ package com.example.pillcountingnewmodels.feature.dashboard.presentation
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -42,7 +43,9 @@ fun DashboardScreen(
     val uiState by viewModel.uiState.collectAsState()
 
     Box(
-        modifier = Modifier.background(AppTheme.extendedColors.secondaryBackground)
+        modifier = Modifier
+            .systemBarsPadding()
+            .background(AppTheme.extendedColors.secondaryBackground)
     ) {
         // Split screen layout: fixed counts vs regular counts
         SplitResponsive(

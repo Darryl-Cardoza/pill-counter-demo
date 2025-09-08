@@ -43,16 +43,20 @@ fun RegularCountSection(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
+        Spacer(modifier = Modifier.height(24.dp))
+        
         // Regular count icon (click → ScanBarcode)
         Image(
             painter = painterResource(id = R.drawable.regular_count),
             contentDescription = stringResource(R.string.regular_count),
-            modifier = Modifier.clickable(
-                indication = null,
-                interactionSource = remember { MutableInteractionSource() }
-            ) {
-                navController.navigate(Screen.ScanBarcode.createRoute(REGULAR_COUNT))
-            }
+            modifier = Modifier
+                .size(120.dp)
+                .clickable(
+                    indication = null,
+                    interactionSource = remember { MutableInteractionSource() }
+                ) {
+                    navController.navigate(Screen.ScanBarcode.createRoute(REGULAR_COUNT))
+                }
         )
 
         Spacer(modifier = Modifier.height(24.dp))
@@ -61,7 +65,7 @@ fun RegularCountSection(
         Text(
             text = stringResource(R.string.regular_count),
             style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.SemiBold,
+            fontWeight = FontWeight.Normal,
             color = MaterialTheme.colorScheme.primary,
             modifier = Modifier.clickable(
                 indication = null,
@@ -86,7 +90,7 @@ fun RegularCountSection(
             }
         )
 
-        Spacer(modifier = Modifier.height(40.dp))
+        Spacer(modifier = Modifier.height(60.dp))
 
         // Status row (Completed + Partial counts)
         Row(

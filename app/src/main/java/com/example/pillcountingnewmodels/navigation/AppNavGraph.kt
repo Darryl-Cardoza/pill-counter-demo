@@ -50,7 +50,9 @@ fun AppNavGraph(navController: NavHostController) {
         }
 
         composable(route = Screen.Settings.route) {
-            SettingsScreen(navController)
+            SettingsScreen(onNavigateBack = {
+                navController.popBackStack()
+            })
         }
 
         composable(route = Screen.ResumeFixedCounts.route) { backStackEntry ->

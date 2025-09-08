@@ -4,7 +4,10 @@ import android.content.res.Configuration
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -30,7 +33,7 @@ fun MenuScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(extendedColors.secondaryBackground)
-            .padding(16.dp)
+            .padding(start = 16.dp, end = 16.dp)
     ) {
         Spacer(Modifier.height(24.dp))
 
@@ -52,75 +55,78 @@ fun MenuScreen(
 
             Spacer(Modifier.width(24.dp))
 
-            Text(
-                text = stringResource(R.string.settings_title),
-                fontSize = 16.sp,
-                color = extendedColors.textColor
-            )
         }
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        // Menu items
-        MenuItemRow(
-            icon = R.drawable.fixed_count,
-            iconTint = MaterialTheme.colorScheme.secondary,
-            title = "Fixed Count",
-            completed = "21 completed",
-            partial = "10 partial",
-            completedTint = MaterialTheme.colorScheme.secondary,
-            partialTint = MaterialTheme.colorScheme.secondary,
-            completedIcon = R.drawable.tick,
-            partialIcon = R.drawable.partial
-        )
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .background(extendedColors.secondaryBackground)
+        ) {
+            // Menu items
+            MenuItemRow(
+                icon = R.drawable.fixed_count,
+                iconTint = MaterialTheme.colorScheme.secondary,
+                title = "Fixed Count",
+                completed = "21 completed",
+                partial = "10 partial",
+                completedTint = MaterialTheme.colorScheme.secondary,
+                partialTint = MaterialTheme.colorScheme.secondary,
+                completedIcon = R.drawable.tick,
+                partialIcon = R.drawable.partial
+            )
 
-        HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
+            HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
 
-        MenuItemRow(
-            icon = R.drawable.regular_count,
-            iconTint = MaterialTheme.colorScheme.primary,
-            title = "Regular Count",
-            completed = "21 completed",
-            partial = "10 partial",
-            completedTint = MaterialTheme.colorScheme.primary,
-            partialTint = MaterialTheme.colorScheme.primary,
-            completedIcon = R.drawable.tick,
-            partialIcon = R.drawable.partial
-        )
+            MenuItemRow(
+                icon = R.drawable.regular_count,
+                iconTint = MaterialTheme.colorScheme.primary,
+                title = "Regular Count",
+                completed = "21 completed",
+                partial = "10 partial",
+                completedTint = MaterialTheme.colorScheme.primary,
+                partialTint = MaterialTheme.colorScheme.primary,
+                completedIcon = R.drawable.tick,
+                partialIcon = R.drawable.partial
+            )
 
-        HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
+            HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
 
+            SimpleMenuRow(
+                navController = navController,
+                icon = R.drawable.history,
+                iconTint = MaterialTheme.colorScheme.secondary,
+                title = "History",
+                trailingText = "3 months",
+                onClick = { navController.navigate(Screen.History.route) }
+            )
 
+            HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
 
-        SimpleMenuRow(
-            icon = R.drawable.history,
-            iconTint = MaterialTheme.colorScheme.secondary,
-            title = "History",
-            trailingText = "3 months",
-            onClick = { navController.navigate(Screen.History.route) }
-        )
+            SimpleMenuRow(
+                navController = navController,
+                icon = R.drawable.settings,
+                iconTint = MaterialTheme.colorScheme.primary,
+                title = "Settings",
+                onClick = { navController.navigate(Screen.Settings.route) }
+            )
 
-        HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
+            HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
 
-        SimpleMenuRow(
-            icon = R.drawable.settings,
-            iconTint = MaterialTheme.colorScheme.secondary,
-            title = "Settings",
-            onClick = { navController.navigate(Screen.Settings.route) }
-        )
-
-        HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
-
-        SimpleMenuRow(
-            icon = R.drawable.logout,
-            iconTint = MaterialTheme.colorScheme.primary,
-            title = "Logout",
-            onClick = {
-                navController.navigate(AUTH_GRAPH_ROUTE) {
-                    popUpTo(Screen.Dashboard.route) { inclusive = true }
+            SimpleMenuRow(
+                navController = navController,
+                icon = R.drawable.logout,
+                iconTint = MaterialTheme.colorScheme.secondary,
+                title = "Logout",
+                onClick = {
+                    navController.navigate(AUTH_GRAPH_ROUTE) {
+                        popUpTo(Screen.Dashboard.route) { inclusive = true }
+                    }
                 }
-            }
-        )
+            )
+        }
     }
 }
 
@@ -167,7 +173,11 @@ fun MenuItemRow(
             )
 
             if (!isPortrait && completed != null && partial != null) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Spacer(modifier = Modifier.weight(1f))
                     StatBadge(
                         text = completed,
                         tint = completedTint,
@@ -250,12 +260,16 @@ fun StatBadge(
 
 @Composable
 fun SimpleMenuRow(
+    navController: NavController,
     icon: Int,
     iconTint: androidx.compose.ui.graphics.Color,
     title: String,
     trailingText: String? = null,
     onClick: (() -> Unit)? = null
 ) {
+
+    Spacer(modifier = Modifier.height(8.dp))
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -279,9 +293,16 @@ fun SimpleMenuRow(
                 text = it,
                 fontSize = 14.sp,
                 color = extendedColors.textColor,
-                modifier = Modifier.padding(end = 12.dp)
+                modifier = Modifier
+                    .padding(end = 12.dp)
+                    .clickable {
+                        navController.navigate(Screen.Settings.route)
+                    }
             )
         }
     }
+
+    Spacer(modifier = Modifier.height(8.dp))
+
 }
 

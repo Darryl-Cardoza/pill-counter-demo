@@ -49,12 +49,14 @@ fun FixedCountSection(
         Image(
             painter = painterResource(id = R.drawable.fixed_count),
             contentDescription = stringResource(R.string.fixed_count),
-            modifier = Modifier.clickable(
-                indication = null,
-                interactionSource = remember { MutableInteractionSource() }
-            ) {
-                navController.navigate(Screen.ScanBarcode.createRoute(FIXED_COUNT))
-            }
+            modifier = Modifier
+                .size(120.dp)
+                .clickable(
+                    indication = null,
+                    interactionSource = remember { MutableInteractionSource() }
+                ) {
+                    navController.navigate(Screen.ScanBarcode.createRoute(FIXED_COUNT))
+                }
         )
 
         Spacer(modifier = Modifier.height(24.dp))
@@ -63,7 +65,7 @@ fun FixedCountSection(
         Text(
             text = stringResource(R.string.fixed_count),
             style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.SemiBold,
+            fontWeight = FontWeight.Normal,
             color = MaterialTheme.colorScheme.secondary,
             modifier = Modifier.clickable(
                 indication = null,
@@ -78,7 +80,7 @@ fun FixedCountSection(
         // Description text (clickable -> ScanBarcode)
         Text(
             text = stringResource(R.string.fixed_count_desc),
-            style = MaterialTheme.typography.bodyLarge,
+            style = MaterialTheme.typography.bodyMedium,
             color = AppTheme.extendedColors.textColor,
             modifier = Modifier.clickable(
                 indication = null,
