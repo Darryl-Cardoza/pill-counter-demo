@@ -27,7 +27,7 @@ fun HollowButton(
     Button(
         onClick = onClick,
         modifier = modifier
-            .height(buttonHeight)
+            .height(buttonHeight - 16.dp)
             .border(
                 width = 1.dp,
                 color = color,

@@ -2,7 +2,6 @@ package com.example.pillcountingnewmodels.feature.login.presentation
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -224,30 +223,7 @@ fun LoginScreen(
                         )
                     }
 
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        modifier = Modifier
-                            .padding(top = 8.dp)
-                            .fillMaxWidth(),
-                    ) {
-                        Text(
-                            text = stringResource(R.string.register),
-                            color = AppTheme.extendedColors.textColor,
-                            style = MaterialTheme.typography.bodyMedium,
-                            modifier = Modifier.clickable {
-                                navController.navigate(Screen.Register.route)
-                            }
-                        )
-                        Text(
-                            text = stringResource(R.string.forgot_password),
-                            color = AppTheme.extendedColors.textColor,
-                            style = MaterialTheme.typography.bodyMedium,
-                            modifier = Modifier.clickable {
-                                navController.navigate(Screen.ForgotPassword.route)
-                            }
-                        )
-                    }
+
                     Spacer(Modifier.height(20.dp))
                 }
             }

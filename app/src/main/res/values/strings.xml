@@ -71,8 +71,8 @@
 
 
     <string name="partial_count_title">Partial Count</string>
-    <string name="fixed_partial_counts_label">Fixed Partial Counts</string>
-    <string name="regular_partial_counts_label">Regular Partial Counts</string>
+    <string name="fixed_partial_counts_label">Fixed Partial \nCounts</string>
+    <string name="regular_partial_counts_label">Regular Partial \nCounts</string>
     <string name="partial_icon_description">Partial Fill Icons</string>
 
     <string name="cd_close_selection">Close Selection</string>

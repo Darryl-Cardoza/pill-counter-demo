@@ -9,6 +9,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavController
+import com.example.pillcountingnewmodels.core.utils.compose.BackButton
 import com.example.pillcountingnewmodels.core.utils.compose.LoadingIndicator
 import com.example.pillcountingnewmodels.core.utils.compose.SplitResponsive
 import com.example.pillcountingnewmodels.feature.pillCount.domain.data.ScanBarcodeEvent
@@ -47,8 +48,8 @@ fun ScanBarCodeScreenContent(
                 .padding(paddingValues)
         ) {
             SplitResponsive(
-                portraitRatio = 0.5f to 0.5f,
-                landscapeRatio = 0.65f to 0.35f,
+                portraitRatio = 0.60f to 0.40f,
+                landscapeRatio = 0.60f to 0.40f,
                 topOrLeft = {
                     if (hasCameraPermission) {
                         ScannerView(
@@ -80,6 +81,9 @@ fun ScanBarCodeScreenContent(
                     }
                 }
             )
+
+            BackButton(navController)
+
         }
     }
 }

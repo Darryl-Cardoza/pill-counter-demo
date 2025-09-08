@@ -13,6 +13,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.graphics.Color
 import com.example.pillcountingnewmodels.feature.fixedPillCountScan.domain.model.FixedCountPillScanningUiState
+import com.example.pillcountingnewmodels.ui.theme.AppTheme
 
 /**
  * Displays the current scanned pill count along with an "ADD" button.
@@ -45,7 +46,7 @@ fun CurrentCountDisplay(
                 .size(width = 100.dp, height = 40.dp),
             shape = RoundedCornerShape(8.dp),
             colors = ButtonDefaults.buttonColors(
-                containerColor = Color(0xFFFD82B5),
+                containerColor = MaterialTheme.colorScheme.secondary,
                 contentColor = Color.White
             ),
             contentPadding = PaddingValues(0.dp)

@@ -22,8 +22,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.pillcountingnewmodels.R
-import com.example.pillcountingnewmodels.core.utils.compose.BackButton
-import com.example.pillcountingnewmodels.core.utils.compose.MenuButton
 import com.example.pillcountingnewmodels.feature.pillCount.domain.data.ScanBarcodeEvent
 import com.example.pillcountingnewmodels.feature.pillCount.presentation.compose.BottomButtons
 import com.example.pillcountingnewmodels.feature.pillCount.presentation.compose.DrugDetails
@@ -58,12 +56,12 @@ fun InformationPanel(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(56.dp)
+                    .height(30.dp)
                     .padding(horizontal = 16.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 // Back button on the left
-                BackButton(navController)
+//                BackButton(navController)
 
                 Spacer(modifier = Modifier.weight(1f))
 
@@ -83,7 +81,7 @@ fun InformationPanel(
                 Spacer(modifier = Modifier.weight(1f))
 
                 // Menu button on the right
-                MenuButton(navController)
+//                MenuButton(navController)
             }
         }
 

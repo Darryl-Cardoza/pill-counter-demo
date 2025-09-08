@@ -1,6 +1,7 @@
 package com.example.pillcountingnewmodels.feature.history.presentation.compose
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Text
@@ -59,7 +60,9 @@ fun CountsSection(
                 textAlign = TextAlign.Center
             )
 
-            Row {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
                 ActionIcon(
                     iconRes = R.drawable.export,
                     contentDescription = stringResource(R.string.export_content_description),

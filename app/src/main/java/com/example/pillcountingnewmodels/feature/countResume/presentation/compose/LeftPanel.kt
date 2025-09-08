@@ -3,6 +3,7 @@ package com.example.pillcountingnewmodels.feature.countResume.presentation.compo
 import android.content.res.Configuration
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -40,37 +41,39 @@ fun LeftPanel(
     val configuration = LocalConfiguration.current
     val isPortrait = configuration.orientation == Configuration.ORIENTATION_PORTRAIT
 
-    Column(
-        modifier = Modifier.fillMaxSize(),
-        horizontalAlignment = Alignment.CenterHorizontally
+
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 16.dp)
     ) {
         Spacer(Modifier.height(16.dp))
 
-        // ---------------- Header Row ----------------
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
+        Icon(
+            painter = painterResource(R.drawable.back),
+            contentDescription = stringResource(R.string.back_content_description),
+            tint = MaterialTheme.colorScheme.primary,
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp)
-        ) {
-            Icon(
-                painter = painterResource(R.drawable.back),
-                contentDescription = stringResource(R.string.back_content_description),
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier
-                    .size(24.dp)
-                    .clickable { onBackClick() }
-            )
+                .size(24.dp)
+                .clickable { onBackClick() }
+        )
 
-            Spacer(Modifier.width(24.dp))
+        Spacer(Modifier.width(24.dp))
 
-            Text(
-                text = stringResource(headlineResId),
-                fontSize = 16.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = appTheme.extendedColors.textColor
-            )
-        }
+        Text(
+            text = stringResource(headlineResId),
+            fontSize = 16.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = appTheme.extendedColors.textColor
+        )
+    }
+
+    Column(
+        modifier = Modifier.fillMaxSize(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
 
         Spacer(Modifier.height(if (isPortrait) 20.dp else 40.dp))
 

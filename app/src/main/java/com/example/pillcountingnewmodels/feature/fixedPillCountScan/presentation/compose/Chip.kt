@@ -42,13 +42,13 @@ fun Chip(
         // Main chip container
         Box(
             modifier = Modifier
-                .size(width = 60.dp, height = 60.dp)
+                .size(width = 50.dp, height = 50.dp)
                 .border(
-                    width = 2.dp,
+                    width = 1.dp,
                     color = MaterialTheme.colorScheme.secondary,
                     shape = RoundedCornerShape(16.dp)
                 )
-                .background(Color.White, RoundedCornerShape(16.dp)),
+                .background(Color.Transparent, RoundedCornerShape(16.dp)),
             contentAlignment = Alignment.Center
         ) {
             Text(

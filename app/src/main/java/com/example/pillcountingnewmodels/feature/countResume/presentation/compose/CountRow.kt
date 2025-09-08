@@ -19,6 +19,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.pillcountingnewmodels.feature.countResume.domain.model.CountItem
+import com.example.pillcountingnewmodels.ui.theme.AppTheme
 
 /**
  * Row representing a single count item in the Partial/Fixed Resume screen.
@@ -45,12 +46,11 @@ fun CountRow(
     val iconColor = Color(0xFF00BCD4)
     val configuration = LocalConfiguration.current
     val isPortrait = configuration.orientation == Configuration.ORIENTATION_PORTRAIT
-    val isDarkMode = isSystemInDarkTheme()
 
     Card(
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(
-            containerColor = if (isDarkMode) Color.Black else Color.White
+            containerColor = AppTheme.extendedColors.secondaryBackground
         ),
         modifier = Modifier
             .fillMaxWidth()
@@ -104,7 +104,7 @@ fun CountRow(
                 )
             }
 
-            Spacer(modifier = Modifier.width(12.dp))
+            Spacer(modifier = Modifier.width(5.dp))
 
             // ---------------- Quantity ----------------
             Text(

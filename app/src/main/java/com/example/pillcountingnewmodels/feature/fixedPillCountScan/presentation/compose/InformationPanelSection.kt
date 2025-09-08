@@ -48,7 +48,6 @@ fun InformationPanelSection(
         // Action Buttons: Rescan, Pause, Done
         ActionButtons(onEvent)
 
-        Spacer(modifier = Modifier.height(10.dp))
     }
 }
 

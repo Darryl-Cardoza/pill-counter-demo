@@ -20,6 +20,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.example.pillcountingnewmodels.R
@@ -76,7 +77,7 @@ fun <E : ResumeEvent> RightPanel(
 
                 // Delete selected items
                 Icon(
-                    imageVector = Icons.Default.Delete,
+                    painter = painterResource(id = R.drawable.delete),
                     contentDescription = stringResource(R.string.cd_delete_selected),
                     tint = if (selectedItems.isNotEmpty()) Color.Red
                     else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
@@ -89,7 +90,7 @@ fun <E : ResumeEvent> RightPanel(
             } else {
                 // Search action placeholder
                 Icon(
-                    imageVector = Icons.Default.Search,
+                    painter = painterResource(id = R.drawable.search),
                     contentDescription = stringResource(R.string.cd_search),
                     tint = iconColor,
                     modifier = Modifier
@@ -101,7 +102,7 @@ fun <E : ResumeEvent> RightPanel(
 
                 // Enable multi-select mode
                 Icon(
-                    imageVector = Icons.Default.Delete,
+                    painter = painterResource(id = R.drawable.delete),
                     contentDescription = stringResource(R.string.cd_select_items_to_delete),
                     tint = iconColor,
                     modifier = Modifier
@@ -136,7 +137,7 @@ fun <E : ResumeEvent> RightPanel(
                         Box(
                             modifier = Modifier
                                 .fillMaxSize()
-                                .background(Color.Red, RoundedCornerShape(12.dp))
+                                .background(Color.Transparent, RoundedCornerShape(12.dp))
                                 .padding(horizontal = 16.dp),
                             contentAlignment = Alignment.CenterEnd
                         ) {

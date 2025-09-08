@@ -4,8 +4,8 @@ import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
 import androidx.navigation.navigation
+import com.example.pillcountingnewmodels.feature.fixedPillCountScan.presentation.FixedCountPillScanningScreen
 import com.example.pillcountingnewmodels.feature.forgotPassword.presentation.compose.ForgotPasswordScreen
-import com.example.pillcountingnewmodels.feature.login.presentation.LoginScreen
 import com.example.pillcountingnewmodels.feature.otp.presentation.compose.OTPScreen
 import com.example.pillcountingnewmodels.feature.register.presentation.RegisterScreen
 import com.example.pillcountingnewmodels.navigation.AUTH_GRAPH_ROUTE
@@ -24,8 +24,8 @@ fun NavGraphBuilder.authGraph(navController: NavHostController) {
         route = AUTH_GRAPH_ROUTE
     ) {
         composable(route = Screen.Login.route) {
-            LoginScreen(navController)
-//            FixedCountPillScanningScreen(navController)
+//            LoginScreen(navController)
+            FixedCountPillScanningScreen(navController)
         }
 
         composable(route = Screen.Register.route) {
