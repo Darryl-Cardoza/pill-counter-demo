@@ -55,7 +55,7 @@ class ScanBarcodeViewModel @Inject constructor(
         when (event) {
             is ScanBarcodeEvent.BarcodeScanned -> processBarcode(event.barcodeValue)
             is ScanBarcodeEvent.ScannerError -> handleScannerError(event.exception)
-            ScanBarcodeEvent.ConfirmScan -> handleConfirmScan()
+            ScanBarcodeEvent.StartCount -> handleStartCount()
             ScanBarcodeEvent.RedoScan -> handleRedoScan()
             ScanBarcodeEvent.SkipScan -> handleSkipScan()
         }
@@ -130,7 +130,7 @@ class ScanBarcodeViewModel @Inject constructor(
      * It checks if an NDC is present and, if so, sends a navigation event
      * to proceed to the next screen. If no NDC is present, it shows an error.
      */
-    private fun handleConfirmScan() {
+    private fun handleStartCount() {
         val currentNdc = uiState.value.ndc
         if (currentNdc.isBlank()) {
             logger.w("ConfirmScan ignored: NDC is blank.")
@@ -150,7 +150,7 @@ class ScanBarcodeViewModel @Inject constructor(
     private fun handleSkipScan() {
         logger.d("Skip scan clicked. Navigating back.")
         viewModelScope.launch {
-            _navigationEvent.send(NavigationEvent.NavigateBack)
+            _navigationEvent.send(NavigationEvent.NavigateToPillCount(""))
         }
     }
 

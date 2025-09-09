@@ -91,6 +91,7 @@
     <string name="pause">Pause</string>
     <string name="done">Done</string>
     <string name="add">Add</string>
+    <string name="count">Count</string>
 
 
 </resources>

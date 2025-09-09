@@ -8,7 +8,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
 import com.example.pillcountingnewmodels.R
 import com.example.pillcountingnewmodels.core.utils.compose.Dimens.medium
 import com.example.pillcountingnewmodels.core.utils.compose.Dimens.small
@@ -20,7 +19,7 @@ import com.example.pillcountingnewmodels.core.utils.compose.HollowButton
 fun BottomButtons(
     onRedo: () -> Unit,
     onSkip: () -> Unit,
-    onScan: () -> Unit
+    onCount: () -> Unit
 ) {
     Row(
         modifier = Modifier
@@ -41,8 +40,8 @@ fun BottomButtons(
             modifier = Modifier.weight(1f)
         )
         FilledButton(
-            text = stringResource(R.string.scan).uppercase(),
-            onClick = onScan,
+            text = stringResource(R.string.count).uppercase(),
+            onClick = onCount,
             color = MaterialTheme.colorScheme.secondary,
             modifier = Modifier.weight(1f)
         )

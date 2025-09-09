@@ -6,7 +6,7 @@ package com.example.pillcountingnewmodels.feature.barcodeScan.domain.data
 sealed interface ScanBarcodeEvent {
     data object RedoScan : ScanBarcodeEvent
     data object SkipScan : ScanBarcodeEvent
-    data object ConfirmScan : ScanBarcodeEvent
+    data object StartCount : ScanBarcodeEvent
     data class BarcodeScanned(val barcodeValue: String) : ScanBarcodeEvent
     data class ScannerError(val exception: Exception) : ScanBarcodeEvent
 }

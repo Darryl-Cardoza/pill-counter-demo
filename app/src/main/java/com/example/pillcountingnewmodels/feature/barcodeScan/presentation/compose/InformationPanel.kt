@@ -89,7 +89,7 @@ fun InformationPanel(
         BottomButtons(
             onRedo = { onEvent(ScanBarcodeEvent.RedoScan) },
             onSkip = { onEvent(ScanBarcodeEvent.SkipScan) },
-            onScan = { onEvent(ScanBarcodeEvent.ConfirmScan) }
+            onCount = { onEvent(ScanBarcodeEvent.StartCount) }
         )
     }
 }
