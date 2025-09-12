@@ -23,10 +23,14 @@ import com.example.pillcountingnewmodels.ui.theme.AppTheme
  */
 @Composable
 fun DrugInformation(uiState: FixedCountPillScanningUiState) {
+    // Calculate the total count from the batch history list
+    val totalBatchCount = uiState.batchHistory.sumOf { it.count }
+    val nextBatchNumber = uiState.batchHistory.size + 1
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 8.dp) // Added vertical padding for spacing
+            .padding(vertical = 8.dp)
     ) {
         // Drug Name
         Text(
@@ -44,16 +48,18 @@ fun DrugInformation(uiState: FixedCountPillScanningUiState) {
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
+            // Display the next batch number
             Text(
-                text = "Batch ${uiState.batchNumber}",
+                text = "Batch $nextBatchNumber",
                 fontSize = 16.sp,
                 fontFamily = FontFamily.Default,
                 fontWeight = FontWeight.Normal,
                 color = MaterialTheme.colorScheme.primary
             )
 
+            // Display the calculated total batch count
             Text(
-                text = "Total ${uiState.totalCount}/${uiState.expectedCount}",
+                text = "Total $totalBatchCount/${uiState.expectedCount}",
                 fontSize = 16.sp,
                 fontFamily = FontFamily.Default,
                 fontWeight = FontWeight.Normal,

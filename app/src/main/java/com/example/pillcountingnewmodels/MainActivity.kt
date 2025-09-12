@@ -29,14 +29,11 @@ import com.example.pillcountingnewmodels.feature.settings.presentation.viewmodel
 import com.example.pillcountingnewmodels.navigation.AppNavGraph
 import com.example.pillcountingnewmodels.ui.theme.ExtendedColors
 import com.example.pillcountingnewmodels.ui.theme.PillCountingNewModelsTheme
-import com.example.pillcountingnewmodels.viewmodel.PillViewModel
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
-    // ViewModel scoped to Activity lifecycle
-    private val pillViewModel: PillViewModel by viewModels()
     // Inject the settings ViewModel
     private val settingsViewModel: ApplicationSettingsViewModel by viewModels()
 

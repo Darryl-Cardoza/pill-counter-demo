@@ -12,6 +12,25 @@ import java.nio.ByteOrder
 import kotlin.math.max
 import kotlin.math.min
 
+/**
+ * Utility object responsible for preprocessing camera frames before they are passed
+ * to a machine learning model for pill detection.
+ *
+ * Preprocessing pipeline:
+ * 1. **Orientation fix** → rotates the input [Bitmap] if required.
+ * 2. **Resize** → scales the image to the model's required input size ([MODEL_INPUT_SIZE] x [MODEL_INPUT_SIZE]).
+ * 3. **Glare reduction** → reduces intensity of overexposed (bright) regions.
+ * 4. **Buffer allocation** → creates a [ByteBuffer] in native order for model input.
+ * 5. **Pixel normalization** → converts RGB channels to float values `[0.0 .. 1.0]`
+ *    with adaptive contrast correction depending on brightness.
+ *
+ * Model assumptions:
+ * - Input shape: `[BATCH_SIZE, MODEL_INPUT_SIZE, MODEL_INPUT_SIZE, PIXEL_SIZE]`
+ * - Pixel encoding: Float32, normalized `[0..1]`
+ *
+ * Usage:
+ * Call [preprocess] from a coroutine. Runs off the main thread by default.
+ */
 object ImagePreprocessor {
 
     private const val MODEL_INPUT_SIZE = 640

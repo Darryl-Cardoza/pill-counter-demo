@@ -2,30 +2,43 @@ package com.example.pillcountingnewmodels.feature.pillCountScan.presentation.vie
 
 import android.app.Application
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
-import android.graphics.ImageFormat
-import android.graphics.Rect
-import android.graphics.YuvImage
 import androidx.camera.core.ImageProxy
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.pillcountingnewmodels.core.utils.AppLogger
 import com.example.pillcountingnewmodels.feature.pillCountScan.domain.data.DetectedPill
 import com.example.pillcountingnewmodels.feature.pillCountScan.domain.data.FixedCountPillScanningEvent
+import com.example.pillcountingnewmodels.feature.pillCountScan.domain.model.Batch
 import com.example.pillcountingnewmodels.feature.pillCountScan.domain.model.FixedCountPillScanningUiState
 import com.example.pillcountingnewmodels.feature.pillCountScan.presentation.logic.PillAnalyzer
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.tensorflow.lite.Interpreter
-import java.io.ByteArrayOutputStream
 import java.io.FileInputStream
 import java.nio.MappedByteBuffer
 import java.nio.channels.FileChannel
 import javax.inject.Inject
 
+
+/**
+ * ViewModel for the Fixed Count Pill Scanning feature.
+ *
+ * Responsibilities:
+ * 1. Loads and initializes the TensorFlow Lite interpreter.
+ * 2. Manages the [PillAnalyzer] for frame-by-frame pill detection.
+ * 3. Stores UI state: detected pills, batch history, drug info, etc.
+ * 4. Handles user events like Add Batch, Rescan, Pause, Done.
+ * 5. Manages memory for camera frames and thumbnails safely.
+ *
+ * Lifecycle:
+ * - Initializes interpreter on-demand via [initializeInterpreter].
+ * - Processes frames in [onFrameCaptured].
+ * - Releases interpreter and bitmaps on [onCleared].
+ */
 @HiltViewModel
 class PillScanningViewModel @Inject constructor(
     app: Application
@@ -47,13 +60,28 @@ class PillScanningViewModel @Inject constructor(
     val uiState = _uiState.asStateFlow()
 
     private var interpreter: Interpreter? = null
+    private var currentFrameBitmap: Bitmap? = null
 
     companion object {
         private const val MODEL_FILENAME = "best_float32_new.tflite"
-        private const val TAG = "PillVM"
+        private const val TAG = "PillScanningVM"
     }
 
-    fun initializeInterpreter(retryCount: Int = 1) {
+    /**
+     * Initializes the TensorFlow Lite interpreter with retry support.
+     *
+     * Once initialized, it creates a [PillAnalyzer] with a callback to update
+     * [DetectedPill]s in UI state and store the latest frame bitmap.
+     *
+     * @param retryCount Number of retries in case of failure.
+     * @param viewWidth Width of the PreviewView for scaling coordinates.
+     * @param viewHeight Height of the PreviewView for scaling coordinates.
+     */
+    fun initializeInterpreter(
+        retryCount: Int = 1,
+        viewWidth: Int = 640,
+        viewHeight: Int = 640
+    ) {
         if (_modelState.value is ModelState.Ready) {
             logger.w("Interpreter already initialized — skipping")
             return
@@ -67,28 +95,50 @@ class PillScanningViewModel @Inject constructor(
 
             while (attempt <= retryCount && !success) {
                 try {
-                    logger.i("Loading TFLite model (attempt ${attempt + 1})…")
-
                     val buffer = loadModelFile(MODEL_FILENAME)
                     val options = Interpreter.Options().apply {
                         setUseXNNPACK(true)
                         numThreads = Runtime.getRuntime().availableProcessors().coerceAtMost(4)
                     }
 
-                    interpreter = Interpreter(buffer, options).also {
-                        success = true
-                        val analyzer = PillAnalyzer(it)
+                    interpreter = Interpreter(buffer, options).also { tflite ->
+                        val analyzer = PillAnalyzer(
+                            interpreter = tflite,
+                            viewWidth = viewWidth,
+                            viewHeight = viewHeight
+                            // Update callback to accept the bitmap
+                        ) { count, detections, bitmap ->
+                            logger.i("✅ Pills detected: $count")
+
+                            // Store the latest bitmap and recycle the previous one
+                            currentFrameBitmap?.recycle()
+                            currentFrameBitmap = bitmap
+
+                            updateDetectedPills(
+                                detections.map {
+                                    DetectedPill(
+                                        x = it.pixelX / viewWidth,
+                                        y = it.pixelY / viewHeight,
+                                        confidence = it.confidence
+                                    )
+                                }
+                            )
+                        }
+
                         val duration = System.currentTimeMillis() - start
                         logger.i("✅ Interpreter ready in ${duration}ms")
                         _modelState.value = ModelState.Ready(analyzer)
+                        success = true
                     }
-
                 } catch (e: Exception) {
                     attempt++
                     logger.e("❌ Failed to initialize interpreter (attempt $attempt)", e)
 
                     if (attempt > retryCount) {
-                        _modelState.value = ModelState.Error("Interpreter initialization failed", e)
+                        _modelState.value = ModelState.Error(
+                            message = "Interpreter initialization failed",
+                            cause = e
+                        )
                     } else {
                         logger.w("Retrying interpreter initialization…")
                     }
@@ -97,38 +147,37 @@ class PillScanningViewModel @Inject constructor(
         }
     }
 
-    fun updateDetectedPills(pills: List<DetectedPill>) {
-        _uiState.value = _uiState.value.copy(detectedPills = pills)
+    /**
+     * Updates the list of detected pills in the UI state.
+     */
+    private fun updateDetectedPills(pills: List<DetectedPill>) {
+        _uiState.update { it.copy(detectedPills = pills) }
     }
 
-    fun imageProxyToBitmap(image: ImageProxy): Bitmap {
-        val yPlane = image.planes[0]
-        val uPlane = image.planes[1]
-        val vPlane = image.planes[2]
-
-        val ySize = yPlane.buffer.remaining()
-        val uSize = uPlane.buffer.remaining()
-        val vSize = vPlane.buffer.remaining()
-
-        val nv21 = ByteArray(ySize + uSize + vSize)
-        yPlane.buffer.get(nv21, 0, ySize)
-        vPlane.buffer.get(nv21, ySize, vSize)
-        uPlane.buffer.get(nv21, ySize + vSize, uSize)
-
-        val yuvImage = YuvImage(nv21, ImageFormat.NV21, image.width, image.height, null)
-        val out = ByteArrayOutputStream()
-        yuvImage.compressToJpeg(Rect(0, 0, image.width, image.height), 100, out)
-        return BitmapFactory.decodeByteArray(out.toByteArray(), 0, out.size())
+    /**
+     * Handles a captured camera frame ([ImageProxy]).
+     *
+     * Frames are processed only if the model is ready. Otherwise, the frame is discarded.
+     */
+    fun onFrameCaptured(image: ImageProxy) {
+        val currentState = _modelState.value
+        if (currentState is ModelState.Ready) {
+            viewModelScope.launch(Dispatchers.Default) {
+                try {
+                    currentState.analyzer.analyze(image)
+                } catch (e: Exception) {
+                    logger.e("Frame processing failed", e)
+                    image.close()
+                }
+            }
+        } else {
+            image.close()
+        }
     }
 
-    override fun onCleared() {
-        super.onCleared()
-        interpreter?.close()
-        interpreter = null
-        _modelState.value = ModelState.Idle
-        logger.i("Interpreter closed and resources released")
-    }
-
+    /**
+     * Loads a TFLite model from the assets folder into a [MappedByteBuffer].
+     */
     private fun loadModelFile(fileName: String): MappedByteBuffer {
         val afd = getApplication<Application>().assets.openFd(fileName)
         FileInputStream(afd.fileDescriptor).use { input ->
@@ -140,27 +189,66 @@ class PillScanningViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Cleans up interpreter and bitmap resources when ViewModel is cleared.
+     */
+    override fun onCleared() {
+        super.onCleared()
+        interpreter?.close()
+        interpreter = null
+        currentFrameBitmap?.recycle()
+        currentFrameBitmap = null
+        _modelState.value = ModelState.Idle
+        logger.i("Interpreter closed and resources released")
+    }
+
+    /**
+     * Handles user events from the scanning UI.
+     *
+     * - [AddBatchClicked]: Adds a new batch with current detected pills and the last thumbnail.
+     * - [RescanClicked]: Clears current detected pills for a fresh scan.
+     * - [PauseClicked]: Placeholder to stop camera flow temporarily.
+     * - [DoneClicked]: Placeholder to finalize and save results.
+     */
     fun onEvent(event: FixedCountPillScanningEvent) {
         when (event) {
             is FixedCountPillScanningEvent.AddBatchClicked -> {
-                logger.i("Add batch clicked")
-                _uiState.value = _uiState.value.copy(
-                    batchHistory = _uiState.value.batchHistory
-                )
+                val currentCount = _uiState.value.detectedPills.size
+                logger.i("Add batch clicked with count: $currentCount")
+
+                if (currentCount == 0) {
+                    logger.w("Skipping add batch because current count is zero.")
+                    return
+                }
+
+                _uiState.update { currentState ->
+                    val nextBatchNumber = currentState.batchHistory.size + 1
+                    // Create the new batch with the stored thumbnail
+                    val newBatch = Batch(
+                        count = currentCount,
+                        batchNumber = nextBatchNumber,
+                        thumbnail = currentFrameBitmap
+                    )
+
+                    currentState.copy(
+                        batchHistory = currentState.batchHistory + newBatch,
+                        detectedPills = emptyList()
+                    )
+                }
+                currentFrameBitmap = null
             }
             is FixedCountPillScanningEvent.RescanClicked -> {
                 logger.i("Rescan requested")
-                _uiState.value = _uiState.value.copy(detectedPills = emptyList())
+                _uiState.update { it.copy(detectedPills = emptyList()) }
             }
             is FixedCountPillScanningEvent.PauseClicked -> {
                 logger.i("Pause clicked")
-                // TODO: handle pause (e.g., stop camera flow temporarily)
+                // TODO: stop camera flow temporarily
             }
             is FixedCountPillScanningEvent.DoneClicked -> {
                 logger.i("Done clicked — finalize process")
-                // TODO: trigger save, navigation, etc.
+                // TODO: trigger save/navigation
             }
         }
     }
 }
-

@@ -14,6 +14,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.pillcountingnewmodels.feature.pillCountScan.domain.model.Batch
 
 /**
  * A custom Chip composable to display batch counts.
@@ -31,8 +32,7 @@ import androidx.compose.ui.unit.sp
  */
 @Composable
 fun Chip(
-    count: String,
-    batchNumber: Int,
+    batch: Batch,
     modifier: Modifier = Modifier,
 ) {
     Box(
@@ -51,7 +51,7 @@ fun Chip(
             contentAlignment = Alignment.Center
         ) {
             Text(
-                text = count,
+                text = batch.count.toString(),
                 color = MaterialTheme.colorScheme.secondary
             )
         }
@@ -65,7 +65,7 @@ fun Chip(
             contentAlignment = Alignment.Center
         ) {
             Text(
-                text = batchNumber.toString(),
+                text = batch.batchNumber.toString(),
                 color = Color.White,
                 fontSize = 12.sp
             )

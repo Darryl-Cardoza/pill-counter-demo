@@ -13,8 +13,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.pillcountingnewmodels.R
-import com.example.pillcountingnewmodels.core.utils.compose.BackButton
-import com.example.pillcountingnewmodels.core.utils.compose.MenuButton
 import com.example.pillcountingnewmodels.ui.theme.AppTheme
 
 /**
@@ -32,7 +30,7 @@ fun TopAppBar(navController: NavController) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 8.dp), // Optional vertical padding for spacing
+            .padding(vertical = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
@@ -43,7 +41,7 @@ fun TopAppBar(navController: NavController) {
 
             Spacer(modifier = Modifier.weight(1f))
 
-            // Title text (centered)
+            // Title text
             Text(
                 text = stringResource(R.string.pill_count_title).uppercase(),
                 fontSize = 16.sp,

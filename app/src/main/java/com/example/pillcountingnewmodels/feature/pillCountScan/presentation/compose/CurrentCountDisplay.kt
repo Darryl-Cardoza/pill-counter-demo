@@ -22,8 +22,8 @@ import com.example.pillcountingnewmodels.feature.pillCountScan.domain.model.Fixe
  * Displays the current scanned pill count along with an "ADD" button.
  *
  * Layout:
- * - Circular indicator for the current count.
- * - Button to increment/add the count.
+ * - Circular indicator for the current count from the camera analysis.
+ * - Button to add the current count to the batch history.
  *
  * @param uiState The current state of the scanning screen.
  * @param onAddClicked Lambda invoked when the "ADD" button is pressed.
@@ -39,8 +39,8 @@ fun CurrentCountDisplay(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceAround
     ) {
-        // Circular count indicator
-        CircularCountIndicator(count = uiState.currentScanCount)
+        // Circular count indicator reflects the live detected pill count.
+        CircularCountIndicator(count = uiState.detectedPills.size)
 
         FilledButton(
             text = stringResource(R.string.add).uppercase(),

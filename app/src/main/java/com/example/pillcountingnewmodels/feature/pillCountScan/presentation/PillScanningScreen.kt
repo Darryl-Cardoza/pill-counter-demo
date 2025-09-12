@@ -4,8 +4,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.systemBarsPadding
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -18,8 +16,6 @@ import com.example.pillcountingnewmodels.feature.pillCountScan.presentation.comp
 import com.example.pillcountingnewmodels.feature.pillCountScan.presentation.compose.InformationPanelSection
 import com.example.pillcountingnewmodels.feature.pillCountScan.presentation.viewmodel.PillScanningViewModel
 import com.example.pillcountingnewmodels.ui.theme.AppTheme
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 
 /**
  * The main composable for the Fixed Count Pill Scanning screen.
@@ -49,7 +45,14 @@ fun PillScanningScreen(
     ) {
         SplitResponsive(
             topOrLeft = {
-                Box(modifier = Modifier.fillMaxSize())
+                // Camera preview with overlays
+                CameraPreviewSection(
+                    pills = uiState.detectedPills,
+                    onFrame = { imageProxy ->
+                        viewModel.onFrameCaptured(imageProxy)
+                    },
+                    modifier = Modifier.fillMaxSize()
+                )
             },
             bottomOrRight = {
                 InformationPanelSection(
@@ -63,7 +66,10 @@ fun PillScanningScreen(
         )
 
         BackButton(navController)
-        MenuButton(navController,
-            modifier = Modifier.align(Alignment.TopEnd))
+        MenuButton(
+            navController,
+            modifier = Modifier.align(Alignment.TopEnd)
+        )
     }
 }
+

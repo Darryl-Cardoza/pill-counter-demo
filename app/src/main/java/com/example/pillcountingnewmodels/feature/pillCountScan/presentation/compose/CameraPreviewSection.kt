@@ -19,11 +19,21 @@ import com.example.pillcountingnewmodels.feature.pillCountScan.presentation.logi
 import kotlinx.coroutines.launch
 
 /**
- * Displays a live camera preview with overlays for detected pills.
+ * A composable that renders the live camera feed and overlays detected pill markers.
  *
- * @param pills List of detected pills with centroid coordinates (normalized [0f..1f]).
- * @param onFrame Callback with camera frames (to send to ViewModel for analysis).
- * @param modifier Modifier to style this composable.
+ * This composable uses [CameraHelper] to start the camera preview and stream frames,
+ * while also drawing visual overlays for detected pills on top of the camera preview.
+ *
+ * ## Responsibilities:
+ * - Start and manage the camera preview using [PreviewView].
+ * - Provide frames via [onFrame] callback for further processing (e.g., ML analysis).
+ * - Overlay detected pill centroids as red circles on the live preview.
+ *
+ * @param pills List of detected pills with normalized coordinates (`0f..1f` range).
+ *              Each pill's `(x, y)` is scaled to match the preview's size.
+ * @param onFrame Callback triggered for each camera frame (ImageProxy).
+ *                The consumer (e.g., ViewModel) should close the ImageProxy after use.
+ * @param modifier Optional [Modifier] for styling and layout.
  */
 @Composable
 fun CameraPreviewSection(
@@ -76,22 +86,6 @@ fun CameraPreviewSection(
                     radius = 10.dp.toPx(),
                     center = Offset(cx, cy)
                 )
-
-                // Draw pill number above the centroid
-                drawContext.canvas.nativeCanvas.apply {
-                    val textPaint = android.graphics.Paint().apply {
-                        color = android.graphics.Color.WHITE
-                        textSize = 40f
-                        isAntiAlias = true
-                        setShadowLayer(4f, 0f, 0f, android.graphics.Color.BLACK)
-                    }
-                    drawText(
-                        "#${index + 1}", // pill number
-                        cx,
-                        cy - 20.dp.toPx(), // little above the circle
-                        textPaint
-                    )
-                }
             }
         }
     }
