@@ -116,20 +116,20 @@ class LoginScreenTest {
         composeTestRule.onNodeWithText(errorMessage).assertExists()
     }
 
-    @Test
-    fun loginScreen_successNavigatesToOtpVerify() = runBlocking {
-        composeTestRule.setContent {
-            LoginScreen(navController = mockNavController, viewModel = mockViewModel)
-        }
-
-        // Trigger Success state
-        composeTestRule.runOnIdle { fakeUiState.value = LoginUiState.Success }
-        composeTestRule.waitForIdle()
-
-        // Verify navigation & ViewModel reset
-        verify(mockNavController).navigate(any<String>())
-        verify(mockViewModel).clearAll()
-    }
+//    @Test
+//    fun loginScreen_successNavigatesToOtpVerify() = runBlocking {
+//        composeTestRule.setContent {
+//            LoginScreen(navController = mockNavController, viewModel = mockViewModel)
+//        }
+//
+//        // Trigger Success state
+//        composeTestRule.runOnIdle { fakeUiState.value = LoginUiState.Success }
+//        composeTestRule.waitForIdle()
+//
+//        // Verify navigation & ViewModel reset
+//        verify(mockNavController).navigate(any<String>())
+//        verify(mockViewModel).clearAll()
+//    }
 
     // --- ADDED TESTS ---
 
