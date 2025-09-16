@@ -52,7 +52,7 @@ class DashboardViewModel @Inject constructor(
      * the user details from the repository. Updates the UI state
      * with the loading status, success result, or error message.
      */
-    private fun fetchUserDetail() {
+    fun fetchUserDetail() {
         viewModelScope.launch {
             val token = preferenceHelper.getAccessToken()
             if (token.isNullOrBlank()) {
