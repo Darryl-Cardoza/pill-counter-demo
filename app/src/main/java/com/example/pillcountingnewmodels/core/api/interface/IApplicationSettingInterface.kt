@@ -1,8 +1,14 @@
 package com.example.pillcountingnewmodels.core.network
 
-import com.example.pillcountingnewmodels.core.models.ApplicationSettingsResponse
+import com.example.pillcountingnewmodels.core.models.ApiResponse
+import com.example.pillcountingnewmodels.core.models.RefreshTokenRequest
+import com.example.pillcountingnewmodels.core.models.RefreshTokenResponse
+import com.example.pillcountingnewmodels.core.models.SettingsDataDto
 import com.example.pillcountingnewmodels.core.utils.URLConstant
+import retrofit2.http.Body
 import retrofit2.http.GET
+import retrofit2.http.Headers
+import retrofit2.http.POST
 
 /**
  * Defines the network endpoints for the application using Retrofit.
@@ -14,8 +20,15 @@ interface IApplicationSettingInterface {
      * Pass Authorization header dynamically from SharedPreferences.
      */
     @GET(URLConstant.MOBILE_SETTINGS)
-    suspend fun getApplicationSettings(
-//        @Header("Authorization") authHeader: String,
-//        @Header("accept") accept: String = URLConstant.CONTENT_TYPE,
-    ): ApplicationSettingsResponse
+    suspend fun getApplicationSettings(): ApiResponse<SettingsDataDto>
+
+    /**
+     * Refreshes access token using a valid refresh token.
+     */
+    @POST(URLConstant.REFRESH_TOKEN)
+    @Headers("Content-Type: ${URLConstant.CONTENT_TYPE}")
+    suspend fun refreshToken(
+        @Body request: RefreshTokenRequest
+    ): RefreshTokenResponse
+
 }

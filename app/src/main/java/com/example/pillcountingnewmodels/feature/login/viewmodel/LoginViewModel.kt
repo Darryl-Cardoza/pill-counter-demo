@@ -5,9 +5,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.pillcountingnewmodels.R
 import com.example.pillcountingnewmodels.core.utils.AppLogger
+import com.example.pillcountingnewmodels.core.utils.PreferenceHelper
 import com.example.pillcountingnewmodels.feature.login.data.LoginRepository
 import com.example.pillcountingnewmodels.feature.login.domain.CredentialsValidator
 import com.example.pillcountingnewmodels.feature.login.domain.model.LoginUiState
+import com.example.pillcountingnewmodels.feature.login.domain.model.LogoutUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -16,47 +18,51 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 /**
- * Manages the UI state and business logic for the Login screen.
+ * ViewModel responsible for handling the authentication logic for the login and logout process.
  *
- * This ViewModel is responsible for:
- * - Exposing a [State] of [LoginUiState] to the UI.
- * - Handling user actions, primarily the login attempt.
- * - Validating user input by delegating to a [CredentialsValidator].
- * - Communicating with the data layer ([LoginRepository]) to perform the login operation.
- * - Logging important events for debugging and monitoring.
+ * This ViewModel:
+ * - Validates user credentials.
+ * - Manages authentication API interactions via [LoginRepository].
+ * - Updates the UI using [LoginUiState] and [LogoutUiState] flows.
+ * - Handles persistent login flags through [PreferenceHelper].
  *
- * @property repository The data source for login operations.
- * @property validator The business logic for validating user credentials.
- * @property context The application context, used for resolving string resources.
+ * @param repository Provides access to login/logout backend operations.
+ * @param validator Performs email format validation before login.
+ * @param context Required to resolve error strings.
+ * @param preferenceHelper Utility to persist token and login state.
  */
 @HiltViewModel
 class LoginViewModel @Inject constructor(
     private val repository: LoginRepository,
     private val validator: CredentialsValidator,
-    @ApplicationContext private val context: Context
+    @ApplicationContext private val context: Context,
+    private val preferenceHelper: PreferenceHelper
 ) : ViewModel() {
 
-    // Initialize the logger for this specific class.
     private val logger = AppLogger.create<LoginViewModel>()
 
-    // A private, mutable StateFlow that holds the current UI state.
-    // This is the single source of truth for the Login screen's state.
+    // Mutable state backing for login UI state
     private val _uiState = MutableStateFlow<LoginUiState>(LoginUiState.Idle)
 
-    // A public, read-only version of the StateFlow that the UI can collect to observe state changes.
+    /** Exposed immutable state flow representing the login UI state. */
     val uiState = _uiState.asStateFlow()
 
+    // Mutable state backing for logout UI state
+    private val _logoutUiState = MutableStateFlow<LogoutUiState>(LogoutUiState.Idle)
+
+    /** Exposed immutable state flow representing the logout UI state. */
+    val logoutUiState = _logoutUiState.asStateFlow()
+
     /**
-     * Orchestrates the login process.
+     * Initiates a login attempt using the given email address.
      *
-     * This function first performs client-side validation on the provided credentials.
-     * If validation passes, it proceeds to call the repository to perform the login.
-     * The [uiState] is updated accordingly to reflect loading, success, or error states.
+     * - Validates the email locally.
+     * - If valid, sends the login request to the backend.
+     * - Emits [LoginUiState.Loading], then [Success] or [Error] depending on outcome.
      *
-     * @param email The email address entered by the user.
+     * @param email The user's email address to authenticate.
      */
     fun login(email: String) {
-        // --- Pre-computation Validation ---
         val validationResult = validator.validateEmail(email)
 
         if (!validationResult.isSuccess) {
@@ -67,23 +73,20 @@ class LoginViewModel @Inject constructor(
         }
 
         if (_uiState.value is LoginUiState.Loading) {
+            // Prevent multiple simultaneous login attempts
             return
         }
 
-        // --- Asynchronous Operation ---
         viewModelScope.launch {
             logger.i("Login attempt for user: $email")
             _uiState.value = LoginUiState.Loading
 
-            // Delegate the login call to the repository and handle the Result wrapper.
             repository.login(email)
-                .onSuccess { loginResponse ->
-                    // The API call was successful.
+                .onSuccess {
                     logger.i("Login successful for user: $email. Token received.")
                     _uiState.value = LoginUiState.Success
                 }
                 .onFailure { exception ->
-                    // The API call failed due to a network error, server error, or other exception.
                     logger.e("Login failed for user: $email", exception)
                     _uiState.value = LoginUiState.Error(
                         exception.message ?: context.getString(R.string.error_unknown)
@@ -93,18 +96,74 @@ class LoginViewModel @Inject constructor(
     }
 
     /**
-     * Resets the UI state back to [LoginUiState.Idle].
+     * Initiates a logout operation using the given refresh token.
      *
-     * This is typically called when the user starts interacting with the input fields again
-     * after an error has been displayed, allowing the error message to be cleared.
+     * - Sends a logout request to the backend.
+     * - Updates [logoutUiState] to reflect the progress and result.
+     *
+     * @param refreshToken The refresh token to invalidate on logout.
      */
-    fun resetState() {
+    fun logout(refreshToken: String) {
+        if (_logoutUiState.value is LogoutUiState.Loading) {
+            return // Avoid duplicate logout calls
+        }
+
+        viewModelScope.launch {
+            logger.i("Logout attempt with refresh token: $refreshToken")
+            _logoutUiState.value = LogoutUiState.Loading
+
+            repository.logout(refreshToken)
+                .onSuccess {
+                    logger.i("Logout successful")
+                    _logoutUiState.value = LogoutUiState.Success
+                }
+                .onFailure { exception ->
+                    logger.e("Logout failed", exception)
+                    _logoutUiState.value = LogoutUiState.Error(
+                        exception.message ?: context.getString(R.string.error_unknown)
+                    )
+                }
+        }
+    }
+
+    /**
+     * Resets the login UI state back to [LoginUiState.Idle].
+     * This is useful after a login failure or success to clean up the UI.
+     */
+    fun resetLoginState() {
         if (_uiState.value !is LoginUiState.Idle) {
             _uiState.value = LoginUiState.Idle
         }
     }
 
-    fun clearAll() {
+    /**
+     * Resets the logout UI state back to [LogoutUiState.Idle].
+     * Should be called after logout error/success messages are no longer needed.
+     */
+    fun resetLogoutState() {
+        if (_logoutUiState.value !is LogoutUiState.Idle) {
+            _logoutUiState.value = LogoutUiState.Idle
+        }
+    }
+
+    /**
+     * Clears both login and logout UI states to idle.
+     * Useful when navigating away from the login/logout flow.
+     */
+    fun clearAllStates() {
         _uiState.value = LoginUiState.Idle
+        _logoutUiState.value = LogoutUiState.Idle
+    }
+
+    /**
+     * Sets the persistent login flag in shared preferences.
+     *
+     * This flag determines whether the user should be automatically logged in
+     * when the app restarts.
+     *
+     * @param isLoggedIn `true` if the user is authenticated and session should be remembered.
+     */
+    fun setUserLoggedIn(isLoggedIn: Boolean) {
+        preferenceHelper.setUserLoggedIn(isLoggedIn)
     }
 }

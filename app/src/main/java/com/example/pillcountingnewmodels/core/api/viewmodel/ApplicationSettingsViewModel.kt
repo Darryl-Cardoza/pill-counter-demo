@@ -2,11 +2,11 @@ package com.example.pillcountingnewmodels.feature.settings.presentation.viewmode
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.pillcountingnewmodels.core.models.ApplicationSettingsResponse
+import com.example.pillcountingnewmodels.core.models.ApiResponse
 import com.example.pillcountingnewmodels.core.models.ApplicationSettingsUiState
 import com.example.pillcountingnewmodels.core.models.ColorSettings
+import com.example.pillcountingnewmodels.core.models.SettingsDataDto
 import com.example.pillcountingnewmodels.core.utils.AppLogger
-import com.example.pillcountingnewmodels.core.utils.toColor // Assuming the extension function is here
 import com.example.pillcountingnewmodels.feature.settings.data.model.ThemeColors
 import com.example.pillcountingnewmodels.feature.settings.domain.repository.IApplicationSettingsRepository
 import com.example.pillcountingnewmodels.feature.settings.domain.viewmodel.IApplicationSettingsViewModel
@@ -17,6 +17,19 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+/**
+ * ViewModel responsible for managing and exposing application settings to the UI layer.
+ *
+ * This ViewModel:
+ * - Fetches remote settings from a repository.
+ * - Applies fetched settings to the UI state.
+ * - Applies fallback settings in case of error.
+ * - Provides a read-only [uiState] for observing in the UI.
+ *
+ * This ViewModel is lifecycle-aware and scoped to the Hilt lifecycle via [@HiltViewModel].
+ *
+ * @property repository Interface to fetch remote settings.
+ */
 @HiltViewModel
 class ApplicationSettingsViewModel @Inject constructor(
     private val repository: IApplicationSettingsRepository
@@ -32,8 +45,11 @@ class ApplicationSettingsViewModel @Inject constructor(
     }
 
     /**
-     * Fetches application settings from the repository and updates the UI state accordingly.
-     * Handles both success and failure cases, applying a fallback on error.
+     * Initiates the process of fetching application settings.
+     *
+     * Handles both success and failure cases:
+     * - On success, settings are applied and stored.
+     * - On failure, fallback settings are applied and an error is logged.
      */
     override fun fetchApplicationSettings() {
         logger.i("Fetching application settings...")
@@ -56,77 +72,61 @@ class ApplicationSettingsViewModel @Inject constructor(
     }
 
     /**
-     * Applies and stores settings from a successful API response.
+     * Applies and updates the UI state with the settings retrieved from a successful API response.
+     *
+     * @param settings The API response containing application settings data.
      */
-    private fun applyAndStoreSettings(settings: ApplicationSettingsResponse) {
+    private fun applyAndStoreSettings(settings: ApiResponse<SettingsDataDto>) {
         logger.i("Successfully fetched and applied remote settings.")
+
         _uiState.update {
             it.copy(
-                colorSettings = settings.colors,
-                appLogoUrl = settings.appLogo
+                colorSettings = settings.data?.settings?.colors,
+                appLogoUrl = settings.data?.settings?.appLogo
             )
         }
-        // Here you would also save these settings to a local preferences service.
+
+        // TODO: Persist the settings locally if required (e.g., SharedPreferences or DataStore).
     }
 
     /**
-     * Applies and stores hardcoded fallback settings.
+     * Applies a hardcoded set of fallback color settings and updates the UI state.
+     *
+     * This is used in cases where fetching settings from the remote source fails.
      */
     private fun applyFallbackSettings() {
         logger.w("Applying hardcoded fallback settings.")
 
-        // Define fallback colors as hex strings
-        val primaryColorLight = "#01BBD3"
-        val secondaryColorLight = "#FD82B5"
-        val tertiaryColorLight = "#333333"
-        val primaryBackgroundLight = "#EDEEEE"
-        val secondaryBackgroundLight = "#FFFFFF"
-        val textColorLight = "#666666"
-        val inputBackgroundLight = "#FFFFFF"
-        val statusChipBackgroundOnPrimaryLight = "#FFFFFF"
-        val statusChipBackgroundOnSecondaryLight = "#F5F4F4"
-
-        val primaryColorDark = "#01BBD3"
-        val secondaryColorDark = "#FD82B5"
-        val tertiaryColorDark = "#FFFFFF"
-        val primaryBackgroundDark = "#333333"
-        val secondaryBackgroundDark = "#191919"
-        val textColorDark = "#EDEEEE"
-        val inputBackgroundDark = "#191919"
-        val statusChipBackgroundOnPrimaryDark = "#191919"
-        val statusChipBackgroundOnSecondaryDark = "#333333"
-
         val fallbackColors = ColorSettings(
             light = ThemeColors(
-                primary = primaryColorLight.toColor(),
-                secondary = secondaryColorLight.toColor(),
-                tertiary = tertiaryColorLight.toColor(),
-                primaryBackground = primaryBackgroundLight.toColor(),
-                secondaryBackground = secondaryBackgroundLight.toColor(),
-                textColor = textColorLight.toColor(),
-                inputBackground = inputBackgroundLight.toColor(),
-                statusChipBackgroundOnPrimary = statusChipBackgroundOnPrimaryLight.toColor(),
-                statusChipBackgroundOnSecondary = statusChipBackgroundOnSecondaryLight.toColor()
+                primary = "#01BBD3",
+                secondary = "#FD82B5",
+                tertiary = "#333333",
+                primaryBackground = "#EDEEEE",
+                secondaryBackground = "#FFFFFF",
+                textColor = "#666666",
+                inputBackground = "#FFFFFF",
+                statusChipBackgroundOnPrimary = "#FFFFFF",
+                statusChipBackgroundOnSecondary = "#F5F4F4"
             ),
             dark = ThemeColors(
-                primary = primaryColorDark.toColor(),
-                secondary = secondaryColorDark.toColor(),
-                tertiary = tertiaryColorDark.toColor(),
-                primaryBackground = primaryBackgroundDark.toColor(),
-                secondaryBackground = secondaryBackgroundDark.toColor(),
-                textColor = textColorDark.toColor(),
-                inputBackground = inputBackgroundDark.toColor(),
-                statusChipBackgroundOnPrimary = statusChipBackgroundOnPrimaryDark.toColor(),
-                statusChipBackgroundOnSecondary = statusChipBackgroundOnSecondaryDark.toColor()
+                primary = "#01BBD3",
+                secondary = "#FD82B5",
+                tertiary = "#FFFFFF",
+                primaryBackground = "#333333",
+                secondaryBackground = "#191919",
+                textColor = "#EDEEEE",
+                inputBackground = "#191919",
+                statusChipBackgroundOnPrimary = "#191919",
+                statusChipBackgroundOnSecondary = "#333333"
             )
         )
 
         _uiState.update {
             it.copy(
                 colorSettings = fallbackColors,
-                appLogoUrl = "default_logo_placeholder" // A local drawable name
+                appLogoUrl = "default_logo_placeholder"
             )
         }
-        // Also save fallback to preferences.
     }
 }

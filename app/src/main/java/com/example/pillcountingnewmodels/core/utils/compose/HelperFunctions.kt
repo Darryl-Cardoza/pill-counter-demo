@@ -1,5 +1,8 @@
 package com.example.pillcountingnewmodels.core.utils.compose
 
+import com.example.pillcountingnewmodels.core.utils.PreferenceHelper
+import com.example.pillcountingnewmodels.navigation.AUTH_GRAPH_ROUTE
+
 object HelperFunctions {
 
     /**
@@ -49,6 +52,12 @@ object HelperFunctions {
     }
 
 
-
+    fun getStartDestination(preferenceHelper: PreferenceHelper): String {
+        return if (preferenceHelper.isUserLoggedIn()) {
+            Screen.Dashboard.route
+        } else {
+            AUTH_GRAPH_ROUTE
+        }
+    }
 
 }
