@@ -18,7 +18,6 @@ import javax.inject.Inject
  * @property ioDispatcher Coroutine dispatcher for offloading I/O operations.
  */
 class LoginRepository @Inject constructor(
-    private val userDao: UserDao,
     private val loginApi: ILoginApi,
     private val ioDispatcher: CoroutineDispatcher
 ) : ILoginRepository {
@@ -37,10 +36,6 @@ class LoginRepository @Inject constructor(
 
                 // Call remote API (headers are injected globally via Interceptor)
                 val response = loginApi.login(request)
-
-                // Optionally persist user data locally (e.g., caching user info or token)
-                // userDao.cacheUser(response.userId, response.token)
-
                 Result.success(response)
             } catch (e: Exception) {
                 Result.failure(e)

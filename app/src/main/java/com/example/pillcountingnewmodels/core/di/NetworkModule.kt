@@ -190,12 +190,10 @@ object NetworkModule {
     @Provides
     @Singleton
     fun provideLoginRepository(
-        userDao: UserDao,
         loginApi: ILoginApi,
         ioDispatcher: CoroutineDispatcher
     ): ILoginRepository {
         return LoginRepository(
-            userDao = userDao,
             loginApi = loginApi,
             ioDispatcher = ioDispatcher
         )
