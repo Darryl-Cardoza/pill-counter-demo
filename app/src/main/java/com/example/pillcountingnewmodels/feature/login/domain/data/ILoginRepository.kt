@@ -3,17 +3,23 @@ package com.example.pillcountingnewmodels.feature.login.domain.data
 import com.example.pillcountingnewmodels.feature.login.domain.model.LoginResponse
 
 /**
- * Defines the contract for authentication-related data operations.
+ * Contract for authentication-related data operations.
  *
- * This interface abstracts the data source, allowing for different implementations
- * (e.g., a fake repository for testing) and promoting a loosely coupled architecture.
+ * This interface abstracts the data source, allowing multiple implementations
+ * (e.g., a real repository, fake/test repository, or mock for unit testing).
+ * It helps maintain a clean architecture and promotes testability.
  */
 interface ILoginRepository {
+
     /**
      * Attempts to authenticate a user with the given credentials via the remote API.
-     * @param username The user's email address.
-     * @param password The user's password.
-     * @return A [Result] wrapper containing the [LoginResponse] on success or an exception on failure.
+     *
+     * @param username The user's email/username.
+     * @return A [Result] wrapping either:
+     *   - [LoginResponse] on success, or
+     *   - an exception on failure.
      */
-    suspend fun login(username: String, password: String): Result<LoginResponse>
+    suspend fun login(
+        username: String,
+    ): Result<LoginResponse>
 }

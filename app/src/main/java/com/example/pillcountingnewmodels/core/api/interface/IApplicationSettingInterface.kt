@@ -1,6 +1,7 @@
 package com.example.pillcountingnewmodels.core.network
 
 import com.example.pillcountingnewmodels.core.models.ApplicationSettingsResponse
+import com.example.pillcountingnewmodels.core.utils.URLConstant
 import retrofit2.http.GET
 
 /**
@@ -10,8 +11,11 @@ interface IApplicationSettingInterface {
 
     /**
      * Fetches the application settings from the remote server.
-     * This is a suspend function, designed to be called from a coroutine.
+     * Pass Authorization header dynamically from SharedPreferences.
      */
-    @GET("v1/settings") //TODO(Replace with actual API endpoint path)
-    suspend fun getApplicationSettings(): ApplicationSettingsResponse
+    @GET(URLConstant.MOBILE_SETTINGS)
+    suspend fun getApplicationSettings(
+//        @Header("Authorization") authHeader: String,
+//        @Header("accept") accept: String = URLConstant.CONTENT_TYPE,
+    ): ApplicationSettingsResponse
 }

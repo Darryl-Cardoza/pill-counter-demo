@@ -10,11 +10,12 @@ import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 /**
- * The default implementation of [LoginRepository] that interacts with both a remote API and a local Room database.
+ * Default implementation of [ILoginRepository] that interacts with both
+ * a remote API and a local Room database.
  *
- * @property userDao The Data Access Object for interacting with the user table.
- * @property loginApi The Retrofit service for making network authentication requests.
- * @property ioDispatcher The coroutine dispatcher for running all operations on a background thread.
+ * @property userDao DAO for user-related local persistence.
+ * @property loginApi Retrofit service for network authentication.
+ * @property ioDispatcher Coroutine dispatcher for offloading I/O operations.
  */
 class LoginRepository @Inject constructor(
     private val userDao: UserDao,
@@ -23,26 +24,26 @@ class LoginRepository @Inject constructor(
 ) : ILoginRepository {
 
     /**
-     * Executes the login request against the remote API on an I/O-optimized thread.
-     * Upon success, it could also perform local database operations, like caching user data.
+     * Authenticates the user against the remote API.
+     *
+     * @param username The email/username used for login.
+     * @return A [Result] wrapping either a [LoginResponse] or an exception on failure.
      */
-    override suspend fun login(username: String, password: String): Result<LoginResponse> =
+    override suspend fun login(username: String): Result<LoginResponse> =
         withContext(ioDispatcher) {
             try {
-                // Create the request body and call the remote API.
-                val request = LoginRequest(email = username, password = password)
+                // Build request body
+                val request = LoginRequest(email = username)
+
+                // Call remote API (headers are injected globally via Interceptor)
                 val response = loginApi.login(request)
 
-                // You could add logic here to save the user's token or profile data to the local database.
-                // For example: userDao.cacheUser(response.userId, ...)
+                // Optionally persist user data locally (e.g., caching user info or token)
+                // userDao.cacheUser(response.userId, response.token)
 
                 Result.success(response)
             } catch (e: Exception) {
-                // Gracefully handle potential network or API errors (e.g., HttpException, IOException).
                 Result.failure(e)
             }
         }
-
-
 }
-

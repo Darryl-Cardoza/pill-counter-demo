@@ -3,6 +3,7 @@ plugins {
     id("org.jetbrains.kotlin.android") version "1.9.10"
     id("com.google.dagger.hilt.android") version "2.51"
     id("kotlin-kapt")
+    id("org.jetbrains.kotlin.plugin.serialization")
 }
 
 android {
@@ -19,6 +20,8 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
         resValue("string", "app_version_name", versionName?:"")
+        buildConfigField("String", "SERVER_KEY", "\"d1ff4797acb7147205bb249cce918f23a4f8e54a8d56488d79e83abcdf1b24f6f1ccc9af5dea3c1a1b5e2b6aa247ff55ac8e12f165974f8cfce41328f7ea447e\"")
+
     }
 
     buildTypes {
@@ -157,5 +160,9 @@ dependencies {
 
     implementation("androidx.compose.material:material:1.7.0") // for SwipeToDismiss
     implementation("androidx.compose.material3:material3:1.3.0") // for Material3
+
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
+
+    implementation("com.jakewharton.retrofit:retrofit2-kotlinx-serialization-converter:1.0.0")
 
 }

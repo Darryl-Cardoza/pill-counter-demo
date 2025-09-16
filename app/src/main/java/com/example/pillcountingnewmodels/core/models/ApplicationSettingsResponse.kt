@@ -1,11 +1,11 @@
 package com.example.pillcountingnewmodels.core.models
 
-import androidx.compose.runtime.Immutable
+import com.squareup.moshi.JsonClass
 
 /**
  * Represents the entire settings response from the API.
  */
-@Immutable
+@JsonClass(generateAdapter = true)
 data class ApplicationSettingsResponse(
     val colors: ColorSettings,
     val appLogo: String,

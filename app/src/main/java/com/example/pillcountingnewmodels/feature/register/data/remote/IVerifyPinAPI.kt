@@ -1,5 +1,6 @@
 package com.example.pillcountingnewmodels.feature.register.data.remote
 
+import com.example.pillcountingnewmodels.core.utils.URLConstant.VERIFY_OTP
 import com.example.pillcountingnewmodels.feature.register.domain.model.VerifyPinRequest
 import com.example.pillcountingnewmodels.feature.register.domain.model.VerifyPinResponse
 import retrofit2.http.Body
@@ -14,6 +15,6 @@ interface IVerifyPinAPI {
      * @param request A data object containing the user's email and password.
      * @return A [VerifyPinRequest] containing a success message.
      */
-    @POST("v1/verify") // TODO(Replace with your actual register endpoint)
+    @POST(VERIFY_OTP)
     suspend fun verifyPin(@Body request: VerifyPinRequest): VerifyPinResponse
 }

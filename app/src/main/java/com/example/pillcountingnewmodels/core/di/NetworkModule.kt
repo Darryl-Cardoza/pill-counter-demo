@@ -4,6 +4,11 @@ import android.content.Context
 import com.chuckerteam.chucker.api.ChuckerInterceptor
 import com.example.pillcountingnewmodels.core.network.IApplicationSettingInterface
 import com.example.pillcountingnewmodels.core.room.dao.UserDao
+import com.example.pillcountingnewmodels.core.utils.ColorAdapter
+import com.example.pillcountingnewmodels.core.utils.PreferenceHelper
+import com.example.pillcountingnewmodels.feature.barcodeScan.data.remote.IDrugAPI
+import com.example.pillcountingnewmodels.feature.barcodeScan.data.repository.DrugRepository
+import com.example.pillcountingnewmodels.feature.barcodeScan.domain.repository.IDrugRepository
 import com.example.pillcountingnewmodels.feature.forgotPassword.data.ForgotPasswordRepository
 import com.example.pillcountingnewmodels.feature.forgotPassword.data.remote.IForgotPasswordAPI
 import com.example.pillcountingnewmodels.feature.forgotPassword.domain.data.IForgotPasswordRepository
@@ -11,9 +16,6 @@ import com.example.pillcountingnewmodels.feature.login.data.LoginRepository
 import com.example.pillcountingnewmodels.feature.login.data.remote.ILoginApi
 import com.example.pillcountingnewmodels.feature.login.domain.data.ILoginRepository
 import com.example.pillcountingnewmodels.feature.otp.data.VerifyPinRepository
-import com.example.pillcountingnewmodels.feature.barcodeScan.data.remote.IDrugAPI
-import com.example.pillcountingnewmodels.feature.barcodeScan.data.repository.DrugRepository
-import com.example.pillcountingnewmodels.feature.barcodeScan.domain.repository.IDrugRepository
 import com.example.pillcountingnewmodels.feature.register.data.RegisterRepository
 import com.example.pillcountingnewmodels.feature.register.data.remote.IRegisterAPI
 import com.example.pillcountingnewmodels.feature.register.data.remote.IVerifyPinAPI
@@ -48,7 +50,7 @@ import javax.inject.Singleton
 object NetworkModule {
 
     // TODO: Replace with the actual base URL of your production API.
-    private const val MAIN_API_BASE_URL = "https://your.api.com/"
+    private const val MAIN_API_BASE_URL = "http://192.168.0.79:8000/"
 
     /** The base URL for the openFDA API. */
     const val DRUG_API_BASE_URL = "https://api.fda.gov/"
@@ -93,6 +95,7 @@ object NetworkModule {
     @Singleton
     fun provideMoshi(): Moshi {
         return Moshi.Builder()
+            .add(ColorAdapter())
             .add(KotlinJsonAdapterFactory())
             .build()
     }
@@ -264,9 +267,10 @@ object NetworkModule {
     @Provides
     @Singleton
     fun provideApplicationSettingsRepository(
-        apiService: IApplicationSettingInterface
+        apiService: IApplicationSettingInterface,
+        preferenceHelper: PreferenceHelper
     ): IApplicationSettingsRepository {
-        return ApplicationSettingsRepository(apiService)
+        return ApplicationSettingsRepository(apiService = apiService, prefs = preferenceHelper)
     }
 }
 

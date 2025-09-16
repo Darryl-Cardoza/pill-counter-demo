@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.pillcountingnewmodels.R
 import com.example.pillcountingnewmodels.core.utils.AppLogger
+import com.example.pillcountingnewmodels.core.utils.PreferenceHelper
 import com.example.pillcountingnewmodels.feature.otp.data.VerifyPinRepository
 import com.example.pillcountingnewmodels.feature.register.domain.model.VerifyPinUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -30,7 +31,8 @@ import javax.inject.Inject
 @HiltViewModel
 class VerifyPinViewModel @Inject constructor(
     private val repository: VerifyPinRepository,
-    @ApplicationContext private val context: Context
+    @ApplicationContext private val context: Context,
+    private val prefs: PreferenceHelper
 ) : ViewModel() {
 
     // Initialize the logger for this specific class.
@@ -71,8 +73,16 @@ class VerifyPinViewModel @Inject constructor(
 
             // Delegate the verification call to the repository and handle the Result wrapper.
             repository.verifyPin(email, otp)
-                .onSuccess {
+                .onSuccess { response ->
                     logger.i("OTP verification successful for user: $email.")
+
+                    response.accessToken?.let { access ->
+                        response.refreshToken?.let { refresh ->
+                            prefs.saveTokens(access, refresh)
+                            logger.i("Tokens saved in SharedPreferences")
+                        }
+                    }
+
                     _uiState.value = VerifyPinUiState.Success
                 }
                 .onFailure { exception ->
@@ -94,5 +104,10 @@ class VerifyPinViewModel @Inject constructor(
             _uiState.value = VerifyPinUiState.Idle
         }
     }
+
+    fun clearAfterSuccess() {
+        _uiState.value = VerifyPinUiState.Idle
+    }
+
 }
 

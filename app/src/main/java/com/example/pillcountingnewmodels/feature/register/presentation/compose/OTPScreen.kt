@@ -36,8 +36,10 @@ import com.example.pillcountingnewmodels.R
 import com.example.pillcountingnewmodels.core.utils.compose.ActionButtonPrimary
 import com.example.pillcountingnewmodels.core.utils.compose.AppInfo
 import com.example.pillcountingnewmodels.core.utils.compose.BackButton
+import com.example.pillcountingnewmodels.core.utils.compose.HelperFunctions.maskEmail
 import com.example.pillcountingnewmodels.core.utils.compose.OTPTextField
 import com.example.pillcountingnewmodels.core.utils.compose.SplitResponsive
+import com.example.pillcountingnewmodels.feature.login.viewmodel.LoginViewModel
 import com.example.pillcountingnewmodels.feature.otp.viewmodel.VerifyPinViewModel
 import com.example.pillcountingnewmodels.feature.register.domain.model.VerifyPinUiState
 import com.example.pillcountingnewmodels.ui.theme.AppTheme
@@ -47,7 +49,8 @@ import kotlinx.coroutines.delay
 fun OTPScreen(
     navController: NavController,
     userEmail: String,
-    viewModel: VerifyPinViewModel = hiltViewModel()
+    viewModel: VerifyPinViewModel = hiltViewModel(),
+    loginViewModel: LoginViewModel = hiltViewModel()
 ) {
     var otp by remember { mutableStateOf("") }
     val verifyPinUiState by viewModel.uiState.collectAsState()
@@ -56,6 +59,8 @@ fun OTPScreen(
     val timer = 60
     var secRemaining by remember { mutableIntStateOf(timer) }
     var isTimerRunning by remember { mutableStateOf(true) }
+
+    val maskedEmail = remember(userEmail) { maskEmail(userEmail) }
 
     LaunchedEffect(isTimerRunning) {
         while (isTimerRunning && secRemaining > 0) {
@@ -89,7 +94,7 @@ fun OTPScreen(
                 ) {
 
                     Text(
-                        text = "${stringResource(R.string.code_sent_to)} \n$userEmail",
+                        text = "${stringResource(R.string.code_sent_to)} \n$maskedEmail",
                         color = AppTheme.extendedColors.textColor,
                         style = MaterialTheme.typography.bodyMedium,
                         textAlign = TextAlign.Center,
@@ -120,7 +125,7 @@ fun OTPScreen(
                         style = MaterialTheme.typography.bodyMedium,
                         modifier = if (!isTimerRunning) {
                             Modifier.clickable {
-                                // TODO: Add logic to call a 'resend OTP' API endpoint
+                                loginViewModel.login(userEmail)
                                 secRemaining = timer
                                 isTimerRunning = true
                             }
@@ -136,6 +141,7 @@ fun OTPScreen(
                         is VerifyPinUiState.Idle -> {
                             Spacer(Modifier.height(20.dp))
                         }
+
                         is VerifyPinUiState.Error -> {
                             Text(
                                 text = state.message,
@@ -144,16 +150,21 @@ fun OTPScreen(
                                 modifier = Modifier.padding(bottom = 16.dp)
                             )
                         }
+
                         is VerifyPinUiState.Loading -> {
                             CircularProgressIndicator(modifier = Modifier.padding(bottom = 16.dp))
                         }
+
                         is VerifyPinUiState.Success -> {
                             LaunchedEffect(Unit) {
-                                // Navigate to Dashboard on successful verification
+                                otp = ""
+                                secRemaining = timer
+                                isTimerRunning = true
+
                                 navController.navigate(Screen.Dashboard.route) {
-                                    // Clear the entire back stack up to the dashboard
                                     popUpTo(Screen.Dashboard.route) { inclusive = true }
                                 }
+                                viewModel.clearAfterSuccess()
                             }
                         }
                     }
@@ -162,12 +173,8 @@ fun OTPScreen(
                     ActionButtonPrimary(
                         text = stringResource(R.string.verify).uppercase(),
                         onClick = {
-                            /*if (verifyPinUiState !is VerifyPinUiState.Loading) {
+                            if (verifyPinUiState !is VerifyPinUiState.Loading) {
                                 viewModel.verifyPin(userEmail, otp)
-                            }*/
-                            navController.navigate(Screen.Dashboard.route) {
-                                // Clear the entire back stack up to the dashboard
-                                popUpTo(Screen.Dashboard.route) { inclusive = true }
                             }
                         },
                         modifier = Modifier.align(Alignment.CenterHorizontally)

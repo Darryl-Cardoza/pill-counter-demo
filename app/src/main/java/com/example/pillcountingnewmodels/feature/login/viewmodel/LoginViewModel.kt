@@ -54,12 +54,10 @@ class LoginViewModel @Inject constructor(
      * The [uiState] is updated accordingly to reflect loading, success, or error states.
      *
      * @param email The email address entered by the user.
-     * @param password The password entered by the user.
      */
-    fun login(email: String, password: String) {
+    fun login(email: String) {
         // --- Pre-computation Validation ---
-        val validationResult = validator.validateEmail(email).takeIf { it.isSuccess }
-            ?: validator.validatePassword(password)
+        val validationResult = validator.validateEmail(email)
 
         if (!validationResult.isSuccess) {
             val errorMessage = validationResult.errorMessageResId?.let { context.getString(it) }
@@ -78,10 +76,9 @@ class LoginViewModel @Inject constructor(
             _uiState.value = LoginUiState.Loading
 
             // Delegate the login call to the repository and handle the Result wrapper.
-            repository.login(email, password)
+            repository.login(email)
                 .onSuccess { loginResponse ->
                     // The API call was successful.
-                    // The loginResponse object (e.g., loginResponse.token) is available here if needed.
                     logger.i("Login successful for user: $email. Token received.")
                     _uiState.value = LoginUiState.Success
                 }
@@ -106,5 +103,8 @@ class LoginViewModel @Inject constructor(
             _uiState.value = LoginUiState.Idle
         }
     }
-}
 
+    fun clearAll() {
+        _uiState.value = LoginUiState.Idle
+    }
+}
