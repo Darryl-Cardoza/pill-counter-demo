@@ -78,7 +78,7 @@ class VerifyPinViewModel @Inject constructor(
 
                     response.accessToken?.let { access ->
                         response.refreshToken?.let { refresh ->
-                            prefs.saveTokens(access, refresh)
+                            prefs.saveTokens(accessToken = access, refreshToken = refresh)
                             logger.i("Tokens saved in SharedPreferences")
                         }
                     }

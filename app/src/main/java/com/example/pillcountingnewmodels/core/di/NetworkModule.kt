@@ -9,6 +9,9 @@ import com.example.pillcountingnewmodels.core.utils.PreferenceHelper
 import com.example.pillcountingnewmodels.feature.barcodeScan.data.remote.IDrugAPI
 import com.example.pillcountingnewmodels.feature.barcodeScan.data.repository.DrugRepository
 import com.example.pillcountingnewmodels.feature.barcodeScan.domain.repository.IDrugRepository
+import com.example.pillcountingnewmodels.feature.dashboard.data.UserDetailRepository
+import com.example.pillcountingnewmodels.feature.dashboard.data.remote.IUserDetailAPI
+import com.example.pillcountingnewmodels.feature.dashboard.domain.data.IUserDetailRepository
 import com.example.pillcountingnewmodels.feature.forgotPassword.data.ForgotPasswordRepository
 import com.example.pillcountingnewmodels.feature.forgotPassword.data.remote.IForgotPasswordAPI
 import com.example.pillcountingnewmodels.feature.forgotPassword.domain.data.IForgotPasswordRepository
@@ -50,7 +53,8 @@ import javax.inject.Singleton
 object NetworkModule {
 
     // TODO: Replace with the actual base URL of your production API.
-    private const val MAIN_API_BASE_URL = "http://192.168.0.79:8000/"
+//    private const val MAIN_API_BASE_URL = "http://192.168.0.79:8000/"
+    private const val MAIN_API_BASE_URL = "http://192.168.0.23:8000/"
 
     /** The base URL for the openFDA API. */
     const val DRUG_API_BASE_URL = "https://api.fda.gov/"
@@ -176,6 +180,15 @@ object NetworkModule {
     }
 
     /**
+     * Creates and provides an implementation of the [IUserDetailAPI] service for getting the user details.
+     */
+    @Provides
+    @Singleton
+    fun provideUserDetailsApi(@MainApi retrofit: Retrofit): IUserDetailAPI {
+        return retrofit.create(IUserDetailAPI::class.java)
+    }
+
+    /**
      * Creates and provides an implementation of the [IDrugAPI] service for verifying the user registration.
      */
     @Provides
@@ -249,6 +262,25 @@ object NetworkModule {
     }
 
     /**
+     * Provides the concrete implementation of the [IForgotPasswordRepository].
+     */
+    @Provides
+    @Singleton
+    fun provideUserDetailRepository(
+        api: IUserDetailAPI,
+        applicationSettingApi: IApplicationSettingInterface,
+        preferenceHelper: PreferenceHelper,
+        ioDispatcher: CoroutineDispatcher
+    ): IUserDetailRepository {
+        return UserDetailRepository(
+            api = api,
+            applicationSettingApi = applicationSettingApi,
+            preferenceHelper = preferenceHelper,
+            ioDispatcher = ioDispatcher
+        )
+    }
+
+    /**
      * Provides the concrete implementation of the [IDrugRepository].
      */
     @Provides
@@ -270,7 +302,10 @@ object NetworkModule {
         apiService: IApplicationSettingInterface,
         preferenceHelper: PreferenceHelper
     ): IApplicationSettingsRepository {
-        return ApplicationSettingsRepository(apiService = apiService, prefs = preferenceHelper)
+        return ApplicationSettingsRepository(
+            apiService = apiService,
+            preferenceHelper = preferenceHelper
+        )
     }
 }
 

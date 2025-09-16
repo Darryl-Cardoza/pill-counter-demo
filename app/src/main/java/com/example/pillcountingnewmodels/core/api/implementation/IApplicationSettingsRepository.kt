@@ -1,6 +1,7 @@
 package com.example.pillcountingnewmodels.feature.settings.domain.repository
 
-import com.example.pillcountingnewmodels.core.models.ApplicationSettingsResponse
+import com.example.pillcountingnewmodels.core.models.ApiResponse
+import com.example.pillcountingnewmodels.core.models.SettingsDataDto
 
 /**
  * Defines the contract for the Application Settings repository.
@@ -12,9 +13,9 @@ interface IApplicationSettingsRepository {
     /**
      * Retrieves the application settings.
      *
-     * @return An [ApplicationSettingsResponse] object containing the settings.
+     * @return An [SettingsDataDto] object containing the settings.
      * @throws Exception if the data fetching fails (e.g., network error, parsing error).
      */
-    suspend fun getApplicationSettings(): ApplicationSettingsResponse
+    suspend fun getApplicationSettings(): ApiResponse<SettingsDataDto>
 }
 

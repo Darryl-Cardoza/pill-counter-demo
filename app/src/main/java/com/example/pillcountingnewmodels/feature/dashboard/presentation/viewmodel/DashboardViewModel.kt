@@ -1,53 +1,93 @@
 package com.example.pillcountingnewmodels.feature.dashboard.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.example.pillcountingnewmodels.core.utils.PreferenceHelper
+import com.example.pillcountingnewmodels.feature.dashboard.domain.data.IUserDetailRepository
 import com.example.pillcountingnewmodels.feature.dashboard.domain.model.DashboardUiState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 /**
- * ViewModel responsible for managing and exposing the state of the Dashboard screen.
+ * ViewModel responsible for managing the state of the Dashboard screen,
+ * including fetching user details and dashboard metrics.
  *
- * Responsibilities:
- * - Holds the current [DashboardUiState].
- * - Fetches and updates dashboard metrics (completed/partial counts).
- * - Exposes immutable state to the UI layer via [uiState].
- *
- * Note:
- * In a production environment, data would typically be fetched from a repository
- * (network, database, or a combination). Currently, it uses mock values.
+ * @property userDetailRepository Repository to fetch user details.
+ * @property preferenceHelper Helper to retrieve stored access tokens.
  */
-class DashboardViewModel : ViewModel() {
+class DashboardViewModel @Inject constructor(
+    private val userDetailRepository: IUserDetailRepository,
+    private val preferenceHelper: PreferenceHelper
+) : ViewModel() {
 
-    // Backing state for the Dashboard screen
     private val _uiState = MutableStateFlow(DashboardUiState())
-
-    /**
-     * Publicly exposed immutable state for UI consumption.
-     * UI layers should collect this StateFlow to render updates reactively.
-     */
     val uiState = _uiState.asStateFlow()
 
     init {
-        // Initialize dashboard data when ViewModel is created
         loadDashboardData()
+        fetchUserDetail()
     }
 
     /**
-     * Loads dashboard data.
+     * Loads mock dashboard data into the UI state.
      *
-     * TODO:
-     * Replace with repository calls or use cases when integrating with real data sources.
+     * TODO: Replace with real data fetch from repository or use case.
      */
     private fun loadDashboardData() {
-        // Mocked data (for now). Replace with actual repository call.
         _uiState.update {
             it.copy(
-                completedFixedCount = "12",
-                partialFixedCount = "3",
-                completedRegularCount = "45",
-                partialRegularCount = "8"
+                completedFixedCount = "0",
+                partialFixedCount = "0",
+                completedRegularCount = "0",
+                partialRegularCount = "0"
+            )
+        }
+    }
+
+    /**
+     * Retrieves the access token from preferences and requests
+     * the user details from the repository. Updates the UI state
+     * with the loading status, success result, or error message.
+     */
+    private fun fetchUserDetail() {
+        viewModelScope.launch {
+            val token = preferenceHelper.getAccessToken()
+            if (token.isNullOrBlank()) {
+                _uiState.update {
+                    it.copy(
+                        isLoadingUserDetail = false,
+                        userDetailError = "Access token not found"
+                    )
+                }
+                return@launch
+            }
+
+            _uiState.update { it.copy(isLoadingUserDetail = true, userDetailError = null) }
+
+            val result = userDetailRepository.getUserDetail(token)
+
+            result.fold(
+                onSuccess = { userDetail ->
+                    _uiState.update {
+                        it.copy(
+                            userDetail = userDetail,
+                            isLoadingUserDetail = false,
+                            userDetailError = null
+                        )
+                    }
+                },
+                onFailure = { error ->
+                    _uiState.update {
+                        it.copy(
+                            userDetail = null,
+                            isLoadingUserDetail = false,
+                            userDetailError = error.message ?: "Unknown error occurred"
+                        )
+                    }
+                }
             )
         }
     }

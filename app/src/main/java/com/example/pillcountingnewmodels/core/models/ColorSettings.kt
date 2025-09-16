@@ -1,13 +1,20 @@
 package com.example.pillcountingnewmodels.core.models
 
 import com.example.pillcountingnewmodels.feature.settings.data.model.ThemeColors
+import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
 
 /**
- * Contains the theme colors for both light and dark modes.
+ * Represents the complete color theme configuration for both light and dark modes.
+ *
+ * This model is typically received from a remote API and used to dynamically
+ * theme the application UI based on user preference or system settings.
+ *
+ * @property light The set of colors used in light mode.
+ * @property dark The set of colors used in dark mode.
  */
 @JsonClass(generateAdapter = true)
 data class ColorSettings(
-    val light: ThemeColors,
-    val dark: ThemeColors
+    @Json(name = "light") val light: ThemeColors,
+    @Json(name = "dark") val dark: ThemeColors
 )

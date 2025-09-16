@@ -3,10 +3,14 @@ package com.example.pillcountingnewmodels.core.models
 import androidx.annotation.StringRes
 
 /**
- * Represents the outcome of a validation check.
+ * Represents the result of a validation operation, such as form input or user interaction checks.
  *
- * @property isSuccess True if validation passed, false otherwise.
- * @property errorMessageResId The string resource ID for the error message if validation failed.
+ * This model is typically used to encapsulate the success or failure of a validation check,
+ * along with an optional error message for display in the UI.
+ *
+ * @property isSuccess Indicates whether the validation was successful.
+ * @property errorMessageResId Optional string resource ID pointing to the validation error message.
+ * Should be provided if [isSuccess] is false. Can be used with context.getString().
  */
 data class ValidationResult(
     val isSuccess: Boolean,
