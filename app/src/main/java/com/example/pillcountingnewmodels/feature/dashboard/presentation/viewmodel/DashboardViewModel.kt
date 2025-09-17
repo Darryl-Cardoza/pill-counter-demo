@@ -63,7 +63,7 @@ class DashboardViewModel @Inject constructor(
     }
 
 
-    private fun fetchUserDetail() {
+    fun fetchUserDetail() {
         viewModelScope.launch(Dispatchers.IO) {
             logger.d("Starting fetchUserDetail()")
 

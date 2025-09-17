@@ -5,7 +5,11 @@ import app.cash.turbine.test
 import com.example.pillcountingnewmodels.R
 import com.example.pillcountingnewmodels.core.utils.MainDispatcherRule
 import com.example.pillcountingnewmodels.core.utils.PreferenceHelper
+import com.example.pillcountingnewmodels.feature.dashboard.domain.model.UserDetail
 import com.example.pillcountingnewmodels.feature.otp.data.VerifyPinRepository
+import com.example.pillcountingnewmodels.feature.register.domain.model.UserRole
+import com.example.pillcountingnewmodels.feature.register.domain.model.VerifiedUser
+import com.example.pillcountingnewmodels.feature.register.domain.model.VerifyPinData
 import com.example.pillcountingnewmodels.feature.register.domain.model.VerifyPinUiState
 import com.example.pillcountingnewmodels.feature.register.domain.model.VerifyPinResponse
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -27,6 +31,32 @@ class VerifyPinViewModelTest {
     private lateinit var context: Context
     private lateinit var prefs: PreferenceHelper
     private lateinit var viewModel: VerifyPinViewModel
+
+    private val mockVerifiedUser = VerifiedUser(
+        userId = "u12345",
+        email = "test@example.com",
+        isVerified = true,
+        role = UserRole(
+            id = "r1",
+            name = "user"
+        ),
+        authIsLocked = false
+    )
+
+    private val mockVerifyPinResponse = VerifyPinResponse(
+        status = 200,
+        isSuccess = true,
+        message = "OTP verified successfully.",
+        token = "fake-jwt-token",
+        data = VerifyPinData(
+            accessToken = "access_token",
+            refreshToken = "refresh_token",
+            expiresIn = 3600,
+            user = mockVerifiedUser
+        ),
+        detail = null
+    )
+
 
     @Before
     fun setup() {
@@ -59,13 +89,7 @@ class VerifyPinViewModelTest {
         val email = "test@example.com"
         val otp = "1234"
 
-        val response = VerifyPinResponse(
-            isSuccess = true,
-            accessToken = "access_token",
-            refreshToken = "refresh_token"
-        )
-
-        whenever(repository.verifyPin(email, otp)).thenReturn(Result.success(response))
+        whenever(repository.verifyPin(email, otp)).thenReturn(Result.success(mockVerifyPinResponse))
 
         viewModel.uiState.test {
             viewModel.verifyPin(email, otp)

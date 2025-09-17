@@ -8,6 +8,9 @@ import com.example.pillcountingnewmodels.core.utils.PreferenceHelper
 import com.example.pillcountingnewmodels.feature.dashboard.data.UserDetailRepository
 import com.example.pillcountingnewmodels.feature.dashboard.data.remote.IUserDetailAPI
 import com.example.pillcountingnewmodels.feature.dashboard.domain.model.UserDetail
+import com.example.pillcountingnewmodels.feature.dashboard.domain.model.UserDetailResponse
+import com.example.pillcountingnewmodels.feature.dashboard.domain.model.UserProfile
+import com.example.pillcountingnewmodels.feature.dashboard.domain.model.UserSettings
 import io.mockk.Runs
 import io.mockk.coEvery
 import io.mockk.just
@@ -41,9 +44,30 @@ class UserDetailRepositoryTest {
     private lateinit var repository: UserDetailRepository
 
     private val mockUserDetail = UserDetail(
-        id = "123",
-        name = "John Doe",
-        email = "john.doe@example.com"
+        email = "john.doe@example.com",
+        isVerified = true,
+        role = "admin",
+        profile = UserProfile(
+            fullName = "John Doe",
+            phoneNumber = "+1 555 123 4567",
+            avatarUrl = "https://example.com/avatars/johndoe.png"
+        ),
+        settings = UserSettings(
+            notificationsEnabled = true,
+            language = "en",
+            timezone = "America/New_York",
+            theme = "dark",
+            fontSize = "medium",
+            experimentalFeatures = listOf("beta-dashboard", "voice-input")
+        )
+    )
+
+    private val mockUserDetailResponse = UserDetailResponse(
+        status = 200,
+        isSuccess = true,
+        message = "User details fetched successfully",
+        token = "fake-jwt-token",
+        data = mockUserDetail
     )
 
     @Before
@@ -53,12 +77,12 @@ class UserDetailRepositoryTest {
 
     @Test
     fun `getUserDetail returns success when API call succeeds`() = runTest(scheduler) {
-        coEvery { api.getUserDetail("Bearer token") } returns Response.success(mockUserDetail)
+        coEvery { api.getUserDetail("Bearer token") } returns Response.success(mockUserDetailResponse)
 
         val result = repository.getUserDetail("token")
 
         assertTrue(result.isSuccess)
-        assertEquals(mockUserDetail, result.getOrNull())
+        assertEquals(mockUserDetailResponse, result.getOrNull())
     }
 
     @Test
@@ -83,12 +107,12 @@ class UserDetailRepositoryTest {
         coEvery { applicationSettingApi.refreshToken(RefreshTokenRequest(refreshToken)) } returns
                 RefreshTokenResponse(accessToken = newAccessToken, refreshToken = "newRefresh")
         coEvery { preferenceHelper.saveTokens(newAccessToken, "newRefresh") } just Runs
-        coEvery { api.getUserDetail("Bearer $newAccessToken") } returns Response.success(mockUserDetail)
+        coEvery { api.getUserDetail("Bearer $newAccessToken") } returns Response.success(mockUserDetailResponse)
 
         val result = repository.getUserDetail("token")
 
         assertTrue(result.isSuccess)
-        assertEquals(mockUserDetail, result.getOrNull())
+        assertEquals(mockUserDetailResponse, result.getOrNull())
     }
 
     @Test
