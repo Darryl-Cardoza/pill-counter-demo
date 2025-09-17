@@ -77,8 +77,18 @@ fun MenuScreen(
 
             SimpleMenuRow(
                 navController = navController,
-                icon = R.drawable.history,
+                icon = R.drawable.profile,
                 iconTint = MaterialTheme.colorScheme.secondary,
+                title = "Profile",
+                onClick = { navController.navigate(Screen.Profile.route) }
+            )
+
+            HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
+
+            SimpleMenuRow(
+                navController = navController,
+                icon = R.drawable.history,
+                iconTint = MaterialTheme.colorScheme.primary,
                 title = "History",
                 trailingText = "3 months",
                 onClick = { navController.navigate(Screen.History.route) }
@@ -89,7 +99,7 @@ fun MenuScreen(
             SimpleMenuRow(
                 navController = navController,
                 icon = R.drawable.settings,
-                iconTint = MaterialTheme.colorScheme.primary,
+                iconTint = MaterialTheme.colorScheme.secondary,
                 title = "Settings",
                 onClick = { navController.navigate(Screen.Settings.route) }
             )
@@ -99,7 +109,7 @@ fun MenuScreen(
             SimpleMenuRow(
                 navController = navController,
                 icon = R.drawable.logout,
-                iconTint = MaterialTheme.colorScheme.secondary,
+                iconTint = MaterialTheme.colorScheme.primary,
                 title = "Logout",
                 onClick = {
                     navController.navigate(AUTH_GRAPH_ROUTE) {

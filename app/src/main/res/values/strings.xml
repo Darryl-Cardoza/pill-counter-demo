@@ -98,5 +98,17 @@
     <string name="yes">Yes</string>
     <string name="no">No</string>
 
+    <!-- Profile -->
+    <string name="profile_title"> PROFILE </string>
+    <string name="first_name"> First Name </string>
+    <string name="last_name"> Last Name </string>
+    <string name="pharmacy_name"> Pharmacy Name </string>
+    <string name="phone_number"> Phone Number </string>
+    <string name="npi_number"> NPI No. </string>
+    <string name="do_not_ask"> Do not ask again </string>
+    <string name="delete"> DELETE </string>
+    <string name="skip_alt"> SKIP </string>
+    <string name="save"> SAVE </string>
+
 
 </resources>

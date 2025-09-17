@@ -32,6 +32,10 @@ android {
                 "proguard-rules.pro"
             )
         }
+        debug {
+            // Enables code coverage for the debug build
+            enableUnitTestCoverage = true
+        }
     }
 
     compileOptions {
@@ -67,6 +71,10 @@ kapt {
 }
 
 dependencies {
+    // Compose BOM
+    implementation(platform("androidx.compose:compose-bom:2024.06.00"))
+    androidTestImplementation(platform("androidx.compose:compose-bom:2024.06.00"))
+
     // Core and Compose
     implementation("androidx.core:core-ktx:1.12.0")
     implementation("androidx.activity:activity-compose:1.10.1")
@@ -112,13 +120,26 @@ dependencies {
     implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
 
     // Testing
+    // JVM Unit Tests
     testImplementation("junit:junit:4.13.2")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.0")
+    testImplementation("org.mockito:mockito-core:5.17.0")
+    testImplementation("org.mockito.kotlin:mockito-kotlin:5.2.1")
+    testImplementation("app.cash.turbine:turbine:1.1.0")
+    testImplementation ("io.mockk:mockk:1.13.8")
+
+    // Android Instrumentation Tests
     androidTestImplementation("androidx.test.ext:junit:1.1.5")
-    androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")
+    androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
+    androidTestImplementation("androidx.navigation:navigation-testing:2.9.4")
+    androidTestImplementation("org.mockito:mockito-android:5.4.0")
+    androidTestImplementation("org.mockito.kotlin:mockito-kotlin:5.2.1")
+
+    // Debug tools
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
-    androidTestImplementation(platform("androidx.compose:compose-bom:2024.06.00"))
+
 
     // Retrofit for networking
     implementation("com.squareup.retrofit2:retrofit:2.9.0")
@@ -142,8 +163,6 @@ dependencies {
     implementation("com.kizitonwose.calendar:compose:2.5.0")
 
     implementation("androidx.compose.foundation:foundation")
-
-    implementation(platform("androidx.compose:compose-bom:2024.06.00"))
 
     implementation("com.google.code.gson:gson:2.10.1")
 

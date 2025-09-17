@@ -2,6 +2,7 @@
 
 package com.example.pillcountingnewmodels.navigation
 
+import ProfileScreen
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -87,6 +88,14 @@ fun AppNavGraph(
 
         composable(route = Screen.History.route) {
             HistoryScreen(
+                navController = navController,
+                onBackClick = {
+                    navController.popBackStack()
+                })
+        }
+
+        composable(route = Screen.Profile.route) {
+            ProfileScreen(
                 navController = navController,
                 onBackClick = {
                     navController.popBackStack()
