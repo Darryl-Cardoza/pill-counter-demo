@@ -2,60 +2,74 @@ package com.example.pillcountingnewmodels.feature.dashboard.presentation.viewmod
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.pillcountingnewmodels.core.room.dao.PillCountTxnDao
+import com.example.pillcountingnewmodels.core.room.dao.UserDao
+import com.example.pillcountingnewmodels.core.room.models.CountStatus
+import com.example.pillcountingnewmodels.core.room.models.CountType
+import com.example.pillcountingnewmodels.core.room.models.UserEntity
+import com.example.pillcountingnewmodels.core.utils.AppLogger
 import com.example.pillcountingnewmodels.core.utils.PreferenceHelper
 import com.example.pillcountingnewmodels.feature.dashboard.domain.data.IUserDetailRepository
 import com.example.pillcountingnewmodels.feature.dashboard.domain.model.DashboardUiState
+import com.example.pillcountingnewmodels.feature.dashboard.domain.model.UserDetail
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-/**
- * ViewModel responsible for managing the state of the Dashboard screen,
- * including fetching user details and dashboard metrics.
- *
- * @property userDetailRepository Repository to fetch user details.
- * @property preferenceHelper Helper to retrieve stored access tokens.
- */
+@HiltViewModel
 class DashboardViewModel @Inject constructor(
     private val userDetailRepository: IUserDetailRepository,
-    private val preferenceHelper: PreferenceHelper
+    private val preferenceHelper: PreferenceHelper,
+    private val userDao: UserDao,
+    private val pillCountTxnDao: PillCountTxnDao
 ) : ViewModel() {
+
+    private val logger = AppLogger.create<DashboardViewModel>()
 
     private val _uiState = MutableStateFlow(DashboardUiState())
     val uiState = _uiState.asStateFlow()
 
     init {
+        logger.i("DashboardViewModel initialized.")
         loadDashboardData()
         fetchUserDetail()
     }
 
     /**
-     * Loads mock dashboard data into the UI state.
-     *
-     * TODO: Replace with real data fetch from repository or use case.
+     * Load dashboard counters from the database.
      */
     private fun loadDashboardData() {
-        _uiState.update {
-            it.copy(
-                completedFixedCount = "0",
-                partialFixedCount = "0",
-                completedRegularCount = "0",
-                partialRegularCount = "0"
-            )
+        viewModelScope.launch(Dispatchers.IO) {
+            pillCountTxnDao.observeDashboardCountsGrouped().collect { rows ->
+                val completedFixed   = rows.firstOrNull { it.status == CountStatus.COMPLETED && it.countType == CountType.FIXED   }?.cnt ?: 0
+                val partialFixed     = rows.firstOrNull { it.status == CountStatus.PARTIAL   && it.countType == CountType.FIXED   }?.cnt ?: 0
+                val completedRegular = rows.firstOrNull { it.status == CountStatus.COMPLETED && it.countType == CountType.REGULAR }?.cnt ?: 0
+                val partialRegular   = rows.firstOrNull { it.status == CountStatus.PARTIAL   && it.countType == CountType.REGULAR }?.cnt ?: 0
+
+                _uiState.update {
+                    it.copy(
+                        completedFixedCount = completedFixed.toString(),
+                        partialFixedCount = partialFixed.toString(),
+                        completedRegularCount = completedRegular.toString(),
+                        partialRegularCount = partialRegular.toString()
+                    )
+                }
+            }
         }
     }
 
-    /**
-     * Retrieves the access token from preferences and requests
-     * the user details from the repository. Updates the UI state
-     * with the loading status, success result, or error message.
-     */
+
     private fun fetchUserDetail() {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
+            logger.d("Starting fetchUserDetail()")
+
             val token = preferenceHelper.getAccessToken()
             if (token.isNullOrBlank()) {
+                logger.e("Access token not found in preferences.")
                 _uiState.update {
                     it.copy(
                         isLoadingUserDetail = false,
@@ -65,26 +79,53 @@ class DashboardViewModel @Inject constructor(
                 return@launch
             }
 
+
+            logger.i("Access token retrieved. Requesting user detail from repository.")
             _uiState.update { it.copy(isLoadingUserDetail = true, userDetailError = null) }
 
             val result = userDetailRepository.getUserDetail(token)
 
             result.fold(
-                onSuccess = { userDetail ->
-                    _uiState.update {
-                        it.copy(
-                            userDetail = userDetail,
-                            isLoadingUserDetail = false,
-                            userDetailError = null
-                        )
+                onSuccess = { payload ->
+                    logger.i("User detail fetch successful. Persisting to Room...")
+
+                    try {
+                        // Coerce payload to a single UI type (UserDetail?)
+                        val uiUser: UserDetail? = when (payload) {
+                            else -> payload.data
+                        }
+
+                        // Persist only if we actually have user data
+                        uiUser?.let { detail ->
+                            val entity = detail.toUserEntity(uiUser.role)
+                            userDao.upsertPreservingLocalId(entity)
+                            logger.i("User detail persisted locally.")
+                        }
+
+                        _uiState.update {
+                            it.copy(
+                                userDetail = uiUser,           // <- always UserDetail?
+                                isLoadingUserDetail = false,
+                                userDetailError = null
+                            )
+                        }
+                    } catch (dbErr: Throwable) {
+                        logger.e("Persisting user detail failed.", dbErr)
+                        _uiState.update {
+                            it.copy(
+                                isLoadingUserDetail = false,
+                                userDetailError = dbErr.message ?: "Failed to persist user detail"
+                            )
+                        }
                     }
                 },
                 onFailure = { error ->
+                    logger.e("Failed to fetch user details.", error)
                     _uiState.update {
                         it.copy(
                             userDetail = null,
                             isLoadingUserDetail = false,
-                            userDetailError = error.message ?: "Unknown error occurred"
+                            userDetailError = error.message ?: "An unknown error occurred"
                         )
                     }
                 }
@@ -92,3 +133,33 @@ class DashboardViewModel @Inject constructor(
         }
     }
 }
+
+/* ───────────────────────────── Mappers ───────────────────────────── */
+
+/**
+ * Map API payload [UserDetail] to persistence [UserEntity].
+ * Uses [jwtUserId] (from JWT) as the Room primary key; falls back to email if missing.
+ */
+private fun UserDetail.toUserEntity(jwtUserId: String?): UserEntity {
+    val experimentalJson = this.settings?.experimentalFeatures
+        ?.joinToString(prefix = "[", postfix = "]") { "\"$it\"" }
+
+    val pk = jwtUserId ?: this.email
+    return UserEntity(
+        userId = pk,
+        email = this.email,
+        name = this.profile?.fullName,
+        phoneNumber = this.profile?.phoneNumber,
+        avatarUrl = this.profile?.avatarUrl,
+        role = this.role,
+        isVerified = this.isVerified,
+        language = this.settings?.language,
+        timezone = this.settings?.timezone,
+        theme = this.settings?.theme,
+        fontSize = this.settings?.fontSize?.toString(),
+        notifications = this.settings?.notificationsEnabled,
+        experimental = experimentalJson,
+        createdAt = System.currentTimeMillis()
+    )
+}
+

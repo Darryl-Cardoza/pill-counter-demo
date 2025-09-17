@@ -4,12 +4,14 @@ import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.pillcountingnewmodels.R
+import com.example.pillcountingnewmodels.core.models.ErrorResponse
 import com.example.pillcountingnewmodels.core.utils.AppLogger
 import com.example.pillcountingnewmodels.core.utils.PreferenceHelper
 import com.example.pillcountingnewmodels.feature.login.data.LoginRepository
 import com.example.pillcountingnewmodels.feature.login.domain.CredentialsValidator
 import com.example.pillcountingnewmodels.feature.login.domain.model.LoginUiState
 import com.example.pillcountingnewmodels.feature.login.domain.model.LogoutUiState
+import com.google.gson.Gson
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -88,8 +90,22 @@ class LoginViewModel @Inject constructor(
                 }
                 .onFailure { exception ->
                     logger.e("Login failed for user: $email", exception)
-                    _uiState.value = LoginUiState.Error(
+                    val errorMessage = if (exception is retrofit2.HttpException) {
+                        val errorBody = exception.response()?.errorBody()?.string()
+                        errorBody?.let {
+                            try {
+                                val errorResponse = Gson().fromJson(it, ErrorResponse::class.java)
+                                errorResponse.message
+                            } catch (e: Exception) {
+                                context.getString(R.string.error_unknown)
+                            }
+                        } ?: context.getString(R.string.error_unknown)
+                    } else {
                         exception.message ?: context.getString(R.string.error_unknown)
+                    }
+
+                    _uiState.value = LoginUiState.Error(
+                        errorMessage
                     )
                 }
         }
@@ -119,9 +135,22 @@ class LoginViewModel @Inject constructor(
                 }
                 .onFailure { exception ->
                     logger.e("Logout failed", exception)
-                    _logoutUiState.value = LogoutUiState.Error(
+                    val errorMessage = if (exception is retrofit2.HttpException) {
+                        val errorBody = exception.response()?.errorBody()?.string()
+                        errorBody?.let {
+                            try {
+                                val errorResponse = Gson().fromJson(it, ErrorResponse::class.java)
+                                errorResponse.message
+                            } catch (e: Exception) {
+                                context.getString(R.string.error_unknown)
+                            }
+                        } ?: context.getString(R.string.error_unknown)
+                    } else {
                         exception.message ?: context.getString(R.string.error_unknown)
-                    )
+                    }
+
+                    _logoutUiState.value = LogoutUiState.Error(errorMessage)
+
                 }
         }
     }

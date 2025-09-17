@@ -43,7 +43,7 @@ fun FixedCountSection(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(40.dp))
 
         // Fixed count icon leading to ScanBarcode screen
         Image(
@@ -90,7 +90,7 @@ fun FixedCountSection(
             }
         )
 
-        Spacer(modifier = Modifier.height(60.dp))
+       Spacer(modifier = Modifier.weight(1f))
 
         // Row of status chips for Completed & Partial
         Row(
@@ -127,6 +127,8 @@ fun FixedCountSection(
                 )
             }
         }
+
+        Spacer(modifier = Modifier.height(10.dp))
     }
 }
 

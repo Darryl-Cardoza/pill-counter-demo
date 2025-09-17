@@ -43,7 +43,7 @@ fun RegularCountSection(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(40.dp))
         
         // Regular count icon (click → ScanBarcode)
         Image(
@@ -90,7 +90,7 @@ fun RegularCountSection(
             }
         )
 
-        Spacer(modifier = Modifier.height(60.dp))
+        Spacer(modifier = Modifier.weight(1f))
 
         // Status row (Completed + Partial counts)
         Row(
@@ -127,6 +127,8 @@ fun RegularCountSection(
                 )
             }
         }
+
+        Spacer(modifier = Modifier.height(10.dp))
     }
 }
 

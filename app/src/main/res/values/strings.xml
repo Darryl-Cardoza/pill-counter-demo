@@ -93,5 +93,10 @@
     <string name="add">Add</string>
     <string name="count">Count</string>
 
+    <string name="confirm_exit_title">Confirm Exit</string>
+    <string name="confirm_exit_message">Are you sure you want to cancel the login process?</string>
+    <string name="yes">Yes</string>
+    <string name="no">No</string>
+
 
 </resources>

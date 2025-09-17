@@ -165,13 +165,12 @@ fun LoginScreen(
 
                             is LoginUiState.Success -> {
                                 LaunchedEffect(Unit) {
-                                    if (rememberMe) {
-                                        viewModel.setUserLoggedIn(true)
-                                    }
-
-                                    navController.navigate(Screen.Dashboard.route) {
-                                        popUpTo(0) { inclusive = true } // clear backstack
-                                    }
+                                    navController.navigate(
+                                        Screen.OtpVerify.createRoute(
+                                            email = email,
+                                            rememberMe = rememberMe
+                                        )
+                                    )
 
                                     viewModel.resetLoginState()
                                     email = ""

@@ -1,13 +1,11 @@
 package com.example.pillcountingnewmodels.feature.login.data.remote
 
-import com.example.pillcountingnewmodels.BuildConfig
 import com.example.pillcountingnewmodels.core.utils.URLConstant
 import com.example.pillcountingnewmodels.feature.login.domain.model.LoginRequest
 import com.example.pillcountingnewmodels.feature.login.domain.model.LoginResponse
 import com.example.pillcountingnewmodels.feature.login.domain.model.LogoutRequest
 import com.example.pillcountingnewmodels.feature.login.domain.model.LogoutResponse
 import retrofit2.http.Body
-import retrofit2.http.Headers
 import retrofit2.http.POST
 
 /**
@@ -22,10 +20,6 @@ interface ILoginApi {
      * @return A [LoginResponse] containing authentication results such as access tokens.
      */
     @POST(URLConstant.SEND_OTP)
-    @Headers(
-        "Content-Type: ${URLConstant.CONTENT_TYPE}",
-        "X-Server-Key: ${BuildConfig.SERVER_KEY}"
-    )
     suspend fun login(
         @Body request: LoginRequest
     ): LoginResponse
@@ -37,10 +31,6 @@ interface ILoginApi {
      * @return A [LogoutResponse] indicating success or failure of the logout operation.
      */
     @POST(URLConstant.LOGOUT)
-    @Headers(
-        "Content-Type: ${URLConstant.CONTENT_TYPE}",
-//        "X-Server-Key: ${BuildConfig.SERVER_KEY}"
-    )
     suspend fun logout(
         @Body request: LogoutRequest
     ): LogoutResponse

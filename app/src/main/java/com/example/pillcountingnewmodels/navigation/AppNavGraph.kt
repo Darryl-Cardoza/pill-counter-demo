@@ -5,14 +5,10 @@ package com.example.pillcountingnewmodels.navigation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
-import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import com.example.pillcountingnewmodels.core.utils.PreferenceHelper
-import com.example.pillcountingnewmodels.core.utils.compose.HelperFunctions.getStartDestination
 import com.example.pillcountingnewmodels.feature.barcodeScan.presentation.ScanBarCodeScreen
 import com.example.pillcountingnewmodels.feature.countResume.presentation.FixedCountResumeScreen
 import com.example.pillcountingnewmodels.feature.countResume.presentation.RegularCountResumeScreen
@@ -28,12 +24,10 @@ import com.example.pillcountingnewmodels.navigatio.authGraph
 const val AUTH_GRAPH_ROUTE = "auth"
 
 @Composable
-fun AppNavGraph(navController: NavHostController) {
-    val context = LocalContext.current
-    val preferenceHelper = remember { PreferenceHelper(context) }
-
-    val startDestination = remember { getStartDestination(preferenceHelper) }
-
+fun AppNavGraph(
+    navController: NavHostController,
+    startDestination: String
+) {
     NavHost(
         navController = navController,
         startDestination = startDestination

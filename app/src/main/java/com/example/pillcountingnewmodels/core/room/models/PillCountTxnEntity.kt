@@ -1,13 +1,36 @@
 package com.example.pillcountingnewmodels.core.room.models
 
 import androidx.room.Entity
+import androidx.room.ForeignKey
+import androidx.room.Index
 import androidx.room.PrimaryKey
-import com.google.common.base.Equivalence
-import org.intellij.lang.annotations.Language
+import androidx.room.TypeConverters
+import com.example.pillcountingnewmodels.core.room.di.PillCountTxnConverters
 
-import androidx.room.*
-
-
+/**
+ * Entity representing a pill count transaction (header/master).
+ *
+ * Each transaction can belong to a user and a drug. Both FKs are nullable
+ * because `onDelete = SET_NULL` is used on the foreign keys.
+ *
+ * @property txnId        Auto-generated primary key.
+ * @property userId       FK to [UserEntity.userId]. Null if the user is deleted.
+ * @property drugId       FK to [DrugMasterEntity.drugId]. Null if the drug is deleted (type must match parent: Long?).
+ * @property countType    How the count is performed (requires a TypeConverter).
+ * @property targetCount  Expected/target count for reconciliation.
+ * @property status       Transaction status (requires a TypeConverter).
+ * @property note         Free-form note for the transaction.
+ * @property expiry       Optional expiry (stored as string; consider epoch millis for strictness).
+ * @property lotNo        Lot/batch number.
+ * @property barcodeImage Path/URI to a barcode image, if captured.
+ * @property isSubstitute Whether a substitute drug was used.
+ * @property rxNo         Prescription number.
+ * @property refillNo     Refill number or code.
+ * @property patientName  Patient display name associated with the transaction.
+ * @property isDeleted    Soft-delete flag.
+ * @property createdAt    Creation timestamp (epoch millis).
+ * @property updatedAt    Last update timestamp (epoch millis).
+ */
 @Entity(
     tableName = "pill_count_txn",
     foreignKeys = [
@@ -25,29 +48,32 @@ import androidx.room.*
         )
     ],
     indices = [
-        Index("userId"),
-        Index("drugId")
+        Index(value = ["userId"], name = "idx_txn_userId"),
+        Index(value = ["drugId"], name = "idx_txn_drugId")
     ]
 )
+@TypeConverters(PillCountTxnConverters::class)
 data class PillCountTxnEntity(
-    @PrimaryKey(autoGenerate = true) val txnId: Long = 0,
+    @PrimaryKey(autoGenerate = true)
+    val txnId: Long = 0L,
 
-    val userId: Long?,
-    val drugId: Long?,
+    val userId: String? = null,
+    val drugId: Long? = null,
 
     val countType: CountType,
-    val targetCount: Int?,
+    val targetCount: Int? = null,
     val status: CountStatus,
 
-    val note: String?,
-    val expiry: String?,
-    val lotNo: String?,
-    val barcodeImage: String?,
+    val note: String? = null,
+    val expiry: String? = null,
+    val lotNo: String? = null,
+    val barcodeImage: String? = null,
     val isSubstitute: Boolean = false,
-    val rxNo: String?,
-    val refillNo: String?,
-    val patientName: String?,
+    val rxNo: String? = null,
+    val refillNo: String? = null,
+    val patientName: String? = null,
     val isDeleted: Boolean = false,
+
     val createdAt: Long = System.currentTimeMillis(),
-    val updatedAt: Long = System.currentTimeMillis(),
+    val updatedAt: Long = System.currentTimeMillis()
 )

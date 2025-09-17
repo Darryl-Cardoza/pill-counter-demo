@@ -45,10 +45,23 @@ import com.example.pillcountingnewmodels.feature.register.domain.model.VerifyPin
 import com.example.pillcountingnewmodels.ui.theme.AppTheme
 import kotlinx.coroutines.delay
 
+/**
+ * Composable function displaying the OTP verification screen.
+ *
+ * This screen handles OTP input, countdown timer for resending OTP,
+ * and navigation to the dashboard upon successful verification.
+ *
+ * @param navController NavController used for screen navigation.
+ * @param userEmail The email address to which the OTP was sent.
+ * @param rememberMe Flag indicating whether the user opted to be remembered.
+ * @param viewModel [VerifyPinViewModel] scoped to this screen for OTP verification logic.
+ * @param loginViewModel [LoginViewModel] to trigger resend OTP actions.
+ */
 @Composable
 fun OTPScreen(
     navController: NavController,
     userEmail: String,
+    rememberMe: Boolean,
     viewModel: VerifyPinViewModel = hiltViewModel(),
     loginViewModel: LoginViewModel = hiltViewModel()
 ) {
@@ -56,21 +69,51 @@ fun OTPScreen(
     val verifyPinUiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
 
-    val timer = 60
-    var secRemaining by remember { mutableIntStateOf(timer) }
+    // Timer settings
+    val timerDuration = 60
+    var secondsRemaining by remember { mutableIntStateOf(timerDuration) }
     var isTimerRunning by remember { mutableStateOf(true) }
+    var showExitConfirmationDialog by remember { mutableStateOf(false) }
 
+    // Mask the email for privacy display
     val maskedEmail = remember(userEmail) { maskEmail(userEmail) }
 
+    // Countdown timer effect
     LaunchedEffect(isTimerRunning) {
-        while (isTimerRunning && secRemaining > 0) {
+        while (isTimerRunning && secondsRemaining > 0) {
             delay(1000L)
-            secRemaining -= 1
+            secondsRemaining -= 1
         }
-        if (secRemaining == 0) {
+        if (secondsRemaining == 0) {
             isTimerRunning = false
         }
     }
+
+    if (showExitConfirmationDialog) {
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { showExitConfirmationDialog = false },
+            title = { Text(text = stringResource(R.string.confirm_exit_title)) },
+            text = { Text(text = stringResource(R.string.confirm_exit_message)) },
+            confirmButton = {
+                androidx.compose.material3.TextButton(
+                    onClick = {
+                        showExitConfirmationDialog = false
+                        navController.popBackStack()
+                    }
+                ) {
+                    Text(text = stringResource(R.string.yes))
+                }
+            },
+            dismissButton = {
+                androidx.compose.material3.TextButton(
+                    onClick = { showExitConfirmationDialog = false }
+                ) {
+                    Text(text = stringResource(R.string.no))
+                }
+            }
+        )
+    }
+
 
     Box(
         modifier = Modifier
@@ -78,11 +121,13 @@ fun OTPScreen(
             .systemBarsPadding()
             .background(AppTheme.extendedColors.secondaryBackground)
     ) {
-        BackButton(navController)
+        BackButton(
+            navController = navController,
+            onClick = { showExitConfirmationDialog = true }
+        )
+
         SplitResponsive(
-            topOrLeft = {
-                AppInfo(context)
-            },
+            topOrLeft = { AppInfo(context) },
             bottomOrRight = {
                 Column(
                     modifier = Modifier
@@ -92,7 +137,6 @@ fun OTPScreen(
                     verticalArrangement = Arrangement.Center,
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-
                     Text(
                         text = "${stringResource(R.string.code_sent_to)} \n$maskedEmail",
                         color = AppTheme.extendedColors.textColor,
@@ -103,7 +147,6 @@ fun OTPScreen(
 
                     Spacer(Modifier.height(50.dp))
 
-                    // OTP Input Field
                     OTPTextField(
                         otp = otp,
                         onOtpChange = {
@@ -119,14 +162,14 @@ fun OTPScreen(
                     Text(
                         text = if (isTimerRunning) stringResource(
                             R.string.pre_resend_code,
-                            secRemaining
+                            secondsRemaining
                         ) else stringResource(R.string.resend_code),
                         color = if (isTimerRunning) AppTheme.extendedColors.textColor else MaterialTheme.colorScheme.secondary,
                         style = MaterialTheme.typography.bodyMedium,
                         modifier = if (!isTimerRunning) {
                             Modifier.clickable {
                                 loginViewModel.login(userEmail)
-                                secRemaining = timer
+                                secondsRemaining = timerDuration
                                 isTimerRunning = true
                             }
                         } else {
@@ -136,29 +179,25 @@ fun OTPScreen(
 
                     Spacer(Modifier.height(20.dp))
 
-                    // Handle UI state changes
                     when (val state = verifyPinUiState) {
-                        is VerifyPinUiState.Idle -> {
-                            Spacer(Modifier.height(20.dp))
-                        }
+                        is VerifyPinUiState.Idle -> Spacer(Modifier.height(20.dp))
 
-                        is VerifyPinUiState.Error -> {
-                            Text(
-                                text = state.message,
-                                color = MaterialTheme.colorScheme.error,
-                                style = MaterialTheme.typography.bodyMedium,
-                                modifier = Modifier.padding(bottom = 16.dp)
-                            )
-                        }
+                        is VerifyPinUiState.Error -> Text(
+                            text = state.message,
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier.padding(bottom = 16.dp)
+                        )
 
-                        is VerifyPinUiState.Loading -> {
-                            CircularProgressIndicator(modifier = Modifier.padding(bottom = 16.dp))
-                        }
+                        is VerifyPinUiState.Loading -> CircularProgressIndicator(
+                            modifier = Modifier.padding(bottom = 16.dp)
+                        )
 
                         is VerifyPinUiState.Success -> {
                             LaunchedEffect(Unit) {
+                                rememberMe.takeIf { it }?.let { viewModel.setUserLoggedIn(true) }
                                 otp = ""
-                                secRemaining = timer
+                                secondsRemaining = timerDuration
                                 isTimerRunning = true
 
                                 navController.navigate(Screen.Dashboard.route) {
@@ -169,7 +208,6 @@ fun OTPScreen(
                         }
                     }
 
-                    // Verify Button
                     ActionButtonPrimary(
                         text = stringResource(R.string.verify).uppercase(),
                         onClick = {

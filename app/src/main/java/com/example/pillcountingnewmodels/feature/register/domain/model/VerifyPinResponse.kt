@@ -5,37 +5,36 @@ import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
 
 /**
- * Represents the data structure for the OTP verification API response.
+ * Represents the response from the OTP verification API.
  *
- * On success: includes tokens, expiration, and user info.
- * On failure: includes validation or server error details.
+ * Includes metadata (status, message), and on success,
+ * contains access tokens, expiration, and user information
+ * nested under the `data` object.
  */
 @JsonClass(generateAdapter = true)
 data class VerifyPinResponse(
 
-    // Common fields
+    /** HTTP-like status code */
     @Json(name = "status")
     val status: Int? = null,
 
+    /** Whether the request was successful */
     @Json(name = "is_success")
     val isSuccess: Boolean? = null,
 
+    /** Message from the server, e.g., success or error details */
     @Json(name = "message")
     val message: String? = null,
 
-    // Success fields
-    @Json(name = "access_token")
-    val accessToken: String? = null,
+    /** Optional top-level JWT token */
+    @Json(name = "token")
+    val token: String? = null,
 
-    @Json(name = "refresh_token")
-    val refreshToken: String? = null,
+    /** Nested response data (tokens, user info) */
+    @Json(name = "data")
+    val data: VerifyPinData? = null,
 
-    @Json(name = "expires_in")
-    val expiresIn: Int? = null,
-
-    @Json(name = "user")
-    val user: Any? = null,
-
+    /** Optional error details if the request failed */
     @Json(name = "detail")
     val detail: List<ErrorDetail>? = null
 )
