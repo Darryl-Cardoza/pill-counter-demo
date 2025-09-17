@@ -9,6 +9,10 @@ import com.squareup.moshi.JsonClass
 @JsonClass(generateAdapter = true)
 data class VerifiedUser(
 
+    /** Unique user identifier */
+    @Json(name = "user_id")
+    val userId: String? = null,
+
     /** User's email address */
     @Json(name = "email")
     val email: String? = null,
@@ -17,7 +21,11 @@ data class VerifiedUser(
     @Json(name = "is_verified")
     val isVerified: Boolean? = null,
 
-    /** Role identifier (e.g., UUID) */
+    /** Role object containing id and name */
     @Json(name = "role")
-    val role: String? = null
+    val role: UserRole? = null,
+
+    /** Whether the user account is locked */
+    @Json(name = "auth_is_locked")
+    val authIsLocked: Boolean? = null
 )
