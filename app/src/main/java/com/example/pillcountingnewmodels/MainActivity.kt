@@ -16,10 +16,13 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.rememberNavController
+import com.example.pillcountingnewmodels.core.utils.PreferenceHelper
+import com.example.pillcountingnewmodels.core.utils.compose.HelperFunctions.getStartDestination
 import com.example.pillcountingnewmodels.core.utils.toColor
 import com.example.pillcountingnewmodels.feature.settings.presentation.viewmodel.ApplicationSettingsViewModel
 import com.example.pillcountingnewmodels.navigation.AppNavGraph
@@ -96,7 +99,13 @@ class MainActivity : ComponentActivity() {
                         darkExtendedColors = extendedDynamicDark
                     ) {
                         val navController = rememberNavController()
-                        AppNavGraph(navController = navController)
+                        val preferenceHelper = remember { PreferenceHelper(this) }
+                        val startDestination = remember { getStartDestination(preferenceHelper) }
+
+                        AppNavGraph(
+                            navController = navController,
+                            startDestination = startDestination
+                        )
                     }
                 }
             }

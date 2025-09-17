@@ -135,14 +135,21 @@ private fun ForgotPasswordForm(
             is ForgotPasswordUiState.Loading -> {
                 CircularProgressIndicator(modifier = Modifier.padding(bottom = 16.dp))
             }
+
             is ForgotPasswordUiState.Error -> {
                 LaunchedEffect(uiState.message) {
                     ToastUtils.show(context, uiState.message)
                 }
             }
+
             is ForgotPasswordUiState.Success -> {
                 LaunchedEffect(uiState.email) {
-                    navController.navigate(Screen.OtpVerify.createRoute(uiState.email))
+                    navController.navigate(
+                        Screen.OtpVerify.createRoute(
+                            email = uiState.email,
+                            rememberMe = false
+                        )
+                    )
                 }
             }
         }

@@ -2,6 +2,7 @@ package com.example.pillcountingnewmodels.di
 
 import android.content.Context
 import com.chuckerteam.chucker.api.ChuckerInterceptor
+import com.example.pillcountingnewmodels.core.api.HeaderInterceptor
 import com.example.pillcountingnewmodels.core.network.IApplicationSettingInterface
 import com.example.pillcountingnewmodels.core.room.dao.UserDao
 import com.example.pillcountingnewmodels.core.utils.ColorAdapter
@@ -53,8 +54,8 @@ import javax.inject.Singleton
 object NetworkModule {
 
     // TODO: Replace with the actual base URL of your production API.
-//    private const val MAIN_API_BASE_URL = "http://192.168.0.79:8000/"
-    private const val MAIN_API_BASE_URL = "http://192.168.0.23:8000/"
+    private const val MAIN_API_BASE_URL = "http://192.168.0.79:8000/"
+//    private const val MAIN_API_BASE_URL = "http://192.168.0.23:8000/"
 
     /** The base URL for the openFDA API. */
     const val DRUG_API_BASE_URL = "https://api.fda.gov/"
@@ -82,6 +83,7 @@ object NetworkModule {
         @ApplicationContext context: Context
     ): OkHttpClient {
         return OkHttpClient.Builder()
+            .addInterceptor(HeaderInterceptor()) // Custom header interceptor
             .addInterceptor(loggingInterceptor) // Logs network traffic to Logcat.
             .addInterceptor(ChuckerInterceptor(context)) // Provides an in-app UI for inspecting network traffic.
             .connectTimeout(30, TimeUnit.SECONDS)

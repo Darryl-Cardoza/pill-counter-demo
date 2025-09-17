@@ -134,6 +134,7 @@ fun RegisterScreen(
                         is RegisterUiState.Idle -> {
                             Spacer(Modifier.height(30.dp))
                         }
+
                         is RegisterUiState.Error -> {
                             Text(
                                 text = state.message,
@@ -142,13 +143,20 @@ fun RegisterScreen(
                                 modifier = Modifier.padding(bottom = 16.dp)
                             )
                         }
+
                         is RegisterUiState.Loading -> {
                             CircularProgressIndicator(modifier = Modifier.padding(bottom = 16.dp))
                         }
+
                         is RegisterUiState.Success -> {
                             LaunchedEffect(Unit) {
                                 // Navigate to OTP screen on successful registration
-                                navController.navigate(Screen.OtpVerify.createRoute(email))
+                                navController.navigate(
+                                    Screen.OtpVerify.createRoute(
+                                        email = email,
+                                        rememberMe = false
+                                    )
+                                )
                             }
                         }
                     }

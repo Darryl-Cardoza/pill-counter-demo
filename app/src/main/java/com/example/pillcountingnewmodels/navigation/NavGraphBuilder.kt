@@ -35,10 +35,16 @@ fun NavGraphBuilder.authGraph(navController: NavHostController) {
             route = Screen.OtpVerify.route,
             arguments = Screen.OtpVerify.navArguments
         ) { backStackEntry ->
-            // Use the type-safe argument key from the Screen object
+
             val email = backStackEntry.arguments?.getString(Screen.OtpVerify.ARG_EMAIL) ?: ""
-            OTPScreen(navController, email)
+
+            val rememberMe =
+                backStackEntry.arguments?.getBoolean(Screen.OtpVerify.ARG_REMEMBER_ME) ?: false
+
+            // Pass both to OTPScreen
+            OTPScreen(navController, email, rememberMe)
         }
+
 
         composable(route = Screen.ForgotPassword.route) {
             ForgotPasswordScreen(navController)
