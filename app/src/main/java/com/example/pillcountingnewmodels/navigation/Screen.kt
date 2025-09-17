@@ -41,6 +41,10 @@ sealed interface Screen {
         override val route: String = "history"
     }
 
+    data object Profile : Screen {
+        override val route: String = "profile"
+    }
+
 
     // For screens with arguments
     data object OtpVerify : Screen {
