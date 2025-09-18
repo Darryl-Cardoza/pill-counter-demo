@@ -101,7 +101,7 @@ class LoginViewModel @Inject constructor(
                             }
                         } ?: context.getString(R.string.error_unknown)
                     } else {
-                        exception.message ?: context.getString(R.string.error_unknown)
+                        context.getString(R.string.error_unknown)
                     }
 
                     _uiState.value = LoginUiState.Error(

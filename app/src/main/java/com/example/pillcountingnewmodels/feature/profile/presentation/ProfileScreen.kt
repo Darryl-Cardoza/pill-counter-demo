@@ -1,6 +1,7 @@
 package com.example.pillcountingnewmodels.feature.profile.presentation
 
 import android.content.res.Configuration
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
@@ -98,6 +99,8 @@ fun ProfileScreen(
         { viewModel.email = it },
         { viewModel.npi = it },
     )
+
+    BackHandler { /* kept empty to consume back press and prevent navigation */ }
 
     Box(
         modifier = Modifier
