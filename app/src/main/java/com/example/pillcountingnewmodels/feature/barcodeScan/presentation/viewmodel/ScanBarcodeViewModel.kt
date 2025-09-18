@@ -7,7 +7,6 @@ import com.example.pillcountingnewmodels.core.room.dao.DrugMasterDao
 import com.example.pillcountingnewmodels.core.room.dao.PillCountTxnDao
 import com.example.pillcountingnewmodels.core.room.models.CountStatus
 import com.example.pillcountingnewmodels.core.room.models.CountType
-import com.example.pillcountingnewmodels.core.room.models.DrugMasterEntity
 import com.example.pillcountingnewmodels.core.room.models.PillCountTxnEntity
 import com.example.pillcountingnewmodels.core.utils.AppLogger
 import com.example.pillcountingnewmodels.core.utils.PreferenceHelper

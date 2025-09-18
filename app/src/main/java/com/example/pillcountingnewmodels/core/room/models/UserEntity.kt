@@ -2,8 +2,6 @@ package com.example.pillcountingnewmodels.core.room.models
 
 import androidx.room.ColumnInfo
 import androidx.room.Entity
-import androidx.room.ForeignKey
-import androidx.room.Index
 import androidx.room.PrimaryKey
 
 /**
