@@ -1,4 +1,4 @@
-package com.example.pillcountingnewmodels.feature.forgotPassword.viewmodel
+package com.example.pillcountingnewmodels.feature.forgotPassword.presentation.viewmodel
 
 import android.content.Context
 import androidx.lifecycle.ViewModel

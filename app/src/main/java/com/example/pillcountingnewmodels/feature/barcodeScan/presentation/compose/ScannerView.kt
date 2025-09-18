@@ -1,4 +1,4 @@
-package com.example.pillcountingnewmodels.feature.barcodeScan.presentation.composables
+package com.example.pillcountingnewmodels.feature.barcodeScan.presentation.compose
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -52,6 +52,7 @@ fun ScannerView(
             onClick = {
                 // Simulate scanning a valid NDC for Metformin Hydrochloride.
                 onBarcodeScanned("59779-311")
+                0
             },
             // The button is disabled after a scan until the user presses "Redo Scan".
             enabled = isScannerActive

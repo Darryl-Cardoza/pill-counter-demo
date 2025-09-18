@@ -6,9 +6,9 @@ import androidx.camera.core.ImageProxy
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.pillcountingnewmodels.core.utils.AppLogger
-import com.example.pillcountingnewmodels.feature.pillCountScan.domain.data.DetectedPill
 import com.example.pillcountingnewmodels.feature.pillCountScan.domain.data.FixedCountPillScanningEvent
 import com.example.pillcountingnewmodels.feature.pillCountScan.domain.model.Batch
+import com.example.pillcountingnewmodels.feature.pillCountScan.domain.model.DetectedPill
 import com.example.pillcountingnewmodels.feature.pillCountScan.domain.model.FixedCountPillScanningUiState
 import com.example.pillcountingnewmodels.feature.pillCountScan.presentation.logic.PillAnalyzer
 import dagger.hilt.android.lifecycle.HiltViewModel

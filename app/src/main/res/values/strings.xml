@@ -110,5 +110,15 @@
     <string name="skip_alt"> SKIP </string>
     <string name="save"> SAVE </string>
 
+    <string name="error_phone_invalid">Invalid phone number</string>
+    <string name="error_name_invalid">Name cannot contain numbers</string>
+    <string name="error_pharmacy_name_invalid">Pharmacy name too short</string>
+    <string name="error_npi_invalid">Invalid NPI number</string>
+
+
+    <!-- Dialogs -->
+    <string name="exit_text">Are you sure you want to exit the app?</string>
+    <string name="delete_item_text">Are you sure you want to delete this item?</string>
+
 
 </resources>

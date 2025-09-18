@@ -10,8 +10,5 @@ import com.squareup.moshi.JsonClass
 data class UserSettings(
     @Json(name = "notifications_enabled") val notificationsEnabled: Boolean? = null,
     @Json(name = "language") val language: String? = null,
-    @Json(name = "timezone") val timezone: String? = null,
-    @Json(name = "theme") val theme: String? = null,
-    @Json(name = "font_size") val fontSize: String? = null,
-    @Json(name = "experimental_features") val experimentalFeatures: List<String> = emptyList()
+    @Json(name = "timezone") val timezone: String? = null
 )

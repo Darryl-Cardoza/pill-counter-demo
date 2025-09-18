@@ -1,5 +1,6 @@
 package com.example.pillcountingnewmodels.feature.history.presentation
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.fillMaxSize
@@ -51,6 +52,9 @@ fun HistoryScreen(
         firstVisibleMonth = currentMonth,
         firstDayOfWeek = DayOfWeek.SUNDAY
     )
+
+    BackHandler { /* kept empty to consume back press and prevent navigation */ }
+
 
     Box(
         modifier = Modifier

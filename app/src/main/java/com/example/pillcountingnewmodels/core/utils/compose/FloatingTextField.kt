@@ -13,7 +13,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.OutlinedTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
@@ -32,6 +31,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -41,6 +41,34 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.pillcountingnewmodels.ui.theme.AppTheme
 
+/**
+ * A custom text input composable with a floating label, optional password visibility toggle,
+ * and support for IME actions (Next / Done).
+ *
+ * This field animates its label position and scale depending on focus state and
+ * whether it contains text, mimicking Material floating label behavior while
+ * allowing for theme customization.
+ *
+ * ### Features
+ * - Floating label that animates above the field when focused or non-empty.
+ * - Optional password toggle to show/hide input.
+ * - Supports IME actions (`Next`, `Done`) with configurable behavior.
+ * - Keyboard focus handling: moves focus forward on Next, clears focus (hides keyboard)
+ *   on Done by default, or triggers [onImeAction] if provided.
+ *
+ * @param value Current text value of the input field.
+ * @param onValueChange Callback invoked when the text value changes.
+ * @param label Label text displayed as floating placeholder.
+ * @param modifier Modifier applied to the composable.
+ * @param cornerRadius Corner radius for the input background shape.
+ * @param height Fixed height of the text field container.
+ * @param cursorColor Color of the input cursor.
+ * @param isPassword Whether this field is a password field (enables toggle icon).
+ * @param keyboardType Keyboard type (e.g., text, number, email, phone).
+ * @param imeAction IME action for the keyboard (e.g., Done, Next).
+ * @param onImeAction Optional callback invoked when the Done action is pressed.
+ * Defaults to clearing focus (hiding keyboard) if not supplied.
+ */
 @Composable
 fun FloatingLabelTextField(
     value: String,
@@ -55,6 +83,7 @@ fun FloatingLabelTextField(
     imeAction: ImeAction = ImeAction.Done,
     onImeAction: (() -> Unit)? = null
 ) {
+    val focusManager = LocalFocusManager.current
     var passwordVisible by remember { mutableStateOf(!isPassword) }
     var isFocused by remember { mutableStateOf(false) }
 
@@ -68,12 +97,13 @@ fun FloatingLabelTextField(
         } else {
             // center vertically inside text field
             (height / 2) + 15.dp
-        }
+        }, label = "labelOffsetY"
     )
 
     // Floating label scale
     val labelScale by animateFloatAsState(
-        targetValue = if (isFocused || value.isNotEmpty()) 0.75f else 1f
+        targetValue = if (isFocused || value.isNotEmpty()) 0.75f else 1f,
+        label = "labelScale"
     )
 
     Box(
@@ -102,14 +132,25 @@ fun FloatingLabelTextField(
                     color = AppTheme.extendedColors.textColor,
                     fontSize = 16.sp
                 ),
-                visualTransformation = if (isPassword && !passwordVisible) PasswordVisualTransformation() else VisualTransformation.None,
+                visualTransformation = if (isPassword && !passwordVisible) {
+                    PasswordVisualTransformation()
+                } else {
+                    VisualTransformation.None
+                },
                 cursorBrush = SolidColor(cursorColor),
                 keyboardOptions = KeyboardOptions(
                     keyboardType = keyboardType,
                     imeAction = imeAction
                 ),
                 keyboardActions = KeyboardActions(
-                    onDone = { onImeAction?.invoke() }
+                    onNext = { focusManager.moveFocus(androidx.compose.ui.focus.FocusDirection.Next) },
+                    onDone = {
+                        if (onImeAction != null) {
+                            onImeAction()
+                        } else {
+                            focusManager.clearFocus() // closes keyboard
+                        }
+                    }
                 ),
                 modifier = Modifier
                     .fillMaxWidth()
@@ -120,7 +161,8 @@ fun FloatingLabelTextField(
                 Box(modifier = Modifier.align(Alignment.CenterEnd)) {
                     IconButton(onClick = { passwordVisible = !passwordVisible }) {
                         Icon(
-                            imageVector = if (passwordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff,
+                            imageVector = if (passwordVisible) Icons.Filled.Visibility
+                            else Icons.Filled.VisibilityOff,
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.primary
                         )
@@ -142,10 +184,3 @@ fun FloatingLabelTextField(
         )
     }
 }
-
-
-
-
-
-
-

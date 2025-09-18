@@ -45,10 +45,18 @@ class DashboardViewModel @Inject constructor(
     private fun loadDashboardData() {
         viewModelScope.launch(Dispatchers.IO) {
             pillCountTxnDao.observeDashboardCountsGrouped().collect { rows ->
-                val completedFixed   = rows.firstOrNull { it.status == CountStatus.COMPLETED && it.countType == CountType.FIXED   }?.cnt ?: 0
-                val partialFixed     = rows.firstOrNull { it.status == CountStatus.PARTIAL   && it.countType == CountType.FIXED   }?.cnt ?: 0
-                val completedRegular = rows.firstOrNull { it.status == CountStatus.COMPLETED && it.countType == CountType.REGULAR }?.cnt ?: 0
-                val partialRegular   = rows.firstOrNull { it.status == CountStatus.PARTIAL   && it.countType == CountType.REGULAR }?.cnt ?: 0
+                val completedFixed =
+                    rows.firstOrNull { it.status == CountStatus.COMPLETED && it.countType == CountType.FIXED }?.cnt
+                        ?: 0
+                val partialFixed =
+                    rows.firstOrNull { it.status == CountStatus.PARTIAL && it.countType == CountType.FIXED }?.cnt
+                        ?: 0
+                val completedRegular =
+                    rows.firstOrNull { it.status == CountStatus.COMPLETED && it.countType == CountType.REGULAR }?.cnt
+                        ?: 0
+                val partialRegular =
+                    rows.firstOrNull { it.status == CountStatus.PARTIAL && it.countType == CountType.REGULAR }?.cnt
+                        ?: 0
 
                 _uiState.update {
                     it.copy(
@@ -97,14 +105,15 @@ class DashboardViewModel @Inject constructor(
 
                         // Persist only if we actually have user data
                         uiUser?.let { detail ->
-                            val entity = detail.toUserEntity(uiUser.role)
-                            userDao.upsertPreservingLocalId(entity)
-                            logger.i("User detail persisted locally.")
+                            val entity = detail.toUserEntity(jwtUserId = uiUser.profile?.userId)
+                            preferenceHelper.saveUserId(entity.userId)
+                            userDao.upsertPreservingLocalId(user = entity)
+                            logger.i(message = "User detail persisted locally.")
                         }
 
                         _uiState.update {
                             it.copy(
-                                userDetail = uiUser,           // <- always UserDetail?
+                                userDetail = uiUser,
                                 isLoadingUserDetail = false,
                                 userDetailError = null
                             )
@@ -141,24 +150,22 @@ class DashboardViewModel @Inject constructor(
  * Uses [jwtUserId] (from JWT) as the Room primary key; falls back to email if missing.
  */
 private fun UserDetail.toUserEntity(jwtUserId: String?): UserEntity {
-    val experimentalJson = this.settings?.experimentalFeatures
-        ?.joinToString(prefix = "[", postfix = "]") { "\"$it\"" }
-
-    val pk = jwtUserId ?: this.email
+    val pk = jwtUserId ?: this.profile?.email.orEmpty()
     return UserEntity(
         userId = pk,
-        email = this.email,
+        email = this.profile?.email,
         name = this.profile?.fullName,
         phoneNumber = this.profile?.phoneNumber,
         avatarUrl = this.profile?.avatarUrl,
-        role = this.role,
-        isVerified = this.isVerified,
+        role = this.profile?.role?.name,
+        isVerified = this.profile?.isVerified ?: false,
+
+        isProfileCompleted = this.profile?.isProfileCompleted,
+        pharmacyName = this.profile?.pharmacyName,
+        npiId = this.profile?.npiId,
         language = this.settings?.language,
         timezone = this.settings?.timezone,
-        theme = this.settings?.theme,
-        fontSize = this.settings?.fontSize?.toString(),
         notifications = this.settings?.notificationsEnabled,
-        experimental = experimentalJson,
         createdAt = System.currentTimeMillis()
     )
 }

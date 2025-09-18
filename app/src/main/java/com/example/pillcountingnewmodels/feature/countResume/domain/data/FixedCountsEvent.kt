@@ -3,7 +3,7 @@ package com.example.pillcountingnewmodels.feature.countResume.domain.data
 import com.example.pillcountingnewmodels.feature.countResume.domain.model.CountItem
 
 /**
- * Represents all user interactions and actions that can occur on the [FixedCountResumeScreen].
+ * Represents all user interactions and actions that can occur on the [FixedCountsEvent].
  *
  * Each event corresponds to a specific UI action, such as selecting an item,
  * toggling multi-select mode, or deleting an item.
