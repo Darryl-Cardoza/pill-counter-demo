@@ -5,7 +5,10 @@ import android.graphics.Bitmap
 import androidx.camera.core.ImageProxy
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.pillcountingnewmodels.core.room.dao.PillCountTxnDetailsDao
+import com.example.pillcountingnewmodels.core.room.models.PillCountTxnDetailsEntity
 import com.example.pillcountingnewmodels.core.utils.AppLogger
+import com.example.pillcountingnewmodels.core.utils.PreferenceHelper
 import com.example.pillcountingnewmodels.feature.pillCountScan.domain.data.FixedCountPillScanningEvent
 import com.example.pillcountingnewmodels.feature.pillCountScan.domain.model.Batch
 import com.example.pillcountingnewmodels.feature.pillCountScan.domain.model.DetectedPill
@@ -41,7 +44,9 @@ import javax.inject.Inject
  */
 @HiltViewModel
 class PillScanningViewModel @Inject constructor(
-    app: Application
+    app: Application,
+    private val preferenceHelper: PreferenceHelper,
+    private val pillCountTxnDetailsDao: PillCountTxnDetailsDao
 ) : AndroidViewModel(app) {
 
     private val logger = AppLogger.create<PillScanningViewModel>()
@@ -234,8 +239,21 @@ class PillScanningViewModel @Inject constructor(
                         batchHistory = currentState.batchHistory + newBatch,
                         detectedPills = emptyList()
                     )
+
                 }
                 currentFrameBitmap = null
+                viewModelScope.launch {
+                    val detail = PillCountTxnDetailsEntity(
+                        txnId = preferenceHelper.getTxnId(), // FK to transaction
+                        txnDetailsNo = uiState.value.batchNumber,
+                        pillCount = currentCount,
+                        imagePath = "",
+                        createdAt = System.currentTimeMillis(),
+                        updatedAt = System.currentTimeMillis()
+                    )
+                    pillCountTxnDetailsDao.insert(detail)
+                }
+
             }
             is FixedCountPillScanningEvent.RescanClicked -> {
                 logger.i("Rescan requested")

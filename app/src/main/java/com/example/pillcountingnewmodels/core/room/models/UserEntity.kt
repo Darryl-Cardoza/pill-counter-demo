@@ -2,6 +2,8 @@ package com.example.pillcountingnewmodels.core.room.models
 
 import androidx.room.ColumnInfo
 import androidx.room.Entity
+import androidx.room.ForeignKey
+import androidx.room.Index
 import androidx.room.PrimaryKey
 
 /**
@@ -18,21 +20,10 @@ import androidx.room.PrimaryKey
 @Entity(tableName = "users")
 data class UserEntity(
 
-    /**
-     * Unique identifier for the user.
-     *
-     * - Primary key in Room.
-     * - Derived from JWT subject; falls back to `profile.user_id` or `profile.email`.
-     */
-    @PrimaryKey
-    val userId: String,
-
-    /**
-     * Local incremental identifier (not from the backend).
-     * Used for device-side ordering or joins when needed.
-     */
-    @ColumnInfo(defaultValue = "0")
+    @PrimaryKey(autoGenerate = true)
     val localId: Long = 0L,
+
+    val userId: String,
 
     // ───── Profile fields ─────
 
@@ -52,7 +43,6 @@ data class UserEntity(
     val role: String? = null,
 
     /** Whether the user’s email/account is verified. */
-    @ColumnInfo(defaultValue = "0")
     val isVerified: Boolean = false,
 
     /** Flag indicating if the profile is completed. */

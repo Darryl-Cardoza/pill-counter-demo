@@ -36,6 +36,11 @@ class PreferenceHelper @Inject constructor(
 
         /** Key for storing the currently logged-in user's ID. */
         private const val KEY_USER_ID = "user_id"
+
+        /** Key for storing the currently logged-in user's ID. */
+        private const val KEY_LOCAL_ID = "local_id"
+
+        private const val KEY_TXN_ID = "txn_id"
     }
 
     /** SharedPreferences instance for persistent key-value storage. */
@@ -96,4 +101,27 @@ class PreferenceHelper @Inject constructor(
     fun clearUserId() {
         prefs.edit { remove(KEY_USER_ID) }
     }
+
+    /**
+     * Saves the current user's ID into preferences.
+     *
+     * @param localId Unique identifier of the logged-in user in rooms db.
+     */
+    fun saveLocalId(localId: Long) {
+        prefs.edit { putLong(KEY_LOCAL_ID, localId) }
+    }
+
+    /**
+     * Retrieves the stored local ID.
+     *
+     * @return The stored local ID, or `null` if none is set.
+     */
+    fun getLocalId(): Long? = prefs.getLong(KEY_LOCAL_ID, 0)
+
+
+    fun saveTxnId(txnId: Long) {
+        prefs.edit { putLong(KEY_TXN_ID, txnId) }
+    }
+
+    fun getTxnId(): Long? = prefs.getLong(KEY_TXN_ID, 0)
 }

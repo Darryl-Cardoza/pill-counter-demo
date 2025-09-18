@@ -4,8 +4,13 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.pillcountingnewmodels.core.room.dao.DrugMasterDao
+import com.example.pillcountingnewmodels.core.room.dao.PillCountTxnDao
+import com.example.pillcountingnewmodels.core.room.models.CountStatus
+import com.example.pillcountingnewmodels.core.room.models.CountType
 import com.example.pillcountingnewmodels.core.room.models.DrugMasterEntity
+import com.example.pillcountingnewmodels.core.room.models.PillCountTxnEntity
 import com.example.pillcountingnewmodels.core.utils.AppLogger
+import com.example.pillcountingnewmodels.core.utils.PreferenceHelper
 import com.example.pillcountingnewmodels.feature.barcodeScan.domain.data.IDrugRepository
 import com.example.pillcountingnewmodels.feature.barcodeScan.domain.data.NavigationEvent
 import com.example.pillcountingnewmodels.feature.barcodeScan.domain.data.ScanBarcodeEvent
@@ -31,7 +36,9 @@ import javax.inject.Inject
 class ScanBarcodeViewModel @Inject constructor(
     private val savedStateHandle: SavedStateHandle,
     private val drugRepository: IDrugRepository,
-    private val drugMasterDao: DrugMasterDao
+    private val drugMasterDao: DrugMasterDao,
+    private val preferenceHelper: PreferenceHelper,
+    private val pillCountTxnDao: PillCountTxnDao
 ) : ViewModel() {
 
     private val logger = AppLogger.create<ScanBarcodeViewModel>()
@@ -43,7 +50,7 @@ class ScanBarcodeViewModel @Inject constructor(
     val navigationEvent = _navigationEvent.receiveAsFlow()
 
     init {
-        val scanType = savedStateHandle.get<String>(ARG_TYPE) ?: "regular"
+        val scanType = savedStateHandle.get<String>(ARG_TYPE) ?: ""
         _uiState.update { it.copy(scanType = scanType) }
         logger.i("ViewModel initialized with scanType: '$scanType'")
     }
@@ -77,7 +84,7 @@ class ScanBarcodeViewModel @Inject constructor(
         logger.i("Processing barcode: $barcodeValue")
 
         viewModelScope.launch {
-            val drug = drugMasterDao.getByNdc(barcodeValue)
+            val drug = drugMasterDao.getDrugByNdc(barcodeValue)
             if (drug != null) {
                 logger.i("Drug exists: ${drug.drugName}")
                 // use the record directly
@@ -85,7 +92,7 @@ class ScanBarcodeViewModel @Inject constructor(
                     it.copy(
                         isLoading = false,
                         drugName = drug.drugName ?: "",
-                        ndc = drug.ndc ?: "",
+                        ndc = drug.ndc,
                         isScannerActive = false // Pause scanner on successful scan
                     )
                 }
@@ -142,10 +149,6 @@ class ScanBarcodeViewModel @Inject constructor(
         }
     }
 
-    fun handleManualPillInfo(){
-
-    }
-
     /**
      * Handles the confirmation of a scanned item.
      * It checks if an NDC is present and, if so, sends a navigation event
@@ -161,20 +164,25 @@ class ScanBarcodeViewModel @Inject constructor(
         }
         logger.d("Confirm scan clicked. Navigating to pill count.")
         viewModelScope.launch {
-            val drug = drugMasterDao.getByNdc(currentNdc)
-            if (drug != null) {
-                // Only update drugName
-                drugMasterDao.updateDrugNameByNdc(currentNdc, currentDrugName)
-            } else {
-                // Insert new record
-                drugMasterDao.upsert(
-                    DrugMasterEntity(
-                        ndc = currentNdc,
-                        drugName = currentDrugName
-                    )
-                )
-            }
+            val drugId = drugMasterDao.upsertAndReturnId(currentNdc, currentDrugName)
+            val localId =  preferenceHelper.getLocalId()
+            logger.i(message = "local id in scan--->   $localId")
+            val txn = PillCountTxnEntity(
+                localId = localId,
+                drugId = drugId,
+                countType = when (uiState.value.scanType){
+                    "FIXED" -> CountType.FIXED
+                    "REGULAR" -> CountType.REGULAR
+                    else -> CountType.REGULAR
+                },
+                status = CountStatus.PARTIAL,
+                expiry = uiState.value.expiry,
+                lotNo = uiState.value.lotNo
+            )
 
+            val txnId = pillCountTxnDao.insert(txn)
+            preferenceHelper.saveTxnId(txnId)
+            logger.d("active transaction id -->  $txnId")
             _navigationEvent.send(NavigationEvent.NavigateToPillCount(currentNdc))
         }
     }
@@ -198,7 +206,7 @@ class ScanBarcodeViewModel @Inject constructor(
                 ndc = ndc,
                 isScannerActive = false, // Pause scanner on successful scan
                 showManualEntry = false, //hiding dialog
-                error = ""
+                error = null
             )
         }
     }
@@ -207,7 +215,7 @@ class ScanBarcodeViewModel @Inject constructor(
         _uiState.update {
             it.copy(
                 showManualEntry = true,
-                error = ""
+                error = null
             )
         }
     }
@@ -216,7 +224,7 @@ class ScanBarcodeViewModel @Inject constructor(
         _uiState.update {
             it.copy(
                 showManualEntry = false,
-                error = ""
+                error = null
             )
         }
     }

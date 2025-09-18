@@ -14,6 +14,8 @@ data class ScanBarcodeUiState(
     val scanType: String = "",
     val drugName: String = "",
     val ndc: String = "",
+    val expiry: String = "",
+    val lotNo: String = "",
     val isLoading: Boolean = false,
     val error: String? = null,
     val isScannerActive: Boolean = true,

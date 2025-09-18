@@ -14,7 +14,7 @@ import com.example.pillcountingnewmodels.core.room.di.PillCountTxnConverters
  * because `onDelete = SET_NULL` is used on the foreign keys.
  *
  * @property txnId        Auto-generated primary key.
- * @property userId       FK to [UserEntity.userId]. Null if the user is deleted.
+ * @property localId       FK to [UserEntity.localId]. Null if the user is deleted.
  * @property drugId       FK to [DrugMasterEntity.drugId]. Null if the drug is deleted (type must match parent: Long?).
  * @property countType    How the count is performed (requires a TypeConverter).
  * @property targetCount  Expected/target count for reconciliation.
@@ -36,8 +36,8 @@ import com.example.pillcountingnewmodels.core.room.di.PillCountTxnConverters
     foreignKeys = [
         ForeignKey(
             entity = UserEntity::class,
-            parentColumns = ["userId"],
-            childColumns = ["userId"],
+            parentColumns = ["localId"],
+            childColumns = ["localId"],
             onDelete = ForeignKey.SET_NULL
         ),
         ForeignKey(
@@ -48,7 +48,7 @@ import com.example.pillcountingnewmodels.core.room.di.PillCountTxnConverters
         )
     ],
     indices = [
-        Index(value = ["userId"], name = "idx_txn_userId"),
+        Index(value = ["localId"], name = "idx_txn_localId"),
         Index(value = ["drugId"], name = "idx_txn_drugId")
     ]
 )
@@ -57,7 +57,7 @@ data class PillCountTxnEntity(
     @PrimaryKey(autoGenerate = true)
     val txnId: Long = 0L,
 
-    val userId: String? = null,
+    val localId: Long? = null,
     val drugId: Long? = null,
 
     val countType: CountType,

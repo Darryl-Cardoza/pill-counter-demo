@@ -17,7 +17,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.pillcountingnewmodels.R
-import com.example.pillcountingnewmodels.core.utils.AppConstants.FIXED_COUNT
+import com.example.pillcountingnewmodels.core.room.models.CountType
 import com.example.pillcountingnewmodels.ui.theme.AppTheme
 
 /**
@@ -115,7 +115,7 @@ fun FixedCountSection(
                     indication = null,
                     interactionSource = remember { MutableInteractionSource() }
                 ) {
-                    navController.navigate(Screen.ResumeFixedCounts.createRoute(FIXED_COUNT))
+                    navController.navigate(Screen.ResumeFixedCounts.createRoute(CountType.FIXED.toString()))
                 }
             ) {
                 StatusChip(
@@ -133,5 +133,5 @@ fun FixedCountSection(
 }
 
 fun navigateToBarcodeScanFixedCount(navController: NavController) {
-    navController.navigate(Screen.ScanBarcode.createRoute(FIXED_COUNT))
+    navController.navigate(Screen.ScanBarcode.createRoute(CountType.FIXED.toString()))
 }

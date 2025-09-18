@@ -106,8 +106,11 @@ class DashboardViewModel @Inject constructor(
                         // Persist only if we actually have user data
                         uiUser?.let { detail ->
                             val entity = detail.toUserEntity(jwtUserId = uiUser.profile?.userId)
+                            val localId = userDao.upsertPreservingLocalId(user = entity)
+                            logger.i(message = "local id --->   $localId")
                             preferenceHelper.saveUserId(entity.userId)
-                            userDao.upsertPreservingLocalId(user = entity)
+                            preferenceHelper.saveLocalId(localId)
+                            logger.i(message = "local id 2 --->   ${preferenceHelper.getLocalId()}")
                             logger.i(message = "User detail persisted locally.")
                         }
 

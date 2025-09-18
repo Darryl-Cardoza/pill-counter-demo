@@ -14,6 +14,9 @@ interface DrugMasterDao {
 
     /* ────────────────────────── Insert / Update ────────────────────────── */
 
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insert(drug: DrugMasterEntity): Long
+
     /**
      * Insert or update a single [DrugMasterEntity].
      *
@@ -21,7 +24,7 @@ interface DrugMasterDao {
      * @return The newly inserted row ID.
      */
     @Upsert
-    suspend fun upsert(drug: DrugMasterEntity)
+    suspend fun upsert(drug: DrugMasterEntity): Long
 
     /**
      * Insert or update a list of [DrugMasterEntity] records.
@@ -41,7 +44,26 @@ interface DrugMasterDao {
     suspend fun update(drug: DrugMasterEntity)
 
     @Query("UPDATE drug_master SET drugName = :drugName WHERE ndc = :ndc")
-    suspend fun updateDrugNameByNdc(ndc: String, drugName: String)
+    suspend fun updateDrugNameByNdc(ndc: String, drugName: String): Int
+
+    suspend fun upsertAndReturnId(ndc: String, drugName: String): Long {
+        // Check if exists
+        val existingId = getDrugIdByNdc(ndc)
+        return if (existingId != null) {
+            // Update existing row
+            updateDrugNameByNdc(ndc, drugName)
+            existingId
+        } else {
+            // Insert new row
+            insert(
+                DrugMasterEntity(
+                    ndc = ndc,
+                    drugName = drugName
+                )
+            )
+        }
+    }
+
 
     /* ───────────────────────────── Queries ────────────────────────────── */
 
@@ -61,7 +83,10 @@ interface DrugMasterDao {
      * @return The matching [DrugMasterEntity], or null if not found.
      */
     @Query("SELECT * FROM drug_master WHERE ndc = :ndc LIMIT 1")
-    suspend fun getByNdc(ndc: String): DrugMasterEntity?
+    suspend fun getDrugByNdc(ndc: String): DrugMasterEntity?
+
+    @Query("SELECT drugId FROM drug_master WHERE ndc = :ndc LIMIT 1")
+    suspend fun getDrugIdByNdc(ndc: String): Long?
 
     /**
      * Search for drugs by name or NDC.

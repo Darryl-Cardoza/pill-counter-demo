@@ -52,13 +52,14 @@ interface UserDao {
      * if the user already exists; otherwise assigns the next local ID.
      */
     @Transaction
-    suspend fun upsertPreservingLocalId(user: UserEntity) {
+    suspend fun upsertPreservingLocalId(user: UserEntity): Long {
         val existing = getById(user.userId)
         val toSave = when {
             existing != null -> user.copy(localId = existing.localId)
             else -> user.copy(localId = nextLocalId())
         }
         upsert(toSave)
+        return toSave.localId
     }
 
     /**

@@ -17,7 +17,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.pillcountingnewmodels.R
-import com.example.pillcountingnewmodels.core.utils.AppConstants.REGULAR_COUNT
+import com.example.pillcountingnewmodels.core.room.models.CountType
 import com.example.pillcountingnewmodels.ui.theme.AppTheme
 
 /**
@@ -115,7 +115,7 @@ fun RegularCountSection(
                     indication = null,
                     interactionSource = remember { MutableInteractionSource() }
                 ) {
-                    navController.navigate(Screen.ResumeRegularCounts.createRoute(REGULAR_COUNT))
+                    navigateToBarcodeScanRegularCount(navController)
                 }
             ) {
                 StatusChip(
@@ -133,5 +133,5 @@ fun RegularCountSection(
 }
 
 fun navigateToBarcodeScanRegularCount(navController: NavController) {
-    navController.navigate(Screen.ScanBarcode.createRoute(REGULAR_COUNT))
+    navController.navigate(Screen.ScanBarcode.createRoute(CountType.REGULAR.toString()))
 }

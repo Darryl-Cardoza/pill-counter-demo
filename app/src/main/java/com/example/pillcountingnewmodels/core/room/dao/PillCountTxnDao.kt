@@ -35,7 +35,7 @@ interface PillCountTxnDao {
      * @return The row ID of the inserted entity.
      */
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun upsert(txn: PillCountTxnEntity): Long
+    suspend fun insert(txn: PillCountTxnEntity): Long
 
     /**
      * Insert or replace multiple transaction headers.
@@ -101,7 +101,7 @@ interface PillCountTxnDao {
     /**
      * Paged, filterable query for active transactions.
      *
-     * @param userId Optional user filter (exact match).
+     * @param localId Optional user filter (exact match).
      * @param drugId Optional drug filter (exact match).
      * @param limit  Max rows to return.
      * @param offset Rows to skip (for pagination).
@@ -110,14 +110,14 @@ interface PillCountTxnDao {
         """
         SELECT * FROM pill_count_txn
         WHERE isDeleted = 0
-          AND (:userId IS NULL OR userId = :userId)
+          AND (:localId IS NULL OR localId = :localId)
           AND (:drugId IS NULL OR drugId = :drugId)
         ORDER BY createdAt DESC
         LIMIT :limit OFFSET :offset
         """
     )
     suspend fun queryPaged(
-        userId: String? = null,
+        localId: String? = null,
         drugId: Long? = null,
         limit: Int = 50,
         offset: Int = 0
@@ -194,18 +194,18 @@ interface PillCountTxnDao {
     /**
      * Get all transactions for a given user with their details.
      *
-     * @param userId The user ID to filter by (nullable → returns all users).
+     * @param localId The user ID to filter by (nullable → returns all users).
      */
     @Transaction
     @Query(
         """
         SELECT * FROM pill_count_txn
         WHERE isDeleted = 0
-          AND (:userId IS NULL OR userId = :userId)
+          AND (:localId IS NULL OR localId = :localId)
         ORDER BY createdAt DESC
         """
     )
-    suspend fun getAllByUserWithDetails(userId: String?): List<PillCountTxnWithDetails>
+    suspend fun getAllByUserWithDetails(localId: Long?): List<PillCountTxnWithDetails>
 
     /**
      * Grouped aggregate: one row per (status, countType).

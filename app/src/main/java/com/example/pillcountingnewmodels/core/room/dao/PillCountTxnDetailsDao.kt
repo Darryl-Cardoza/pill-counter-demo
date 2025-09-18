@@ -27,7 +27,7 @@ interface PillCountTxnDetailsDao {
      * @return The row ID of the inserted entity.
      */
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun upsert(detail: PillCountTxnDetailsEntity): Long
+    suspend fun insert(detail: PillCountTxnDetailsEntity): Long
 
     /**
      * Insert or replace multiple transaction details.
