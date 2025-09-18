@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBarsPadding
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -20,6 +19,9 @@ import com.example.pillcountingnewmodels.feature.barcodeScan.presentation.compos
 
 import com.example.pillcountingnewmodels.feature.barcodeScan.presentation.composables.ScannerView
 import com.example.pillcountingnewmodels.feature.barcodeScan.presentation.compose.PermissionDeniedView
+import com.example.pillcountingnewmodels.feature.barcodeScan.presentation.compose.InformationPanel
+import com.example.pillcountingnewmodels.feature.barcodeScan.presentation.compose.PermissionDeniedView
+import com.example.pillcountingnewmodels.feature.barcodeScan.presentation.compose.ScannerView
 
 /**
  * The stateless presentation component for the barcode scanning screen. It is responsible for

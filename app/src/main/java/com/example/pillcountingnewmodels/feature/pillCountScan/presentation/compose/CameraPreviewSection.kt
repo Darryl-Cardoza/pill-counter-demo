@@ -16,7 +16,7 @@ import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
-import com.example.pillcountingnewmodels.feature.pillCountScan.domain.data.DetectedPill
+import com.example.pillcountingnewmodels.feature.pillCountScan.domain.model.DetectedPill
 import com.example.pillcountingnewmodels.feature.pillCountScan.presentation.logic.CameraHelper
 import kotlinx.coroutines.launch
 import kotlin.math.max
@@ -104,8 +104,8 @@ fun CameraPreviewSection(
                 val offset = mapToViewCoordinates(
                     pill.x,
                     pill.y,
-                    imageWidth = 640,   // 👈 replace with model input width
-                    imageHeight = 640   // 👈 replace with model input height
+                    imageWidth = 640,
+                    imageHeight = 640
                 )
 
                 drawCircle(

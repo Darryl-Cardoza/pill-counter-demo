@@ -1,13 +1,11 @@
 package com.example.pillcountingnewmodels.feature.barcodeScan.domain.model
 
-
 import com.squareup.moshi.Json
 
 /**
  * DTO that models the JSON response from the openFDA `/drug/ndc.json` endpoint.
  */
 data class DrugDataResponse(
-
     val results: List<DrugResult>?
 )
 

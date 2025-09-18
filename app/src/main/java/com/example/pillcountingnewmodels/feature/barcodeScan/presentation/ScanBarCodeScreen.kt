@@ -1,6 +1,7 @@
 package com.example.pillcountingnewmodels.feature.barcodeScan.presentation
 
 import ManualDrugEntryDialog
+import Screen
 import android.Manifest
 import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -18,7 +19,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.pillcountingnewmodels.core.utils.ToastUtils
 import com.example.pillcountingnewmodels.feature.barcodeScan.domain.data.NavigationEvent
-import com.example.pillcountingnewmodels.feature.barcodeScan.viewmodel.ScanBarcodeViewModel
+import com.example.pillcountingnewmodels.feature.barcodeScan.presentation.viewmodel.ScanBarcodeViewModel
 
 /**
  * A stateful composable that manages the logic for camera permissions and collects state

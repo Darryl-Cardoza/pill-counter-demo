@@ -2,7 +2,7 @@
 
 package com.example.pillcountingnewmodels.navigation
 
-import ProfileScreen
+import Screen
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -13,11 +13,12 @@ import androidx.navigation.compose.composable
 import com.example.pillcountingnewmodels.feature.barcodeScan.presentation.ScanBarCodeScreen
 import com.example.pillcountingnewmodels.feature.countResume.presentation.FixedCountResumeScreen
 import com.example.pillcountingnewmodels.feature.countResume.presentation.RegularCountResumeScreen
-import com.example.pillcountingnewmodels.feature.counts.presentation.viewmodel.CountsViewModel
+import com.example.pillcountingnewmodels.feature.countResume.presentation.viewmodel.CountsViewModel
 import com.example.pillcountingnewmodels.feature.dashboard.presentation.DashboardScreen
 import com.example.pillcountingnewmodels.feature.history.presentation.HistoryScreen
 import com.example.pillcountingnewmodels.feature.menu.presentation.compose.MenuScreen
 import com.example.pillcountingnewmodels.feature.pillCountScan.presentation.PillScanningScreen
+import com.example.pillcountingnewmodels.feature.profile.presentation.ProfileScreen
 import com.example.pillcountingnewmodels.feature.settings.presentation.SettingsScreen
 import com.example.pillcountingnewmodels.navigatio.authGraph
 

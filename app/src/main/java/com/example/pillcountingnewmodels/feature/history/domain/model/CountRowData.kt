@@ -3,7 +3,7 @@ package com.example.pillcountingnewmodels.feature.history.domain.model
 /**
  * Represents a single row in the medicine counts list on the History screen.
  *
- * This data class encapsulates all information needed to render a row in [CountsSection]:
+ * This data class encapsulates all information needed to render a row in [CountRowData]:
  * - `name`: Display name of the medicine.
  * - `count`: Number of units counted.
  * - `iconRes`: Drawable resource ID for the associated icon/action.

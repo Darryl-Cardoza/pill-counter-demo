@@ -5,32 +5,83 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 
 /**
- * Entity representing a user in the system, persisted locally in Room.
+ * Room entity representing a user account, persisted locally for offline access.
  *
- * Mirrors the API user payload (excluding auth token) and adds a
- * local incremental ID for device-side needs. `userId` is the PK.
+ * This entity mirrors the structure of the backend `profile` and `settings` payloads,
+ * while also introducing local-only metadata such as [localId] and [createdAt].
+ *
+ * ### Key Notes
+ * - [userId] (PK) is typically derived from the JWT claim; falls back to API `profile.user_id` or `profile.email`.
+ * - Sensitive values like auth tokens are **not** stored here — those live in [androidx.room.Dao].
+ * - Ensures a single canonical record per user account in local persistence.
  */
 @Entity(tableName = "users")
 data class UserEntity(
+
+    /**
+     * Unique identifier for the user.
+     *
+     * - Primary key in Room.
+     * - Derived from JWT subject; falls back to `profile.user_id` or `profile.email`.
+     */
     @PrimaryKey
     val userId: String,
+
+    /**
+     * Local incremental identifier (not from the backend).
+     * Used for device-side ordering or joins when needed.
+     */
     @ColumnInfo(defaultValue = "0")
     val localId: Long = 0L,
 
+    // ───── Profile fields ─────
+
+    /** Email address of the user. */
     val email: String? = null,
+
+    /** Full name of the user. */
     val name: String? = null,
+
+    /** Contact phone number. */
     val phoneNumber: String? = null,
+
+    /** Avatar/profile image URL. */
     val avatarUrl: String? = null,
+
+    /** Role name (e.g., "admin", "pharmacist"). */
     val role: String? = null,
 
+    /** Whether the user’s email/account is verified. */
     @ColumnInfo(defaultValue = "0")
     val isVerified: Boolean = false,
 
+    /** Flag indicating if the profile is completed. */
+    @ColumnInfo(name = "is_profile_completed")
+    val isProfileCompleted: Boolean? = null,
+
+    /** Associated pharmacy name (if applicable). */
+    @ColumnInfo(name = "pharmacy_name")
+    val pharmacyName: String? = null,
+
+    /** NPI (National Provider Identifier) or equivalent ID. */
+    @ColumnInfo(name = "npi_id")
+    val npiId: String? = null,
+
+    // ───── Settings fields ─────
+
+    /** Preferred language code (e.g., "en", "hi"). */
     val language: String? = null,
+
+    /** Preferred timezone (e.g., "Asia/Kolkata"). */
     val timezone: String? = null,
-    val theme: String? = null,
-    val fontSize: String? = null,
+
+    /** Whether notifications are enabled. */
     val notifications: Boolean? = null,
-    val experimental: String? = null,
+
+    // ───── Local metadata ─────
+
+    /**
+     * Local timestamp (epoch millis) when this record was created/updated.
+     */
     val createdAt: Long = System.currentTimeMillis()
 )

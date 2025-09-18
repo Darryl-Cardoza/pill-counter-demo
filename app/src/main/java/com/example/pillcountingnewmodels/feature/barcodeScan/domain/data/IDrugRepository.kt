@@ -1,4 +1,4 @@
-package com.example.pillcountingnewmodels.feature.barcodeScan.domain.repository
+package com.example.pillcountingnewmodels.feature.barcodeScan.domain.data
 
 import com.example.pillcountingnewmodels.feature.barcodeScan.domain.model.DrugInfo
 
