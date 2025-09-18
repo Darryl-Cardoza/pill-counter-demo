@@ -173,17 +173,8 @@ interface UserDao {
     @Query("UPDATE users SET timezone = :tz WHERE userId = :id")
     suspend fun updateTimezone(id: String, tz: String?)
 
-    @Query("UPDATE users SET theme = :theme WHERE userId = :id")
-    suspend fun updateTheme(id: String, theme: String?)
-
-    @Query("UPDATE users SET fontSize = :size WHERE userId = :id")
-    suspend fun updateFontSize(id: String, size: String?)
-
     @Query("UPDATE users SET notifications = :enabled WHERE userId = :id")
     suspend fun updateNotifications(id: String, enabled: Boolean?)
-
-    @Query("UPDATE users SET experimental = :json WHERE userId = :id")
-    suspend fun updateExperimental(id: String, json: String?)
 
     /* ────────────────────────────── Deletes ────────────────────────────── */
 

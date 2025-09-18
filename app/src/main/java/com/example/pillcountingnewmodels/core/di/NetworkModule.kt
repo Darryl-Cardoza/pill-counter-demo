@@ -1,4 +1,4 @@
-package com.example.pillcountingnewmodels.di
+package com.example.pillcountingnewmodels.core.di
 
 import android.content.Context
 import com.chuckerteam.chucker.api.ChuckerInterceptor
@@ -7,9 +7,11 @@ import com.example.pillcountingnewmodels.core.network.IApplicationSettingInterfa
 import com.example.pillcountingnewmodels.core.room.dao.UserDao
 import com.example.pillcountingnewmodels.core.utils.ColorAdapter
 import com.example.pillcountingnewmodels.core.utils.PreferenceHelper
+import com.example.pillcountingnewmodels.di.DrugApiQualifier
+import com.example.pillcountingnewmodels.di.MainApi
+import com.example.pillcountingnewmodels.feature.barcodeScan.data.DrugRepository
 import com.example.pillcountingnewmodels.feature.barcodeScan.data.remote.IDrugAPI
-import com.example.pillcountingnewmodels.feature.barcodeScan.data.repository.DrugRepository
-import com.example.pillcountingnewmodels.feature.barcodeScan.domain.repository.IDrugRepository
+import com.example.pillcountingnewmodels.feature.barcodeScan.domain.data.IDrugRepository
 import com.example.pillcountingnewmodels.feature.dashboard.data.UserDetailRepository
 import com.example.pillcountingnewmodels.feature.dashboard.data.remote.IUserDetailAPI
 import com.example.pillcountingnewmodels.feature.dashboard.domain.data.IUserDetailRepository
@@ -20,6 +22,9 @@ import com.example.pillcountingnewmodels.feature.login.data.LoginRepository
 import com.example.pillcountingnewmodels.feature.login.data.remote.ILoginApi
 import com.example.pillcountingnewmodels.feature.login.domain.data.ILoginRepository
 import com.example.pillcountingnewmodels.feature.otp.data.VerifyPinRepository
+import com.example.pillcountingnewmodels.feature.profile.data.ProfileRepository
+import com.example.pillcountingnewmodels.feature.profile.data.remote.IProfileApi
+import com.example.pillcountingnewmodels.feature.profile.domain.data.IProfileRepository
 import com.example.pillcountingnewmodels.feature.register.data.RegisterRepository
 import com.example.pillcountingnewmodels.feature.register.data.remote.IRegisterAPI
 import com.example.pillcountingnewmodels.feature.register.data.remote.IVerifyPinAPI
@@ -191,6 +196,15 @@ object NetworkModule {
     }
 
     /**
+     * Creates and provides an implementation of the [IProfileApi] service for updating the user details.
+     */
+    @Provides
+    @Singleton
+    fun provideUserProfileApi(@MainApi retrofit: Retrofit): IProfileApi {
+        return retrofit.create(IProfileApi::class.java)
+    }
+
+    /**
      * Creates and provides an implementation of the [IDrugAPI] service for verifying the user registration.
      */
     @Provides
@@ -279,6 +293,25 @@ object NetworkModule {
             applicationSettingApi = applicationSettingApi,
             preferenceHelper = preferenceHelper,
             ioDispatcher = ioDispatcher
+        )
+    }
+
+    /**
+     * Provides the concrete implementation of the [IForgotPasswordRepository].
+     */
+    @Provides
+    @Singleton
+    fun provideUserProfileRepository(
+        api: IProfileApi,
+        ioDispatcher: CoroutineDispatcher,
+        userDao: UserDao,
+        preferenceHelper : PreferenceHelper
+    ): IProfileRepository {
+        return ProfileRepository(
+            profileApi = api,
+            userDao = userDao,
+            ioDispatcher = ioDispatcher,
+            preferenceHelper = preferenceHelper
         )
     }
 

@@ -1,4 +1,4 @@
-package com.example.pillcountingnewmodels.feature.counts.presentation.viewmodel
+package com.example.pillcountingnewmodels.feature.countResume.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope

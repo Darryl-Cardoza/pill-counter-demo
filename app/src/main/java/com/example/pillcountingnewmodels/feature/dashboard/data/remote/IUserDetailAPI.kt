@@ -1,6 +1,8 @@
 package com.example.pillcountingnewmodels.feature.dashboard.data.remote
 
+import com.example.pillcountingnewmodels.core.models.ApiResponse
 import com.example.pillcountingnewmodels.core.utils.URLConstant
+import com.example.pillcountingnewmodels.feature.dashboard.domain.model.UserDetail
 import com.example.pillcountingnewmodels.feature.dashboard.domain.model.UserDetailResponse
 import retrofit2.Response
 import retrofit2.http.GET
@@ -20,5 +22,5 @@ interface IUserDetailAPI {
     @GET(URLConstant.GET_ABOUT_ME)
     suspend fun getUserDetail(
         @Header("Authorization") authorization: String
-    ): Response<UserDetailResponse>
+    ): Response<ApiResponse<UserDetail>>
 }

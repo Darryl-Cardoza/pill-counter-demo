@@ -1,12 +1,13 @@
 package com.example.pillcountingnewmodels.feature.dashboard.data
 
+import com.example.pillcountingnewmodels.core.models.ApiResponse
 import com.example.pillcountingnewmodels.core.models.RefreshTokenRequest
 import com.example.pillcountingnewmodels.core.network.IApplicationSettingInterface
 import com.example.pillcountingnewmodels.core.utils.AppLogger
 import com.example.pillcountingnewmodels.core.utils.PreferenceHelper
 import com.example.pillcountingnewmodels.feature.dashboard.data.remote.IUserDetailAPI
 import com.example.pillcountingnewmodels.feature.dashboard.domain.data.IUserDetailRepository
-import com.example.pillcountingnewmodels.feature.dashboard.domain.model.UserDetailResponse
+import com.example.pillcountingnewmodels.feature.dashboard.domain.model.UserDetail
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
 import retrofit2.HttpException
@@ -37,7 +38,7 @@ class UserDetailRepository @Inject constructor(
      * @return A [Result] wrapping either a [UserDetail] on success,
      * or an exception on failure.
      */
-    override suspend fun getUserDetail(token: String): Result<UserDetailResponse> =
+    override suspend fun getUserDetail(token: String): Result<ApiResponse<UserDetail>> =
         withContext(ioDispatcher) {
             try {
                 logger.i("Fetching user detail with token: $token")

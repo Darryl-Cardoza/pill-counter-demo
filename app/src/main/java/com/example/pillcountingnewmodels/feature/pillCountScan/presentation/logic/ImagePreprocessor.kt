@@ -3,7 +3,12 @@ package com.example.pillcountingnewmodels.feature.pillCountScan.presentation.log
 import android.graphics.Bitmap
 import android.graphics.Color
 import android.graphics.Matrix
+import androidx.core.graphics.get
+import androidx.core.graphics.scale
+import androidx.core.graphics.set
 import com.example.pillcountingnewmodels.core.utils.AppLogger
+import com.example.pillcountingnewmodels.feature.pillCountScan.presentation.logic.ImagePreprocessor.MODEL_INPUT_SIZE
+import com.example.pillcountingnewmodels.feature.pillCountScan.presentation.logic.ImagePreprocessor.preprocess
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -66,7 +71,7 @@ object ImagePreprocessor {
 
         // Step 2: Resize to model input
         val resized = try {
-            Bitmap.createScaledBitmap(orientedBitmap, MODEL_INPUT_SIZE, MODEL_INPUT_SIZE, true).also {
+            orientedBitmap.scale(MODEL_INPUT_SIZE, MODEL_INPUT_SIZE).also {
                 logger.d("Resized bitmap to ${it.width}x${it.height}")
             }
         } catch (e: OutOfMemoryError) {
@@ -86,7 +91,7 @@ object ImagePreprocessor {
         var skipped = 0
         for (y in 0 until MODEL_INPUT_SIZE) {
             for (x in 0 until MODEL_INPUT_SIZE) {
-                val pixel = glareReduced.getPixel(x, y)
+                val pixel = glareReduced[x, y]
 
                 var r = (pixel shr 16 and 0xFF).toFloat()
                 var g = (pixel shr 8 and 0xFF).toFloat()
@@ -108,7 +113,7 @@ object ImagePreprocessor {
                     buffer.putFloat(r / 255f)
                     buffer.putFloat(g / 255f)
                     buffer.putFloat(b / 255f)
-                } catch (e: Exception) {
+                } catch (_: Exception) {
                     skipped++
                 }
             }
@@ -132,7 +137,7 @@ object ImagePreprocessor {
         var adjusted = 0
         for (y in 0 until mutable.height step 2) {
             for (x in 0 until mutable.width step 2) {
-                val pixel = mutable.getPixel(x, y)
+                val pixel = mutable[x, y]
                 val r = Color.red(pixel)
                 val g = Color.green(pixel)
                 val b = Color.blue(pixel)
@@ -148,7 +153,7 @@ object ImagePreprocessor {
                     newR = (newR * 0.8).toInt()
                     newG = (newG * 0.8).toInt()
                     newB = (newB * 0.8).toInt()
-                    mutable.setPixel(x, y, Color.rgb(newR, newG, newB))
+                    mutable[x, y] = Color.rgb(newR, newG, newB)
                     adjusted++
                 }
             }

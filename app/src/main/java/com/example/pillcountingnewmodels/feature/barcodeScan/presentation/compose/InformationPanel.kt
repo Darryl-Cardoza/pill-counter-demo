@@ -1,4 +1,4 @@
-package com.example.pillcountingnewmodels.feature.barcodeScan.presentation.composables
+package com.example.pillcountingnewmodels.feature.barcodeScan.presentation.compose
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -23,8 +23,6 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.pillcountingnewmodels.R
 import com.example.pillcountingnewmodels.feature.barcodeScan.domain.data.ScanBarcodeEvent
-import com.example.pillcountingnewmodels.feature.barcodeScan.presentation.compose.BottomButtons
-import com.example.pillcountingnewmodels.feature.barcodeScan.presentation.compose.DrugDetails
 import com.example.pillcountingnewmodels.ui.theme.AppTheme
 
 

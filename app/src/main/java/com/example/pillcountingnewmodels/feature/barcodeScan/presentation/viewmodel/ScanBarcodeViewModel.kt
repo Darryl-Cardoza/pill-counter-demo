@@ -1,13 +1,13 @@
-package com.example.pillcountingnewmodels.feature.barcodeScan.viewmodel
+package com.example.pillcountingnewmodels.feature.barcodeScan.presentation.viewmodel
 
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.pillcountingnewmodels.core.utils.AppLogger
+import com.example.pillcountingnewmodels.feature.barcodeScan.domain.data.IDrugRepository
 import com.example.pillcountingnewmodels.feature.barcodeScan.domain.data.NavigationEvent
 import com.example.pillcountingnewmodels.feature.barcodeScan.domain.data.ScanBarcodeEvent
 import com.example.pillcountingnewmodels.feature.barcodeScan.domain.model.ScanBarcodeUiState
-import com.example.pillcountingnewmodels.feature.barcodeScan.domain.repository.IDrugRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow

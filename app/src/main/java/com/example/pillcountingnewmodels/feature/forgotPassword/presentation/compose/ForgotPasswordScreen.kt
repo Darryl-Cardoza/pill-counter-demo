@@ -21,7 +21,7 @@ import com.example.pillcountingnewmodels.R
 import com.example.pillcountingnewmodels.core.utils.ToastUtils
 import com.example.pillcountingnewmodels.core.utils.compose.*
 import com.example.pillcountingnewmodels.feature.forgotPassword.domain.model.ForgotPasswordUiState
-import com.example.pillcountingnewmodels.feature.forgotPassword.viewmodel.ForgotPasswordViewModel
+import com.example.pillcountingnewmodels.feature.forgotPassword.presentation.viewmodel.ForgotPasswordViewModel
 import com.example.pillcountingnewmodels.ui.theme.AppTheme
 
 /**
