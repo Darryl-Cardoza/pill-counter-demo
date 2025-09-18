@@ -110,7 +110,7 @@ fun ProfileScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .verticalScroll(rememberScrollState())
+                .verticalScroll(rememberScrollState()),
         ) {
             // Top bar
             Row(
@@ -190,34 +190,105 @@ fun ProfileScreen(
             Spacer(Modifier.height(20.dp))
 
             // State feedback
-            when (updateUiState) {
-                is ProfileUpdateUiState.Idle -> {}
-                is ProfileUpdateUiState.Loading -> CircularProgressIndicator()
-                is ProfileUpdateUiState.Success -> Text(
-                    text = "Profile updated successfully!",
-                    color = MaterialTheme.colorScheme.primary
-                )
 
-                is ProfileUpdateUiState.Error -> Text(
-                    text = (updateUiState as ProfileUpdateUiState.Error).message,
-                    color = MaterialTheme.colorScheme.error
-                )
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                when (updateUiState) {
+                    is ProfileUpdateUiState.Idle -> {}
+                    is ProfileUpdateUiState.Loading -> {
+                        Column(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            CircularProgressIndicator()
+                        }
+                    }
+
+                    is ProfileUpdateUiState.Success -> {
+                        Column(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Text(
+                                text = "Profile updated successfully!",
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
+
+                    is ProfileUpdateUiState.Error -> {
+                        Column(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Text(
+                                text = (updateUiState as ProfileUpdateUiState.Error).message,
+                                color = MaterialTheme.colorScheme.error
+                            )
+                        }
+                    }
+                }
             }
 
-            when (deleteUiState) {
-                is ProfileDeleteUiState.Idle -> {}
-                is ProfileDeleteUiState.Loading -> CircularProgressIndicator()
-                is ProfileDeleteUiState.Success -> Text(
-                    text = "Profile deleted successfully!",
-                    color = MaterialTheme.colorScheme.primary
-                )
 
-                is ProfileDeleteUiState.Error -> Text(
-                    text = (deleteUiState as ProfileDeleteUiState.Error).message,
-                    color = MaterialTheme.colorScheme.error
-                )
+            // Delete state feedback
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                when (deleteUiState) {
+                    is ProfileDeleteUiState.Idle -> {}
+                    is ProfileDeleteUiState.Loading -> {
+                        Column(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            CircularProgressIndicator()
+                            Spacer(Modifier.height(20.dp))
+
+                        }
+                    }
+
+                    is ProfileDeleteUiState.Success -> {
+                        Column(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Text(
+                                text = "Profile deleted successfully!",
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                            Spacer(Modifier.height(10.dp))
+
+                        }
+                    }
+
+                    is ProfileDeleteUiState.Error -> {
+                        Column(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Text(
+                                text = (deleteUiState as ProfileDeleteUiState.Error).message,
+                                color = MaterialTheme.colorScheme.error
+                            )
+                        }
+                    }
+                }
             }
 
+
+            Spacer(Modifier.height(20.dp))
             Spacer(modifier = Modifier.weight(1f))
             // Buttons
             Row(
