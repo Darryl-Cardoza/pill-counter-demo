@@ -21,11 +21,9 @@ import androidx.room.PrimaryKey
 data class DrugMasterEntity(
     @PrimaryKey(autoGenerate = true)
     val drugId: Long = 0L,
-
     val drugName: String? = null,
-    val ndc: String? = null,
+    val ndc: String,
     val equivalence: String? = null,
     val drugType: String? = null,
-
     val createdAt: Long = System.currentTimeMillis()
 )

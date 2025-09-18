@@ -97,6 +97,11 @@
     <string name="confirm_exit_message">Are you sure you want to cancel the login process?</string>
     <string name="yes">Yes</string>
     <string name="no">No</string>
+    <string name="pill_info_add_manually">Enter Pill Info Manually</string>
+    <string name="drugname">Drug Name</string>
+    <string name="ndc">Ndc</string>
+    <string name="cancel">Cancel</string>
+    <string name="ok">Ok</string>
 
     <!-- Profile -->
     <string name="profile_title"> PROFILE </string>
@@ -109,6 +114,7 @@
     <string name="delete"> DELETE </string>
     <string name="skip_alt"> SKIP </string>
     <string name="save"> SAVE </string>
+    <string name="manual">Manual</string>
 
 
 </resources>

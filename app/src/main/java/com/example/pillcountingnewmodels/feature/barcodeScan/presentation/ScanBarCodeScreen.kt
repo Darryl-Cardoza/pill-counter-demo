@@ -1,5 +1,6 @@
 package com.example.pillcountingnewmodels.feature.barcodeScan.presentation
 
+import ManualDrugEntryDialog
 import android.Manifest
 import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -15,6 +16,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.example.pillcountingnewmodels.core.utils.ToastUtils
 import com.example.pillcountingnewmodels.feature.barcodeScan.domain.data.NavigationEvent
 import com.example.pillcountingnewmodels.feature.barcodeScan.viewmodel.ScanBarcodeViewModel
 
@@ -71,6 +73,19 @@ fun ScanBarCodeScreen(
 
     // Collect the UI state from the ViewModel in a lifecycle-aware manner.
     val uiState by viewModel.uiState.collectAsState()
+    if (uiState.showManualEntry) {
+        ManualDrugEntryDialog(
+            drugNameFetched = uiState.drugName,
+            ndcFetched = uiState.ndc,
+            onConfirm = { drugName, ndc ->
+                viewModel.addManualDrug(drugName, ndc)
+            },
+            onDismiss = { viewModel.hideManualEntryDialog() }
+        )
+    }
+    uiState.error?.let { errorMsg ->
+        ToastUtils.show(context,errorMsg)
+    }
 
     // Delegate the UI rendering to the stateless content composable.
     ScanBarCodeScreenContent(

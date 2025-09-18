@@ -18,7 +18,7 @@ import com.example.pillcountingnewmodels.core.utils.compose.HollowButton
 @Composable
 fun BottomButtons(
     onRedo: () -> Unit,
-    onSkip: () -> Unit,
+    onManual: () -> Unit,
     onCount: () -> Unit
 ) {
     Row(
@@ -34,8 +34,8 @@ fun BottomButtons(
             modifier = Modifier.weight(1f) // takes equal width
         )
         HollowButton(
-            text = stringResource(R.string.skip).uppercase(),
-            onClick = onSkip,
+            text = stringResource(R.string.manual).uppercase(),
+            onClick = onManual,
             color = MaterialTheme.colorScheme.primary,
             modifier = Modifier.weight(1f)
         )

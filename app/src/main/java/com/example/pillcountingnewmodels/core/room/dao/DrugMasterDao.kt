@@ -20,8 +20,8 @@ interface DrugMasterDao {
      * @param drug The drug entity to insert or replace.
      * @return The newly inserted row ID.
      */
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun upsert(drug: DrugMasterEntity): Long
+    @Upsert
+    suspend fun upsert(drug: DrugMasterEntity)
 
     /**
      * Insert or update a list of [DrugMasterEntity] records.
@@ -39,6 +39,9 @@ interface DrugMasterDao {
      */
     @Update
     suspend fun update(drug: DrugMasterEntity)
+
+    @Query("UPDATE drug_master SET drugName = :drugName WHERE ndc = :ndc")
+    suspend fun updateDrugNameByNdc(ndc: String, drugName: String)
 
     /* ───────────────────────────── Queries ────────────────────────────── */
 

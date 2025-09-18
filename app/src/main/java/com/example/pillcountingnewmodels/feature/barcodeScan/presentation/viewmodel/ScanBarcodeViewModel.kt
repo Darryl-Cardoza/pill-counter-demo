@@ -3,6 +3,8 @@ package com.example.pillcountingnewmodels.feature.barcodeScan.viewmodel
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.pillcountingnewmodels.core.room.dao.DrugMasterDao
+import com.example.pillcountingnewmodels.core.room.models.DrugMasterEntity
 import com.example.pillcountingnewmodels.core.utils.AppLogger
 import com.example.pillcountingnewmodels.feature.barcodeScan.domain.data.NavigationEvent
 import com.example.pillcountingnewmodels.feature.barcodeScan.domain.data.ScanBarcodeEvent
@@ -28,7 +30,8 @@ import javax.inject.Inject
 @HiltViewModel
 class ScanBarcodeViewModel @Inject constructor(
     private val savedStateHandle: SavedStateHandle,
-    private val drugRepository: IDrugRepository
+    private val drugRepository: IDrugRepository,
+    private val drugMasterDao: DrugMasterDao
 ) : ViewModel() {
 
     private val logger = AppLogger.create<ScanBarcodeViewModel>()
@@ -57,7 +60,7 @@ class ScanBarcodeViewModel @Inject constructor(
             is ScanBarcodeEvent.ScannerError -> handleScannerError(event.exception)
             ScanBarcodeEvent.StartCount -> handleStartCount()
             ScanBarcodeEvent.RedoScan -> handleRedoScan()
-            ScanBarcodeEvent.SkipScan -> handleSkipScan()
+            ScanBarcodeEvent.manualPillInfo -> showManualEntryDialog()
         }
     }
 
@@ -70,39 +73,53 @@ class ScanBarcodeViewModel @Inject constructor(
      */
     private fun processBarcode(barcodeValue: String) {
         if (uiState.value.isLoading) return // Prevent processing if already in progress
-
+        _uiState.update { it.copy(isLoading = true, error = null) }
         logger.i("Processing barcode: $barcodeValue")
+
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, error = null) }
-            try {
-
-                val drugInfo = drugRepository.getDrugInfoByNdc(barcodeValue)
-
-                if (drugInfo != null) {
-                    val displayName = when {
-                        !drugInfo.brandName.isNullOrBlank() -> drugInfo.brandName
-                        !drugInfo.genericName.isNullOrBlank() -> drugInfo.genericName
-                        else -> "Unknown Drug"
-                    }
-                    logger.i("Successfully fetched drug info for barcode $barcodeValue")
-                    _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            drugName = displayName,
-                            ndc = drugInfo.ndc,
-                            isScannerActive = false // Pause scanner on successful scan
-                        )
-                    }
-                } else {
-                    throw Exception("No drug information found for this NDC.")
-                }
-            } catch (e: Exception) {
-                logger.e("Failed to fetch drug info for barcode $barcodeValue", e)
+            val drug = drugMasterDao.getByNdc(barcodeValue)
+            if (drug != null) {
+                logger.i("Drug exists: ${drug.drugName}")
+                // use the record directly
                 _uiState.update {
                     it.copy(
                         isLoading = false,
-                        error = e.message ?: "Failed to find drug information."
+                        drugName = drug.drugName ?: "",
+                        ndc = drug.ndc ?: "",
+                        isScannerActive = false // Pause scanner on successful scan
                     )
+                }
+            } else {
+                logger.i("Drug not found, fetching from API...")
+                try {
+                    //val drugInfo = drugRepository.getDrugInfoByNdc("59779-311")
+                    val drugInfo = drugRepository.getDrugInfoByNdc(barcodeValue)
+                    if (drugInfo != null) {
+                        val displayName = when {
+                            !drugInfo.genericName.isNullOrBlank() -> drugInfo.genericName
+                            else -> "Unknown Drug"
+                        }
+                        logger.i("Successfully fetched drug info for barcode $barcodeValue")
+                        _uiState.update {
+                            it.copy(
+                                isLoading = false,
+                                drugName = displayName,
+                                ndc = drugInfo.ndc,
+                                isScannerActive = false // Pause scanner on successful scan
+                            )
+                        }
+                    } else {
+                        throw Exception("No drug information found for this NDC.")
+                    }
+                } catch (e: Exception) {
+                    logger.e("Failed to fetch drug info for barcode $barcodeValue", e)
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            error = e.message ?: "Failed to find drug information.",
+                            showManualEntry = true
+                        )
+                    }
                 }
             }
         }
@@ -125,6 +142,10 @@ class ScanBarcodeViewModel @Inject constructor(
         }
     }
 
+    fun handleManualPillInfo(){
+
+    }
+
     /**
      * Handles the confirmation of a scanned item.
      * It checks if an NDC is present and, if so, sends a navigation event
@@ -132,6 +153,7 @@ class ScanBarcodeViewModel @Inject constructor(
      */
     private fun handleStartCount() {
         val currentNdc = uiState.value.ndc
+        val currentDrugName = uiState.value.drugName
         if (currentNdc.isBlank()) {
             logger.w("ConfirmScan ignored: NDC is blank.")
             _uiState.update { it.copy(error = "Please scan an item first.") }
@@ -139,18 +161,21 @@ class ScanBarcodeViewModel @Inject constructor(
         }
         logger.d("Confirm scan clicked. Navigating to pill count.")
         viewModelScope.launch {
-            _navigationEvent.send(NavigationEvent.NavigateToPillCount(currentNdc))
-        }
-    }
+            val drug = drugMasterDao.getByNdc(currentNdc)
+            if (drug != null) {
+                // Only update drugName
+                drugMasterDao.updateDrugNameByNdc(currentNdc, currentDrugName)
+            } else {
+                // Insert new record
+                drugMasterDao.upsert(
+                    DrugMasterEntity(
+                        ndc = currentNdc,
+                        drugName = currentDrugName
+                    )
+                )
+            }
 
-    /**
-     * Handles the user's choice to skip the scanning process.
-     * It sends a one-time navigation event to go back to the previous screen.
-     */
-    private fun handleSkipScan() {
-        logger.d("Skip scan clicked. Navigating back.")
-        viewModelScope.launch {
-            _navigationEvent.send(NavigationEvent.NavigateToPillCount(""))
+            _navigationEvent.send(NavigationEvent.NavigateToPillCount(currentNdc))
         }
     }
 
@@ -163,6 +188,37 @@ class ScanBarcodeViewModel @Inject constructor(
     private fun handleScannerError(exception: Exception) {
         logger.e("Received scanner error.", exception)
         _uiState.update { it.copy(error = "Scanner failed. Please try again.") }
+    }
+
+    fun addManualDrug(drugName: String, ndc: String) {
+        _uiState.update {
+            it.copy(
+                isLoading = false,
+                drugName = drugName,
+                ndc = ndc,
+                isScannerActive = false, // Pause scanner on successful scan
+                showManualEntry = false, //hiding dialog
+                error = ""
+            )
+        }
+    }
+
+    fun showManualEntryDialog(){
+        _uiState.update {
+            it.copy(
+                showManualEntry = true,
+                error = ""
+            )
+        }
+    }
+
+    fun hideManualEntryDialog(){
+        _uiState.update {
+            it.copy(
+                showManualEntry = false,
+                error = ""
+            )
+        }
     }
 
     companion object {

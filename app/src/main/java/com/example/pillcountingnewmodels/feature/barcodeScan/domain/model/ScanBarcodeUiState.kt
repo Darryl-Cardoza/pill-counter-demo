@@ -16,5 +16,6 @@ data class ScanBarcodeUiState(
     val ndc: String = "",
     val isLoading: Boolean = false,
     val error: String? = null,
-    val isScannerActive: Boolean = true
+    val isScannerActive: Boolean = true,
+    val showManualEntry: Boolean = false
 )

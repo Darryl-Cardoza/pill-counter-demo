@@ -184,4 +184,7 @@ dependencies {
 
     implementation("com.jakewharton.retrofit:retrofit2-kotlinx-serialization-converter:1.0.0")
 
+    //    OkhttpProfiler
+    implementation("io.nerdythings:okhttp-profiler:1.1.1")
+
 }
