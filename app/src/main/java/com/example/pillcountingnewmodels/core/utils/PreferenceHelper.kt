@@ -2,6 +2,7 @@ package com.example.pillcountingnewmodels.core.utils
 
 import android.content.Context
 import android.content.SharedPreferences
+import androidx.core.content.edit
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -10,8 +11,8 @@ import javax.inject.Singleton
  * Helper class to manage application preferences related to authentication and session state.
  *
  * This class provides methods for storing, retrieving, and clearing access tokens,
- * refresh tokens, and user login status. It uses Android's [SharedPreferences] for
- * persistent storage.
+ * refresh tokens, user login status, and the logged-in user's ID.
+ * It uses Android's [SharedPreferences] for persistent storage.
  *
  * @constructor Injects the application context using Hilt to access [SharedPreferences].
  * @param context Application-level context for accessing shared preferences.
@@ -32,65 +33,67 @@ class PreferenceHelper @Inject constructor(
 
         /** Key for tracking whether the user is currently logged in. */
         private const val KEY_USER_LOGGED_IN = "user_logged_in"
+
+        /** Key for storing the currently logged-in user's ID. */
+        private const val KEY_USER_ID = "user_id"
     }
 
     /** SharedPreferences instance for persistent key-value storage. */
     private val prefs: SharedPreferences =
         context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
 
-    /**
-     * Saves both access and refresh tokens in persistent storage.
-     *
-     * @param accessToken The access token to save.
-     * @param refreshToken The refresh token to save.
-     */
+    // ─────────────────────────── Tokens ───────────────────────────
+
     fun saveTokens(accessToken: String, refreshToken: String) {
-        prefs.edit()
-            .putString(KEY_ACCESS_TOKEN, accessToken)
-            .putString(KEY_REFRESH_TOKEN, refreshToken)
-            .apply()
+        prefs.edit {
+            putString(KEY_ACCESS_TOKEN, accessToken)
+                .putString(KEY_REFRESH_TOKEN, refreshToken)
+        }
     }
 
-    /**
-     * Retrieves the stored access token.
-     *
-     * @return The access token, or `null` if not found.
-     */
     fun getAccessToken(): String? = prefs.getString(KEY_ACCESS_TOKEN, null)
 
-    /**
-     * Retrieves the stored refresh token.
-     *
-     * @return The refresh token, or `null` if not found.
-     */
     fun getRefreshToken(): String? = prefs.getString(KEY_REFRESH_TOKEN, null)
 
-    /**
-     * Clears both the access and refresh tokens from storage.
-     * This is typically called on user logout.
-     */
     fun clearTokens() {
-        prefs.edit()
-            .remove(KEY_ACCESS_TOKEN)
-            .remove(KEY_REFRESH_TOKEN)
-            .apply()
+        prefs.edit {
+            remove(KEY_ACCESS_TOKEN)
+                .remove(KEY_REFRESH_TOKEN)
+        }
     }
 
-    /**
-     * Sets the login status flag indicating whether the user is logged in.
-     *
-     * @param loggedIn `true` if the user is logged in, `false` otherwise.
-     */
+    // ─────────────────────────── User Session ───────────────────────────
+
     fun setUserLoggedIn(loggedIn: Boolean) {
-        prefs.edit().putBoolean(KEY_USER_LOGGED_IN, loggedIn).apply()
+        prefs.edit { putBoolean(KEY_USER_LOGGED_IN, loggedIn) }
     }
 
-    /**
-     * Returns the current login status of the user.
-     *
-     * @return `true` if the user is logged in, `false` otherwise.
-     */
     fun isUserLoggedIn(): Boolean {
         return prefs.getBoolean(KEY_USER_LOGGED_IN, false)
+    }
+
+    // ─────────────────────────── User ID ───────────────────────────
+
+    /**
+     * Saves the current user's ID into preferences.
+     *
+     * @param userId Unique identifier of the logged-in user.
+     */
+    fun saveUserId(userId: String) {
+        prefs.edit { putString(KEY_USER_ID, userId) }
+    }
+
+    /**
+     * Retrieves the stored user ID.
+     *
+     * @return The stored user ID, or `null` if none is set.
+     */
+    fun getUserId(): String? = prefs.getString(KEY_USER_ID, null)
+
+    /**
+     * Clears the stored user ID (e.g., on logout).
+     */
+    fun clearUserId() {
+        prefs.edit { remove(KEY_USER_ID) }
     }
 }
