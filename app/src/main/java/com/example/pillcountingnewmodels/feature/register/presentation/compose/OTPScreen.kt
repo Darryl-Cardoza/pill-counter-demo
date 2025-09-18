@@ -36,6 +36,7 @@ import com.example.pillcountingnewmodels.R
 import com.example.pillcountingnewmodels.core.utils.compose.ActionButtonPrimary
 import com.example.pillcountingnewmodels.core.utils.compose.AppInfo
 import com.example.pillcountingnewmodels.core.utils.compose.BackButton
+import com.example.pillcountingnewmodels.core.utils.compose.CommonDialog
 import com.example.pillcountingnewmodels.core.utils.compose.HelperFunctions.maskEmail
 import com.example.pillcountingnewmodels.core.utils.compose.OTPTextField
 import com.example.pillcountingnewmodels.core.utils.compose.SplitResponsive
@@ -90,30 +91,18 @@ fun OTPScreen(
     }
 
     if (showExitConfirmationDialog) {
-        androidx.compose.material3.AlertDialog(
-            onDismissRequest = { showExitConfirmationDialog = false },
-            title = { Text(text = stringResource(R.string.confirm_exit_title)) },
-            text = { Text(text = stringResource(R.string.confirm_exit_message)) },
-            confirmButton = {
-                androidx.compose.material3.TextButton(
-                    onClick = {
-                        showExitConfirmationDialog = false
-                        navController.popBackStack()
-                    }
-                ) {
-                    Text(text = stringResource(R.string.yes))
-                }
+        CommonDialog(
+            message = stringResource(R.string.confirm_exit_message),
+            title = stringResource(R.string.confirm_exit_title),
+            confirmText = stringResource(R.string.yes),
+            cancelText = stringResource(R.string.no),
+            onConfirm = {
+                showExitConfirmationDialog = false
+                navController.popBackStack()
             },
-            dismissButton = {
-                androidx.compose.material3.TextButton(
-                    onClick = { showExitConfirmationDialog = false }
-                ) {
-                    Text(text = stringResource(R.string.no))
-                }
-            }
+            onCancel = { showExitConfirmationDialog = false }
         )
     }
-
 
     Box(
         modifier = Modifier

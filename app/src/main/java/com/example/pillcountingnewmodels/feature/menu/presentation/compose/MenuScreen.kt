@@ -1,6 +1,7 @@
 package com.example.pillcountingnewmodels.feature.menu.presentation.compose
 
 import android.content.res.Configuration
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -31,6 +32,9 @@ import com.example.pillcountingnewmodels.ui.theme.AppTheme.extendedColors
 fun MenuScreen(
     navController: NavController,
 ) {
+
+    BackHandler { /* kept empty to consume back press and prevent navigation */ }
+
     Column(
         modifier = Modifier
             .fillMaxSize()

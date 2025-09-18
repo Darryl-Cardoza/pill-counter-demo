@@ -1,11 +1,10 @@
 package com.example.pillcountingnewmodels.feature.countResume.presentation.compose
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.DismissDirection
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.SwipeToDismiss
 import androidx.compose.material.rememberDismissState
@@ -13,10 +12,13 @@ import androidx.compose.material.DismissValue
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -24,6 +26,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.example.pillcountingnewmodels.R
+import com.example.pillcountingnewmodels.core.utils.compose.CommonDialog
 import com.example.pillcountingnewmodels.feature.countResume.domain.data.ResumeEvent
 import com.example.pillcountingnewmodels.feature.countResume.domain.data.ResumeEventFactory
 import com.example.pillcountingnewmodels.feature.countResume.domain.model.CountItem
@@ -50,6 +53,8 @@ fun <E : ResumeEvent> RightPanel(
     eventFactory: ResumeEventFactory<E>
 ) {
     val iconColor = Color(0xFF00BCD4)
+    var showDeleteConfirmationDialog by remember { mutableStateOf(false) }
+    var itemPendingDelete by remember { mutableStateOf<CountItem?>(null) }
 
     Column(
         modifier = Modifier
@@ -63,7 +68,6 @@ fun <E : ResumeEvent> RightPanel(
             verticalAlignment = Alignment.CenterVertically
         ) {
             if (isMultiSelectMode) {
-                // Close multi-select mode
                 Icon(
                     imageVector = Icons.Default.Close,
                     contentDescription = stringResource(R.string.cd_close_selection),
@@ -75,7 +79,6 @@ fun <E : ResumeEvent> RightPanel(
 
                 Spacer(Modifier.width(16.dp))
 
-                // Delete selected items
                 Icon(
                     painter = painterResource(id = R.drawable.delete),
                     contentDescription = stringResource(R.string.cd_delete_selected),
@@ -88,7 +91,6 @@ fun <E : ResumeEvent> RightPanel(
                         }
                 )
             } else {
-                // Search action placeholder
                 Icon(
                     painter = painterResource(id = R.drawable.search),
                     contentDescription = stringResource(R.string.cd_search),
@@ -100,7 +102,6 @@ fun <E : ResumeEvent> RightPanel(
 
                 Spacer(Modifier.width(16.dp))
 
-                // Enable multi-select mode
                 Icon(
                     painter = painterResource(id = R.drawable.delete),
                     contentDescription = stringResource(R.string.cd_select_items_to_delete),
@@ -123,21 +124,21 @@ fun <E : ResumeEvent> RightPanel(
             items(items, key = { it.id }) { item ->
                 val dismissState = rememberDismissState(
                     confirmStateChange = { newValue ->
-                        if (newValue == DismissValue.DismissedToStart || newValue == DismissValue.DismissedToEnd) {
-                            onEvent(eventFactory.itemSwipedToDelete(item))
-                            true
+                        if (newValue == DismissValue.DismissedToStart) {
+                            itemPendingDelete = item
+                            showDeleteConfirmationDialog = true
+                            false
                         } else false
                     }
                 )
 
                 SwipeToDismiss(
                     state = dismissState,
+                    directions = setOf(DismissDirection.EndToStart),
                     background = {
-                        // Red background with delete icon
                         Box(
                             modifier = Modifier
                                 .fillMaxSize()
-                                .background(Color.Transparent, RoundedCornerShape(12.dp))
                                 .padding(horizontal = 16.dp),
                             contentAlignment = Alignment.CenterEnd
                         ) {
@@ -161,4 +162,23 @@ fun <E : ResumeEvent> RightPanel(
             }
         }
     }
+
+    // ---------------- Delete Confirmation Dialog ----------------
+    if (showDeleteConfirmationDialog && itemPendingDelete != null) {
+        CommonDialog(
+            message = stringResource(R.string.delete_item_text),
+            confirmText = stringResource(R.string.yes),
+            cancelText = stringResource(R.string.no),
+            onConfirm = {
+                itemPendingDelete?.let { onEvent(eventFactory.itemSwipedToDelete(it)) }
+                showDeleteConfirmationDialog = false
+                itemPendingDelete = null
+            },
+            onCancel = {
+                showDeleteConfirmationDialog = false
+                itemPendingDelete = null
+            }
+        )
+    }
 }
+

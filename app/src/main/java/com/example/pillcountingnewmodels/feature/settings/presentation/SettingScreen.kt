@@ -1,6 +1,7 @@
 package com.example.pillcountingnewmodels.feature.settings.presentation
 
 import android.content.res.Configuration
+import androidx.activity.compose.BackHandler
 import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -45,6 +46,8 @@ fun SettingsScreen(
 
     val extendedColors = LocalExtendedColors.current
     val colorScheme = MaterialTheme.colorScheme
+
+    BackHandler { /* kept empty to consume back press and prevent navigation */ }
 
     Column(
         modifier = Modifier

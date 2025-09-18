@@ -1,5 +1,6 @@
 package com.example.pillcountingnewmodels.feature.dashboard.presentation
 
+import android.app.Activity
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -7,10 +8,17 @@ import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.example.pillcountingnewmodels.R
+import com.example.pillcountingnewmodels.core.utils.compose.CommonDialog
 import com.example.pillcountingnewmodels.core.utils.compose.MenuButton
 import com.example.pillcountingnewmodels.core.utils.compose.SplitResponsive
 import com.example.pillcountingnewmodels.feature.dashboard.presentation.compose.FixedCountSection
@@ -36,8 +44,15 @@ fun DashboardScreen(
     navController: NavController,
     viewModel: DashboardViewModel = hiltViewModel()
 ) {
+
+    var showLogoutDialog by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+    val activity = context as? Activity
+
     // Prevent navigating back from dashboard screen
-    BackHandler(enabled = true) { /* Intentionally left blank */ }
+    BackHandler(enabled = true) {
+        showLogoutDialog = true
+    }
 
     // Collect dashboard UI state reactively
     val uiState by viewModel.uiState.collectAsState()
@@ -71,4 +86,18 @@ fun DashboardScreen(
             modifier = Modifier.align(Alignment.TopEnd)
         )
     }
+
+    if (showLogoutDialog) {
+        CommonDialog(
+            message = stringResource(R.string.exit_text),
+            confirmText = stringResource(R.string.yes),
+            cancelText = stringResource(R.string.no),
+            onConfirm = {
+                showLogoutDialog = false
+                activity?.finishAffinity()
+            },
+            onCancel = { showLogoutDialog = false }
+        )
+    }
+
 }

@@ -1,5 +1,6 @@
 package com.example.pillcountingnewmodels.feature.countResume.presentation
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -23,6 +24,9 @@ fun RegularCountResumeScreen(
     uiState: RegularCountsUiState,
     onEvent: (RegularCountsEvent) -> Unit
 ) {
+
+    BackHandler { /* kept empty to consume back press and prevent navigation */ }
+
     // Factory mapping RegularCountsEvent
     val regularEventFactory = object : ResumeEventFactory<RegularCountsEvent> {
         override fun toggleMultiSelectMode() = RegularCountsEvent.ToggleMultiSelectMode
