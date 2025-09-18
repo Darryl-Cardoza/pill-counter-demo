@@ -6,9 +6,13 @@ import com.example.pillcountingnewmodels.core.models.ValidationResult
 import javax.inject.Inject
 
 /**
- * Handles validation for user credentials like email and password.
- * This class is framework-agnostic and returns resource IDs for errors,
- * leaving string resolution to the UI layer (ViewModel).
+ * Provides validation utilities for user credentials and profile fields.
+ *
+ * Each method checks a single field and returns a [ValidationResult].
+ * - Empty values are considered valid (optional fields).
+ * - When invalid, a string resource ID for the error message is provided.
+ *
+ * @constructor Creates an instance of [CredentialsValidator].
  */
 class CredentialsValidator @Inject constructor() {
 
@@ -16,12 +20,11 @@ class CredentialsValidator @Inject constructor() {
      * Validates an email address format.
      *
      * @param email The email string to validate.
-     * @return [ValidationResult] indicating success or failure with a corresponding string resource ID.
+     * @return [ValidationResult] with success if blank or valid format,
+     * failure if the email is incorrectly formatted.
      */
     fun validateEmail(email: String): ValidationResult {
-        if (email.isBlank()) {
-            return ValidationResult(false, R.string.error_email_empty)
-        }
+        if (email.isBlank()) return ValidationResult(true) // optional
         if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
             return ValidationResult(false, R.string.error_email_invalid)
         }
@@ -29,17 +32,96 @@ class CredentialsValidator @Inject constructor() {
     }
 
     /**
-     * Validates a password based on a set of security rules, returning the first error found.
+     * Validates a phone number format.
      *
-     * Rules enforced:
-     * - Minimum 8 characters
-     * - At least one uppercase letter
-     * - At least one lowercase letter
-     * - At least one digit
-     * - At least one special character
+     * Rules:
+     * - Optional (blank values pass).
+     * - Must match Android's [Patterns.PHONE].
+     * - Must be at least 7 digits long.
+     *
+     * @param phone The phone number string to validate.
+     * @return [ValidationResult] with success if blank or valid phone,
+     * failure otherwise.
+     */
+    fun validatePhone(phone: String): ValidationResult {
+        if (phone.isBlank()) return ValidationResult(true)
+        if (!Patterns.PHONE.matcher(phone).matches() || phone.length < 7) {
+            return ValidationResult(false, R.string.error_phone_invalid)
+        }
+        return ValidationResult(true)
+    }
+
+    /**
+     * Validates a person's name.
+     *
+     * Rules:
+     * - Optional (blank passes).
+     * - Must not contain digits.
+     *
+     * @param name The name string to validate.
+     * @return [ValidationResult] with success if valid,
+     * failure if digits are found.
+     */
+    fun validateName(name: String): ValidationResult {
+        if (name.isBlank()) return ValidationResult(true)
+        if (name.any { it.isDigit() }) {
+            return ValidationResult(false, R.string.error_name_invalid)
+        }
+        return ValidationResult(true)
+    }
+
+    /**
+     * Validates a pharmacy name.
+     *
+     * Rules:
+     * - Optional (blank passes).
+     * - Must be at least 2 characters long.
+     *
+     * @param pharmacy The pharmacy name string to validate.
+     * @return [ValidationResult] with success if valid,
+     * failure if too short.
+     */
+    fun validatePharmacyName(pharmacy: String): ValidationResult {
+        if (pharmacy.isBlank()) return ValidationResult(true)
+        if (pharmacy.length < 2) {
+            return ValidationResult(false, R.string.error_pharmacy_name_invalid)
+        }
+        return ValidationResult(true)
+    }
+
+    /**
+     * Validates an NPI (National Provider Identifier) or equivalent ID.
+     *
+     * Rules:
+     * - Optional (blank passes).
+     * - Must contain only digits.
+     * - Length must be between 6 and 12 digits.
+     *
+     * @param npi The NPI string to validate.
+     * @return [ValidationResult] with success if valid,
+     * failure otherwise.
+     */
+    fun validateNpi(npi: String): ValidationResult {
+        if (npi.isBlank()) return ValidationResult(true)
+        if (!npi.all { it.isDigit() } || npi.length !in 6..12) {
+            return ValidationResult(false, R.string.error_npi_invalid)
+        }
+        return ValidationResult(true)
+    }
+
+    /**
+     * Validates a password for security rules.
+     *
+     * Rules:
+     * - Minimum 8 characters.
+     * - At least one uppercase letter.
+     * - At least one lowercase letter.
+     * - At least one digit.
+     * - At least one special character.
      *
      * @param password The password string to validate.
-     * @return [ValidationResult] indicating success or failure with a corresponding string resource ID.
+     * @return [ValidationResult] with success if valid,
+     * failure with the first violated rule otherwise.
      */
     fun validatePassword(password: String): ValidationResult {
         if (password.length < 8) {
@@ -60,4 +142,3 @@ class CredentialsValidator @Inject constructor() {
         return ValidationResult(true)
     }
 }
-

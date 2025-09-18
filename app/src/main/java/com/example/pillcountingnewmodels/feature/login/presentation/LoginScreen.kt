@@ -1,5 +1,6 @@
 package com.example.pillcountingnewmodels.feature.login.presentation
 
+import Screen
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -165,16 +166,16 @@ fun LoginScreen(
 
                             is LoginUiState.Success -> {
                                 LaunchedEffect(Unit) {
+
+                                    viewModel.clearAllStates()
+                                    email = ""
+                                    rememberMe = false
                                     navController.navigate(
                                         Screen.OtpVerify.createRoute(
                                             email = email,
                                             rememberMe = rememberMe
                                         )
                                     )
-
-                                    viewModel.resetLoginState()
-                                    email = ""
-                                    rememberMe = false
                                 }
                             }
 

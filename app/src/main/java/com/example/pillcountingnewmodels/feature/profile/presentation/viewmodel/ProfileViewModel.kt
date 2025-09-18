@@ -9,6 +9,7 @@ import com.example.pillcountingnewmodels.core.room.dao.UserDao
 import com.example.pillcountingnewmodels.core.room.models.UserEntity
 import com.example.pillcountingnewmodels.core.utils.AppLogger
 import com.example.pillcountingnewmodels.core.utils.PreferenceHelper
+import com.example.pillcountingnewmodels.feature.login.domain.CredentialsValidator
 import com.example.pillcountingnewmodels.feature.profile.data.ProfileRepository
 import com.example.pillcountingnewmodels.feature.profile.domain.model.ProfileDeleteUiState
 import com.example.pillcountingnewmodels.feature.profile.domain.model.ProfileUpdateRequest
@@ -20,61 +21,73 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 /**
- * ViewModel responsible for handling Profile screen state and business logic.
+ * ViewModel for managing Profile UI state, validation, and business logic.
  *
- * This class:
- * - Prefills the profile form with user data from [UserDao].
- * - Handles profile update and delete operations via [ProfileRepository].
- * - Emits UI states ([ProfileUpdateUiState], [ProfileDeleteUiState]) to drive Compose UI.
+ * Responsibilities:
+ * - Prefill the profile form from [UserDao].
+ * - Validate fields using [CredentialsValidator].
+ * - Handle profile update and delete operations via [ProfileRepository].
+ * - Manage state flows ([ProfileUpdateUiState], [ProfileDeleteUiState]) for Compose UI.
  *
- * @property repository Repository for performing remote profile operations.
- * @property preferenceHelper Helper for accessing persisted preferences (e.g., userId).
- * @property userDao Local Room DAO for persisting and retrieving user data.
+ * @property repository Repository for profile API operations.
+ * @property preferenceHelper Shared preferences helper for storing user session data.
+ * @property userDao Room DAO for persisting and observing user data locally.
+ * @property validator Validation utility for checking profile field inputs.
  */
 @HiltViewModel
 class ProfileViewModel @Inject constructor(
     private val repository: ProfileRepository,
     private val preferenceHelper: PreferenceHelper,
-    private val userDao: UserDao
+    private val userDao: UserDao,
+    private val validator: CredentialsValidator
 ) : ViewModel() {
 
     private val logger = AppLogger.create<ProfileViewModel>()
 
     // ─────────────────────────── UI States ───────────────────────────
 
-    /** State flow for profile update requests. */
+    /** State flow representing the status of profile update operations. */
     private val _updateUiState = MutableStateFlow<ProfileUpdateUiState>(ProfileUpdateUiState.Idle)
     val updateUiState = _updateUiState.asStateFlow()
 
-    /** State flow for profile delete requests. */
+    /** State flow representing the status of profile delete operations. */
     private val _deleteUiState = MutableStateFlow<ProfileDeleteUiState>(ProfileDeleteUiState.Idle)
     val deleteUiState = _deleteUiState.asStateFlow()
 
     // ─────────────────────────── Profile Fields ───────────────────────────
 
-    /** User's first name (editable). */
+    /** User's first name input. */
     var firstName by mutableStateOf("")
 
-    /** User's last name (editable). */
+    /** User's last name input. */
     var lastName by mutableStateOf("")
 
-    /** Pharmacy name associated with the user (editable). */
+    /** Pharmacy name input. */
     var pharmacyName by mutableStateOf("")
 
-    /** Contact phone number (editable). */
+    /** Phone number input. */
     var phoneNumber by mutableStateOf("")
 
-    /** Email address (editable but typically non-changeable). */
+    /** Email input. */
     var email by mutableStateOf("")
 
-    /** NPI (National Provider Identifier) or equivalent ID (editable). */
+    /** NPI (National Provider Identifier) input. */
     var npi by mutableStateOf("")
 
-    /** Whether the "do not ask again" flag is set (affects notifications). */
+    /** Checkbox state for "Do not ask again". */
     var doNotAskAgain by mutableStateOf(false)
 
+    // ─────────────────────────── Validation Errors ───────────────────────────
+
+    var firstNameError by mutableStateOf<Int?>(null)
+    var lastNameError by mutableStateOf<Int?>(null)
+    var pharmacyNameError by mutableStateOf<Int?>(null)
+    var phoneError by mutableStateOf<Int?>(null)
+    var emailError by mutableStateOf<Int?>(null)
+    var npiError by mutableStateOf<Int?>(null)
+
     init {
-        // Load user data from local persistence and prefill fields
+        // Attempt to load user data from preferences and prefill fields.
         val userId = preferenceHelper.getUserId()
         if (!userId.isNullOrBlank()) {
             observeUser(userId)
@@ -84,10 +97,10 @@ class ProfileViewModel @Inject constructor(
     }
 
     /**
-     * Observes the [UserEntity] stored in Room for the given [userId].
-     * Updates the form fields with values when available.
+     * Observes the [UserEntity] in Room by [userId].
+     * Automatically updates UI fields when the user record changes.
      *
-     * @param userId Unique identifier of the user.
+     * @param userId The unique user identifier.
      */
     private fun observeUser(userId: String) {
         viewModelScope.launch {
@@ -95,7 +108,6 @@ class ProfileViewModel @Inject constructor(
                 user?.let {
                     logger.i("Prefilling profile UI with user: ${it.email}")
 
-                    // Split full name into first + last
                     val parts = it.name?.trim()?.split(" ") ?: emptyList()
                     firstName = parts.firstOrNull() ?: ""
                     lastName = if (parts.size > 1) parts.drop(1).joinToString(" ") else ""
@@ -110,10 +122,43 @@ class ProfileViewModel @Inject constructor(
         }
     }
 
+    // ─────────────────────────── Validation ───────────────────────────
+
     /**
-     * Sends a profile update request to the backend and persists changes to Room on success.
+     * Validates all profile fields. Fields are optional,
+     * but if filled they must be valid.
+     *
+     * @return true if all inputs are valid, false otherwise.
+     */
+    private fun validateInputs(): Boolean {
+        firstNameError = validator.validateName(firstName).errorMessageResId
+        lastNameError = validator.validateName(lastName).errorMessageResId
+        pharmacyNameError = validator.validatePharmacyName(pharmacyName).errorMessageResId
+        phoneError = validator.validatePhone(phoneNumber).errorMessageResId
+        emailError = validator.validateEmail(email).errorMessageResId
+        npiError = validator.validateNpi(npi).errorMessageResId
+
+        return listOf(
+            firstNameError,
+            lastNameError,
+            pharmacyNameError,
+            phoneError,
+            emailError,
+            npiError
+        ).all { it == null }
+    }
+
+    // ─────────────────────────── API Actions ───────────────────────────
+
+    /**
+     * Updates the user's profile after validation.
      */
     fun updateProfile() {
+        if (!validateInputs()) {
+            logger.w("Validation failed. Aborting update.")
+            return
+        }
+
         viewModelScope.launch {
             _updateUiState.value = ProfileUpdateUiState.Loading
 
@@ -133,7 +178,6 @@ class ProfileViewModel @Inject constructor(
                 .onSuccess {
                     logger.i("Profile update success")
 
-                    // Persist changes locally
                     val userId = preferenceHelper.getUserId()
                     if (!userId.isNullOrBlank()) {
                         val entity = UserEntity(
@@ -164,9 +208,10 @@ class ProfileViewModel @Inject constructor(
     }
 
     /**
-     * Sends a delete profile request to the backend.
-     * Does not immediately delete from Room to avoid accidental local data loss
-     * (can be extended if required).
+     * Deletes the user's profile.
+     *
+     * Note: Local Room record is not deleted immediately
+     * to prevent accidental data loss.
      */
     fun deleteProfile() {
         viewModelScope.launch {
@@ -186,12 +231,12 @@ class ProfileViewModel @Inject constructor(
         }
     }
 
-    /** Resets the profile update UI state to idle. */
+    /** Resets profile update UI state back to [ProfileUpdateUiState.Idle]. */
     fun resetUpdateState() {
         _updateUiState.value = ProfileUpdateUiState.Idle
     }
 
-    /** Resets the profile delete UI state to idle. */
+    /** Resets profile delete UI state back to [ProfileDeleteUiState.Idle]. */
     fun resetDeleteState() {
         _deleteUiState.value = ProfileDeleteUiState.Idle
     }

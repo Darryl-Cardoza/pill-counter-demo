@@ -184,15 +184,4 @@ class LoginViewModel @Inject constructor(
         _logoutUiState.value = LogoutUiState.Idle
     }
 
-    /**
-     * Sets the persistent login flag in shared preferences.
-     *
-     * This flag determines whether the user should be automatically logged in
-     * when the app restarts.
-     *
-     * @param isLoggedIn `true` if the user is authenticated and session should be remembered.
-     */
-    fun setUserLoggedIn(isLoggedIn: Boolean) {
-        preferenceHelper.setUserLoggedIn(isLoggedIn)
-    }
 }
