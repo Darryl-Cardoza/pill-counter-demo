@@ -5,6 +5,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -64,6 +65,12 @@ fun CameraPreviewSection(
             cameraHelper.frameFlow.collect { imageProxy ->
                 onFrame(imageProxy)
             }
+        }
+    }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            cameraHelper.stopCamera()
         }
     }
 

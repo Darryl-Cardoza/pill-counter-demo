@@ -87,26 +87,25 @@ class ProfileViewModel @Inject constructor(
     var npiError by mutableStateOf<Int?>(null)
 
     init {
-        // Attempt to load user data from preferences and prefill fields.
-        val userId = preferenceHelper.getUserId()
-        if (!userId.isNullOrBlank()) {
-            observeUser(userId)
+        val localId = preferenceHelper.getLocalId()
+        if (localId != null) {
+            observeUser(localId)
         } else {
-            logger.w("No userId found in preferences — skipping prefill.")
+            logger.w("No localId found in preferences — skipping prefill.")
         }
     }
 
     /**
-     * Observes the [UserEntity] in Room by [userId].
+     * Observes the [UserEntity] in Room by [localId].
      * Automatically updates UI fields when the user record changes.
      *
-     * @param userId The unique user identifier.
+     * @param localId The Room PK of the user.
      */
-    private fun observeUser(userId: String) {
+    private fun observeUser(localId: Long) {
         viewModelScope.launch {
-            userDao.observeById(userId).collect { user ->
+            userDao.observeByLocalId(localId).collect { user ->
                 user?.let {
-                    logger.i("Prefilling profile UI with user: ${it.email}")
+                    logger.i("Prefilling profile UI with user (localId=$localId, email=${it.email})")
 
                     val parts = it.name?.trim()?.split(" ") ?: emptyList()
                     firstName = parts.firstOrNull() ?: ""
@@ -178,10 +177,11 @@ class ProfileViewModel @Inject constructor(
                 .onSuccess {
                     logger.i("Profile update success")
 
-                    val userId = preferenceHelper.getUserId()
-                    if (!userId.isNullOrBlank()) {
+                    val localId = preferenceHelper.getLocalId()
+                    if (localId != null) {
                         val entity = UserEntity(
-                            userId = userId,
+                            localId = localId,
+                            userId = preferenceHelper.getUserId().orEmpty(),
                             email = email,
                             name = "$firstName $lastName".trim(),
                             phoneNumber = phoneNumber,
@@ -192,8 +192,8 @@ class ProfileViewModel @Inject constructor(
                             isProfileCompleted = true,
                             createdAt = System.currentTimeMillis()
                         )
-                        userDao.upsertPreservingLocalId(entity)
-                        logger.i("User entity updated in Room.")
+                        userDao.update(entity)
+                        logger.i("User entity updated in Room via localId=$localId")
                     }
 
                     _updateUiState.value = ProfileUpdateUiState.Success

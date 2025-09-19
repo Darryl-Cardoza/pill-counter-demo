@@ -168,14 +168,14 @@ fun LoginScreen(
                                 LaunchedEffect(Unit) {
 
                                     viewModel.clearAllStates()
-                                    email = ""
-                                    rememberMe = false
                                     navController.navigate(
                                         Screen.OtpVerify.createRoute(
                                             email = email,
                                             rememberMe = rememberMe
                                         )
                                     )
+                                    email = ""
+                                    rememberMe = false
                                 }
                             }
 

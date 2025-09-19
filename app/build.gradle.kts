@@ -168,7 +168,7 @@ dependencies {
     implementation("com.squareup.moshi:moshi-kotlin:1.15.0")
 
     // CameraX dependencies for camera preview and lifecycle management
-    val cameraXVersion = "1.3.3"
+    val cameraXVersion = "1.4.0"
     implementation("androidx.camera:camera-core:${cameraXVersion}")
     implementation("androidx.camera:camera-camera2:${cameraXVersion}")
     implementation("androidx.camera:camera-lifecycle:${cameraXVersion}")

@@ -1,121 +1,135 @@
 package com.example.pillcountingnewmodels.core.room.dao
 
-import androidx.room.Dao
-import androidx.room.Insert
-import androidx.room.OnConflictStrategy
-import androidx.room.Query
-import androidx.room.Transaction
-import androidx.room.Update
+import androidx.room.*
 import com.example.pillcountingnewmodels.core.room.models.UserEntity
 import kotlinx.coroutines.flow.Flow
 
 /**
- * DAO for accessing and managing [UserEntity] records.
+ * Data Access Object (DAO) for managing [UserEntity] persistence.
  *
- * Provides CRUD, existence checks, counts, flexible search, field-level updates,
- * and transactional helpers (e.g., preserving localId on upsert).
+ * This DAO enforces **localId stability**:
+ * - `localId` is the Room primary key and the **only FK** exposed to other tables.
+ * - `userId` is a unique business identifier (from server/JWT) but is **not** a FK.
+ * - Once assigned, a `localId` is stable across app restarts, syncs, or logins.
+ *
+ * ### Professional Practices
+ * - Never use `OnConflictStrategy.REPLACE` → it destroys PKs and breaks FKs.
+ * - Always update in place (`update`) to preserve `localId`.
+ * - Use `@Transaction` for compound upsert logic.
+ * - Use Flow return types for reactive UI updates.
  */
 @Dao
 interface UserDao {
 
-    /* ────────────────────────── Create / Update ────────────────────────── */
+    /* ────────────────────────── Insert / Update ────────────────────────── */
 
     /**
-     * Insert or replace a single user (overwrites all fields).
+     * Inserts a new [UserEntity].
+     *
+     * - Ignores insert if a duplicate `userId` already exists.
+     * - Returns the new rowId (localId) if inserted, or `-1` if ignored.
      */
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun upsert(user: UserEntity)
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insertIgnore(user: UserEntity): Long
 
     /**
-     * Insert or replace multiple users (overwrites all fields).
-     */
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun upsertAll(users: List<UserEntity>)
-
-    /**
-     * Update an existing user (partial update of provided fields).
+     * Updates an existing [UserEntity] (matched on PK = localId).
+     *
+     * - Only updates non-null fields that are set in [user].
+     * - Use [upsertPreservingLocalId] for safe upsert.
      */
     @Update
     suspend fun update(user: UserEntity)
 
     /**
-     * Get the next device-side incremental ID for `localId`.
+     * Upserts a [UserEntity] while preserving `localId`.
      *
-     * Note: Room only auto-increments PKs. Since `localId` is not a PK,
-     * allocate it manually using this helper when needed.
-     */
-    @Query("SELECT COALESCE(MAX(localId), 0) + 1 FROM users")
-    suspend fun nextLocalId(): Long
-
-    /**
-     * Transactional helper that upserts a user while preserving the existing `localId`
-     * if the user already exists; otherwise assigns the next local ID.
+     * - If the user already exists (matched by `userId`), it reuses its `localId` and updates the row.
+     * - If the user does not exist, it inserts a new record (auto-generating a `localId`).
+     * - Returns the stable `localId` for the user.
      */
     @Transaction
     suspend fun upsertPreservingLocalId(user: UserEntity): Long {
-        val existing = getById(user.userId)
-        val toSave = when {
-            existing != null -> user.copy(localId = existing.localId)
-            else -> user.copy(localId = nextLocalId())
+        val existing = getByUserId(user.userId)
+        return if (existing != null) {
+            val toSave = user.copy(localId = existing.localId)
+            update(toSave)
+            existing.localId
+        } else {
+            insertIgnore(user).let { newId ->
+                if (newId == -1L) {
+                    // Race condition: inserted by another coroutine → fetch again
+                    getByUserId(user.userId)?.localId
+                        ?: throw IllegalStateException("User insert failed unexpectedly")
+                } else {
+                    newId
+                }
+            }
         }
-        upsert(toSave)
-        return toSave.localId
     }
 
     /**
-     * Replace the table content with the provided list (clear + bulk upsert).
-     * Useful after a full sync from server.
+     * Bulk upsert with preservation of [localId] stability.
+     * Existing users are updated, new users are inserted.
      */
     @Transaction
-    suspend fun replaceAll(users: List<UserEntity>) {
-        clear()
-        upsertAll(users.mapIndexed { _, u ->
-            // ensure localId allocation for new rows
-            // note: if you want stable device IDs across runs, allocate in repo using nextLocalId()
-            u
-        })
+    suspend fun upsertAllPreservingLocalId(users: List<UserEntity>): List<Long> {
+        return users.map { upsertPreservingLocalId(it) }
     }
 
     /* ─────────────────────────────── Reads ─────────────────────────────── */
 
     /**
-     * Get a user by their unique ID (primary key).
+     * Retrieves a user by their localId (Room PK).
      */
-    @Query("SELECT * FROM users WHERE userId = :id LIMIT 1")
-    suspend fun getById(id: String): UserEntity?
+    @Query("SELECT * FROM users WHERE localId = :localId LIMIT 1")
+    suspend fun getByLocalId(localId: Long): UserEntity?
 
     /**
-     * Observe a user by their unique ID.
+     * Observes a user by localId (Room PK).
      */
-    @Query("SELECT * FROM users WHERE userId = :id LIMIT 1")
-    fun observeById(id: String): Flow<UserEntity?>
+    @Query("SELECT * FROM users WHERE localId = :localId LIMIT 1")
+    fun observeByLocalId(localId: Long): Flow<UserEntity?>
 
     /**
-     * Get all users ordered by creation time (newest first).
+     * Retrieves a user by their **business id** (`userId`).
+     */
+    @Query("SELECT * FROM users WHERE userId = :userId LIMIT 1")
+    suspend fun getByUserId(userId: String): UserEntity?
+
+    /**
+     * Observes a user by `userId`.
+     * Emits updates whenever the row changes.
+     */
+    @Query("SELECT * FROM users WHERE userId = :userId LIMIT 1")
+    fun observeByUserId(userId: String): Flow<UserEntity?>
+
+    /**
+     * Retrieves all users ordered by creation timestamp (newest first).
      */
     @Query("SELECT * FROM users ORDER BY createdAt DESC")
     suspend fun getAll(): List<UserEntity>
 
     /**
-     * Observe all users ordered by creation time (newest first).
+     * Observes all users ordered by creation timestamp (newest first).
      */
     @Query("SELECT * FROM users ORDER BY createdAt DESC")
     fun observeAll(): Flow<List<UserEntity>>
 
     /**
-     * Find a user by email.
+     * Finds a user by email.
      */
     @Query("SELECT * FROM users WHERE email = :email LIMIT 1")
     suspend fun findByEmail(email: String): UserEntity?
 
     /**
-     * Find a user by phone number.
+     * Finds a user by phone number.
      */
     @Query("SELECT * FROM users WHERE phoneNumber = :phone LIMIT 1")
     suspend fun findByPhone(phone: String): UserEntity?
 
     /**
-     * Case-insensitive search by name or email.
+     * Performs a case-insensitive search by name or email.
      */
     @Query(
         """
@@ -127,72 +141,39 @@ interface UserDao {
     )
     suspend fun search(q: String? = null): List<UserEntity>
 
-    /**
-     * Get/observe all users having a given role.
-     */
-    @Query("SELECT * FROM users WHERE role = :role ORDER BY createdAt DESC")
-    suspend fun getAllByRole(role: String): List<UserEntity>
-
-    @Query("SELECT * FROM users WHERE role = :role ORDER BY createdAt DESC")
-    fun observeAllByRole(role: String): Flow<List<UserEntity>>
+    /* ─────────────────────────────── Counts ─────────────────────────────── */
 
     /**
-     * Count total users.
+     * Counts total number of users in the table.
      */
     @Query("SELECT COUNT(*) FROM users")
     suspend fun countAll(): Int
 
     /**
-     * Check existence by userId.
+     * Checks if a user exists for the given `userId`.
      */
-    @Query("SELECT EXISTS(SELECT 1 FROM users WHERE userId = :id)")
-    suspend fun exists(id: String): Boolean
-
-    /* ───────────────────────── Field-Level Updates ─────────────────────── */
-
-    @Query("UPDATE users SET name = :name WHERE userId = :id")
-    suspend fun updateName(id: String, name: String)
-
-    @Query("UPDATE users SET email = :email WHERE userId = :id")
-    suspend fun updateEmail(id: String, email: String?)
-
-    @Query("UPDATE users SET phoneNumber = :phone WHERE userId = :id")
-    suspend fun updatePhone(id: String, phone: String?)
-
-    @Query("UPDATE users SET avatarUrl = :url WHERE userId = :id")
-    suspend fun updateAvatar(id: String, url: String?)
-
-    @Query("UPDATE users SET role = :role WHERE userId = :id")
-    suspend fun updateRole(id: String, role: String?)
-
-    @Query("UPDATE users SET isVerified = :verified WHERE userId = :id")
-    suspend fun updateVerification(id: String, verified: Boolean)
-
-    @Query("UPDATE users SET language = :language WHERE userId = :id")
-    suspend fun updateLanguage(id: String, language: String?)
-
-    @Query("UPDATE users SET timezone = :tz WHERE userId = :id")
-    suspend fun updateTimezone(id: String, tz: String?)
-
-    @Query("UPDATE users SET notifications = :enabled WHERE userId = :id")
-    suspend fun updateNotifications(id: String, enabled: Boolean?)
+    @Query("SELECT EXISTS(SELECT 1 FROM users WHERE userId = :userId)")
+    suspend fun exists(userId: String): Boolean
 
     /* ────────────────────────────── Deletes ────────────────────────────── */
 
     /**
-     * Delete a user by their unique ID.
+     * Deletes a user by `userId`.
      */
-    @Query("DELETE FROM users WHERE userId = :id")
-    suspend fun deleteById(id: String)
+    @Query("DELETE FROM users WHERE userId = :userId")
+    suspend fun deleteByUserId(userId: String)
 
     /**
-     * Bulk delete users by IDs.
+     * Bulk delete users by `userId`s.
      */
-    @Query("DELETE FROM users WHERE userId IN (:ids)")
-    suspend fun deleteByIds(ids: List<String>)
+    @Query("DELETE FROM users WHERE userId IN (:userIds)")
+    suspend fun deleteByUserIds(userIds: List<String>)
 
     /**
-     * Clear the entire table.
+     * Clears the entire table.
+     *
+     * ⚠️ Use with caution: this will break FKs in dependent tables.
+     * Prefer marking users as inactive instead.
      */
     @Query("DELETE FROM users")
     suspend fun clear()

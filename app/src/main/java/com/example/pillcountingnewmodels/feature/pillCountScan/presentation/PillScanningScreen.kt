@@ -4,7 +4,10 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.systemBarsPadding
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -28,13 +31,13 @@ fun PillScanningScreen(
     viewModel: PillScanningViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    val modelState by viewModel.modelState.collectAsState()
 
-    val coroutineScope = rememberCoroutineScope()
-
-    // Kick off model initialization once
     LaunchedEffect(Unit) {
         viewModel.initializeInterpreter(retryCount = 2)
+    }
+
+    LaunchedEffect(scanType) {
+        viewModel.setScanType(scanType)
     }
 
     Box(

@@ -7,6 +7,7 @@ import com.example.pillcountingnewmodels.core.room.dao.DrugMasterDao
 import com.example.pillcountingnewmodels.core.room.dao.PillCountTxnDao
 import com.example.pillcountingnewmodels.core.room.models.CountStatus
 import com.example.pillcountingnewmodels.core.room.models.CountType
+import com.example.pillcountingnewmodels.core.room.models.DrugMasterEntity
 import com.example.pillcountingnewmodels.core.room.models.PillCountTxnEntity
 import com.example.pillcountingnewmodels.core.utils.AppLogger
 import com.example.pillcountingnewmodels.core.utils.PreferenceHelper
@@ -25,11 +26,21 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 /**
- * The ViewModel for the ScanBarCodeScreen.
- * It handles the business logic, manages the screen's state, and responds to UI events.
+ * ViewModel responsible for handling all business logic of the Barcode Scanning screen.
  *
- * @property savedStateHandle Handle to access navigation arguments.
- * @property drugRepository The repository for fetching drug information.
+ * Responsibilities:
+ * - Manage camera scanner state (start, stop, redo).
+ * - Process scanned barcodes:
+ *   - Lookup drug in local DB first.
+ *   - If not found, fetch from API.
+ * - Create pill count transactions and persist them in local Room DB.
+ * - Expose navigation events to drive UI transitions.
+ *
+ * @property savedStateHandle Used to retrieve navigation arguments (e.g., scan type).
+ * @property drugRepository Repository for fetching drug details from a remote source.
+ * @property drugMasterDao DAO for managing drug master data.
+ * @property preferenceHelper Wrapper for persisting local IDs and preferences.
+ * @property pillCountTxnDao DAO for handling pill count transaction records.
  */
 @HiltViewModel
 class ScanBarcodeViewModel @Inject constructor(
@@ -40,12 +51,19 @@ class ScanBarcodeViewModel @Inject constructor(
     private val pillCountTxnDao: PillCountTxnDao
 ) : ViewModel() {
 
+    /** Logger instance scoped to this ViewModel for debugging and error tracking. */
     private val logger = AppLogger.create<ScanBarcodeViewModel>()
 
+    /** Backing state for the UI layer (state hoisted for Compose). */
     private val _uiState = MutableStateFlow(ScanBarcodeUiState())
+
+    /** Public immutable view of the UI state. */
     val uiState: StateFlow<ScanBarcodeUiState> = _uiState.asStateFlow()
 
+    /** Backing channel for one-time navigation events (e.g., navigate to PillCount screen). */
     private val _navigationEvent = Channel<NavigationEvent>()
+
+    /** Public Flow that UI can collect to observe navigation actions. */
     val navigationEvent = _navigationEvent.receiveAsFlow()
 
     init {
@@ -55,14 +73,14 @@ class ScanBarcodeViewModel @Inject constructor(
     }
 
     /**
-     * Central handler for all incoming UI events.
-     * It logs the event and delegates it to the appropriate private function for processing.
-     * @param event The [ScanBarcodeEvent] triggered by the user or the system.
+     * Central event dispatcher for UI-triggered or system-triggered events.
+     *
+     * @param event The event from [ScanBarcodeEvent] that needs to be handled.
      */
     fun onEvent(event: ScanBarcodeEvent) {
         logger.d("Received event: ${event::class.java.simpleName}")
         when (event) {
-            is ScanBarcodeEvent.BarcodeScanned -> processBarcode(event.barcodeValue)
+            is ScanBarcodeEvent.BarcodeScanned -> processBarcode(barcodeValue = event.barcodeValue, imagePath = event.imagePath)
             is ScanBarcodeEvent.ScannerError -> handleScannerError(event.exception)
             ScanBarcodeEvent.StartCount -> handleStartCount()
             ScanBarcodeEvent.RedoScan -> handleRedoScan()
@@ -71,54 +89,48 @@ class ScanBarcodeViewModel @Inject constructor(
     }
 
     /**
-     * Processes the scanned barcode value.
-     * It sets the UI to a loading state, fetches drug information from the repository
-     * with a simulated 2-second delay, and updates the state with the result.
-     * On success, it pauses the scanner to prevent immediate re-scans.
-     * @param barcodeValue The raw string value from the scanned barcode.
+     * Process a scanned barcode value.
+     *
+     * - First checks if the drug exists in local DB ([DrugMasterDao]).
+     * - If not found, fetches from remote API via [IDrugRepository].
+     * - Updates [uiState] with result (drug name, NDC, error, etc.).
+     *
+     * @param barcodeValue Raw string value from the scanned barcode.
      */
-    private fun processBarcode(barcodeValue: String) {
-        if (uiState.value.isLoading) return // Prevent processing if already in progress
+    private fun processBarcode(barcodeValue: String, imagePath: String) {
+        if (uiState.value.isLoading) return
         _uiState.update { it.copy(isLoading = true, error = null) }
-        logger.i("Processing barcode: $barcodeValue")
 
         viewModelScope.launch {
             val drug = drugMasterDao.getDrugByNdc(barcodeValue)
             if (drug != null) {
-                logger.i("Drug exists: ${drug.drugName}")
-                // use the record directly
                 _uiState.update {
                     it.copy(
                         isLoading = false,
-                        drugName = drug.drugName ?: "",
+                        drugName = drug.drugName.orEmpty(),
                         ndc = drug.ndc,
-                        isScannerActive = false // Pause scanner on successful scan
+                        barcodeImagePath = imagePath,
+                        isScannerActive = false
                     )
                 }
             } else {
-                logger.i("Drug not found, fetching from API...")
                 try {
-                    //val drugInfo = drugRepository.getDrugInfoByNdc("59779-311")
                     val drugInfo = drugRepository.getDrugInfoByNdc(barcodeValue)
                     if (drugInfo != null) {
-                        val displayName = when {
-                            !drugInfo.genericName.isNullOrBlank() -> drugInfo.genericName
-                            else -> "Unknown Drug"
-                        }
-                        logger.i("Successfully fetched drug info for barcode $barcodeValue")
+                        val displayName = drugInfo.genericName?.takeIf { it.isNotBlank() } ?: "Unknown Drug"
                         _uiState.update {
                             it.copy(
                                 isLoading = false,
                                 drugName = displayName,
                                 ndc = drugInfo.ndc,
-                                isScannerActive = false // Pause scanner on successful scan
+                                barcodeImagePath = imagePath,
+                                isScannerActive = false
                             )
                         }
                     } else {
                         throw Exception("No drug information found for this NDC.")
                     }
                 } catch (e: Exception) {
-                    logger.e("Failed to fetch drug info for barcode $barcodeValue", e)
                     _uiState.update {
                         it.copy(
                             isLoading = false,
@@ -131,105 +143,122 @@ class ScanBarcodeViewModel @Inject constructor(
         }
     }
 
+
     /**
-     * Resets the UI state to allow for a new scan.
-     * It clears any previously scanned drug name and NDC, removes error messages,
-     * and importantly, sets the scanner to active.
+     * Reset the UI state for a redo scan.
+     *
+     * Clears drug info and error messages, and re-activates the scanner.
      */
     private fun handleRedoScan() {
-        logger.d("Redo scan clicked. Clearing state and resuming scanner.")
+        logger.d("Redo scan triggered → resuming scanner.")
         _uiState.update {
             it.copy(
                 drugName = "",
                 ndc = "",
                 error = null,
-                isScannerActive = true // Resume scanner
+                isScannerActive = true
             )
         }
     }
 
     /**
-     * Handles the confirmation of a scanned item.
-     * It checks if an NDC is present and, if so, sends a navigation event
-     * to proceed to the next screen. If no NDC is present, it shows an error.
+     * Handle confirmation of a scanned drug and create a pill count transaction.
+     *
+     * - Validates that a scanned NDC exists.
+     * - Uses [DrugMasterDao.upsertPreservingId] to ensure the drug is persisted.
+     * - Creates a [PillCountTxnEntity] and persists it in [PillCountTxnDao].
+     * - Emits a navigation event to proceed to pill count screen.
      */
     private fun handleStartCount() {
         val currentNdc = uiState.value.ndc
         val currentDrugName = uiState.value.drugName
+
         if (currentNdc.isBlank()) {
-            logger.w("ConfirmScan ignored: NDC is blank.")
+            logger.w("StartCount ignored: NDC is blank.")
             _uiState.update { it.copy(error = "Please scan an item first.") }
             return
         }
-        logger.d("Confirm scan clicked. Navigating to pill count.")
+
         viewModelScope.launch {
-            val drugId = drugMasterDao.upsertAndReturnId(currentNdc, currentDrugName)
-            val localId =  preferenceHelper.getLocalId()
-            logger.i(message = "local id in scan--->   $localId")
+            val drugId = drugMasterDao.upsertPreservingId(
+                DrugMasterEntity(
+                    ndc = currentNdc,
+                    drugName = currentDrugName
+                )
+            )
+            val localId = preferenceHelper.getLocalId()
+            logger.i("LocalId retrieved from preferences: $localId")
+
             val txn = PillCountTxnEntity(
                 localId = localId,
                 drugId = drugId,
-                countType = when (uiState.value.scanType){
+                countType = when (uiState.value.scanType) {
                     "FIXED" -> CountType.FIXED
                     "REGULAR" -> CountType.REGULAR
                     else -> CountType.REGULAR
                 },
                 status = CountStatus.PARTIAL,
                 expiry = uiState.value.expiry,
-                lotNo = uiState.value.lotNo
+                lotNo = uiState.value.lotNo,
+                barcodeImage = uiState.value.barcodeImagePath
             )
 
-            val txnId = pillCountTxnDao.insert(txn)
+            val txnId = pillCountTxnDao.upsertPreservingId(txn)
             preferenceHelper.saveTxnId(txnId)
-            logger.d("active transaction id -->  $txnId")
-            _navigationEvent.send(NavigationEvent.NavigateToPillCount(currentNdc))
+            logger.d("Transaction created with txnId=$txnId")
+
+            _navigationEvent.send(
+                NavigationEvent.NavigateToPillCount(
+                    ndc = currentNdc,
+                    type = uiState.value.scanType
+                )
+            )
         }
     }
 
     /**
-     * Handles errors reported by the barcode analyzer.
-     * It logs the exception and updates the UI state with a generic, user-friendly
-     * error message.
-     * @param exception The exception caught by the scanner component.
+     * Handle scanner errors reported from MLKit or CameraX.
+     *
+     * @param exception The thrown exception.
      */
     private fun handleScannerError(exception: Exception) {
-        logger.e("Received scanner error.", exception)
+        logger.e("Scanner error received", exception)
         _uiState.update { it.copy(error = "Scanner failed. Please try again.") }
     }
 
+    /**
+     * Add a drug manually (fallback path).
+     *
+     * Used when the drug is not recognized or the barcode fails to resolve.
+     *
+     * @param drugName Human-readable drug name entered manually.
+     * @param ndc National Drug Code string.
+     */
     fun addManualDrug(drugName: String, ndc: String) {
         _uiState.update {
             it.copy(
                 isLoading = false,
                 drugName = drugName,
                 ndc = ndc,
-                isScannerActive = false, // Pause scanner on successful scan
-                showManualEntry = false, //hiding dialog
-                error = null
-            )
-        }
-    }
-
-    fun showManualEntryDialog(){
-        _uiState.update {
-            it.copy(
-                showManualEntry = true,
-                error = null
-            )
-        }
-    }
-
-    fun hideManualEntryDialog(){
-        _uiState.update {
-            it.copy(
+                isScannerActive = false,
                 showManualEntry = false,
                 error = null
             )
         }
     }
 
+    /** Show the manual entry dialog. */
+    fun showManualEntryDialog() {
+        _uiState.update { it.copy(showManualEntry = true, error = null) }
+    }
+
+    /** Hide the manual entry dialog. */
+    fun hideManualEntryDialog() {
+        _uiState.update { it.copy(showManualEntry = false, error = null) }
+    }
+
     companion object {
+        /** Navigation argument key for scan type ("FIXED" or "REGULAR"). */
         const val ARG_TYPE = "type"
     }
 }
-

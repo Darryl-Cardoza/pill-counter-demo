@@ -269,4 +269,8 @@ class PillScanningViewModel @Inject constructor(
             }
         }
     }
+
+    fun setScanType(type: String) {
+        _uiState.update { it.copy(scanType = type) }
+    }
 }

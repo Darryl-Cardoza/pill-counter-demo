@@ -9,6 +9,7 @@ import com.example.pillcountingnewmodels.core.room.models.CountType
 import com.example.pillcountingnewmodels.core.room.models.UserEntity
 import com.example.pillcountingnewmodels.core.utils.AppLogger
 import com.example.pillcountingnewmodels.core.utils.PreferenceHelper
+import com.example.pillcountingnewmodels.core.utils.compose.HelperFunctions.mapCounts
 import com.example.pillcountingnewmodels.feature.dashboard.domain.data.IUserDetailRepository
 import com.example.pillcountingnewmodels.feature.dashboard.domain.model.DashboardUiState
 import com.example.pillcountingnewmodels.feature.dashboard.domain.model.UserDetail
@@ -20,6 +21,23 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+/**
+ * ViewModel for the Dashboard screen.
+ *
+ * ### Responsibilities
+ * - Observe pill count transaction statistics from [PillCountTxnDao].
+ * - Map database counts into dashboard-friendly values (Fixed/Regular, Completed/Partial).
+ * - Fetch user profile details from [IUserDetailRepository] using an access token.
+ * - Persist user details into Room via [UserDao].
+ * - Keep preferences ([PreferenceHelper]) up-to-date with userId and localId.
+ *
+ * Threading:
+ * - Database operations are executed on `Dispatchers.IO`.
+ * - Results are mapped and posted to UI state using [MutableStateFlow].
+ *
+ * Logging:
+ * - All lifecycle and error events are logged using [AppLogger].
+ */
 @HiltViewModel
 class DashboardViewModel @Inject constructor(
     private val userDetailRepository: IUserDetailRepository,
@@ -28,49 +46,52 @@ class DashboardViewModel @Inject constructor(
     private val pillCountTxnDao: PillCountTxnDao
 ) : ViewModel() {
 
+    /** Logger instance for this ViewModel. */
     private val logger = AppLogger.create<DashboardViewModel>()
 
+    /** Backing state flow for the Dashboard UI. */
     private val _uiState = MutableStateFlow(DashboardUiState())
+
+    /** Public immutable UI state exposed to the UI layer. */
     val uiState = _uiState.asStateFlow()
 
     init {
         logger.i("DashboardViewModel initialized.")
-        loadDashboardData()
+        observeDashboardCounts()
         fetchUserDetail()
     }
 
     /**
-     * Load dashboard counters from the database.
+     * Observe aggregated transaction counts and update the dashboard UI state.
+     *
+     * Counts are grouped by [CountType] and [CountStatus] (Completed/Partial).
+     * Uses [mapCounts] to transform database rows into strongly typed buckets.
      */
-    private fun loadDashboardData() {
+    private fun observeDashboardCounts() {
         viewModelScope.launch(Dispatchers.IO) {
             pillCountTxnDao.observeDashboardCountsGrouped().collect { rows ->
-                val completedFixed =
-                    rows.firstOrNull { it.status == CountStatus.COMPLETED && it.countType == CountType.FIXED }?.cnt
-                        ?: 0
-                val partialFixed =
-                    rows.firstOrNull { it.status == CountStatus.PARTIAL && it.countType == CountType.FIXED }?.cnt
-                        ?: 0
-                val completedRegular =
-                    rows.firstOrNull { it.status == CountStatus.COMPLETED && it.countType == CountType.REGULAR }?.cnt
-                        ?: 0
-                val partialRegular =
-                    rows.firstOrNull { it.status == CountStatus.PARTIAL && it.countType == CountType.REGULAR }?.cnt
-                        ?: 0
-
+                val counts = mapCounts(rows)
                 _uiState.update {
                     it.copy(
-                        completedFixedCount = completedFixed.toString(),
-                        partialFixedCount = partialFixed.toString(),
-                        completedRegularCount = completedRegular.toString(),
-                        partialRegularCount = partialRegular.toString()
+                        completedFixedCount = counts.fixedCompleted.toString(),
+                        partialFixedCount = counts.fixedPartial.toString(),
+                        completedRegularCount = counts.regularCompleted.toString(),
+                        partialRegularCount = counts.regularPartial.toString()
                     )
                 }
             }
         }
     }
 
-
+    /**
+     * Fetch the latest user details from the remote repository.
+     *
+     * - Reads the access token from [PreferenceHelper].
+     * - Requests user details via [IUserDetailRepository].
+     * - Persists the user profile into [UserDao].
+     * - Saves `userId` and `localId` into [PreferenceHelper] for later use.
+     * - Updates [DashboardUiState] with either success or error state.
+     */
     private fun fetchUserDetail() {
         viewModelScope.launch(Dispatchers.IO) {
             logger.d("Starting fetchUserDetail()")
@@ -87,33 +108,22 @@ class DashboardViewModel @Inject constructor(
                 return@launch
             }
 
-
             logger.i("Access token retrieved. Requesting user detail from repository.")
             _uiState.update { it.copy(isLoadingUserDetail = true, userDetailError = null) }
 
             val result = userDetailRepository.getUserDetail(token)
-
             result.fold(
                 onSuccess = { payload ->
                     logger.i("User detail fetch successful. Persisting to Room...")
-
                     try {
-                        // Coerce payload to a single UI type (UserDetail?)
-                        val uiUser: UserDetail? = when (payload) {
-                            else -> payload.data
-                        }
-
-                        // Persist only if we actually have user data
+                        val uiUser: UserDetail? = payload.data
                         uiUser?.let { detail ->
                             val entity = detail.toUserEntity(jwtUserId = uiUser.profile?.userId)
                             val localId = userDao.upsertPreservingLocalId(user = entity)
-                            logger.i(message = "local id --->   $localId")
                             preferenceHelper.saveUserId(entity.userId)
                             preferenceHelper.saveLocalId(localId)
-                            logger.i(message = "local id 2 --->   ${preferenceHelper.getLocalId()}")
-                            logger.i(message = "User detail persisted locally.")
+                            logger.i("User persisted locally with localId=$localId")
                         }
-
                         _uiState.update {
                             it.copy(
                                 userDetail = uiUser,

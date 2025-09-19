@@ -1,7 +1,6 @@
 package com.example.pillcountingnewmodels.feature.countResume.domain.model
 
 import com.example.pillcountingnewmodels.R
-import java.util.UUID
 
 /**
  * Represents a single item in a partial or fixed count list.
@@ -17,7 +16,7 @@ import java.util.UUID
  * @property image Drawable resource ID for the item's icon. Defaults to [R.drawable.logo].
  */
 data class CountItem(
-    val id: String = UUID.randomUUID().toString(),
+    val id: Long,
     val name: String,
     val quantity: Int,
     val date: String,

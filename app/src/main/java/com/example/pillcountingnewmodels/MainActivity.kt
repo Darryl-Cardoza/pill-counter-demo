@@ -112,7 +112,7 @@ class MainActivity : ComponentActivity() {
         }
 
         // Set the app to be fullscreen and immersive AFTER the content view is set.
-        configureImmersiveFullscreen()
+//        configureImmersiveFullscreen()
     }
 
     /**

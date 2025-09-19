@@ -1,17 +1,28 @@
 package com.example.pillcountingnewmodels.feature.countResume.presentation.compose
 
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.DismissDirection
+import androidx.compose.material.DismissValue
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.SwipeToDismiss
-import androidx.compose.material.rememberDismissState
-import androidx.compose.material.DismissValue
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.rememberDismissState
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -32,16 +43,18 @@ import com.example.pillcountingnewmodels.feature.countResume.domain.data.ResumeE
 import com.example.pillcountingnewmodels.feature.countResume.domain.model.CountItem
 
 /**
- * Right panel displaying the list of count items (fixed or regular) with support for:
- * - Multi-select
- * - Swipe-to-delete
- * - Resume actions
+ * Displays the right panel of the count resume screen.
  *
- * @param items List of CountItem to display.
- * @param selectedItems List of currently selected items (for multi-select mode).
- * @param isMultiSelectMode Flag indicating whether multi-select mode is active.
- * @param onEvent Callback to send events to the ViewModel.
- * @param eventFactory Factory to generate ResumeEvent instances.
+ * Features:
+ * - Header actions (search, toggle multi-select, delete).
+ * - List of [CountItem]s with support for swipe-to-delete and multi-select.
+ * - Delete confirmation dialog for both single-item and bulk deletes.
+ *
+ * @param items List of count items to render.
+ * @param selectedItems Items currently selected in multi-select mode.
+ * @param isMultiSelectMode Whether multi-select mode is active.
+ * @param onEvent Callback to propagate events to the ViewModel.
+ * @param eventFactory Factory for creating strongly-typed [ResumeEvent]s.
  */
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
@@ -53,21 +66,25 @@ fun <E : ResumeEvent> RightPanel(
     eventFactory: ResumeEventFactory<E>
 ) {
     val iconColor = Color(0xFF00BCD4)
-    var showDeleteConfirmationDialog by remember { mutableStateOf(false) }
-    var itemPendingDelete by remember { mutableStateOf<CountItem?>(null) }
+
+    // State for delete confirmation dialog
+    var showDeleteDialog by remember { mutableStateOf(false) }
+    var deleteMode by remember { mutableStateOf(DeleteMode.None) }
+    var pendingItem by remember { mutableStateOf<CountItem?>(null) }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(12.dp)
     ) {
-        // ---------------- Header Actions ----------------
+        /* ---------------- Header Actions ---------------- */
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.End,
             verticalAlignment = Alignment.CenterVertically
         ) {
             if (isMultiSelectMode) {
+                // Close multi-select mode
                 Icon(
                     imageVector = Icons.Default.Close,
                     contentDescription = stringResource(R.string.cd_close_selection),
@@ -79,6 +96,7 @@ fun <E : ResumeEvent> RightPanel(
 
                 Spacer(Modifier.width(16.dp))
 
+                // Delete selected items (with confirmation)
                 Icon(
                     painter = painterResource(id = R.drawable.delete),
                     contentDescription = stringResource(R.string.cd_delete_selected),
@@ -87,10 +105,12 @@ fun <E : ResumeEvent> RightPanel(
                     modifier = Modifier
                         .size(28.dp)
                         .clickable(enabled = selectedItems.isNotEmpty()) {
-                            onEvent(eventFactory.deleteClicked())
+                            deleteMode = DeleteMode.Multi
+                            showDeleteDialog = true
                         }
                 )
             } else {
+                // Search icon (placeholder for now)
                 Icon(
                     painter = painterResource(id = R.drawable.search),
                     contentDescription = stringResource(R.string.cd_search),
@@ -102,6 +122,7 @@ fun <E : ResumeEvent> RightPanel(
 
                 Spacer(Modifier.width(16.dp))
 
+                // Enter multi-select mode
                 Icon(
                     painter = painterResource(id = R.drawable.delete),
                     contentDescription = stringResource(R.string.cd_select_items_to_delete),
@@ -115,7 +136,7 @@ fun <E : ResumeEvent> RightPanel(
 
         Spacer(Modifier.height(12.dp))
 
-        // ---------------- Counts List ----------------
+        /* ---------------- Counts List ---------------- */
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
             verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -125,9 +146,10 @@ fun <E : ResumeEvent> RightPanel(
                 val dismissState = rememberDismissState(
                     confirmStateChange = { newValue ->
                         if (newValue == DismissValue.DismissedToStart) {
-                            itemPendingDelete = item
-                            showDeleteConfirmationDialog = true
-                            false
+                            pendingItem = item
+                            deleteMode = DeleteMode.Single
+                            showDeleteDialog = true
+                            false // stop auto-dismiss, wait for confirmation
                         } else false
                     }
                 )
@@ -163,22 +185,42 @@ fun <E : ResumeEvent> RightPanel(
         }
     }
 
-    // ---------------- Delete Confirmation Dialog ----------------
-    if (showDeleteConfirmationDialog && itemPendingDelete != null) {
+    /* ---------------- Delete Confirmation Dialog ---------------- */
+    if (showDeleteDialog) {
+        val message = when (deleteMode) {
+            DeleteMode.Single -> stringResource(R.string.delete_item_text)
+            DeleteMode.Multi -> stringResource(R.string.delete_selected_items_text)
+            else -> ""
+        }
+
         CommonDialog(
-            message = stringResource(R.string.delete_item_text),
+            message = message,
             confirmText = stringResource(R.string.yes),
             cancelText = stringResource(R.string.no),
             onConfirm = {
-                itemPendingDelete?.let { onEvent(eventFactory.itemSwipedToDelete(it)) }
-                showDeleteConfirmationDialog = false
-                itemPendingDelete = null
+                when (deleteMode) {
+                    DeleteMode.Single -> pendingItem?.let {
+                        onEvent(eventFactory.itemSwipedToDelete(it))
+                    }
+                    DeleteMode.Multi -> onEvent(eventFactory.deleteClicked())
+                    else -> {}
+                }
+                showDeleteDialog = false
+                pendingItem = null
+                deleteMode = DeleteMode.None
             },
             onCancel = {
-                showDeleteConfirmationDialog = false
-                itemPendingDelete = null
+                showDeleteDialog = false
+                pendingItem = null
+                deleteMode = DeleteMode.None
             }
         )
     }
 }
 
+/**
+ * Tracks which delete mode the confirmation dialog is for.
+ */
+private enum class DeleteMode {
+    None, Single, Multi
+}

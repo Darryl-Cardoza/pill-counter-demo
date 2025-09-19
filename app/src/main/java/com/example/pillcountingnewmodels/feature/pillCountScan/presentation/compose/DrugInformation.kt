@@ -1,6 +1,12 @@
 package com.example.pillcountingnewmodels.feature.pillCountScan.presentation.compose
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -57,9 +63,15 @@ fun DrugInformation(uiState: FixedCountPillScanningUiState) {
                 color = MaterialTheme.colorScheme.primary
             )
 
+            val countDisplay = when (uiState.scanType) {
+                "FIXED" -> "${totalBatchCount}/${uiState.expectedCount}"
+                "REGULAR" -> totalBatchCount.toString()
+                else -> totalBatchCount.toString()
+            }
+
             // Display the calculated total batch count
             Text(
-                text = "Total $totalBatchCount/${uiState.expectedCount}",
+                text = countDisplay,
                 fontSize = 16.sp,
                 fontFamily = FontFamily.Default,
                 fontWeight = FontWeight.Normal,

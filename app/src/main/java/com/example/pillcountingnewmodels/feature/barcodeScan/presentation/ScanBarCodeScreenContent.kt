@@ -10,15 +10,15 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.navigation.NavController
+import com.example.pillcountingnewmodels.core.utils.AppLogger
 import com.example.pillcountingnewmodels.core.utils.compose.BackButton
 import com.example.pillcountingnewmodels.core.utils.compose.LoadingIndicator
 import com.example.pillcountingnewmodels.core.utils.compose.SplitResponsive
 import com.example.pillcountingnewmodels.feature.barcodeScan.domain.data.ScanBarcodeEvent
 import com.example.pillcountingnewmodels.feature.barcodeScan.domain.model.ScanBarcodeUiState
-
-import com.example.pillcountingnewmodels.feature.barcodeScan.presentation.composables.ScannerView
-import com.example.pillcountingnewmodels.feature.barcodeScan.presentation.compose.PermissionDeniedView
 import com.example.pillcountingnewmodels.feature.barcodeScan.presentation.compose.InformationPanel
+import com.example.pillcountingnewmodels.feature.barcodeScan.presentation.compose.PermissionDeniedView
+import com.example.pillcountingnewmodels.feature.barcodeScan.presentation.compose.ScannerView
 
 /**
  * The stateless presentation component for the barcode scanning screen. It is responsible for
@@ -56,8 +56,14 @@ fun ScanBarCodeScreenContent(
                     if (hasCameraPermission) {
                         ScannerView(
                             isScannerActive = uiState.isScannerActive,
-                            onBarcodeScanned = { barcodeValue ->
-                                onEvent(ScanBarcodeEvent.BarcodeScanned(barcodeValue))
+                            onBarcodeScanned = { value, imagePath ->
+                                onEvent(
+                                    ScanBarcodeEvent.BarcodeScanned(
+                                        barcodeValue = value,
+                                        imagePath = imagePath
+                                    )
+                                )
+                                AppLogger("ScanBarcode").i("Barcode=$value, saved image=$imagePath")
                             },
                             onError = { exception ->
                                 onEvent(ScanBarcodeEvent.ScannerError(exception))

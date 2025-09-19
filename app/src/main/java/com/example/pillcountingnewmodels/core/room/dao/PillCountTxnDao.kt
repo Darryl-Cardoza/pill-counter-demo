@@ -1,11 +1,6 @@
 package com.example.pillcountingnewmodels.core.room.dao
 
-import androidx.room.Dao
-import androidx.room.Insert
-import androidx.room.OnConflictStrategy
-import androidx.room.Query
-import androidx.room.Transaction
-import androidx.room.Update
+import androidx.room.*
 import com.example.pillcountingnewmodels.core.room.models.CountStatus
 import com.example.pillcountingnewmodels.core.room.models.PillCountTxnEntity
 import com.example.pillcountingnewmodels.core.room.models.StatusTypeCount
@@ -13,15 +8,13 @@ import com.example.pillcountingnewmodels.core.room.relation.PillCountTxnWithDeta
 import kotlinx.coroutines.flow.Flow
 
 /**
- * DAO for accessing and managing [PillCountTxnEntity] records (transaction headers).
+ * Data Access Object (DAO) for managing [PillCountTxnEntity] records (transaction headers).
  *
- * Provides CRUD operations, paged/filterable queries, field updates, and
- * relation-based fetches (header with details).
- *
- * ### Notes
- * - Assumes `PillCountTxnEntity.userId` type matches `UserEntity.userId` (e.g., `String?`).
- * - Consider adding indices in `PillCountTxnEntity` for frequently-filtered columns
- *   like `userId`, `drugId`, `status`, and `createdAt` to optimize queries.
+ * ### Design Goals
+ * - Ensure **txnId stability**: transaction PKs must not reset or break foreign keys in details.
+ * - Avoid `OnConflictStrategy.REPLACE` which deletes and reinserts rows.
+ * - Provide safe upsert methods for single and bulk inserts.
+ * - Offer reactive [Flow] queries for live dashboards.
  */
 @Dao
 interface PillCountTxnDao {
@@ -29,38 +22,77 @@ interface PillCountTxnDao {
     /* ────────────────────────── Create / Update ────────────────────────── */
 
     /**
-     * Insert or replace a single transaction header.
+     * Insert a new transaction.
      *
-     * @param txn The transaction to insert or replace.
-     * @return The row ID of the inserted entity.
+     * - Uses [OnConflictStrategy.IGNORE] to avoid accidental PK resets.
+     * - Returns the new rowId (txnId) if inserted, or `-1` if a conflict occurred.
+     *
+     * @param txn The [PillCountTxnEntity] to insert.
+     * @return RowId (txnId) if inserted, or -1 if ignored.
      */
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insert(txn: PillCountTxnEntity): Long
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insertIgnore(txn: PillCountTxnEntity): Long
 
     /**
-     * Insert or replace multiple transaction headers.
+     * Update an existing transaction, matched by primary key ([txnId]).
      *
-     * @param txns The list of transactions to insert or replace.
-     * @return Row IDs for newly inserted entities.
-     */
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun upsertAll(txns: List<PillCountTxnEntity>): List<Long>
-
-    /**
-     * Update an existing transaction header.
-     *
-     * @param txn The entity with updated fields.
+     * @param txn The updated transaction entity.
      */
     @Update
     suspend fun update(txn: PillCountTxnEntity)
 
+    /**
+     * Safely upsert a transaction while preserving [txnId].
+     *
+     * - If the transaction already exists (same txnId), update in place.
+     * - If not, insert a new record.
+     * - Never resets [txnId], ensuring foreign key stability in child tables.
+     *
+     * @param txn The transaction to upsert.
+     * @return The stable [txnId].
+     */
+    @Transaction
+    suspend fun upsertPreservingId(txn: PillCountTxnEntity): Long {
+        return if (txn.txnId != 0L) {
+            val existing = getById(txn.txnId)
+            if (existing != null) {
+                update(txn.copy(txnId = existing.txnId))
+                existing.txnId
+            } else {
+                insertIgnore(txn).let { newId ->
+                    if (newId == -1L) {
+                        getById(txn.txnId)?.txnId
+                            ?: throw IllegalStateException("Txn insert failed unexpectedly")
+                    } else newId
+                }
+            }
+        } else {
+            insertIgnore(txn).takeIf { it != -1L }
+                ?: throw IllegalStateException("Insert failed: transaction already exists")
+        }
+    }
+
+    /**
+     * Bulk upsert for multiple transactions, preserving PKs.
+     *
+     * - Runs [upsertPreservingId] for each entity.
+     * - Ensures all txnIds remain stable.
+     *
+     * @param txns List of [PillCountTxnEntity].
+     * @return List of stable [txnId]s.
+     */
+    @Transaction
+    suspend fun upsertAllPreservingId(txns: List<PillCountTxnEntity>): List<Long> {
+        return txns.map { upsertPreservingId(it) }
+    }
+
     /* ─────────────────────────────── Reads ─────────────────────────────── */
 
     /**
-     * Get a transaction by its primary key.
+     * Retrieve a transaction by its primary key.
      *
-     * @param id The transaction ID.
-     * @return The matching [PillCountTxnEntity], or null if not found.
+     * @param id The txnId.
+     * @return Matching [PillCountTxnEntity] or null if not found.
      */
     @Query("SELECT * FROM pill_count_txn WHERE txnId = :id LIMIT 1")
     suspend fun getById(id: Long): PillCountTxnEntity?
@@ -68,14 +100,16 @@ interface PillCountTxnDao {
     /**
      * Observe a transaction by its primary key.
      *
-     * @param id The transaction ID.
-     * @return A [Flow] emitting the entity when it changes (or null if missing).
+     * Emits updates whenever the entity changes.
+     *
+     * @param id The txnId.
+     * @return A [Flow] emitting [PillCountTxnEntity] or null.
      */
     @Query("SELECT * FROM pill_count_txn WHERE txnId = :id LIMIT 1")
     fun observeById(id: Long): Flow<PillCountTxnEntity?>
 
     /**
-     * Get all non-deleted transactions ordered by newest first.
+     * Retrieve all active (non-deleted) transactions ordered by newest first.
      */
     @Query(
         """
@@ -87,7 +121,7 @@ interface PillCountTxnDao {
     suspend fun getAllActive(): List<PillCountTxnEntity>
 
     /**
-     * Observe all non-deleted transactions ordered by newest first.
+     * Observe all active (non-deleted) transactions ordered by newest first.
      */
     @Query(
         """
@@ -99,12 +133,12 @@ interface PillCountTxnDao {
     fun observeAllActive(): Flow<List<PillCountTxnEntity>>
 
     /**
-     * Paged, filterable query for active transactions.
+     * Paged query for transactions with optional user and drug filters.
      *
-     * @param localId Optional user filter (exact match).
-     * @param drugId Optional drug filter (exact match).
-     * @param limit  Max rows to return.
-     * @param offset Rows to skip (for pagination).
+     * @param localId Optional FK to user.
+     * @param drugId Optional FK to drug.
+     * @param limit Maximum rows to return.
+     * @param offset Rows to skip (pagination).
      */
     @Query(
         """
@@ -117,7 +151,7 @@ interface PillCountTxnDao {
         """
     )
     suspend fun queryPaged(
-        localId: String? = null,
+        localId: Long? = null,
         drugId: Long? = null,
         limit: Int = 50,
         offset: Int = 0
@@ -128,9 +162,9 @@ interface PillCountTxnDao {
     /**
      * Update the status of a transaction.
      *
-     * @param txnId  The transaction ID.
-     * @param status The new [CountStatus].
-     * @param now    Update timestamp (epoch millis).
+     * @param txnId The transaction PK.
+     * @param status New [CountStatus].
+     * @param now Update timestamp (epoch millis).
      */
     @Query("UPDATE pill_count_txn SET status = :status, updatedAt = :now WHERE txnId = :txnId")
     suspend fun updateStatus(
@@ -142,9 +176,9 @@ interface PillCountTxnDao {
     /**
      * Update the target count of a transaction.
      *
-     * @param txnId  The transaction ID.
-     * @param target The new target count (nullable).
-     * @param now    Update timestamp (epoch millis).
+     * @param txnId Transaction PK.
+     * @param target New target count (nullable).
+     * @param now Update timestamp.
      */
     @Query("UPDATE pill_count_txn SET targetCount = :target, updatedAt = :now WHERE txnId = :txnId")
     suspend fun updateTargetCount(
@@ -156,9 +190,9 @@ interface PillCountTxnDao {
     /**
      * Update the note of a transaction.
      *
-     * @param txnId The transaction ID.
-     * @param note  The note text (nullable).
-     * @param now   Update timestamp (epoch millis).
+     * @param txnId Transaction PK.
+     * @param note Optional note string.
+     * @param now Update timestamp.
      */
     @Query("UPDATE pill_count_txn SET note = :note, updatedAt = :now WHERE txnId = :txnId")
     suspend fun updateNote(
@@ -170,8 +204,8 @@ interface PillCountTxnDao {
     /**
      * Soft-delete a transaction (sets `isDeleted = 1`).
      *
-     * @param txnId The transaction ID.
-     * @param now   Update timestamp (epoch millis).
+     * @param txnId Transaction PK.
+     * @param now Update timestamp.
      */
     @Query("UPDATE pill_count_txn SET isDeleted = 1, updatedAt = :now WHERE txnId = :txnId")
     suspend fun softDelete(
@@ -182,9 +216,9 @@ interface PillCountTxnDao {
     /* ──────────────────────────── Relations ────────────────────────────── */
 
     /**
-     * Get a transaction and its details in a single call.
+     * Fetch a transaction and its details in a single call.
      *
-     * @param id The transaction ID.
+     * @param id The transaction PK.
      * @return [PillCountTxnWithDetails] or null if not found.
      */
     @Transaction
@@ -192,9 +226,10 @@ interface PillCountTxnDao {
     suspend fun getWithDetails(id: Long): PillCountTxnWithDetails?
 
     /**
-     * Get all transactions for a given user with their details.
+     * Retrieve all transactions for a given user, with details included.
      *
-     * @param localId The user ID to filter by (nullable → returns all users).
+     * @param localId Optional user FK. Null → returns all users.
+     * @return List of [PillCountTxnWithDetails].
      */
     @Transaction
     @Query(
@@ -208,8 +243,9 @@ interface PillCountTxnDao {
     suspend fun getAllByUserWithDetails(localId: Long?): List<PillCountTxnWithDetails>
 
     /**
-     * Grouped aggregate: one row per (status, countType).
-     * At most 4 rows (COMPLETED|PARTIAL × FIXED|REGULAR).
+     * Aggregate dashboard counts, grouped by [CountStatus] and count type.
+     *
+     * @return One row per (status, countType).
      */
     @Query(
         """
@@ -224,7 +260,9 @@ interface PillCountTxnDao {
     suspend fun getDashboardCountsGrouped(): List<StatusTypeCount>
 
     /**
-     * Live version (Flow) if you want the dashboard to auto-update.
+     * Live dashboard counts, grouped by [CountStatus] and count type.
+     *
+     * @return Flow emitting aggregate counts on updates.
      */
     @Query(
         """
@@ -237,5 +275,4 @@ interface PillCountTxnDao {
         """
     )
     fun observeDashboardCountsGrouped(): Flow<List<StatusTypeCount>>
-
 }
