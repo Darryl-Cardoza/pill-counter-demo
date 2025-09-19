@@ -1,5 +1,6 @@
 package com.example.pillcountingnewmodels.feature.pillCountScan.presentation
 
+import Screen
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -23,7 +24,6 @@ import com.example.pillcountingnewmodels.R
 import com.example.pillcountingnewmodels.core.room.models.CountType
 import com.example.pillcountingnewmodels.core.utils.ToastUtils
 import com.example.pillcountingnewmodels.core.utils.compose.BackButton
-import com.example.pillcountingnewmodels.core.utils.compose.CommonDialog
 import com.example.pillcountingnewmodels.core.utils.compose.MenuButton
 import com.example.pillcountingnewmodels.core.utils.compose.SplitResponsive
 import com.example.pillcountingnewmodels.feature.pillCountScan.domain.data.FixedCountPillScanningEvent
@@ -32,7 +32,6 @@ import com.example.pillcountingnewmodels.feature.pillCountScan.presentation.comp
 import com.example.pillcountingnewmodels.feature.pillCountScan.presentation.compose.InformationPanelSection
 import com.example.pillcountingnewmodels.feature.pillCountScan.presentation.compose.TargetPillsCountDialog
 import com.example.pillcountingnewmodels.feature.pillCountScan.presentation.viewmodel.PillScanningViewModel
-import com.example.pillcountingnewmodels.navigation.AUTH_GRAPH_ROUTE
 import com.example.pillcountingnewmodels.ui.theme.AppTheme
 
 /**

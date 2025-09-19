@@ -1,11 +1,13 @@
 package com.example.pillcountingnewmodels.feature.pillCountScan.presentation.compose
 
-import androidx.compose.foundation.layout.*
-import androidx.compose.material3.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
 import com.example.pillcountingnewmodels.R
 import com.example.pillcountingnewmodels.core.utils.compose.Dimens.medium
 import com.example.pillcountingnewmodels.core.utils.compose.Dimens.small

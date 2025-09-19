@@ -4,7 +4,6 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.ImageFormat
 import android.graphics.Rect
-import android.media.Image
 import android.os.Environment
 import androidx.camera.core.ImageProxy
 import java.io.File

@@ -2,7 +2,6 @@ package com.example.pillcountingnewmodels.feature.pillCountScan.presentation.com
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.runtime.Composable
 import com.example.pillcountingnewmodels.core.utils.compose.Dimens.medium
