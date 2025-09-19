@@ -24,6 +24,7 @@ import com.example.pillcountingnewmodels.core.utils.compose.SplitResponsive
 import com.example.pillcountingnewmodels.feature.dashboard.presentation.compose.FixedCountSection
 import com.example.pillcountingnewmodels.feature.dashboard.presentation.compose.RegularCountSection
 import com.example.pillcountingnewmodels.feature.dashboard.presentation.viewmodel.DashboardViewModel
+import com.example.pillcountingnewmodels.feature.pillCountScan.presentation.compose.TargetPillsCountDialog
 import com.example.pillcountingnewmodels.ui.theme.AppTheme
 
 /**

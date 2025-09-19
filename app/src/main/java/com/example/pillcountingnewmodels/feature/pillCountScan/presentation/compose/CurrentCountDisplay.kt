@@ -1,22 +1,14 @@
 package com.example.pillcountingnewmodels.feature.pillCountScan.presentation.compose
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import com.example.pillcountingnewmodels.R
 import com.example.pillcountingnewmodels.core.utils.compose.FilledButton
-import com.example.pillcountingnewmodels.feature.pillCountScan.domain.data.FixedCountPillScanningEvent
-import com.example.pillcountingnewmodels.feature.pillCountScan.domain.model.FixedCountPillScanningUiState
+import com.example.pillcountingnewmodels.feature.pillCountScan.domain.model.PillScanningUiState
 
 /**
  * Displays the current scanned pill count along with an "ADD" button.
@@ -30,7 +22,7 @@ import com.example.pillcountingnewmodels.feature.pillCountScan.domain.model.Fixe
  */
 @Composable
 fun CurrentCountDisplay(
-    uiState: FixedCountPillScanningUiState,
+    uiState: PillScanningUiState,
     onAddClicked: () -> Unit
 ) {
     Row(

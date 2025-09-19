@@ -82,7 +82,7 @@ fun ScannerView(
                                     barcodes.firstOrNull()?.rawValue?.let { value ->
                                         hasScanned.value = true
                                         val bitmap = imageProxy.toBitmap()
-                                        val filePath = bitmap?.let {
+                                        val filePath = bitmap.let {
                                             saveBitmapToFile(
                                                 ctx,
                                                 it,
@@ -114,7 +114,7 @@ fun ScannerView(
     )
 
     // Cleanup when Composable leaves composition
-    DisposableEffect(Unit) {
+    /*DisposableEffect(Unit) {
         onDispose {
             try {
                 cameraProvider?.unbindAll()
@@ -122,5 +122,5 @@ fun ScannerView(
                 onError(e)
             }
         }
-    }
+    }*/
 }

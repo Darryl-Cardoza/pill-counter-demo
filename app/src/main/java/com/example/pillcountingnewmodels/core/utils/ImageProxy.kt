@@ -34,8 +34,8 @@ fun ImageProxy.toBitmap(): Bitmap? {
 }
 
 // Save bitmap to file
-fun saveBitmapToFile(context: Context, bitmap: Bitmap, filename: String): String {
-    val dir = File(context.getExternalFilesDir(Environment.DIRECTORY_PICTURES), "barcodes")
+fun saveBitmapToFile(context: Context, bitmap: Bitmap, filename: String, child: String = "barcodes"): String {
+    val dir = File(context.getExternalFilesDir(Environment.DIRECTORY_PICTURES), child)
     if (!dir.exists()) dir.mkdirs()
 
     val file = File(dir, filename)

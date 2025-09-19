@@ -140,5 +140,13 @@
     <string name="menu_completed">%1$d completed</string>
     <string name="menu_partial">%1$d partial</string>
     <string name="menu_history_duration">3 months</string>
+    <string name="txn_detail">Transaction Detail</string>
+    <string name="total">Total</string>
+    <string name="pill_required">Pills Required</string>
+    <string name="max_count_reached">Total Transaction Details count exceeds target.</string>
+    <string name="no_transaction_found">No Transaction Found, please start counting pills</string>
+    <string name="confirm_done">Confirm Completion</string>
+    <string name="confirm_done_desc_regular">Are you sure you want to mark this transaction as completed?</string>
+    <string name="confirm_done_desc_fixed">Target not reached. This transaction will be marked as PARTIAL.</string>
 
 </resources>

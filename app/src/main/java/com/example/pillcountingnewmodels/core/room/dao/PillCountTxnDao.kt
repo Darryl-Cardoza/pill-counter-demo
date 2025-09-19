@@ -275,4 +275,20 @@ interface PillCountTxnDao {
         """
     )
     fun observeDashboardCountsGrouped(): Flow<List<StatusTypeCount>>
+
+
+    @Query(
+        """
+    SELECT dm.drugName
+    FROM pill_count_txn AS pct
+    LEFT JOIN drug_master AS dm ON pct.drugId = dm.drugId
+    WHERE pct.txnId = :transactionId
+    LIMIT 1
+    """
+    )
+    suspend fun getDrugNameForTransaction(transactionId: Long): String?
+
+    @Query("UPDATE pill_count_txn SET status = :newStatus, updatedAt = :updatedAt WHERE txnId = :txnId")
+    suspend fun updateTxnStatus(txnId: Long, newStatus: CountStatus, updatedAt: Long = System.currentTimeMillis())
+
 }

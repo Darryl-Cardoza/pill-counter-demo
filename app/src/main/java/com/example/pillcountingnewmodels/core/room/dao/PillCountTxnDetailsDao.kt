@@ -57,25 +57,6 @@ interface PillCountTxnDetailsDao {
     @Query("SELECT * FROM pill_count_txn_details WHERE txnDetailsId = :id LIMIT 1")
     suspend fun getById(id: Long): PillCountTxnDetailsEntity?
 
-    /**
-     * Get all non-deleted details for a given transaction.
-     * Results are ordered by:
-     * - `txnDetailsNo` (nulls last)
-     * - `createdAt` (ascending)
-     *
-     * @param txnId The parent transaction ID.
-     */
-    @Query(
-        """
-        SELECT * FROM pill_count_txn_details
-        WHERE txnId = :txnId AND isDeleted = 0
-        ORDER BY 
-            CASE WHEN txnDetailsNo IS NULL THEN 1 ELSE 0 END,
-            txnDetailsNo ASC,
-            createdAt ASC
-        """
-    )
-    suspend fun getAllForTxn(txnId: Long): List<PillCountTxnDetailsEntity>
 
     /**
      * Observe all non-deleted details for a given transaction.
@@ -139,5 +120,12 @@ interface PillCountTxnDetailsDao {
         """
     )
     suspend fun getLatestImageDetail(txnId: Long): PillCountTxnDetailsEntity?
+
+    @Query("""
+    SELECT COALESCE(SUM(pillCount), 0) 
+    FROM pill_count_txn_details 
+    WHERE txnId = :txnId
+""")
+    suspend fun getTotalPillCountForTxn(txnId: Long): Int
 
 }

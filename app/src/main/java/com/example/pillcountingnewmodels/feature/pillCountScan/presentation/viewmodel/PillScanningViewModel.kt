@@ -5,17 +5,23 @@ import android.graphics.Bitmap
 import androidx.camera.core.ImageProxy
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.pillcountingnewmodels.core.room.dao.PillCountTxnDao
 import com.example.pillcountingnewmodels.core.room.dao.PillCountTxnDetailsDao
+import com.example.pillcountingnewmodels.core.room.models.CountStatus
+import com.example.pillcountingnewmodels.core.room.models.CountType
 import com.example.pillcountingnewmodels.core.room.models.PillCountTxnDetailsEntity
 import com.example.pillcountingnewmodels.core.utils.AppLogger
 import com.example.pillcountingnewmodels.core.utils.PreferenceHelper
+import com.example.pillcountingnewmodels.core.utils.saveBitmapToFile
 import com.example.pillcountingnewmodels.feature.pillCountScan.domain.data.FixedCountPillScanningEvent
-import com.example.pillcountingnewmodels.feature.pillCountScan.domain.model.Batch
+import com.example.pillcountingnewmodels.feature.pillCountScan.domain.data.NavigationEvent
+import com.example.pillcountingnewmodels.feature.pillCountScan.domain.model.TxnDetail
 import com.example.pillcountingnewmodels.feature.pillCountScan.domain.model.DetectedPill
-import com.example.pillcountingnewmodels.feature.pillCountScan.domain.model.FixedCountPillScanningUiState
+import com.example.pillcountingnewmodels.feature.pillCountScan.domain.model.PillScanningUiState
 import com.example.pillcountingnewmodels.feature.pillCountScan.presentation.logic.PillAnalyzer
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -25,6 +31,8 @@ import java.io.FileInputStream
 import java.nio.MappedByteBuffer
 import java.nio.channels.FileChannel
 import javax.inject.Inject
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.receiveAsFlow
 
 
 /**
@@ -46,6 +54,7 @@ import javax.inject.Inject
 class PillScanningViewModel @Inject constructor(
     app: Application,
     private val preferenceHelper: PreferenceHelper,
+    private val pillCountTxnDao: PillCountTxnDao,
     private val pillCountTxnDetailsDao: PillCountTxnDetailsDao
 ) : AndroidViewModel(app) {
 
@@ -61,8 +70,11 @@ class PillScanningViewModel @Inject constructor(
     private val _modelState = MutableStateFlow<ModelState>(ModelState.Idle)
     val modelState = _modelState.asStateFlow()
 
-    private val _uiState = MutableStateFlow(FixedCountPillScanningUiState())
+    private val _uiState = MutableStateFlow(PillScanningUiState())
     val uiState = _uiState.asStateFlow()
+
+    private val _navigationEvent = Channel<NavigationEvent>()
+    val navigationEvent = _navigationEvent.receiveAsFlow()
 
     private var interpreter: Interpreter? = null
     private var currentFrameBitmap: Bitmap? = null
@@ -70,6 +82,28 @@ class PillScanningViewModel @Inject constructor(
     companion object {
         private const val MODEL_FILENAME = "best_float32_new.tflite"
         private const val TAG = "PillScanningVM"
+    }
+
+    init {
+        preferenceHelper.getTxnId()?.let { observeBatchesForTxn(it) }
+    }
+
+    fun observeBatchesForTxn(txnId: Long) {
+        viewModelScope.launch {
+            pillCountTxnDetailsDao.observeAllForTxn(txnId).collectLatest { entities ->
+                _uiState.update { currentState ->
+                    currentState.copy(
+                        txnDetailHistory = entities.map { e ->
+                            TxnDetail(
+                                txnDetailId = e.txnDetailsId,
+                                count = e.pillCount ?: 0,
+                                thumbnail = null,
+                            )
+                        }
+                    )
+                }
+            }
+        }
     }
 
     /**
@@ -218,59 +252,154 @@ class PillScanningViewModel @Inject constructor(
     fun onEvent(event: FixedCountPillScanningEvent) {
         when (event) {
             is FixedCountPillScanningEvent.AddBatchClicked -> {
+                val totalBatchCount = _uiState.value.txnDetailHistory.sumOf { it.count }
+                val targetCount = _uiState.value.targetCount
                 val currentCount = _uiState.value.detectedPills.size
+
+                // Predict the total after adding the current batch
+                val predictedTotal = totalBatchCount + currentCount
+
+                if (_uiState.value.scanType == CountType.FIXED.toString() &&predictedTotal > targetCount) {
+                    logger.w("Skipping add transaction detail because predicted total exceeds target.")
+                    _uiState.update {
+                        it.copy(
+                            error = "Total transaction detail count exceeds target.",
+                            restrictAdd = true
+                        )
+                    }
+                    return
+                }
+
                 logger.i("Add batch clicked with count: $currentCount")
 
                 if (currentCount == 0) {
                     logger.w("Skipping add batch because current count is zero.")
                     return
                 }
-
-                _uiState.update { currentState ->
-                    val nextBatchNumber = currentState.batchHistory.size + 1
-                    // Create the new batch with the stored thumbnail
-                    val newBatch = Batch(
-                        count = currentCount,
-                        batchNumber = nextBatchNumber,
-                        thumbnail = currentFrameBitmap
+                val filePath = currentFrameBitmap?.let {
+                    saveBitmapToFile(
+                        getApplication(),
+                        it,
+                        "txn_detail_${System.currentTimeMillis()}.jpg",
+                        "transaction_details"
                     )
-
-                    currentState.copy(
-                        batchHistory = currentState.batchHistory + newBatch,
-                        detectedPills = emptyList()
-                    )
-
                 }
-                currentFrameBitmap = null
+
                 viewModelScope.launch {
                     val detail = PillCountTxnDetailsEntity(
                         txnId = preferenceHelper.getTxnId(), // FK to transaction
-                        txnDetailsNo = uiState.value.batchNumber,
                         pillCount = currentCount,
-                        imagePath = "",
+                        imagePath = filePath,
                         createdAt = System.currentTimeMillis(),
                         updatedAt = System.currentTimeMillis()
                     )
                     pillCountTxnDetailsDao.insert(detail)
                 }
+                currentFrameBitmap = null
 
             }
+
             is FixedCountPillScanningEvent.RescanClicked -> {
                 logger.i("Rescan requested")
                 _uiState.update { it.copy(detectedPills = emptyList()) }
             }
+
             is FixedCountPillScanningEvent.PauseClicked -> {
                 logger.i("Pause clicked")
                 // TODO: stop camera flow temporarily
             }
+
             is FixedCountPillScanningEvent.DoneClicked -> {
                 logger.i("Done clicked — finalize process")
-                // TODO: trigger save/navigation
+                viewModelScope.launch {
+                    val txnId = preferenceHelper.getTxnId() ?: 0
+                    val totalPillCount = pillCountTxnDetailsDao.getTotalPillCountForTxn(txnId)
+                    if (totalPillCount == 0) {
+                        _uiState.update {
+                            it.copy(
+                                error = "Please add at least one transaction detail before finishing.",
+                                showNoTransaction = true
+                            )
+                        }
+                        return@launch
+                    }
+                }
+                _uiState.update { it.copy(showConfirmDialog = true) }
+
+            }
+
+            is FixedCountPillScanningEvent.ConfirmDone -> {
+                viewModelScope.launch {
+                    val txnId = preferenceHelper.getTxnId() ?: 0
+                    val totalPillCount = pillCountTxnDetailsDao.getTotalPillCountForTxn(txnId)
+                    val txn =
+                        pillCountTxnDao.getById(txnId) // get txn to know countType & targetCount
+                    if (txn == null) {
+                        return@launch
+                    }
+                    if (totalPillCount == 0) {
+                        _uiState.update {
+                            it.copy(
+                                error = "Please add at least one transaction detail before finishing.",
+                                showConfirmDialog = false
+                            )
+                        }
+                        return@launch
+                    }
+
+                    // Decide status
+                    val finalStatus = if (txn.countType == CountType.FIXED) {
+                        if (txn.targetCount != null && totalPillCount < txn.targetCount) {
+                            CountStatus.PARTIAL
+                        } else {
+                            CountStatus.COMPLETED
+                        }
+                    } else {
+                        CountStatus.COMPLETED
+                    }
+                    pillCountTxnDao.updateTxnStatus(txnId, finalStatus)
+
+                    //navigation
+                    _navigationEvent.send(
+                        NavigationEvent.NavigateToDashboard
+                    )
+                }
+            }
+
+            is FixedCountPillScanningEvent.CancelDone -> {
+                _uiState.update { it.copy(showConfirmDialog = false) }
             }
         }
     }
 
     fun setScanType(type: String) {
         _uiState.update { it.copy(scanType = type) }
+    }
+
+    fun updateTargetCount(target: Int) {
+        _uiState.update { it.copy(targetCount = target) }
+        viewModelScope.launch {
+            pillCountTxnDao.updateTargetCount(preferenceHelper.getTxnId() ?: 0, target)
+        }
+    }
+
+    fun showDrugName() {
+        viewModelScope.launch {
+            _uiState.update {
+                it.copy(
+                    drugName = pillCountTxnDao.getDrugNameForTransaction(
+                        preferenceHelper.getTxnId() ?: 0
+                    ).toString()
+                )
+            }
+
+        }
+    }
+
+    fun resetRestrictAdd() {
+        _uiState.update { it.copy(restrictAdd = false) }
+    }
+    fun resetNoTransaction() {
+        _uiState.update { it.copy(showNoTransaction = false) }
     }
 }

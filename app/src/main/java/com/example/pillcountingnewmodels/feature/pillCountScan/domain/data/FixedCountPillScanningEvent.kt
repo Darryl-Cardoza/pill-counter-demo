@@ -5,4 +5,6 @@ sealed interface FixedCountPillScanningEvent {
     data object RescanClicked : FixedCountPillScanningEvent
     data object PauseClicked : FixedCountPillScanningEvent
     data object DoneClicked : FixedCountPillScanningEvent
+    data object ConfirmDone : FixedCountPillScanningEvent
+    data object CancelDone : FixedCountPillScanningEvent
 }

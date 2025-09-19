@@ -11,11 +11,13 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.pillcountingnewmodels.feature.pillCountScan.domain.model.FixedCountPillScanningUiState
+import com.example.pillcountingnewmodels.R
+import com.example.pillcountingnewmodels.feature.pillCountScan.domain.model.PillScanningUiState
 import com.example.pillcountingnewmodels.ui.theme.AppTheme
 
 /**
@@ -28,11 +30,9 @@ import com.example.pillcountingnewmodels.ui.theme.AppTheme
  * @param uiState Current state of the scanning screen containing drug info.
  */
 @Composable
-fun DrugInformation(uiState: FixedCountPillScanningUiState) {
-    // Calculate the total count from the batch history list
-    val totalBatchCount = uiState.batchHistory.sumOf { it.count }
-    val nextBatchNumber = uiState.batchHistory.size + 1
-
+fun DrugInformation(uiState: PillScanningUiState) {
+    val nextTxnDetailNumber = uiState.txnDetailHistory.size + 1
+    val totalBatchCount = uiState.txnDetailHistory.sumOf { it.count }
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -40,7 +40,7 @@ fun DrugInformation(uiState: FixedCountPillScanningUiState) {
     ) {
         // Drug Name
         Text(
-            text = "Drug Name: ${uiState.drugName}",
+            text = "${stringResource(R.string.drugname)}: ${uiState.drugName}",
             fontSize = 14.sp,
             fontFamily = FontFamily.Default,
             fontWeight = FontWeight.Normal,
@@ -56,7 +56,7 @@ fun DrugInformation(uiState: FixedCountPillScanningUiState) {
         ) {
             // Display the next batch number
             Text(
-                text = "Batch $nextBatchNumber",
+                text = "${stringResource(R.string.txn_detail)} $nextTxnDetailNumber",
                 fontSize = 16.sp,
                 fontFamily = FontFamily.Default,
                 fontWeight = FontWeight.Normal,
@@ -64,8 +64,8 @@ fun DrugInformation(uiState: FixedCountPillScanningUiState) {
             )
 
             val countDisplay = when (uiState.scanType) {
-                "FIXED" -> "${totalBatchCount}/${uiState.expectedCount}"
-                "REGULAR" -> totalBatchCount.toString()
+                "FIXED" -> "${stringResource(R.string.total)}  ${totalBatchCount}/${uiState.targetCount}"
+                "REGULAR" -> "${stringResource(R.string.total)} $totalBatchCount"
                 else -> totalBatchCount.toString()
             }
 

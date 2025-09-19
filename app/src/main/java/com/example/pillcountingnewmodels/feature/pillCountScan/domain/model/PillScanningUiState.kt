@@ -10,26 +10,27 @@ import com.example.pillcountingnewmodels.core.room.models.CountType
  *
  * @param scanType Whether this is a FIXED or REGULAR scan ([CountType]).
  * @param drugName Name of the drug being scanned (e.g., "Crocin 50mg").
- * @param batchNumber Current batch number being processed.
  * @param totalCount Total number of pills counted across all batches so far.
- * @param expectedCount Expected total number of pills to be scanned (ignored if FIXED).
+ * @param targetCount Expected total number of pills to be scanned (ignored if FIXED).
  * @param currentScanCount Number of pills detected in the current scan session.
- * @param batchHistory List of completed batches with their counts and thumbnails.
+ * @param txnDetailHistory List of completed batches with their counts and thumbnails.
  * @param detectedPills List of pills detected in the current camera frame.
  * @param isPaused Whether the scanning process is currently paused.
  * @param isLoading Whether a loading state is active (e.g., processing results).
  * @param error Error message if an error occurred during scanning or counting.
  */
-data class FixedCountPillScanningUiState(
+data class PillScanningUiState(
     val scanType: String = "REGULAR",
     val drugName: String = "",
-    val batchNumber: Int = 0,
     val totalCount: Int = 0,
-    val expectedCount: Int = 1000,
+    val targetCount: Int = 0,
     val currentScanCount: Int = 0,
-    val batchHistory: List<Batch> = emptyList(),
+    val txnDetailHistory: List<TxnDetail> = emptyList(),
     val detectedPills: List<DetectedPill> = emptyList(),
     val isPaused: Boolean = false,
     val isLoading: Boolean = false,
-    val error: String? = null
+    val error: String? = null,
+    val restrictAdd: Boolean = false,
+    val showConfirmDialog: Boolean = false,
+    val showNoTransaction: Boolean = false,
 )

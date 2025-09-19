@@ -40,7 +40,6 @@ data class PillCountTxnDetailsEntity(
     val txnDetailsId: Long = 0L,
 
     val txnId: Long? = null,
-    val txnDetailsNo: Int? = null,
     val pillCount: Int? = null,
     val imagePath: String? = null,
     val type: String? = null,

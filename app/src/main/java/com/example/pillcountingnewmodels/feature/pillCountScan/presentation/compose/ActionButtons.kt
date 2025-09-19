@@ -41,13 +41,13 @@ fun ActionButtons(
         )
         HollowButton(
             text = stringResource(R.string.pause).uppercase(),
-            onClick = { onEvent(FixedCountPillScanningEvent.RescanClicked) },
+            onClick = { onEvent(FixedCountPillScanningEvent.PauseClicked) },
             color = MaterialTheme.colorScheme.primary,
             modifier = Modifier.weight(1f)
         )
         FilledButton(
             text = stringResource(R.string.done).uppercase(),
-            onClick = { onEvent(FixedCountPillScanningEvent.PauseClicked) },
+            onClick = { onEvent(FixedCountPillScanningEvent.DoneClicked) },
             color = MaterialTheme.colorScheme.secondary,
             modifier = Modifier.weight(1f)
         )

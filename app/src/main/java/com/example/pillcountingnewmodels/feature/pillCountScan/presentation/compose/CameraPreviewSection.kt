@@ -68,11 +68,11 @@ fun CameraPreviewSection(
         }
     }
 
-    DisposableEffect(Unit) {
+    /*DisposableEffect(Unit) {
         onDispose {
             cameraHelper.stopCamera()
         }
-    }
+    }*/
 
     Box(modifier = modifier.fillMaxSize()) {
         // Camera preview

@@ -12,8 +12,9 @@ import android.graphics.Bitmap
  * @param count Total number of pills detected in this batch.
  * @param thumbnail A thumbnail image of the batch (nullable if not available).
  */
-data class Batch(
-    val batchNumber: Int,
+data class TxnDetail(
+    val txnDetailId: Long,
+    val batchNumber: Number = 0,
     val count: Int,
     val thumbnail: Bitmap?
 )
