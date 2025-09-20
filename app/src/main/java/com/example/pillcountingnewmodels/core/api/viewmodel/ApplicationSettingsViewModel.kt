@@ -1,4 +1,4 @@
-package com.example.pillcountingnewmodels.feature.settings.presentation.viewmodel
+package com.example.pillcountingnewmodels.core.api.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -7,6 +7,7 @@ import com.example.pillcountingnewmodels.core.models.ApplicationSettingsUiState
 import com.example.pillcountingnewmodels.core.models.ColorSettings
 import com.example.pillcountingnewmodels.core.models.SettingsDataDto
 import com.example.pillcountingnewmodels.core.utils.AppLogger
+import com.example.pillcountingnewmodels.core.utils.PreferenceHelper
 import com.example.pillcountingnewmodels.feature.settings.data.model.ThemeColors
 import com.example.pillcountingnewmodels.feature.settings.domain.repository.IApplicationSettingsRepository
 import com.example.pillcountingnewmodels.feature.settings.domain.viewmodel.IApplicationSettingsViewModel
@@ -21,18 +22,16 @@ import javax.inject.Inject
  * ViewModel responsible for managing and exposing application settings to the UI layer.
  *
  * This ViewModel:
- * - Fetches remote settings from a repository.
- * - Applies fetched settings to the UI state.
- * - Applies fallback settings in case of error.
- * - Provides a read-only [uiState] for observing in the UI.
+ * - Loads cached theme from [PreferenceHelper] immediately for fast startup.
+ * - Fetches remote settings in the background and updates both UI + cache.
+ * - Falls back to hardcoded defaults if neither cache nor remote settings are available.
  *
- * This ViewModel is lifecycle-aware and scoped to the Hilt lifecycle via [@HiltViewModel].
- *
- * @property repository Interface to fetch remote settings.
+ * This ensures the user never waits on a blocking loading screen for theme data.
  */
 @HiltViewModel
 class ApplicationSettingsViewModel @Inject constructor(
-    private val repository: IApplicationSettingsRepository
+    private val repository: IApplicationSettingsRepository,
+    private val preferenceHelper: PreferenceHelper
 ) : ViewModel(), IApplicationSettingsViewModel {
 
     private val logger = AppLogger.create<ApplicationSettingsViewModel>()
@@ -41,58 +40,69 @@ class ApplicationSettingsViewModel @Inject constructor(
     override val uiState = _uiState.asStateFlow()
 
     init {
+        // Load cached/fallback theme instantly
+        loadCachedOrFallbackTheme()
+
+        // Start fetching remote theme in background
         fetchApplicationSettings()
     }
 
     /**
-     * Initiates the process of fetching application settings.
-     *
-     * Handles both success and failure cases:
-     * - On success, settings are applied and stored.
-     * - On failure, fallback settings are applied and an error is logged.
+     * Loads cached theme colors if available, else applies fallback defaults.
+     * This is called synchronously on init to avoid UI blocking.
+     */
+    private fun loadCachedOrFallbackTheme() {
+        val cached = preferenceHelper.getThemeColors()
+        if (cached != null) {
+            logger.i("Loaded cached theme from preferences.")
+            _uiState.update { it.copy(colorSettings = cached) }
+        } else {
+            logger.w("No cached theme found, applying fallback.")
+            applyFallbackSettings()
+        }
+    }
+
+    /**
+     * Initiates a remote fetch for application settings in the background.
+     * Updates the cache and UI if successful, otherwise retains cached/fallback values.
      */
     override fun fetchApplicationSettings() {
-        logger.i("Fetching application settings...")
-        _uiState.update { it.copy(isLoading = true, errorMessage = null) }
-
         viewModelScope.launch {
             try {
-                val settings = repository.getApplicationSettings()
-                applyAndStoreSettings(settings)
+                logger.i("Fetching remote application settings...")
+                val response = repository.getApplicationSettings()
+                applyAndStoreSettings(response)
             } catch (e: Exception) {
-                logger.e("Failed to fetch settings, applying fallback.", e)
-                val errorDescription = "Failed to fetch settings: ${e.message}. Applying fallback."
-                _uiState.update { it.copy(errorMessage = errorDescription) }
-                applyFallbackSettings()
+                logger.e("Failed to fetch settings. Keeping cached/fallback values.", e)
+                _uiState.update { it.copy(errorMessage = e.message) }
             } finally {
-                _uiState.update { it.copy(isLoading = false) }
                 logger.d("Settings fetch process finished.")
             }
         }
     }
 
     /**
-     * Applies and updates the UI state with the settings retrieved from a successful API response.
-     *
-     * @param settings The API response containing application settings data.
+     * Applies new remote settings and updates cache + UI.
      */
     private fun applyAndStoreSettings(settings: ApiResponse<SettingsDataDto>) {
-        logger.i("Successfully fetched and applied remote settings.")
+        logger.i("Successfully fetched remote settings.")
 
+        val theme = settings.data?.settings?.colors
         _uiState.update {
             it.copy(
-                colorSettings = settings.data?.settings?.colors,
-                appLogoUrl = settings.data?.settings?.appLogo
+                colorSettings = theme ?: it.colorSettings, // keep existing if null
+                appLogoUrl = settings.data?.settings?.appLogo ?: it.appLogoUrl
             )
         }
 
-        // TODO: Persist the settings locally if required (e.g., SharedPreferences or DataStore).
+        theme?.let {
+            preferenceHelper.saveThemeColors(it) // persist for next launch
+            logger.i("Updated cached theme colors in preferences.")
+        }
     }
 
     /**
-     * Applies a hardcoded set of fallback color settings and updates the UI state.
-     *
-     * This is used in cases where fetching settings from the remote source fails.
+     * Applies hardcoded fallback color settings if cache + remote both fail.
      */
     private fun applyFallbackSettings() {
         logger.w("Applying hardcoded fallback settings.")

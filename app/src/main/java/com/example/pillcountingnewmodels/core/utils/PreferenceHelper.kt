@@ -3,19 +3,40 @@ package com.example.pillcountingnewmodels.core.utils
 import android.content.Context
 import android.content.SharedPreferences
 import androidx.core.content.edit
+import androidx.security.crypto.EncryptedSharedPreferences
+import androidx.security.crypto.MasterKey
+import com.example.pillcountingnewmodels.core.models.ColorSettings
+import com.google.gson.Gson
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * Helper class to manage application preferences related to authentication and session state.
+ * Secure Preference Helper for managing application-level persistent state.
  *
- * This class provides methods for storing, retrieving, and clearing access tokens,
- * refresh tokens, user login status, and the logged-in user's ID.
- * It uses Android's [SharedPreferences] for persistent storage.
+ * This class wraps [EncryptedSharedPreferences] to provide:
+ * - Encrypted storage of authentication tokens (access/refresh).
+ * - User session state (logged in, IDs).
+ * - Transaction identifiers.
+ * - Cached theme configuration ([ColorSettings]) for instant UI rendering.
  *
- * @constructor Injects the application context using Hilt to access [SharedPreferences].
- * @param context Application-level context for accessing shared preferences.
+ * ### Security
+ * - Keys are encrypted with **AES-256 SIV**.
+ * - Values are encrypted with **AES-256 GCM**.
+ * - Master key is generated and stored in the Android Keystore (hardware-backed if available).
+ *
+ * ### Logging
+ * - Operations are logged via [AppLogger], but sensitive values are never logged.
+ * - Instead, logs include key names, existence, and string lengths.
+ *
+ * ### Usage
+ * This helper is a singleton injected with Hilt:
+ * ```
+ * @Inject lateinit var preferenceHelper: PreferenceHelper
+ * ```
+ *
+ * @constructor Creates an instance of [PreferenceHelper] with secure storage.
+ * @param context Application context, required for encrypted preferences.
  */
 @Singleton
 class PreferenceHelper @Inject constructor(
@@ -23,105 +44,232 @@ class PreferenceHelper @Inject constructor(
 ) {
 
     companion object {
-        private const val PREF_NAME = "pillcounting_prefs"
+        private const val PREF_NAME = "pillcounting_secure_prefs"
 
-        /** Key for storing the access token. */
+        // Keys for Tokens
         private const val KEY_ACCESS_TOKEN = "access_token"
-
-        /** Key for storing the refresh token. */
         private const val KEY_REFRESH_TOKEN = "refresh_token"
 
-        /** Key for tracking whether the user is currently logged in. */
+        // Keys for Session
         private const val KEY_USER_LOGGED_IN = "user_logged_in"
-
-        /** Key for storing the currently logged-in user's ID. */
         private const val KEY_USER_ID = "user_id"
-
-        /** Key for storing the currently logged-in user's ID. */
         private const val KEY_LOCAL_ID = "local_id"
 
+        // Keys for Transactions
         private const val KEY_TXN_ID = "txn_id"
+
+        // Keys for Theme Caching
+        private const val KEY_THEME_COLORS = "theme_colors"
     }
 
-    /** SharedPreferences instance for persistent key-value storage. */
-    private val prefs: SharedPreferences =
-        context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+    /** Secure SharedPreferences instance used for all storage operations. */
+    private val prefs: SharedPreferences
+
+    /** JSON serializer/deserializer for objects like [ColorSettings]. */
+    private val gson = Gson()
+
+    /** Logger instance for consistent structured logging. */
+    private val logger = AppLogger.create<PreferenceHelper>()
+
+    init {
+        // Generate or retrieve a secure AES256_GCM master key
+        val masterKey = MasterKey.Builder(context)
+            .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
+            .build()
+
+        // Create EncryptedSharedPreferences instance
+        prefs = EncryptedSharedPreferences.create(
+            context,
+            PREF_NAME,
+            masterKey,
+            EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+            EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+        )
+
+        logger.i("EncryptedSharedPreferences initialized (AES-256).")
+    }
 
     // ─────────────────────────── Tokens ───────────────────────────
 
+    /**
+     * Saves access and refresh tokens securely.
+     *
+     * @param accessToken The access token for API authentication.
+     * @param refreshToken The refresh token for renewing access tokens.
+     */
     fun saveTokens(accessToken: String, refreshToken: String) {
         prefs.edit {
             putString(KEY_ACCESS_TOKEN, accessToken)
-                .putString(KEY_REFRESH_TOKEN, refreshToken)
+            putString(KEY_REFRESH_TOKEN, refreshToken)
         }
+        logger.i("Saved tokens securely (lengths: ${accessToken.length}, ${refreshToken.length})")
     }
 
-    fun getAccessToken(): String? = prefs.getString(KEY_ACCESS_TOKEN, null)
+    /**
+     * Retrieves the stored access token.
+     *
+     * @return The decrypted access token, or `null` if not set.
+     */
+    fun getAccessToken(): String? {
+        val token = prefs.getString(KEY_ACCESS_TOKEN, null)
+        logger.d("Access token retrieved (exists=${token != null}, length=${token?.length ?: 0})")
+        return token
+    }
 
-    fun getRefreshToken(): String? = prefs.getString(KEY_REFRESH_TOKEN, null)
+    /**
+     * Retrieves the stored refresh token.
+     *
+     * @return The decrypted refresh token, or `null` if not set.
+     */
+    fun getRefreshToken(): String? {
+        val token = prefs.getString(KEY_REFRESH_TOKEN, null)
+        logger.d("Refresh token retrieved (exists=${token != null}, length=${token?.length ?: 0})")
+        return token
+    }
 
+    /**
+     * Clears all stored tokens from secure storage.
+     */
     fun clearTokens() {
         prefs.edit {
             remove(KEY_ACCESS_TOKEN)
-                .remove(KEY_REFRESH_TOKEN)
+            remove(KEY_REFRESH_TOKEN)
         }
+        logger.w("Cleared tokens from secure storage.")
     }
 
     // ─────────────────────────── User Session ───────────────────────────
 
+    /**
+     * Sets the user's login state.
+     *
+     * @param loggedIn `true` if the user is logged in, otherwise `false`.
+     */
     fun setUserLoggedIn(loggedIn: Boolean) {
         prefs.edit { putBoolean(KEY_USER_LOGGED_IN, loggedIn) }
+        logger.i("Updated login state: $loggedIn")
     }
-
-    fun isUserLoggedIn(): Boolean {
-        return prefs.getBoolean(KEY_USER_LOGGED_IN, false)
-    }
-
-    // ─────────────────────────── User ID ───────────────────────────
 
     /**
-     * Saves the current user's ID into preferences.
+     * Checks whether the user is currently logged in.
      *
-     * @param userId Unique identifier of the logged-in user.
+     * @return `true` if logged in, otherwise `false`.
+     */
+    fun isUserLoggedIn(): Boolean {
+        val state = prefs.getBoolean(KEY_USER_LOGGED_IN, false)
+        logger.d("Login state checked: $state")
+        return state
+    }
+
+    // ─────────────────────────── User Identifiers ───────────────────────────
+
+    /**
+     * Saves the backend-provided user ID securely.
+     *
+     * @param userId The unique identifier assigned by the backend.
      */
     fun saveUserId(userId: String) {
         prefs.edit { putString(KEY_USER_ID, userId) }
+        logger.i("Saved userId securely (length=${userId.length})")
     }
 
     /**
-     * Retrieves the stored user ID.
+     * Retrieves the stored backend user ID.
      *
-     * @return The stored user ID, or `null` if none is set.
+     * @return The decrypted user ID, or `null` if not set.
      */
-    fun getUserId(): String? = prefs.getString(KEY_USER_ID, null)
+    fun getUserId(): String? {
+        val id = prefs.getString(KEY_USER_ID, null)
+        logger.d("UserId retrieved (exists=${id != null}, length=${id?.length ?: 0})")
+        return id
+    }
 
     /**
-     * Clears the stored user ID (e.g., on logout).
+     * Clears the stored backend user ID.
      */
     fun clearUserId() {
         prefs.edit { remove(KEY_USER_ID) }
+        logger.w("Cleared userId from secure storage.")
     }
 
     /**
-     * Saves the current user's ID into preferences.
+     * Saves the Room database local user ID.
      *
-     * @param localId Unique identifier of the logged-in user in rooms db.
+     * @param localId Auto-generated primary key for the user in Room DB.
      */
     fun saveLocalId(localId: Long) {
         prefs.edit { putLong(KEY_LOCAL_ID, localId) }
+        logger.i("Saved localId: $localId")
     }
 
     /**
-     * Retrieves the stored local ID.
+     * Retrieves the stored Room DB local user ID.
      *
-     * @return The stored local ID, or `null` if none is set.
+     * @return The Room DB ID, or `0` if not set.
      */
-    fun getLocalId(): Long? = prefs.getLong(KEY_LOCAL_ID, 0)
-
-
-    fun saveTxnId(txnId: Long) {
-        prefs.edit { putLong(KEY_TXN_ID, txnId) }
+    fun getLocalId(): Long {
+        val id = prefs.getLong(KEY_LOCAL_ID, 0)
+        logger.d("LocalId retrieved: $id")
+        return id
     }
 
-    fun getTxnId(): Long? = prefs.getLong(KEY_TXN_ID, 0)
+    // ─────────────────────────── Transactions ───────────────────────────
+
+    /**
+     * Saves a transaction ID securely.
+     *
+     * @param txnId Identifier of the ongoing transaction.
+     */
+    fun saveTxnId(txnId: Long) {
+        prefs.edit { putLong(KEY_TXN_ID, txnId) }
+        logger.i("Saved txnId: $txnId")
+    }
+
+    /**
+     * Retrieves the stored transaction ID.
+     *
+     * @return The transaction ID, or `0` if not set.
+     */
+    fun getTxnId(): Long {
+        val id = prefs.getLong(KEY_TXN_ID, 0)
+        logger.d("TxnId retrieved: $id")
+        return id
+    }
+
+    // ─────────────────────────── Theme Caching ───────────────────────────
+
+    /**
+     * Saves theme [ColorSettings] as encrypted JSON.
+     *
+     * @param theme The [ColorSettings] object to persist securely.
+     */
+    fun saveThemeColors(theme: ColorSettings) {
+        val json = gson.toJson(theme)
+        prefs.edit { putString(KEY_THEME_COLORS, json) }
+        logger.i("Saved theme colors (json length=${json.length})")
+    }
+
+    /**
+     * Retrieves the cached theme [ColorSettings].
+     *
+     * @return Decrypted [ColorSettings], or `null` if not cached.
+     */
+    fun getThemeColors(): ColorSettings? {
+        val json = prefs.getString(KEY_THEME_COLORS, null)
+        return if (json != null) {
+            logger.d("Theme colors retrieved (json length=${json.length})")
+            gson.fromJson(json, ColorSettings::class.java)
+        } else {
+            logger.w("No cached theme colors found.")
+            null
+        }
+    }
+
+    /**
+     * Clears cached theme colors.
+     */
+    fun clearThemeColors() {
+        prefs.edit { remove(KEY_THEME_COLORS) }
+        logger.w("Cleared theme colors from secure storage.")
+    }
 }

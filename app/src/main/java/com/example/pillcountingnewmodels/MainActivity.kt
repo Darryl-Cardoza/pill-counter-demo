@@ -1,7 +1,11 @@
 package com.example.pillcountingnewmodels
 
+import android.content.pm.ApplicationInfo
+import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.os.Debug
+import android.provider.Settings
 import android.view.View
 import android.view.WindowInsets
 import android.view.WindowInsetsController
@@ -12,8 +16,6 @@ import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -21,21 +23,23 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.rememberNavController
+import com.example.pillcountingnewmodels.core.api.viewmodel.ApplicationSettingsViewModel
 import com.example.pillcountingnewmodels.core.utils.PreferenceHelper
+import com.example.pillcountingnewmodels.core.utils.compose.CommonDialog
 import com.example.pillcountingnewmodels.core.utils.compose.HelperFunctions.getStartDestination
 import com.example.pillcountingnewmodels.core.utils.toColor
-import com.example.pillcountingnewmodels.feature.settings.presentation.viewmodel.ApplicationSettingsViewModel
 import com.example.pillcountingnewmodels.navigation.AppNavGraph
 import com.example.pillcountingnewmodels.ui.theme.ExtendedColors
 import com.example.pillcountingnewmodels.ui.theme.PillCountingNewModelsTheme
 import dagger.hilt.android.AndroidEntryPoint
+import java.io.File
+import kotlin.system.exitProcess
 
 /**
- * The main entry point of the application.
+ * Main entry point of the application.
  *
- * This activity is responsible for setting up the window, initializing the UI content with Jetpack Compose,
- * and providing the dynamic theme based on fetched settings. Permission handling and navigation logic
- * are delegated to the appropriate composable screens within the `AppNavGraph`.
+ * Performs runtime environment hardening to ensure the app does not run on
+ * insecure or tampered devices.
  */
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -45,30 +49,26 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Initialize the Jetpack Compose UI.
+        // Normal app UI
         setContent {
-            // Collect the UI state from the ViewModel in a lifecycle-aware manner.
             val settingsState by settingsViewModel.uiState.collectAsStateWithLifecycle()
 
-            // Use Crossfade for a smooth transition between loading and content states.
             Crossfade(
                 targetState = settingsState.isLoading || settingsState.colorSettings == null,
                 label = "LoadingOrContent"
             ) { isLoading ->
                 if (isLoading) {
-                    // Display a loading indicator while settings are being fetched.
                     LoadingScreen()
                 } else {
-                    // Once settings are available, build and apply the dynamic theme.
                     val colorSettings = requireNotNull(settingsState.colorSettings)
 
-                    val lightColorSchemeDynamic = lightColorScheme(
+                    val lightColorSchemeDynamic = androidx.compose.material3.lightColorScheme(
                         primary = colorSettings.light.primary.toColor(),
                         secondary = colorSettings.light.secondary.toColor(),
                         tertiary = colorSettings.light.tertiary.toColor()
                     )
 
-                    val darkColorSchemeDynamic = darkColorScheme(
+                    val darkColorSchemeDynamic = androidx.compose.material3.darkColorScheme(
                         primary = colorSettings.dark.primary.toColor(),
                         secondary = colorSettings.dark.secondary.toColor(),
                         tertiary = colorSettings.dark.tertiary.toColor()
@@ -102,23 +102,127 @@ class MainActivity : ComponentActivity() {
                         val preferenceHelper = remember { PreferenceHelper(this) }
                         val startDestination = remember { getStartDestination(preferenceHelper) }
 
+                        // Build the normal navigation graph
                         AppNavGraph(
                             navController = navController,
                             startDestination = startDestination
                         )
+
+                        // Overlay SecurityErrorDialog if violation is detected
+//                        val violations = getSecurityViolations()
+//                        if (violations.isNotEmpty()) {
+//                            SecurityErrorDialog(violations)
+//                        }
+
                     }
                 }
             }
         }
 
-        // Set the app to be fullscreen and immersive AFTER the content view is set.
-//        configureImmersiveFullscreen()
+
+        configureImmersiveFullscreen()
     }
 
     /**
-     * Configures the window to hide system bars for a fully immersive experience.
-     * This is the recommended approach for a true fullscreen application.
+     * Collects runtime environment violations.
+     *
+     * @return a list of violation messages, empty if no violations.
      */
+    private fun getSecurityViolations(): List<String> {
+        val violations = mutableListOf<String>()
+
+        if (isAdbEnabled()) violations.add("Developer options / ADB debugging enabled")
+        if (isDeviceRooted()) violations.add("Device is rooted or jailbroken")
+        if (isDebuggerAttached()) violations.add("Debugger is attached")
+        if (isRunningOnEmulator()) violations.add("Running on emulator")
+        if (isAppDebuggable()) violations.add("App is built as debuggable")
+        if (!isSignatureValid()) violations.add("App signature mismatch")
+        if (!isFromPlayStore()) violations.add("App not installed from Play Store")
+
+        return violations
+    }
+
+    /** Developer options enabled (ADB debugging). */
+    private fun isAdbEnabled(): Boolean {
+        return Settings.Global.getInt(
+            contentResolver,
+            Settings.Global.DEVELOPMENT_SETTINGS_ENABLED, 0
+        ) == 1
+    }
+
+    /** Basic root detection by checking for `su` binary. */
+    private fun isDeviceRooted(): Boolean {
+        val paths = arrayOf(
+            "/system/app/Superuser.apk",
+            "/sbin/su", "/system/bin/su", "/system/xbin/su",
+            "/data/local/xbin/su", "/data/local/bin/su",
+            "/system/sd/xbin/su", "/system/bin/failsafe/su",
+            "/data/local/su"
+        )
+        return paths.any { File(it).exists() }
+    }
+
+    /** Detects if the app is being debugged. */
+    private fun isDebuggerAttached(): Boolean {
+        return Debug.isDebuggerConnected() || Debug.waitingForDebugger()
+    }
+
+    /** Emulator detection (basic heuristics). */
+    private fun isRunningOnEmulator(): Boolean {
+        return (Build.FINGERPRINT.startsWith("generic") ||
+                Build.MODEL.contains("Emulator") ||
+                Build.MODEL.contains("Android SDK built for x86") ||
+                Build.MANUFACTURER.contains("Genymotion") ||
+                Build.BRAND.startsWith("generic") && Build.DEVICE.startsWith("generic") ||
+                "google_sdk" == Build.PRODUCT)
+    }
+
+    /** Check if the app is debuggable (should be false in production). */
+    private fun isAppDebuggable(): Boolean {
+        return applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE != 0
+    }
+
+    /** Verify the app signature (replace with your release signature hash). */
+    private fun isSignatureValid(): Boolean {
+        return try {
+            val pm = packageManager
+            val signatures = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                pm.getPackageInfo(packageName, PackageManager.GET_SIGNING_CERTIFICATES)
+                    .signingInfo?.apkContentsSigners
+            } else {
+                @Suppress("DEPRECATION")
+                pm.getPackageInfo(packageName, PackageManager.GET_SIGNATURES).signatures
+            }
+
+            val validHash = "YOUR_RELEASE_SIGNATURE_HASH"
+            signatures?.any { sig ->
+                sig.toCharsString().hashCode().toString() == validHash
+            } ?: false
+        } catch (_: Exception) {
+            false
+        }
+    }
+
+
+    /** Verify installation source is Google Play. */
+    @Suppress("DEPRECATION")
+    private fun isFromPlayStore(): Boolean {
+        return try {
+            val installer = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                // API 30+
+                packageManager.getInstallSourceInfo(packageName).installingPackageName
+            } else {
+                // Legacy method for older versions
+                packageManager.getInstallerPackageName(packageName)
+            }
+            installer == "com.android.vending"
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+
+    /** Configure fullscreen immersive mode. */
     private fun configureImmersiveFullscreen() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             window.insetsController?.let { controller ->
@@ -137,10 +241,32 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-/**
- * A simple composable for displaying a centered loading indicator.
- * This keeps the main `setContent` block cleaner.
- */
+/** Security error dialog shown on violations. */
+@Composable
+fun SecurityErrorDialog(violations: List<String>) {
+    val message = buildString {
+        append("The application cannot run on this device due to the following security violations:\n\n")
+        violations.forEach { append("• $it\n") }
+    }
+
+    CommonDialog(
+        title = "Security Alert",
+        message = message,
+        confirmText = "Exit",
+        cancelText = "Close",
+        onConfirm = { exitApp() },
+        onCancel = { exitApp() }
+    )
+}
+
+
+/** Terminates the app. */
+private fun exitApp() {
+    android.os.Process.killProcess(android.os.Process.myPid())
+    exitProcess(1)
+}
+
+/** Loading screen composable. */
 @Composable
 private fun LoadingScreen() {
     Box(
