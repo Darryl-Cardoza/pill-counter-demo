@@ -2,21 +2,26 @@ package com.example.pillcountingnewmodels.feature.barcodeScan.data.remote
 
 import com.example.pillcountingnewmodels.feature.barcodeScan.domain.model.DrugDataResponse
 import retrofit2.http.GET
-import retrofit2.http.Query
+import retrofit2.http.Header
+import retrofit2.http.Path
 
 /**
- * Defines the API endpoints for fetching drug information using Retrofit.
- * This interface outlines the HTTP requests to the openFDA API.
+ * Defines the API endpoints for fetching drug information from your backend.
  */
 interface IDrugAPI {
 
     /**
-     * Fetches drug labeling information based on a National Drug Code (NDC).
-     * This searches for an exact match within the openfda.ndc field.
+     * Fetches drug information based on a National Drug Code (NDC).
      *
-     * @param ndc The exact NDC to search for.
+     * Example:
+     * GET /drugs/ndc/{ndc}
+     *
+     * @param ndc National Drug Code.
      * @return A [DrugDataResponse] containing the search results.
      */
-    @GET("drug/ndc.json")
-    suspend fun getDrugInfoByNdc(@Query("search") ndc: String): DrugDataResponse
+    @GET("drugs/ndc/{ndc}")
+    suspend fun getDrugInfoByNdc(
+        @Header("Authorization") authorization: String,
+        @Path("ndc") ndc: String,
+    ): DrugDataResponse
 }

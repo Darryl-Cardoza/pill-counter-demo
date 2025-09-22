@@ -1,58 +1,94 @@
 package com.example.pillcountingnewmodels.feature.barcodeScan.data
 
 import com.example.pillcountingnewmodels.core.utils.AppLogger
+import com.example.pillcountingnewmodels.core.utils.PreferenceHelper
 import com.example.pillcountingnewmodels.feature.barcodeScan.data.remote.IDrugAPI
-import com.example.pillcountingnewmodels.feature.barcodeScan.domain.model.DrugInfo
 import com.example.pillcountingnewmodels.feature.barcodeScan.domain.data.IDrugRepository
+import com.example.pillcountingnewmodels.feature.barcodeScan.domain.model.DrugInfo
+import retrofit2.HttpException
+import java.io.IOException
 import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * Concrete implementation of the [IDrugRepository] interface.
- * It fetches drug data from the remote [DrugApi] and maps it to the domain model.
+ * Implementation of the [IDrugRepository] interface that fetches
+ * drug information from a remote backend API using [IDrugAPI].
  *
- * @param api The Retrofit API service for drug data.
+ * This repository is responsible for:
+ * - Adding authentication headers (Bearer token from [PreferenceHelper]).
+ * - Executing the network request via Retrofit.
+ * - Safely handling errors (HTTP, network, unexpected).
+ * - Mapping the raw API response into the [DrugInfo] domain model.
+ *
+ * ### Error Handling
+ * - If the access token is missing, the request will not be sent and `null` is returned.
+ * - `HttpException` (e.g., 401/403/500) is caught, logged, and results in `null`.
+ * - `IOException` (network issues) is caught, logged, and results in `null`.
+ * - Any other exceptions are caught and logged to prevent crashes.
+ *
+ * ### Return Contract
+ * - Returns a [DrugInfo] object if data is successfully fetched and mapped.
+ * - Returns `null` if authentication fails, no results are found, or an error occurs.
+ *
+ * @property api Retrofit API service for accessing drug endpoints.
+ * @property preferenceHelper Helper for retrieving the saved access token.
  */
 @Singleton
 class DrugRepository @Inject constructor(
-    private val api: IDrugAPI
+    private val api: IDrugAPI,
+    private val preferenceHelper: PreferenceHelper,
 ) : IDrugRepository {
 
-    // Instantiate the logger for this class
+    /** Logger instance for this repository. */
     private val logger = AppLogger.create<DrugRepository>()
 
     /**
-     * Retrieves drug information by making a network call to the openFDA API.
-     * It formats the NDC for the query and maps the response to the [DrugInfo] domain model.
+     * Retrieves drug information from the backend service using the given [ndc].
      *
-     * @param ndc The NDC of the drug.
-     * @return A [DrugInfo] object if found, otherwise null.
+     * - Injects the `Authorization: Bearer <token>` header automatically.
+     * - Maps the backend response into a [DrugInfo] domain object.
+     * - Provides null-safety and exception guarding to avoid app crashes.
+     *
+     * @param ndc National Drug Code of the drug to be fetched.
+     * @return A [DrugInfo] object if the request is successful, otherwise `null`.
      */
     override suspend fun getDrugInfoByNdc(ndc: String): DrugInfo? {
         logger.i("Fetching drug info for NDC: '$ndc'")
 
-        val response = api.getDrugInfoByNdc("product_ndc:\"$ndc\"")
-        val result = response.results?.firstOrNull()
+        return try {
+            val token = preferenceHelper.getAccessToken()
+            if (token.isNullOrBlank()) {
+                logger.e("No access token found. Aborting API call.")
+                return null
+            }
 
-        if (result == null) {
-            logger.w("No result found in API response for NDC: '$ndc'")
-            return null
-        }
-
-        // Use a .let block to safely work with the non-null result
-        return result.let { apiResult ->
-            // Log what the API parsing returned (the raw data)
-            logger.d("Raw parsed data from API -> brandName: '${apiResult.brandName}', genericName: '${apiResult.genericName}'")
-
-            // Map the raw data to your domain model
-            DrugInfo(
-                brandName = apiResult.brandName ?: "N/A",
-                genericName = apiResult.genericName ?: "N/A",
+            val response = api.getDrugInfoByNdc(
+                authorization = "Bearer $token",
                 ndc = ndc
             )
-        }.also { finalDrugInfo ->
-            // Log the final object that will be returned to the ViewModel
-            logger.i("Returning mapped DrugInfo -> $finalDrugInfo")
+
+            val result = response.data
+            if (result == null) {
+                logger.w("No result found in API response for NDC: '$ndc'")
+                null
+            } else {
+                DrugInfo(
+                    brandName = result.drug?.brandName ?: "N/A",
+                    genericName = result.drug?.genericName ?: "N/A",
+                    ndc = ndc
+                ).also {
+                    logger.i("Returning mapped DrugInfo -> $it")
+                }
+            }
+        } catch (e: HttpException) {
+            logger.e("HTTP error while fetching drug info (code=${e.code()}, message=${e.message()})", e)
+            null
+        } catch (e: IOException) {
+            logger.e("Network error while fetching drug info", e)
+            null
+        } catch (e: Exception) {
+            logger.e("Unexpected error while fetching drug info", e)
+            null
         }
     }
 }

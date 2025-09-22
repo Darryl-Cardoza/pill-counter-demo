@@ -209,7 +209,7 @@ object NetworkModule {
      */
     @Provides
     @Singleton
-    fun provideDrugApi(@DrugApiQualifier retrofit: Retrofit): IDrugAPI {
+    fun provideDrugApi(@MainApi retrofit: Retrofit): IDrugAPI {
         return retrofit.create(IDrugAPI::class.java)
     }
 
@@ -305,7 +305,7 @@ object NetworkModule {
         api: IProfileApi,
         ioDispatcher: CoroutineDispatcher,
         userDao: UserDao,
-        preferenceHelper : PreferenceHelper
+        preferenceHelper: PreferenceHelper
     ): IProfileRepository {
         return ProfileRepository(
             profileApi = api,
@@ -321,10 +321,12 @@ object NetworkModule {
     @Provides
     @Singleton
     fun provideDrugRepository(
-        drugApi: IDrugAPI
+        drugApi: IDrugAPI,
+        preferenceHelper: PreferenceHelper
     ): IDrugRepository {
         return DrugRepository(
-            api = drugApi
+            api = drugApi,
+            preferenceHelper = preferenceHelper
         )
     }
 
