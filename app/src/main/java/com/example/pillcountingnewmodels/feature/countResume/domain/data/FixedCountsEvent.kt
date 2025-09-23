@@ -32,4 +32,6 @@ sealed interface FixedCountsEvent : ResumeEvent {
      * @param item The [CountItem] that was selected/deselected.
      */
     data class SelectItem(val item: CountItem) : FixedCountsEvent
+
+    data class resumeTransaction(val item: CountItem) : FixedCountsEvent
 }

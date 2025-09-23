@@ -6,26 +6,45 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.pillcountingnewmodels.R
 import com.example.pillcountingnewmodels.core.utils.compose.SplitResponsive
+import com.example.pillcountingnewmodels.feature.countResume.domain.data.NavigationEvent
 import com.example.pillcountingnewmodels.feature.countResume.domain.data.FixedCountsEvent
 import com.example.pillcountingnewmodels.feature.countResume.domain.data.ResumeEventFactory
 import com.example.pillcountingnewmodels.feature.countResume.domain.model.CountItem
-import com.example.pillcountingnewmodels.feature.countResume.domain.model.FixedCountsUiState
 import com.example.pillcountingnewmodels.feature.countResume.presentation.compose.LeftPanel
 import com.example.pillcountingnewmodels.feature.countResume.presentation.compose.RightPanel
+import com.example.pillcountingnewmodels.feature.countResume.presentation.viewmodel.CountsViewModel
 import com.example.pillcountingnewmodels.ui.theme.AppTheme
 
 @Composable
 fun FixedCountResumeScreen(
     navController: NavController,
-    uiState: FixedCountsUiState,
-    onEvent: (FixedCountsEvent) -> Unit
+    viewModel: CountsViewModel = hiltViewModel()
 ) {
+    val uiState by viewModel.fixedUiState.collectAsState()
 
     BackHandler { /* kept empty to consume back press and prevent navigation */ }
+
+    LaunchedEffect(Unit) {
+        viewModel.navigationEvent.collect { event ->
+            when (event) {
+                is NavigationEvent.NavigateToPillCount -> {
+                    navController.navigate(Screen.PillCount.createRoute(event.countType.toString())){}
+                }
+
+                NavigationEvent.NavigateBack -> {
+                    navController.popBackStack()
+                }
+            }
+        }
+    }
 
     // Factory mapping FixedCountsEvent
     val fixedEventFactory = object : ResumeEventFactory<FixedCountsEvent> {
@@ -34,6 +53,7 @@ fun FixedCountResumeScreen(
         override fun deleteClicked() = FixedCountsEvent.DeleteClicked
         override fun itemSwipedToDelete(item: CountItem) = FixedCountsEvent.ItemSwipedToDelete(item)
         override fun selectItem(item: CountItem) = FixedCountsEvent.SelectItem(item)
+        override fun resumeTransaction(item: CountItem) = FixedCountsEvent.resumeTransaction(item)
     }
 
     Box(
@@ -59,7 +79,7 @@ fun FixedCountResumeScreen(
                     items = uiState.fixedCounts,
                     selectedItems = uiState.selectedItems,
                     isMultiSelectMode = uiState.isMultiSelectMode,
-                    onEvent = onEvent,
+                    onEvent = viewModel::onFixedEvent,
                     eventFactory = fixedEventFactory
                 )
             },

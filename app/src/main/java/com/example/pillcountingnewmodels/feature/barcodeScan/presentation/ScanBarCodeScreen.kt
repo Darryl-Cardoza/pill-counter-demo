@@ -62,9 +62,7 @@ fun ScanBarCodeScreen(
         viewModel.navigationEvent.collect { event ->
             when (event) {
                 is NavigationEvent.NavigateToPillCount -> {
-                    navController.navigate(Screen.PillCount.createRoute(scanType)){
-
-                    }
+                    navController.navigate(Screen.PillCount.createRoute(scanType)){}
                 }
 
                 NavigationEvent.NavigateBack -> {

@@ -33,4 +33,6 @@ interface ResumeEventFactory<E : ResumeEvent> {
      * @param item The [CountItem] being selected/deselected.
      */
     fun selectItem(item: CountItem): E
+
+    fun resumeTransaction(item: CountItem): E
 }

@@ -177,7 +177,7 @@ fun <E : ResumeEvent> RightPanel(
                             multiSelectMode = isMultiSelectMode,
                             isSelected = selectedItems.contains(item),
                             onSelectChange = { onEvent(eventFactory.selectItem(item)) },
-                            onResumeClick = { /* TODO: Implement resume action */ }
+                            onResumeClick = { onEvent(eventFactory.resumeTransaction(item)) }
                         )
                     }
                 )

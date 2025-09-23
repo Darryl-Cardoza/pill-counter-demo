@@ -4,6 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.pillcountingnewmodels.core.room.dao.PillCountTxnDao
 import com.example.pillcountingnewmodels.core.room.models.CountType
+import com.example.pillcountingnewmodels.core.utils.PreferenceHelper
+import com.example.pillcountingnewmodels.feature.countResume.domain.data.NavigationEvent
 import com.example.pillcountingnewmodels.feature.countResume.domain.data.FixedCountsEvent
 import com.example.pillcountingnewmodels.feature.countResume.domain.data.RegularCountsEvent
 import com.example.pillcountingnewmodels.feature.countResume.domain.model.CountItem
@@ -11,11 +13,13 @@ import com.example.pillcountingnewmodels.feature.countResume.domain.model.FixedC
 import com.example.pillcountingnewmodels.feature.countResume.domain.model.RegularCountsUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -34,7 +38,8 @@ import javax.inject.Inject
  */
 @HiltViewModel
 class CountsViewModel @Inject constructor(
-    private val pillCountTxnDao: PillCountTxnDao
+    private val pillCountTxnDao: PillCountTxnDao,
+    private val preferenceHelper: PreferenceHelper
 ) : ViewModel() {
 
     /* ------------------------- State Flows ------------------------- */
@@ -48,6 +53,9 @@ class CountsViewModel @Inject constructor(
     private val _regularUiState = MutableStateFlow(RegularCountsUiState())
     /** Public immutable state for UI to observe. */
     val regularUiState: StateFlow<RegularCountsUiState> = _regularUiState.asStateFlow()
+
+    private val _navigationEvent = Channel<NavigationEvent>()
+    val navigationEvent = _navigationEvent.receiveAsFlow()
 
     /** Formatter for displaying human-readable dates from epoch millis. */
     private val dateFormatter = SimpleDateFormat("dd-MM-yyyy hh:mm a", Locale.getDefault())
@@ -69,6 +77,7 @@ class CountsViewModel @Inject constructor(
             FixedCountsEvent.DeleteClicked -> handleFixedDeleteClick()
             FixedCountsEvent.ToggleMultiSelectMode -> toggleFixedMultiSelectMode()
             FixedCountsEvent.CloseMultiSelectMode -> closeFixedMultiSelectMode()
+            is FixedCountsEvent.resumeTransaction -> resumeTransaction(CountType.FIXED, event.item)
         }
     }
 
@@ -82,9 +91,20 @@ class CountsViewModel @Inject constructor(
             RegularCountsEvent.DeleteClicked -> handleRegularDeleteClick()
             RegularCountsEvent.ToggleMultiSelectMode -> toggleRegularMultiSelectMode()
             RegularCountsEvent.CloseMultiSelectMode -> closeRegularMultiSelectMode()
+            is RegularCountsEvent.resumeTransaction -> resumeTransaction(CountType.REGULAR, event.item)
         }
     }
 
+    private fun resumeTransaction(countType: CountType, item: CountItem) {
+        viewModelScope.launch {
+            preferenceHelper.saveTxnId(item.id)
+            _navigationEvent.send(
+                NavigationEvent.NavigateToPillCount(
+                    countType = countType
+                )
+            )
+        }
+    }
     /* ------------------------- Fixed Counts Logic ------------------------- */
 
     /**

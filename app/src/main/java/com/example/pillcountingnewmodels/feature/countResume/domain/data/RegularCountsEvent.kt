@@ -32,4 +32,6 @@ sealed interface RegularCountsEvent : ResumeEvent {
      * @param item The [CountItem] that was selected/deselected.
      */
     data class SelectItem(val item: CountItem) : RegularCountsEvent
+
+    data class resumeTransaction(val item: CountItem) : RegularCountsEvent
 }

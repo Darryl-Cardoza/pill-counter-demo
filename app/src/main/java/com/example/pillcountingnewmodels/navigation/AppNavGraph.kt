@@ -68,22 +68,14 @@ fun AppNavGraph(
         }
 
         composable(route = Screen.ResumeFixedCounts.route) { backStackEntry ->
-            val viewModel: CountsViewModel = hiltViewModel()
-            val uiState by viewModel.fixedUiState.collectAsState()
             FixedCountResumeScreen(
-                navController = navController,
-                uiState = uiState,
-                onEvent = viewModel::onFixedEvent
+                navController = navController
             )
         }
 
         composable(route = Screen.ResumeRegularCounts.route) { backStackEntry ->
-            val viewModel: CountsViewModel = hiltViewModel()
-            val uiState by viewModel.regularUiState.collectAsState()
             RegularCountResumeScreen(
-                navController = navController,
-                uiState = uiState,
-                onEvent = viewModel::onRegularEvent
+                navController = navController
             )
         }
 
