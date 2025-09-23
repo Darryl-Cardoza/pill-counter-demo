@@ -148,10 +148,6 @@ fun PillScanningScreen(
         BackButton(navController, onClick = {
             navController.navigate(Screen.Dashboard.route)
         })
-        MenuButton(
-            navController,
-            modifier = Modifier.align(Alignment.TopEnd)
-        )
     }
 
     if (showTargetCountDialog) {
