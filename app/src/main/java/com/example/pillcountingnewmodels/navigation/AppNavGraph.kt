@@ -54,8 +54,8 @@ fun AppNavGraph(
             route = Screen.PillCount.route,
             arguments = Screen.PillCount.navArguments
         ) { backStackEntry ->
-            val scanType = backStackEntry.arguments?.getString(Screen.PillCount.ARG_TYPE) ?: ""
-            PillScanningScreen(navController, scanType)
+            val countType = backStackEntry.arguments?.getString(Screen.PillCount.ARG_TYPE) ?: ""
+            PillScanningScreen(navController, countType)
         }
 
 
@@ -75,7 +75,7 @@ fun AppNavGraph(
 
         composable(route = Screen.ResumeRegularCounts.route) { backStackEntry ->
             RegularCountResumeScreen(
-                navController = navController
+                navController = navController,
             )
         }
 

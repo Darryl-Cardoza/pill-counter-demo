@@ -41,7 +41,7 @@ import com.example.pillcountingnewmodels.ui.theme.AppTheme
 @Composable
 fun PillScanningScreen(
     navController: NavController,
-    scanType: String,
+    countType: String,
     viewModel: PillScanningViewModel = hiltViewModel()
 ) {
     val context = navController.context
@@ -58,7 +58,7 @@ fun PillScanningScreen(
     }
     if (uiState.showConfirmDialog) {
         val warningText = if (
-            scanType == CountType.FIXED.toString() && uiState.txnDetailHistory.sumOf { it.count } < uiState.targetCount
+            countType == CountType.FIXED.toString() && uiState.txnDetailHistory.sumOf { it.count } < uiState.targetCount
         ) {
             stringResource(R.string.confirm_done_desc_fixed)
         } else {
@@ -97,7 +97,7 @@ fun PillScanningScreen(
         viewModel.initializeInterpreter(retryCount = 2)
         viewModel.showDrugName()
 
-        if (scanType == CountType.FIXED.toString() && uiState.txnDetailHistory.isEmpty()) {
+        if (countType == CountType.FIXED.toString() && uiState.txnDetailHistory.isEmpty()) {
             /*uiState.txnDetailHistory.isEmpty() confirms that user has just created the transaction
             and we should ask for target count if its count type is FIXED*/
             showTargetCountDialog = true
@@ -112,8 +112,8 @@ fun PillScanningScreen(
         }
     }
 
-    LaunchedEffect(scanType) {
-        viewModel.setScanType(scanType)
+    LaunchedEffect(countType) {
+        viewModel.setScanType(countType)
     }
 
 

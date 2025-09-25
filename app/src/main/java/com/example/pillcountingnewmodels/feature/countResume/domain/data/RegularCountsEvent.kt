@@ -26,6 +26,8 @@ sealed interface RegularCountsEvent : ResumeEvent {
      */
     data class ItemSwipedToDelete(val item: CountItem) : RegularCountsEvent
 
+    data class ForceCompleteTransaction(val item: CountItem) : RegularCountsEvent
+
     /**
      * Triggered when the user selects or deselects an item in multi-select mode.
      *

@@ -70,9 +70,8 @@
     <string name="error_invalid_otp">Invalid Pin entered.</string>
 
 
-    <string name="partial_count_title">Partial Count</string>
-    <string name="fixed_partial_counts_label">Fixed Partial \nCounts</string>
-    <string name="regular_partial_counts_label">Regular Partial \nCounts</string>
+    <string name="fixed_partial_count_title">Fixed Partial Counts</string>
+    <string name="regular_partial_count_title">Regular Partial Counts</string>
     <string name="partial_icon_description">Partial Fill Icons</string>
 
     <string name="cd_close_selection">Close Selection</string>
@@ -148,5 +147,9 @@
     <string name="confirm_done">Confirm Completion</string>
     <string name="confirm_done_desc_regular">Are you sure you want to mark this transaction as completed?</string>
     <string name="confirm_done_desc_fixed">Target not reached. This transaction will be marked as PARTIAL.</string>
+    <string name="resume">Resume</string>
+    <string name="drug">Drug</string>
+    <string name="select_option">Select Option</string>
+    <string name="force_complete">Force Complete</string>
 
 </resources>

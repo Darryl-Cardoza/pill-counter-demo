@@ -2,6 +2,7 @@ package com.example.pillcountingnewmodels.core.room.dao
 
 import androidx.room.*
 import com.example.pillcountingnewmodels.core.room.models.CountStatus
+import com.example.pillcountingnewmodels.core.room.models.CountType
 import com.example.pillcountingnewmodels.core.room.models.PillCountTxnEntity
 import com.example.pillcountingnewmodels.core.room.models.StatusTypeCount
 import com.example.pillcountingnewmodels.core.room.relation.PillCountTxnWithDetails
@@ -108,6 +109,32 @@ interface PillCountTxnDao {
     @Query("SELECT * FROM pill_count_txn WHERE txnId = :id LIMIT 1")
     fun observeById(id: Long): Flow<PillCountTxnEntity?>
 
+    @Query(
+        """
+    SELECT txn.txnId,
+           txn.createdAt,
+           txn.targetCount,
+           txn.barcodeImage,
+           drug.drugName,
+           IFNULL(SUM(details.pillCount), 0) AS totalPillCount
+    FROM pill_count_txn AS txn
+    LEFT JOIN drug_master AS drug 
+           ON txn.drugId = drug.drugId
+    LEFT JOIN pill_count_txn_details AS details 
+           ON txn.txnId = details.txnId 
+          AND details.isDeleted = 0
+    WHERE txn.isDeleted = 0
+      AND txn.status = :partialStatus
+      AND txn.countType = :countType
+    GROUP BY txn.txnId
+    ORDER BY txn.createdAt DESC
+    """
+    )
+    fun observePartialByCountType(
+        countType: CountType,
+        partialStatus: CountStatus = CountStatus.PARTIAL
+    ): Flow<List<PillCountWithDrugAndTotal>>
+
     /**
      * Retrieve all active (non-deleted) transactions ordered by newest first.
      */
@@ -119,18 +146,6 @@ interface PillCountTxnDao {
         """
     )
     suspend fun getAllActive(): List<PillCountTxnEntity>
-
-    /**
-     * Observe all active (non-deleted) transactions ordered by newest first.
-     */
-    @Query(
-        """
-        SELECT * FROM pill_count_txn
-        WHERE isDeleted = 0
-        ORDER BY createdAt DESC
-        """
-    )
-    fun observeAllActive(): Flow<List<PillCountTxnEntity>>
 
     /**
      * Paged query for transactions with optional user and drug filters.

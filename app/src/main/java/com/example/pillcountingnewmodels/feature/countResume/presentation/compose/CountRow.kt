@@ -1,25 +1,52 @@
 package com.example.pillcountingnewmodels.feature.countResume.presentation.compose
 
-import android.content.res.Configuration
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AspectRatio
-import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.rememberAsyncImagePainter
+import coil.request.ImageRequest
+import com.example.pillcountingnewmodels.R
+import com.example.pillcountingnewmodels.core.room.models.CountType
+import com.example.pillcountingnewmodels.core.utils.compose.Dimens.extraSmall
+import com.example.pillcountingnewmodels.core.utils.compose.Dimens.medium
+import com.example.pillcountingnewmodels.core.utils.compose.Dimens.small
+import com.example.pillcountingnewmodels.core.utils.compose.Dimens.xxLarge
 import com.example.pillcountingnewmodels.feature.countResume.domain.model.CountItem
 import com.example.pillcountingnewmodels.ui.theme.AppTheme
+import java.io.File
 
 /**
  * Row representing a single count item in the Partial/Fixed Resume screen.
@@ -33,7 +60,7 @@ import com.example.pillcountingnewmodels.ui.theme.AppTheme
  * @param multiSelectMode Whether multi-select mode is active.
  * @param isSelected Whether this item is currently selected.
  * @param onSelectChange Callback triggered when the selection changes.
- * @param onResumeClick Callback triggered when the resume action is clicked.
+ * @param onMoreClick Callback triggered when the resume action is clicked.
  */
 @Composable
 fun CountRow(
@@ -41,25 +68,27 @@ fun CountRow(
     multiSelectMode: Boolean,
     isSelected: Boolean,
     onSelectChange: () -> Unit,
-    onResumeClick: () -> Unit
+    onMoreClick: () -> Unit,
+    countType: String
 ) {
-    val iconColor = Color(0xFF00BCD4)
-    val configuration = LocalConfiguration.current
-    val isPortrait = configuration.orientation == Configuration.ORIENTATION_PORTRAIT
 
     Card(
-        shape = RoundedCornerShape(12.dp),
+        shape = RoundedCornerShape(small),
         colors = CardDefaults.cardColors(
             containerColor = AppTheme.extendedColors.secondaryBackground
         ),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = extraSmall
+        ),
         modifier = Modifier
             .fillMaxWidth()
+            .padding(bottom = small)
             .clickable(enabled = multiSelectMode) { onSelectChange() }
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 12.dp, horizontal = 12.dp),
+                .padding(start = small, top = small, bottom = small),
             verticalAlignment = Alignment.CenterVertically
         ) {
 
@@ -72,13 +101,50 @@ fun CountRow(
                 Spacer(modifier = Modifier.width(8.dp))
             }
 
-            // ---------------- Item Icon ----------------
-            Icon(
-                imageVector = Icons.Default.AspectRatio,
-                contentDescription = null,
-                tint = iconColor,
-                modifier = Modifier.size(48.dp)
-            )
+            Box(
+                modifier = Modifier
+                    .width(70.dp)
+                    .height(56.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .border(
+                        1.dp,
+                        color = colorResource(R.color.border_gray),
+                        RoundedCornerShape(8.dp)
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                val hasImage = !item.barcodeImage.isNullOrEmpty()
+
+                val painter = if (hasImage) {
+                    val file = File(item.barcodeImage ?: "")
+                    rememberAsyncImagePainter(
+                        ImageRequest.Builder(LocalContext.current)
+                            .data(file)
+                            .placeholder(R.drawable.bottle)
+                            .error(R.drawable.bottle)
+                            .build()
+                    )
+                } else {
+                    painterResource(R.drawable.bottle)
+                }
+                val imageModifier = if (hasImage) {
+                    Modifier
+                        .fillMaxSize() // full container for placeholder
+                        .clip(RoundedCornerShape(8.dp))
+                } else {
+                    Modifier
+                        .size(36.dp) // smaller for cropped image
+                        .clip(RoundedCornerShape(8.dp))
+                }
+
+                Image(
+                    painter = painter,
+                    contentDescription = null,
+                    contentScale = if (hasImage) ContentScale.Crop else ContentScale.Fit,
+                    modifier = imageModifier
+                )
+            }
+
 
             Spacer(modifier = Modifier.width(12.dp))
 
@@ -90,7 +156,7 @@ fun CountRow(
                     text = item.name,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface,
+                    color = AppTheme.extendedColors.textColor,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -98,7 +164,7 @@ fun CountRow(
                 Text(
                     text = item.date,
                     fontSize = 12.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = AppTheme.extendedColors.textColor,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -107,48 +173,29 @@ fun CountRow(
             Spacer(modifier = Modifier.width(5.dp))
 
             // ---------------- Quantity ----------------
+            val displayText = when (countType) {
+                CountType.REGULAR.toString() -> item.pillCount.toString()
+                else -> "${item.pillCount}/${item.target}"
+            }
             Text(
-                text = item.quantity.toString(),
+                text = displayText,
                 fontSize = 16.sp,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
+                color = AppTheme.extendedColors.textColor,
+                maxLines = 1
             )
 
-            Spacer(modifier = Modifier.width(12.dp))
+
+            Spacer(modifier = Modifier.width(medium))
 
             // ---------------- Resume Action ----------------
             if (!multiSelectMode) {
-                if (isPortrait) {
-                    IconButton(onClick = onResumeClick) {
-                        Icon(
-                            imageVector = Icons.Filled.PlayArrow,
-                            contentDescription = "Resume",
-                            tint = Color(0xFFFD82B5),
-                            modifier = Modifier.size(24.dp)
-                        )
-                    }
-                } else {
-                    Button(
-                        onClick = onResumeClick,
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFFFD82B5),
-                            contentColor = Color.White
-                        ),
-                        shape = RoundedCornerShape(20.dp),
-                        modifier = Modifier
-                            .height(36.dp)
-                            .width(90.dp)
-                    ) {
-                        Text(
-                            text = "RESUME",
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    }
+                IconButton(onClick = onMoreClick) {
+                    Icon(
+                        imageVector = Icons.Default.MoreVert,
+                        contentDescription = stringResource(R.string.resume),
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(xxLarge)
+                    )
                 }
             }
         }

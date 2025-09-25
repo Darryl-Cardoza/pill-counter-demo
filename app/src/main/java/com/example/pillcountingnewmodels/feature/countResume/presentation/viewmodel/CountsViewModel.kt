@@ -3,6 +3,7 @@ package com.example.pillcountingnewmodels.feature.countResume.presentation.viewm
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.pillcountingnewmodels.core.room.dao.PillCountTxnDao
+import com.example.pillcountingnewmodels.core.room.models.CountStatus
 import com.example.pillcountingnewmodels.core.room.models.CountType
 import com.example.pillcountingnewmodels.core.utils.PreferenceHelper
 import com.example.pillcountingnewmodels.feature.countResume.domain.data.NavigationEvent
@@ -78,6 +79,7 @@ class CountsViewModel @Inject constructor(
             FixedCountsEvent.ToggleMultiSelectMode -> toggleFixedMultiSelectMode()
             FixedCountsEvent.CloseMultiSelectMode -> closeFixedMultiSelectMode()
             is FixedCountsEvent.resumeTransaction -> resumeTransaction(CountType.FIXED, event.item)
+            is FixedCountsEvent.ForceCompleteTransaction -> forceCompleteTransaction(event.item)
         }
     }
 
@@ -92,6 +94,13 @@ class CountsViewModel @Inject constructor(
             RegularCountsEvent.ToggleMultiSelectMode -> toggleRegularMultiSelectMode()
             RegularCountsEvent.CloseMultiSelectMode -> closeRegularMultiSelectMode()
             is RegularCountsEvent.resumeTransaction -> resumeTransaction(CountType.REGULAR, event.item)
+            is RegularCountsEvent.ForceCompleteTransaction -> forceCompleteTransaction(event.item)
+        }
+    }
+
+    private fun forceCompleteTransaction(item: CountItem) {
+        viewModelScope.launch {
+            pillCountTxnDao.updateTxnStatus(item.id, CountStatus.FORCE_COMPLETED)
         }
     }
 
@@ -112,14 +121,15 @@ class CountsViewModel @Inject constructor(
      */
     private fun observeFixedCounts() {
         viewModelScope.launch {
-            pillCountTxnDao.observeAllActive()
+            pillCountTxnDao.observePartialByCountType(CountType.FIXED)
                 .map { txns ->
-                    txns.filter { it.countType == CountType.FIXED }
-                        .map {
+                    txns.map {
                             CountItem(
                                 id = it.txnId,
-                                name = it.note ?: "Unnamed Fixed Count",
-                                quantity = it.targetCount ?: 0,
+                                name = it.drugName ?: "",
+                                pillCount = it.totalPillCount,
+                                target = it.targetCount ?: 0,
+                                barcodeImage = it.barcodeImage,
                                 date = formatDate(it.createdAt)
                             )
                         }
@@ -189,14 +199,15 @@ class CountsViewModel @Inject constructor(
      */
     private fun observeRegularCounts() {
         viewModelScope.launch {
-            pillCountTxnDao.observeAllActive()
+            pillCountTxnDao.observePartialByCountType(countType = CountType.REGULAR)
                 .map { txns ->
-                    txns.filter { it.countType == CountType.REGULAR }
-                        .map {
+                    txns.map {
                             CountItem(
                                 id = it.txnId,
-                                name = it.note ?: "Unnamed Regular Count",
-                                quantity = it.targetCount ?: 0,
+                                name = it.drugName ?: "",
+                                pillCount = it.totalPillCount,
+                                target = it.targetCount ?: 0,
+                                barcodeImage = it.barcodeImage,
                                 date = formatDate(it.createdAt)
                             )
                         }
