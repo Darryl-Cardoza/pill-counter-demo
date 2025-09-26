@@ -153,5 +153,6 @@
     <string name="force_complete">Force Complete</string>
     <string name="pills_count">Pills Count</string>
     <string name="searchWithDots">Search…</string>
+    <string name="transaction_detail">Transaction Detail</string>
 
 </resources>

@@ -126,7 +126,7 @@ fun PillScanningScreen(
         )
 
         BackButton(navController, onClick = {
-            navController.navigate(Screen.Dashboard.route)
+            navController.popBackStack()
         })
     }
 

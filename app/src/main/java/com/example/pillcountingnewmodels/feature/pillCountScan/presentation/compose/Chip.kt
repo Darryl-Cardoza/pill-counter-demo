@@ -3,7 +3,10 @@ package com.example.pillcountingnewmodels.feature.pillCountScan.presentation.com
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
@@ -38,13 +41,15 @@ import com.example.pillcountingnewmodels.feature.pillCountScan.domain.model.TxnD
 fun Chip(
     txnDetail: TxnDetail,
     modifier: Modifier = Modifier,
-    index: Int
+    index: Int,
+    onDelete: (txnDetailId: Long) -> Unit
 ) {
     var showDialog by remember { mutableStateOf(false) }
 
     Box(
-        modifier = modifier.padding(top = 8.dp)
-            .clickable{ showDialog = true },
+        modifier = modifier
+            .padding(top = 8.dp)
+            .clickable { showDialog = true },
         contentAlignment = Alignment.TopCenter
     ) {
         // Main chip container
@@ -84,10 +89,11 @@ fun Chip(
         TxnDetailDialog(
             batchNumber = index,
             details = txnDetail,
-            onDelete = { showDialog = false },
-            onOk = { showDialog = false },
+            onDelete = {
+                onDelete(txnDetail.txnDetailId)
+                showDialog = false
+            },
             onDismiss = { showDialog = false },
-            onEvent = {},
         )
     }
 }

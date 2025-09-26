@@ -127,6 +127,7 @@ fun CountRow(
                 } else {
                     painterResource(R.drawable.bottle)
                 }
+
                 val imageModifier = if (hasImage) {
                     Modifier
                         .fillMaxSize() // full container for placeholder

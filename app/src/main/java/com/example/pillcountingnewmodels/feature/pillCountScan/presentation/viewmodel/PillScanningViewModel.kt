@@ -112,7 +112,7 @@ class PillScanningViewModel @Inject constructor(
                             TxnDetail(
                                 txnDetailId = e.txnDetailsId,
                                 count = e.pillCount ?: 0,
-                                thumbnail = null,
+                                image = e.imagePath,
                                 createdAt = e.createdAt
                             )
                         }
@@ -275,7 +275,7 @@ class PillScanningViewModel @Inject constructor(
      */
     fun onEvent(event: FixedCountPillScanningEvent) {
         when (event) {
-            is FixedCountPillScanningEvent.AddBatchClicked -> {
+            is FixedCountPillScanningEvent.AddTransactionDetailClicked -> {
                 val totalBatchCount = _uiState.value.txnDetailHistory.sumOf { it.count }
                 val targetCount = _uiState.value.targetCount
                 val currentCount = _uiState.value.detectedPills.size
@@ -391,6 +391,13 @@ class PillScanningViewModel @Inject constructor(
 
             is FixedCountPillScanningEvent.CancelDone -> {
                 _uiState.update { it.copy(showConfirmDialog = false) }
+            }
+
+            is FixedCountPillScanningEvent.TransactionDetailDeleted -> {
+                viewModelScope.launch {
+                    logger.i("Transaction detail deleted: ${event.txnDetailId}")
+                    pillCountTxnDetailsDao.softDelete(event.txnDetailId)
+                }
             }
         }
     }

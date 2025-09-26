@@ -1,7 +1,5 @@
 package com.example.pillcountingnewmodels.feature.pillCountScan.domain.model
 
-import android.graphics.Bitmap
-
 /**
  * Represents a batch of scanned pills.
  *
@@ -10,12 +8,12 @@ import android.graphics.Bitmap
  *
  * @param batchNumber Identifier for the batch.
  * @param count Total number of pills detected in this batch.
- * @param thumbnail A thumbnail image of the batch (nullable if not available).
+ * @param image A thumbnail image of the batch (nullable if not available).
  */
 data class TxnDetail(
     val txnDetailId: Long,
     val batchNumber: Number = 0,
     val count: Int,
     val createdAt: Long,
-    val thumbnail: Bitmap?
+    val image: String?
 )
