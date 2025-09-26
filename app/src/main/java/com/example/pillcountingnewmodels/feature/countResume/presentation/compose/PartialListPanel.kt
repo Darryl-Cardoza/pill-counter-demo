@@ -1,5 +1,6 @@
 package com.example.pillcountingnewmodels.feature.countResume.presentation.compose
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -19,24 +20,33 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.example.pillcountingnewmodels.R
 import com.example.pillcountingnewmodels.core.utils.compose.CommonDialog
 import com.example.pillcountingnewmodels.core.utils.compose.CommonSingleSelectDialog
-import com.example.pillcountingnewmodels.core.utils.compose.Dimens.medium
+import com.example.pillcountingnewmodels.core.utils.compose.Dimens.extraSmall
 import com.example.pillcountingnewmodels.core.utils.compose.Dimens.small
 import com.example.pillcountingnewmodels.feature.countResume.domain.data.ResumeEvent
 import com.example.pillcountingnewmodels.feature.countResume.domain.data.ResumeEventFactory
 import com.example.pillcountingnewmodels.feature.countResume.domain.model.CountItem
+import com.example.pillcountingnewmodels.ui.theme.AppTheme
 
 /**
  * Displays the right panel of the count resume screen.
@@ -68,11 +78,13 @@ fun <E : ResumeEvent> PartialListPanel(
     var showMoreDialog by remember { mutableStateOf(false) }
     var deleteMode by remember { mutableStateOf(DeleteMode.None) }
     var pendingItem by remember { mutableStateOf<CountItem?>(null) }
-
+    var searchQuery by remember { mutableStateOf("") }
+    var showSearch by remember { mutableStateOf(false) }
+    val focusRequester = remember { FocusRequester() }
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(start = small, end = small, bottom = medium)
+            .padding(start = small, end = small, bottom = extraSmall)
     ) {
 
         Row(
@@ -107,39 +119,86 @@ fun <E : ResumeEvent> PartialListPanel(
                         }
                 )
             } else {
+                if (showSearch) {
+                    TextField(
+                        value = searchQuery,
+                        onValueChange = { searchQuery = it },
+                        modifier = Modifier
+                            .weight(1f)
+                            .focusRequester(focusRequester),
+                        placeholder = { Text(stringResource(R.string.searchWithDots)) },
+                        singleLine = true,
+                        colors = TextFieldDefaults.colors(
+                            focusedContainerColor = Color.Transparent,
+                            unfocusedContainerColor = Color.Transparent,
+                            disabledContainerColor = Color.Transparent,
+
+                            // Only show bottom line
+                            focusedIndicatorColor = MaterialTheme.colorScheme.secondary,
+                            unfocusedIndicatorColor = Color.Gray,    // grey underline when not focused
+                            disabledIndicatorColor = Color.Transparent,
+
+                            focusedTextColor = AppTheme.extendedColors.textColor,
+                            unfocusedTextColor = AppTheme.extendedColors.textColor,
+                            cursorColor = MaterialTheme.colorScheme.secondary
+                        )
+                    )
+                    LaunchedEffect(showSearch) {
+                        if (showSearch) {
+                            focusRequester.requestFocus()
+                        }
+                    }
+
+                }
 
                 Icon(
-                    painter = painterResource(id = R.drawable.search),
+                    painter = if (showSearch) {
+                        rememberVectorPainter(Icons.Default.Close)
+                    } else {
+                        painterResource(id = R.drawable.search)
+                    },
                     contentDescription = stringResource(R.string.cd_search),
                     tint = MaterialTheme.colorScheme.secondary,
                     modifier = Modifier
                         .size(28.dp)
-                        .clickable { /* TODO: Implement search */ }
+                        .clickable {
+                            if (showSearch) {
+                                searchQuery = ""
+                            }
+                            showSearch = !showSearch
+                        }
                 )
 
-                Spacer(Modifier.width(16.dp))
-
-                // Enter multi-select mode
-                Icon(
-                    painter = painterResource(id = R.drawable.delete),
-                    contentDescription = stringResource(R.string.cd_select_items_to_delete),
-                    tint = MaterialTheme.colorScheme.secondary,
-                    modifier = Modifier
-                        .size(28.dp)
-                        .clickable { onEvent(eventFactory.toggleMultiSelectMode()) }
-                )
+                if (!showSearch) {
+                    Spacer(Modifier.width(16.dp))
+                    Icon(
+                        painter = painterResource(id = R.drawable.delete),
+                        contentDescription = stringResource(R.string.cd_select_items_to_delete),
+                        tint = MaterialTheme.colorScheme.secondary,
+                        modifier = Modifier
+                            .size(28.dp)
+                            .clickable { onEvent(eventFactory.toggleMultiSelectMode()) }
+                    )
+                }
             }
         }
 
         Spacer(Modifier.height(12.dp))
 
         /* ---------------- Counts List ---------------- */
+        val filteredItems = remember(searchQuery, items) {
+            if (searchQuery.isBlank()) {
+                items
+            } else {
+                items.filter { it.name.contains(searchQuery, ignoreCase = true) }
+            }
+        }
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
             verticalArrangement = Arrangement.spacedBy(8.dp),
             contentPadding = PaddingValues(bottom = 16.dp)
         ) {
-            items(items, key = { it.id }) { item ->
+            items(filteredItems, key = { it.id }) { item ->
                 CountRow(
                     item = item,
                     multiSelectMode = isMultiSelectMode,
