@@ -1,4 +1,4 @@
-package com.example.pillcountingnewmodels.core.room.models
+package com.example.pillcountingnewmodels.core.room.models.enums
 
 enum class CountStatus {
     PARTIAL,

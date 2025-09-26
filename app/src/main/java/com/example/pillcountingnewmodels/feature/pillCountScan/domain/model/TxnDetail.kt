@@ -16,5 +16,6 @@ data class TxnDetail(
     val txnDetailId: Long,
     val batchNumber: Number = 0,
     val count: Int,
+    val createdAt: Long,
     val thumbnail: Bitmap?
 )

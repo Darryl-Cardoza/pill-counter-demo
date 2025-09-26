@@ -1,7 +1,6 @@
 package com.example.pillcountingnewmodels.feature.countResume.presentation
 
 import Screen
-import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -20,11 +19,10 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.pillcountingnewmodels.R
-import com.example.pillcountingnewmodels.core.room.models.CountType
+import com.example.pillcountingnewmodels.core.room.models.enums.CountType
 import com.example.pillcountingnewmodels.core.utils.compose.BackButton
 import com.example.pillcountingnewmodels.feature.countResume.domain.data.FixedCountsEvent
 import com.example.pillcountingnewmodels.feature.countResume.domain.data.NavigationEvent
-import com.example.pillcountingnewmodels.feature.countResume.domain.data.RegularCountsEvent
 import com.example.pillcountingnewmodels.feature.countResume.domain.data.ResumeEventFactory
 import com.example.pillcountingnewmodels.feature.countResume.domain.model.CountItem
 import com.example.pillcountingnewmodels.feature.countResume.presentation.compose.PartialListPanel

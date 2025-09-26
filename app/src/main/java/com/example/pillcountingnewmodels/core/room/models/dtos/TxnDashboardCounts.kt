@@ -1,4 +1,4 @@
-package com.example.pillcountingnewmodels.core.room.models
+package com.example.pillcountingnewmodels.core.room.models.dtos
 
 /**
  * Aggregated counters for the dashboard.

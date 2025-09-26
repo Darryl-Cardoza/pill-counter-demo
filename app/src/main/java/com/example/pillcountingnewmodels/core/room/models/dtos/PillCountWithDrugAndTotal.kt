@@ -1,5 +1,4 @@
-package com.example.pillcountingnewmodels.core.room.dao
-
+package com.example.pillcountingnewmodels.core.room.models.dtos
 
 data class PillCountWithDrugAndTotal(
     val txnId: Long,
@@ -9,5 +8,3 @@ data class PillCountWithDrugAndTotal(
     val barcodeImage: String?,
     val totalPillCount: Int
 )
-
-

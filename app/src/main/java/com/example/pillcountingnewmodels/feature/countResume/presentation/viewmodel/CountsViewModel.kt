@@ -3,9 +3,10 @@ package com.example.pillcountingnewmodels.feature.countResume.presentation.viewm
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.pillcountingnewmodels.core.room.dao.PillCountTxnDao
-import com.example.pillcountingnewmodels.core.room.models.CountStatus
-import com.example.pillcountingnewmodels.core.room.models.CountType
+import com.example.pillcountingnewmodels.core.room.models.enums.CountStatus
+import com.example.pillcountingnewmodels.core.room.models.enums.CountType
 import com.example.pillcountingnewmodels.core.utils.PreferenceHelper
+import com.example.pillcountingnewmodels.core.utils.toFormattedDate
 import com.example.pillcountingnewmodels.feature.countResume.domain.data.NavigationEvent
 import com.example.pillcountingnewmodels.feature.countResume.domain.data.FixedCountsEvent
 import com.example.pillcountingnewmodels.feature.countResume.domain.data.RegularCountsEvent
@@ -59,7 +60,7 @@ class CountsViewModel @Inject constructor(
     val navigationEvent = _navigationEvent.receiveAsFlow()
 
     /** Formatter for displaying human-readable dates from epoch millis. */
-    private val dateFormatter = SimpleDateFormat("dd-MM-yyyy hh:mm a", Locale.getDefault())
+
 
     init {
         observeFixedCounts()
@@ -130,7 +131,7 @@ class CountsViewModel @Inject constructor(
                                 pillCount = it.totalPillCount,
                                 target = it.targetCount ?: 0,
                                 barcodeImage = it.barcodeImage,
-                                date = formatDate(it.createdAt)
+                                date = it.createdAt.toFormattedDate()
                             )
                         }
                 }
@@ -208,7 +209,7 @@ class CountsViewModel @Inject constructor(
                                 pillCount = it.totalPillCount,
                                 target = it.targetCount ?: 0,
                                 barcodeImage = it.barcodeImage,
-                                date = formatDate(it.createdAt)
+                                date = it.createdAt.toFormattedDate()
                             )
                         }
                 }
@@ -274,13 +275,4 @@ class CountsViewModel @Inject constructor(
      * @param millis Timestamp to format.
      * @return Human-readable formatted date, or "-" if invalid.
      */
-    private fun formatDate(millis: Long?): String {
-        return if (millis != null && millis > 0) {
-            try {
-                dateFormatter.format(Date(millis))
-            } catch (e: Exception) {
-                "-"
-            }
-        } else "-"
-    }
 }

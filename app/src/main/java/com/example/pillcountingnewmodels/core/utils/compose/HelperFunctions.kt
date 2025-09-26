@@ -1,9 +1,9 @@
 package com.example.pillcountingnewmodels.core.utils.compose
 
 import Screen
-import com.example.pillcountingnewmodels.core.room.models.CountStatus
-import com.example.pillcountingnewmodels.core.room.models.CountType
-import com.example.pillcountingnewmodels.core.room.models.StatusTypeCount
+import com.example.pillcountingnewmodels.core.room.models.enums.CountStatus
+import com.example.pillcountingnewmodels.core.room.models.enums.CountType
+import com.example.pillcountingnewmodels.core.room.models.dtos.StatusTypeCount
 import com.example.pillcountingnewmodels.core.utils.PreferenceHelper
 import com.example.pillcountingnewmodels.feature.menu.domain.model.CountBuckets
 import com.example.pillcountingnewmodels.navigation.AUTH_GRAPH_ROUTE

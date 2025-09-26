@@ -107,7 +107,7 @@ fun <E : ResumeEvent> PartialListPanel(
                         }
                 )
             } else {
-                // Search icon (placeholder for now)
+
                 Icon(
                     painter = painterResource(id = R.drawable.search),
                     contentDescription = stringResource(R.string.cd_search),

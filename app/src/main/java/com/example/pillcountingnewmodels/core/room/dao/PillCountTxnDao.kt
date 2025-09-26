@@ -1,10 +1,12 @@
 package com.example.pillcountingnewmodels.core.room.dao
 
 import androidx.room.*
-import com.example.pillcountingnewmodels.core.room.models.CountStatus
-import com.example.pillcountingnewmodels.core.room.models.CountType
+import com.example.pillcountingnewmodels.core.room.models.enums.CountStatus
+import com.example.pillcountingnewmodels.core.room.models.enums.CountType
 import com.example.pillcountingnewmodels.core.room.models.PillCountTxnEntity
-import com.example.pillcountingnewmodels.core.room.models.StatusTypeCount
+import com.example.pillcountingnewmodels.core.room.models.dtos.PillCountWithDrugAndTotal
+import com.example.pillcountingnewmodels.core.room.models.dtos.StatusTypeCount
+import com.example.pillcountingnewmodels.core.room.models.dtos.TxnInfo
 import com.example.pillcountingnewmodels.core.room.relation.PillCountTxnWithDetails
 import kotlinx.coroutines.flow.Flow
 
@@ -294,14 +296,14 @@ interface PillCountTxnDao {
 
     @Query(
         """
-    SELECT dm.drugName
-    FROM pill_count_txn AS pct
-    LEFT JOIN drug_master AS dm ON pct.drugId = dm.drugId
-    WHERE pct.txnId = :transactionId
-    LIMIT 1
-    """
+        SELECT dm.drugName, pct.targetCount
+        FROM pill_count_txn AS pct
+        LEFT JOIN drug_master AS dm ON pct.drugId = dm.drugId
+        WHERE pct.txnId = :transactionId
+        LIMIT 1
+        """
     )
-    suspend fun getDrugNameForTransaction(transactionId: Long): String?
+    suspend fun getTxnInfo(transactionId: Long): TxnInfo?
 
     @Query("UPDATE pill_count_txn SET status = :newStatus, updatedAt = :updatedAt WHERE txnId = :txnId")
     suspend fun updateTxnStatus(txnId: Long, newStatus: CountStatus, updatedAt: Long = System.currentTimeMillis())

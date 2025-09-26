@@ -5,9 +5,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.systemBarsPadding
-import androidx.compose.material.AlertDialog
-import androidx.compose.material.Text
-import androidx.compose.material.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -15,16 +12,15 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.pillcountingnewmodels.R
-import com.example.pillcountingnewmodels.core.room.models.CountType
+import com.example.pillcountingnewmodels.core.room.models.enums.CountType
 import com.example.pillcountingnewmodels.core.utils.ToastUtils
 import com.example.pillcountingnewmodels.core.utils.compose.BackButton
-import com.example.pillcountingnewmodels.core.utils.compose.MenuButton
+import com.example.pillcountingnewmodels.core.utils.compose.CommonDialog
 import com.example.pillcountingnewmodels.core.utils.compose.SplitResponsive
 import com.example.pillcountingnewmodels.feature.pillCountScan.domain.data.FixedCountPillScanningEvent
 import com.example.pillcountingnewmodels.feature.pillCountScan.domain.data.NavigationEvent
@@ -65,43 +61,22 @@ fun PillScanningScreen(
             stringResource(R.string.confirm_done_desc_regular)
         }
 
-        AlertDialog(
-            onDismissRequest = { viewModel.onEvent(FixedCountPillScanningEvent.CancelDone) },
-            title = { Text(stringResource(R.string.confirm_done)) },
-            text = { Text(warningText) },
-            confirmButton = {
-                TextButton(onClick = { viewModel.onEvent(FixedCountPillScanningEvent.ConfirmDone) }) {
-                    Text(stringResource(R.string.ok))
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { viewModel.onEvent(FixedCountPillScanningEvent.CancelDone) }) {
-                    Text(stringResource(R.string.cancel))
-                }
-            }
-        )
-        /*CommonDialog(
-            message = stringResource(R.string.confirm_exit_message),
-            title = stringResource(R.string.confirm_exit_title),
-            confirmText = stringResource(R.string.yes),
-            cancelText = stringResource(R.string.no),
+        CommonDialog(
+            message = warningText,
+            title = stringResource(R.string.confirm_done),
+            confirmText = stringResource(R.string.ok),
+            cancelText = stringResource(R.string.cancel),
             onConfirm = {
-                showExitConfirmationDialog = false
-                navController.popBackStack()
+                viewModel.onEvent(FixedCountPillScanningEvent.ConfirmDone)
             },
-            onCancel = { showExitConfirmationDialog = false }
-        )*/
+            onCancel = { viewModel.onEvent(FixedCountPillScanningEvent.CancelDone) }
+        )
     }
 
     LaunchedEffect(Unit) {
         viewModel.initializeInterpreter(retryCount = 2)
-        viewModel.showDrugName()
-
-        if (countType == CountType.FIXED.toString() && uiState.txnDetailHistory.isEmpty()) {
-            /*uiState.txnDetailHistory.isEmpty() confirms that user has just created the transaction
-            and we should ask for target count if its count type is FIXED*/
-            showTargetCountDialog = true
-        }
+        viewModel.showTxnInfo()
+        viewModel.observeTxnDetailsForTxn(countType)
 
         viewModel.navigationEvent.collect { event ->
             when (event) {
@@ -116,6 +91,11 @@ fun PillScanningScreen(
         viewModel.setScanType(countType)
     }
 
+    LaunchedEffect(uiState.showTargetCountDialog) {
+        if (uiState.showTargetCountDialog) {
+            showTargetCountDialog = true
+        }
+    }
 
     Box(
         modifier = Modifier

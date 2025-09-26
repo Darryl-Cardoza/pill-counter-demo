@@ -1,8 +1,8 @@
 package com.example.pillcountingnewmodels.core.room.di
 
 import androidx.room.TypeConverter
-import com.example.pillcountingnewmodels.core.room.models.CountStatus
-import com.example.pillcountingnewmodels.core.room.models.CountType
+import com.example.pillcountingnewmodels.core.room.models.enums.CountStatus
+import com.example.pillcountingnewmodels.core.room.models.enums.CountType
 
 /**
  * Room [TypeConverter]s for mapping enum types ([CountType], [CountStatus])

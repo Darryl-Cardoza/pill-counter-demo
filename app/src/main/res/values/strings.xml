@@ -151,5 +151,6 @@
     <string name="drug">Drug</string>
     <string name="select_option">Select Option</string>
     <string name="force_complete">Force Complete</string>
+    <string name="pills_count">Pills Count</string>
 
 </resources>
