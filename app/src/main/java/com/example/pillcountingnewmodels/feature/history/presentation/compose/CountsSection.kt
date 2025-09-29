@@ -78,12 +78,12 @@ fun CountsSection(
                     iconRes = R.drawable.filter,
                     contentDescription = stringResource(R.string.filter_content_description),
                     onClick = onFilterClick
-                )
-                ActionIcon(
-                    iconRes = R.drawable.search,
-                    contentDescription = stringResource(R.string.search_content_description),
-                    onClick = onSearchClick
-                )*/
+                    )
+                    ActionIcon(
+                        iconRes = R.drawable.search,
+                        contentDescription = stringResource(R.string.search_content_description),
+                        onClick = onSearchClick
+                    )*/
                 }
             }
 
