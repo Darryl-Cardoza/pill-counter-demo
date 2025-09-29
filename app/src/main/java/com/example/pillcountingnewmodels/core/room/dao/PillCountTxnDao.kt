@@ -9,6 +9,7 @@ import com.example.pillcountingnewmodels.core.room.models.dtos.StatusTypeCount
 import com.example.pillcountingnewmodels.core.room.models.dtos.TxnInfo
 import com.example.pillcountingnewmodels.core.room.relation.PillCountTxnWithDetails
 import com.example.pillcountingnewmodels.feature.history.domain.model.PillCountWithDrug
+import com.example.pillcountingnewmodels.feature.history.domain.model.TxnWithDrugDto
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -307,38 +308,41 @@ interface PillCountTxnDao {
     suspend fun getTxnInfo(transactionId: Long): TxnInfo?
 
     @Query("UPDATE pill_count_txn SET status = :newStatus, updatedAt = :updatedAt WHERE txnId = :txnId")
-    suspend fun updateTxnStatus(txnId: Long, newStatus: CountStatus, updatedAt: Long = System.currentTimeMillis())
+    suspend fun updateTxnStatus(
+        txnId: Long,
+        newStatus: CountStatus,
+        updatedAt: Long = System.currentTimeMillis()
+    )
 
-
-
-//    @Query("""
-//        SELECT t.txnId, d.drugName, t.targetCount, t.createdAt
-//        FROM pill_count_txn AS t
-//        LEFT JOIN drug_master AS d ON t.drugId = d.drugId
-//        WHERE t.isDeleted = 0
-//        ORDER BY t.createdAt DESC
-//    """)
-//    fun getAllTransactions(): Flow<List<PillCountWithDrug>>
-
-    @Query("""
-        SELECT t.txnId, d.drugName, t.targetCount, t.createdAt
-        FROM pill_count_txn AS t
-        LEFT JOIN drug_master AS d ON t.drugId = d.drugId
-        WHERE t.isDeleted = 0 
-          AND t.createdAt BETWEEN :start AND :end
-        ORDER BY t.createdAt DESC
-    """)
+    @Query(
+        """
+    SELECT 
+        txn.txnId,
+        txn.countType,
+        txn.status,
+        COALESCE(SUM(details.pillCount), 0) AS pillCount,
+        drug.drugName,
+        drug.ndc,
+        txn.barcodeImage,
+        txn.createdAt,
+        txn.targetCount,
+        txn.note
+    FROM pill_count_txn AS txn
+    LEFT JOIN pill_count_txn_details AS details
+           ON txn.txnId = details.txnId AND details.isDeleted = 0
+    LEFT JOIN drug_master AS drug
+           ON txn.drugId = drug.drugId
+    WHERE txn.createdAt >= :startOfDay
+      AND txn.createdAt < :endOfDay
+      AND txn.isDeleted = 0
+    GROUP BY txn.txnId
+    """
+    )
     fun getTransactionsWithDrugByDate(
-        start: Long,
-        end: Long
-    ): Flow<List<PillCountWithDrug>>
+        startOfDay: Long,
+        endOfDay: Long
+    ): Flow<List<TxnWithDrugDto>>
 
-    // Query to get raw pill_count_txn entities
-    @Query("SELECT * FROM pill_count_txn WHERE createdAt BETWEEN :start AND :end")
-    fun getTransactionsByDateRaw(
-        start: Long,
-        end: Long
-    ): Flow<List<PillCountTxnEntity>>
 
     // Delete transactions in a date range
     @Query("DELETE FROM pill_count_txn WHERE createdAt BETWEEN :start AND :end")

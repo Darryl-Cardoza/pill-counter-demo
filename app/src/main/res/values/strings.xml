@@ -154,5 +154,11 @@
     <string name="pills_count">Pills Count</string>
     <string name="searchWithDots">Search…</string>
     <string name="transaction_detail">Transaction Detail</string>
+    <string name="confirm_delete_message">Are you sure you want to delete the records for the selected date? This action cannot be undone.</string>
+    <string name="no_data_found">No Data Found</string>
+    <string name="open_pdf_with">Open PDF with</string>
+    <string name="drugname_two_lines">Drug \\nName</string>
+    <string name="status">Status</string>
+    <string name="count_type_two_lines">Count \\nType</string>
 
 </resources>

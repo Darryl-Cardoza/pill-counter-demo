@@ -1,7 +1,6 @@
 package com.example.pillcountingnewmodels.feature.history.presentation.compose
 
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -13,15 +12,21 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.rememberAsyncImagePainter
+import coil.request.ImageRequest
 import com.example.pillcountingnewmodels.R
-import com.example.pillcountingnewmodels.feature.history.domain.model.CountRowData
+import com.example.pillcountingnewmodels.core.room.models.enums.CountStatus
+import com.example.pillcountingnewmodels.core.utils.toFormattedDate
+import com.example.pillcountingnewmodels.feature.history.domain.model.TxnWithDrugDto
 import com.example.pillcountingnewmodels.ui.theme.AppTheme
+import java.io.File
 
 /**
  * Row item representing a single medicine count entry in history.
@@ -32,7 +37,7 @@ import com.example.pillcountingnewmodels.ui.theme.AppTheme
  */
 @Composable
 fun CountRow(
-    rowData: CountRowData,
+    rowData: TxnWithDrugDto,
     appTheme: AppTheme
 ) {
     Column {
@@ -48,15 +53,41 @@ fun CountRow(
                     .width(70.dp)
                     .height(56.dp) // slightly larger to make room for border
                     .clip(RoundedCornerShape(8.dp))
-                    .border(1.dp, color = colorResource(R.color.border_gray), RoundedCornerShape(8.dp)),
+                    .border(
+                        1.dp,
+                        color = colorResource(R.color.border_gray),
+                        RoundedCornerShape(8.dp)
+                    ),
                 contentAlignment = Alignment.Center
             ) {
-                Image(
-                    painter = painterResource(R.drawable.bottle),
-                    contentDescription = null,
-                    modifier = Modifier
-                        .size(48.dp)
+                val hasImage = !rowData.barcodeImage.isNullOrEmpty()
+
+                val painter = if (hasImage) {
+                    val file = File(rowData.barcodeImage ?: "")
+                    rememberAsyncImagePainter(
+                        ImageRequest.Builder(LocalContext.current)
+                            .data(file)
+                            .placeholder(R.drawable.bottle)
+                            .error(R.drawable.bottle)
+                            .build()
+                    )
+                } else {
+                    painterResource(R.drawable.bottle)
+                }
+                val imageModifier = if (hasImage) {
+                    Modifier
+                        .fillMaxSize() // full container for placeholder
                         .clip(RoundedCornerShape(8.dp))
+                } else {
+                    Modifier
+                        .size(36.dp) // smaller for cropped image
+                        .clip(RoundedCornerShape(8.dp))
+                }
+                Image(
+                    painter = painter,
+                    contentDescription = null,
+                    contentScale = if (hasImage) ContentScale.Crop else ContentScale.Fit,
+                    modifier = imageModifier
                 )
             }
 
@@ -65,30 +96,40 @@ fun CountRow(
             // Medicine name + timestamp
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = rowData.name,
+                    text = rowData.drugName.toString(),
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Medium,
                     color = appTheme.extendedColors.textColor
                 )
                 Text(
-                    text = rowData.formattedTimestamp,
+                    text = rowData.createdAt.toFormattedDate(),
                     fontSize = 12.sp,
-                    color = Color(0xFF888888)
+                    color = appTheme.extendedColors.textColor
                 )
             }
 
-            Icon(
-                painter = painterResource(rowData.iconRes),
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(20.dp)
-            )
+            val iconRes = when {
+                rowData.status == CountStatus.PARTIAL -> R.drawable.partial
+                rowData.status == CountStatus.COMPLETED && !rowData.note.isNullOrBlank() -> R.drawable.notes
+                else -> null
+            }
+
+            iconRes?.let {
+                Icon(
+                    painter = painterResource(id = it),
+                    contentDescription = null, // or provide a description if needed
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+
+
 
             Spacer(Modifier.width(12.dp))
 
             // Count value
             Text(
-                text = rowData.count.toString(),
+                text = rowData.pillCount.toString(),
                 fontSize = 16.sp,
                 fontWeight = FontWeight.SemiBold,
                 color = appTheme.extendedColors.textColor,

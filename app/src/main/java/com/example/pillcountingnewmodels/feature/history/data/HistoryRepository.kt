@@ -2,7 +2,7 @@ package com.example.pillcountingnewmodels.feature.history.data
 
 import com.example.pillcountingnewmodels.R
 import com.example.pillcountingnewmodels.core.room.dao.PillCountTxnDao
-import com.example.pillcountingnewmodels.feature.history.domain.model.CountRowData
+import com.example.pillcountingnewmodels.feature.history.domain.model.TxnWithDrugDto
 
 
 import kotlinx.coroutines.flow.Flow
@@ -22,24 +22,14 @@ class HistoryRepository @Inject constructor(
         Locale.getDefault()
     )
 
-    fun getTransactionsForDate(date: LocalDate): Flow<List<CountRowData>> {
+    fun getTransactionsForDate(date: LocalDate): Flow<List<TxnWithDrugDto>> {
         val startOfDay = date.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
         val endOfDay = date.plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
 
-        return dao.getTransactionsWithDrugByDate(startOfDay, endOfDay).map { list ->
-            list.map { txn ->
-                CountRowData(
-                    name = txn.drugName ?: "Unknown Drug",
-                    count = txn.targetCount, // targetCount is non-null
-                    iconRes = R.drawable.partial,
-                    formattedTimestamp = Instant.ofEpochMilli(txn.createdAt)
-                        .atZone(ZoneId.systemDefault())
-                        .toLocalDateTime()
-                        .format(formatter)
-                )
-            }
-        }
+        return dao.getTransactionsWithDrugByDate(startOfDay, endOfDay)
     }
+
+
 
     suspend fun deleteTransactionsForDate(date: LocalDate) {
         val startOfDay = date.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
