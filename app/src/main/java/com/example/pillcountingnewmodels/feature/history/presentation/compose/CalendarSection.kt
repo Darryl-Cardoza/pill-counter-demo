@@ -83,8 +83,7 @@ fun CalendarSection(
                     Text(
                         text = "${month.month.name.lowercase().replaceFirstChar { it.titlecase(Locale.getDefault()) }} ${month.year}",
                         style = MaterialTheme.typography.bodyLarge.copy(
-                            color = MaterialTheme.colorScheme.secondary,
-                            fontWeight = FontWeight.Bold
+                            color = MaterialTheme.colorScheme.primary
                         )
                     )
                 }

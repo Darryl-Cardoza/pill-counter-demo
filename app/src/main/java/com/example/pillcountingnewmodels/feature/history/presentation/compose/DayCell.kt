@@ -3,6 +3,7 @@ package com.example.pillcountingnewmodels.feature.history.presentation.compose
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -44,7 +45,7 @@ fun DayCell(
             modifier = Modifier
                 .aspectRatio(1f)
                 .padding(2.dp)
-                .clip(RoundedCornerShape(6.dp))
+                .clip(CircleShape)
                 .background(
                     when {
                         isSelected -> MaterialTheme.colorScheme.secondary
