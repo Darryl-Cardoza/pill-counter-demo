@@ -1,43 +1,55 @@
 package com.example.pillcountingnewmodels.feature.history.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
-import com.example.pillcountingnewmodels.R
+import androidx.lifecycle.viewModelScope
+import com.example.pillcountingnewmodels.feature.history.data.HistoryRepository
 import com.example.pillcountingnewmodels.feature.history.domain.model.CountRowData
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 import java.time.LocalDate
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
-import java.util.Locale
 import javax.inject.Inject
 
 /**
  * ViewModel for History screen.
  * Prepares all data needed for UI, including formatted timestamps.
  */
-@HiltViewModel
-class HistoryViewModel @Inject constructor() : ViewModel() {
 
-    // Currently selected date
+@HiltViewModel
+class HistoryViewModel @Inject constructor(
+    private val repository: HistoryRepository
+) : ViewModel() {
+
     private val _selectedDate = MutableStateFlow(LocalDate.now())
     val selectedDate: StateFlow<LocalDate> = _selectedDate
 
-    // Sample medicine count data
-    private val _counts = MutableStateFlow(
-        List(15) { index ->
-            val name = if (index % 2 == 0) "Allopurinol 5MG" else "Bevacizumab 5MG"
-            val count = if (index % 2 == 0) 200 + index else 100 + index
-            val timestamp = LocalDateTime.now().minusDays(index.toLong())
-            val formattedTime = timestamp.format(DateTimeFormatter.ofPattern("dd MMM yyyy • hh:mm a", Locale.getDefault()))
-            CountRowData(name, count, R.drawable.partial, formattedTime)
-        }
-    )
-    val counts: StateFlow<List<CountRowData>> = _counts
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val counts: StateFlow<List<CountRowData>> =
+        _selectedDate
+            .flatMapLatest { date ->
+                repository.getTransactionsForDate(date)
+            }
+            .stateIn(
+                viewModelScope,
+                SharingStarted.WhileSubscribed(5000),
+                emptyList()
+            )
 
-    /** Updates the selected date */
     fun selectDate(date: LocalDate) {
         _selectedDate.value = date
     }
-}
+
+    fun deleteCountsForSelectedDate() {
+        viewModelScope.launch {
+            repository.deleteTransactionsForDate(_selectedDate.value)
+        }}}
+
+
+
+
 

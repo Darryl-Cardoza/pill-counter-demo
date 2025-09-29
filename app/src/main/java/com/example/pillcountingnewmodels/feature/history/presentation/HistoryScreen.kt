@@ -1,5 +1,7 @@
 package com.example.pillcountingnewmodels.feature.history.presentation
 
+import android.content.Context
+import android.content.Intent
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -7,14 +9,21 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import androidx.core.content.FileProvider
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.example.pillcountingnewmodels.R
+import com.example.pillcountingnewmodels.core.utils.compose.CommonDialog
 import com.example.pillcountingnewmodels.core.utils.compose.SplitResponsive
 import com.example.pillcountingnewmodels.feature.history.presentation.compose.CalendarSection
 import com.example.pillcountingnewmodels.feature.history.presentation.compose.CountsSection
+import com.example.pillcountingnewmodels.feature.history.presentation.compose.HistoryPdfExporter
 import com.example.pillcountingnewmodels.feature.history.presentation.viewmodel.HistoryViewModel
 import com.example.pillcountingnewmodels.ui.theme.AppTheme
 import com.kizitonwose.calendar.compose.rememberCalendarState
+import java.io.File
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.YearMonth
@@ -38,11 +47,14 @@ fun HistoryScreen(
     onBackClick: () -> Unit = {}
 ) {
     val appTheme = AppTheme
+    val context = LocalContext.current
 
     // Observe selected date and counts from ViewModel
     val selectedDate by viewModel.selectedDate.collectAsState()
     val counts by viewModel.counts.collectAsState()
+    var showDeleteConfirmationDialog by remember { mutableStateOf(false) }
 
+    val pdfExporter = remember { HistoryPdfExporter(context) }
     // Calendar state must be initialized in Composable context
     val today = LocalDate.now()
     val currentMonth = YearMonth.from(today)
@@ -79,12 +91,47 @@ fun HistoryScreen(
                 CountsSection(
                     appTheme = appTheme,
                     counts = counts,
-                    onExportClick = { /* Handle export */ },
-                    onDeleteClick = { /* Handle delete */ },
+                    onExportClick = {  val file = pdfExporter.generateHistoryPdf(counts, selectedDate.toString())
+                        file?.let {
+                            // Share or open the PDF
+                            sharePdfFile(context, it)
+                        } },
+                    onDeleteClick = { showDeleteConfirmationDialog = true },
                     onFilterClick = { /* Handle filter */ },
                     onSearchClick = { /* Handle search */ }
                 )
             }
         )
     }
+
+    if (showDeleteConfirmationDialog) {
+        CommonDialog(
+            message = stringResource(R.string.confirm_delete_message),
+            title = stringResource(R.string.confirm_exit_title),
+            confirmText = stringResource(R.string.yes),
+            cancelText = stringResource(R.string.no),
+            onConfirm = {
+                showDeleteConfirmationDialog = false
+                viewModel.deleteCountsForSelectedDate()
+            },
+            onCancel = { showDeleteConfirmationDialog = false }
+        )
+    }
+}
+
+private fun sharePdfFile(context: Context, file: File) {
+    val uri = FileProvider.getUriForFile(
+        context,
+        "${context.packageName}.provider",
+        file
+    )
+
+    val intent = Intent(Intent.ACTION_VIEW).apply {
+        setDataAndType(uri, "application/pdf")
+        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY)
+    }
+
+    val shareIntent = Intent.createChooser(intent, "Open PDF with")
+    context.startActivity(shareIntent)
 }
