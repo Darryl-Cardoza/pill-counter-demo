@@ -60,7 +60,7 @@ object NetworkModule {
 
     // TODO: Replace with the actual base URL of your production API.
     //private const val MAIN_API_BASE_URL = "https://192.168.0.79/"
-    private const val MAIN_API_BASE_URL = "https://pill.ccrlindia.com/"
+    private const val MAIN_API_BASE_URL = "https://pill.ccrlindia.com:8000/"
 
     /** The base URL for the openFDA API. */
     const val DRUG_API_BASE_URL = "https://api.fda.gov/"
