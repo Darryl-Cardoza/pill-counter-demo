@@ -64,7 +64,7 @@ fun CountsSection(
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 ActionIcon(
-                    iconRes = R.drawable.export,
+                    iconRes = R.drawable.pdf,
                     contentDescription = stringResource(R.string.export_content_description),
                     onClick = onExportClick
                 )
@@ -73,7 +73,7 @@ fun CountsSection(
                     contentDescription = stringResource(R.string.delete_content_description),
                     onClick = onDeleteClick
                 )
-                ActionIcon(
+                /*ActionIcon(
                     iconRes = R.drawable.filter,
                     contentDescription = stringResource(R.string.filter_content_description),
                     onClick = onFilterClick
@@ -82,23 +82,35 @@ fun CountsSection(
                     iconRes = R.drawable.search,
                     contentDescription = stringResource(R.string.search_content_description),
                     onClick = onSearchClick
-                )
+                )*/
             }
         }
 
         Spacer(Modifier.height(16.dp))
 
-        // Lazy list of counts
-        LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(bottom = 16.dp)
-        ) {
-            items(counts) { rowData ->
-                CountRow(
-                    rowData = rowData,
-                    appTheme = appTheme
+
+        if (counts.isEmpty()) {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = stringResource(R.string.no_data_found),
+                    fontSize = 18.sp,
+                    color = appTheme.extendedColors.textColor.copy(alpha = 0.6f),
+                    textAlign = TextAlign.Center
                 )
             }
+        } else {
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(bottom = 16.dp)
+            ) {
+                items(counts) { rowData ->
+                    CountRow(rowData = rowData, appTheme = appTheme)
+                }
+            }
         }
+
     }
 }

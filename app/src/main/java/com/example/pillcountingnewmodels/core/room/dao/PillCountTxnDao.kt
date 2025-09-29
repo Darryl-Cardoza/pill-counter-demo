@@ -5,6 +5,7 @@ import com.example.pillcountingnewmodels.core.room.models.CountStatus
 import com.example.pillcountingnewmodels.core.room.models.PillCountTxnEntity
 import com.example.pillcountingnewmodels.core.room.models.StatusTypeCount
 import com.example.pillcountingnewmodels.core.room.relation.PillCountTxnWithDetails
+import com.example.pillcountingnewmodels.feature.history.domain.model.PillCountWithDrug
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -290,5 +291,44 @@ interface PillCountTxnDao {
 
     @Query("UPDATE pill_count_txn SET status = :newStatus, updatedAt = :updatedAt WHERE txnId = :txnId")
     suspend fun updateTxnStatus(txnId: Long, newStatus: CountStatus, updatedAt: Long = System.currentTimeMillis())
+
+
+
+//    @Query("""
+//        SELECT t.txnId, d.drugName, t.targetCount, t.createdAt
+//        FROM pill_count_txn AS t
+//        LEFT JOIN drug_master AS d ON t.drugId = d.drugId
+//        WHERE t.isDeleted = 0
+//        ORDER BY t.createdAt DESC
+//    """)
+//    fun getAllTransactions(): Flow<List<PillCountWithDrug>>
+
+    @Query("""
+        SELECT t.txnId, d.drugName, t.targetCount, t.createdAt
+        FROM pill_count_txn AS t
+        LEFT JOIN drug_master AS d ON t.drugId = d.drugId
+        WHERE t.isDeleted = 0 
+          AND t.createdAt BETWEEN :start AND :end
+        ORDER BY t.createdAt DESC
+    """)
+    fun getTransactionsWithDrugByDate(
+        start: Long,
+        end: Long
+    ): Flow<List<PillCountWithDrug>>
+
+    // Query to get raw pill_count_txn entities
+    @Query("SELECT * FROM pill_count_txn WHERE createdAt BETWEEN :start AND :end")
+    fun getTransactionsByDateRaw(
+        start: Long,
+        end: Long
+    ): Flow<List<PillCountTxnEntity>>
+
+    // Delete transactions in a date range
+    @Query("DELETE FROM pill_count_txn WHERE createdAt BETWEEN :start AND :end")
+    suspend fun deleteTransactionsByDate(
+        start: Long,
+        end: Long
+    )
+
 
 }
