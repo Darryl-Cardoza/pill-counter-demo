@@ -107,7 +107,7 @@ fun HistoryScreen(
     if (showDeleteConfirmationDialog) {
         CommonDialog(
             message = stringResource(R.string.confirm_delete_message),
-            title = stringResource(R.string.confirm_exit_title),
+            title = stringResource(R.string.confirm_delete_title),
             confirmText = stringResource(R.string.yes),
             cancelText = stringResource(R.string.no),
             onConfirm = {

@@ -160,5 +160,6 @@
     <string name="drugname_two_lines">Drug \\nName</string>
     <string name="status">Status</string>
     <string name="count_type_two_lines">Count \\nType</string>
+    <string name="confirm_delete_title">Confirm Delete</string>
 
 </resources>
