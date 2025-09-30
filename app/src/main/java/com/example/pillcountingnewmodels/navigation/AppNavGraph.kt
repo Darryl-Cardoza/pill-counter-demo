@@ -15,6 +15,7 @@ import com.example.pillcountingnewmodels.feature.countResume.presentation.FixedC
 import com.example.pillcountingnewmodels.feature.countResume.presentation.RegularCountResumeScreen
 import com.example.pillcountingnewmodels.feature.countResume.presentation.viewmodel.CountsViewModel
 import com.example.pillcountingnewmodels.feature.dashboard.presentation.DashboardScreen
+import com.example.pillcountingnewmodels.feature.history.presentation.HistoryDetailScreen
 import com.example.pillcountingnewmodels.feature.history.presentation.HistoryScreen
 import com.example.pillcountingnewmodels.feature.menu.presentation.MenuScreen
 import com.example.pillcountingnewmodels.feature.pillCountScan.presentation.PillScanningScreen
@@ -27,12 +28,10 @@ const val AUTH_GRAPH_ROUTE = "auth"
 
 @Composable
 fun AppNavGraph(
-    navController: NavHostController,
-    startDestination: String
+    navController: NavHostController, startDestination: String
 ) {
     NavHost(
-        navController = navController,
-        startDestination = startDestination
+        navController = navController, startDestination = startDestination
     ) {
         // Nested graph for all authentication-related screens
         authGraph(navController)
@@ -43,16 +42,14 @@ fun AppNavGraph(
         }
 
         composable(
-            route = Screen.ScanBarcode.route,
-            arguments = Screen.ScanBarcode.navArguments
+            route = Screen.ScanBarcode.route, arguments = Screen.ScanBarcode.navArguments
         ) { backStackEntry ->
             val scanType = backStackEntry.arguments?.getString(Screen.ScanBarcode.ARG_TYPE) ?: ""
             ScanBarCodeScreen(navController, scanType)
         }
 
         composable(
-            route = Screen.PillCount.route,
-            arguments = Screen.PillCount.navArguments
+            route = Screen.PillCount.route, arguments = Screen.PillCount.navArguments
         ) { backStackEntry ->
             val countType = backStackEntry.arguments?.getString(Screen.PillCount.ARG_TYPE) ?: ""
             PillScanningScreen(navController, countType)
@@ -84,7 +81,14 @@ fun AppNavGraph(
                 navController = navController,
                 onBackClick = {
                     navController.popBackStack()
-                })
+                }
+            )
+        }
+
+        composable(route = Screen.HistoryDetail.route) {
+            HistoryDetailScreen(
+                navController = navController,
+            )
         }
 
         composable(route = Screen.Profile.route) {
@@ -92,7 +96,8 @@ fun AppNavGraph(
                 navController = navController,
                 onBackClick = {
                     navController.popBackStack()
-                })
+                }
+            )
         }
     }
 }

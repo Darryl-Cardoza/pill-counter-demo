@@ -41,6 +41,10 @@ sealed interface Screen {
         override val route: String = "history"
     }
 
+    data object HistoryDetail : Screen {
+        override val route: String = "history_detail"
+    }
+
     data object Profile : Screen {
         override val route: String = "profile"
     }
@@ -121,19 +125,6 @@ sealed interface Screen {
         )
 
         fun createRoute(type: String) = "$ROUTE_PREFIX/$type"
-    }
-
-    data object HistoryDetailScreen : Screen {
-        private const val ROUTE_PREFIX = "history_details_screen"
-        const val ARG_TYPE = "txnId"
-
-        override val route: String = "$ROUTE_PREFIX/{$ARG_TYPE}"
-
-        val navArguments: List<NamedNavArgument> = listOf(
-            navArgument(ARG_TYPE) { type = NavType.StringType }
-        )
-
-        fun createRoute(txnId: String) = "$ROUTE_PREFIX/$txnId"
     }
 
 }

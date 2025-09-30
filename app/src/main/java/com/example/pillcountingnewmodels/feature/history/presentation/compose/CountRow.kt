@@ -2,6 +2,7 @@ package com.example.pillcountingnewmodels.feature.history.presentation.compose
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
@@ -38,13 +39,15 @@ import java.io.File
 @Composable
 fun CountRow(
     rowData: TxnWithDrugDto,
-    appTheme: AppTheme
+    appTheme: AppTheme,
+    onTxnClick: () -> Unit
 ) {
     Column {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 12.dp, horizontal = 8.dp),
+                .padding(vertical = 12.dp, horizontal = 8.dp)
+                .clickable(onClick = onTxnClick),
             verticalAlignment = Alignment.CenterVertically
         ) {
             // Medicine thumbnail/logo

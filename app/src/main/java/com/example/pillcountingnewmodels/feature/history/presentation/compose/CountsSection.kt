@@ -37,6 +37,7 @@ fun CountsSection(
     onExportClick: () -> Unit = {},
     onDeleteClick: () -> Unit = {},
     onFilterClick: () -> Unit = {},
+    onTxnClick: (Long) -> Unit = {},
     onSearchClick: () -> Unit = {}
 ) {
     Column(
@@ -109,7 +110,10 @@ fun CountsSection(
                 contentPadding = PaddingValues(bottom = 16.dp)
             ) {
                 items(counts) { rowData ->
-                    CountRow(rowData = rowData, appTheme = appTheme)
+                    CountRow(
+                        rowData = rowData,
+                        appTheme = appTheme,
+                        onTxnClick = { onTxnClick(rowData.txnId) })
                 }
             }
         }

@@ -97,8 +97,10 @@ fun HistoryScreen(
                         }
                     },
                     onDeleteClick = { showDeleteConfirmationDialog = true },
-                    onFilterClick = { /* Handle filter */ },
-                    onSearchClick = { /* Handle search */ }
+                    onTxnClick = { txnId ->
+                        viewModel.selectCurrentTransaction(txnId)
+                        navController.navigate(Screen.HistoryDetail.route)
+                    }
                 )
             }
         )

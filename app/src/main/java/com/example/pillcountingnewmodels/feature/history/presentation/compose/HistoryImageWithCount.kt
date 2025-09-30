@@ -1,7 +1,9 @@
 package com.example.pillcountingnewmodels.feature.history.presentation.compose
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -15,6 +17,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -23,26 +26,28 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.pillcountingnewmodels.R
-import com.example.pillcountingnewmodels.ui.theme.AppTheme
+import com.example.pillcountingnewmodels.core.utils.compose.Dimens.medium
 
 @Composable
 
-fun ImagewithCount(landscape: Boolean,appTheme : AppTheme){
+fun ImageWithCount() {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
             .fillMaxWidth()
-            .padding(start = 16.dp)
+            .padding(horizontal = medium)
     ) {
         Image(
-            painter = painterResource(id = R.drawable.pill_count_image), // replace with actual image resource
-            contentDescription = stringResource(R.string.cd_image),
+            painter = painterResource(id = R.drawable.ic_launcher_background), // replace with your drawable
+            contentDescription = null,
             modifier = Modifier
-                .width(if(landscape)160.dp else 160.dp)
-                .height(if(landscape)100.dp else 120.dp)
+                .width(160.dp)
+                .height(100.dp)
                 .clip(RoundedCornerShape(12.dp)),
             contentScale = ContentScale.Crop
         )
+
+
 
         Column(
             verticalArrangement = Arrangement.Center,
@@ -60,7 +65,7 @@ fun ImagewithCount(landscape: Boolean,appTheme : AppTheme){
             )
 
             Text(
-                text = "TOTAL COUNT",
+                text = stringResource(R.string.total_count).uppercase(),
                 style = MaterialTheme.typography.bodyLarge.copy(
                     color = MaterialTheme.colorScheme.primary,
                     fontSize = 16.sp,
@@ -68,7 +73,6 @@ fun ImagewithCount(landscape: Boolean,appTheme : AppTheme){
                 textAlign = TextAlign.Center // Additional centering for text alignment
             )
         }
-
 
 
     }

@@ -1,15 +1,11 @@
 package com.example.pillcountingnewmodels.feature.history.presentation
 
 
-import com.example.pillcountingnewmodels.core.utils.PdfExporter
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import android.content.res.Configuration
 import android.widget.Toast
-import androidx.activity.compose.BackHandler
-
-import com.example.pillcountingnewmodels.R
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -18,17 +14,13 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.material.Icon
-import androidx.compose.material.IconButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
@@ -40,10 +32,11 @@ import androidx.compose.ui.unit.sp
 import androidx.core.content.FileProvider
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.example.pillcountingnewmodels.R
+import com.example.pillcountingnewmodels.core.utils.PdfExporter
 import com.example.pillcountingnewmodels.core.utils.compose.BackButton
 import com.example.pillcountingnewmodels.feature.history.presentation.compose.DrugInfoSection
-
-import com.example.pillcountingnewmodels.feature.profile.presentation.viewmodel.ProfileViewModel
+import com.example.pillcountingnewmodels.feature.history.presentation.viewmodel.HistoryDetailsViewModel
 import com.example.pillcountingnewmodels.ui.theme.AppTheme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -52,151 +45,94 @@ import java.io.File
 
 
 @Composable
-fun isLandscape(): Boolean {
-    val configuration = LocalConfiguration.current
-    return configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
-}
-
-
-@Composable
 fun HistoryDetailScreen(
     navController: NavController,
-    viewModel: ProfileViewModel = hiltViewModel(),
-    onBackClick: () -> Unit = {}
+    viewModel: HistoryDetailsViewModel = hiltViewModel()
 ) {
-    val appTheme = AppTheme
-    val landscape = isLandscape()
-
     val drugName = "Allopurinol 5MG"
     val ndc = "123654"
     val expiry = "12-08-2025"
-    val batch = "45698"
+    val lotNo = "45698"
     val date = "12-01-2025"
     val time = "11:25 am"
+    val note = "My long note"
 
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
-    // PDF export state
-    var showExportResult by remember { mutableStateOf(false) }
-    var exportSuccess by remember { mutableStateOf(false) }
-    var exportMessage by remember { mutableStateOf("") }
-
     val pdfExporter = remember { PdfExporter(context) }
 
-    val scrollState = rememberScrollState()
-
     val images = listOf(
-        R.drawable.pill_count_image,
-        R.drawable.pill_count_image,
-        R.drawable.pill_count_image,
-        R.drawable.pill_count_image
+        R.drawable.history,
+        R.drawable.history,
+        R.drawable.history,
+        R.drawable.history
     )
 
-    BackHandler {
-        onBackClick()
-    }
+    Column(
+        modifier = Modifier.fillMaxSize().background(AppTheme.extendedColors.secondaryBackground),
 
-    if (landscape) {
-
-        Column(
-            modifier = Modifier.fillMaxSize(),
-            verticalArrangement = Arrangement.Top
-
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Start,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(60.dp)
         ) {
+            BackButton(navController = navController)
 
+            Text(
+                text = drugName,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Medium,
+                color = AppTheme.extendedColors.textColor,
+                modifier = Modifier.weight(1f)
 
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Start,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(60.dp)
-                    .background(appTheme.extendedColors.secondaryBackground)
+            )
+            IconButton(
+                onClick = {
+                    scope.launch {
+                        val pdfFile = exportToPdf(
+                            pdfExporter = pdfExporter,
+                            drugName = drugName,
+                            totalCount = "456",
+                            notes = "adasdnaudbahbdahd",
+                            ndc = ndc,
+                            expiry = expiry,
+                            lotNo = "5454545",
+                            date = date,
+                            time = time
+                        )
+
+                        if (pdfFile != null) {
+                            // Open the PDF file
+                            openPdfFile(context, pdfFile)
+                        }
+                    }
+
+                }
             ) {
-                BackButton(navController)
-
-                Text(
-                    text = drugName,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = appTheme.extendedColors.textColor,
-                    modifier = Modifier.weight(1f)
+                Icon(
+                    painter = painterResource(id = R.drawable.pdf),
+                    contentDescription = "Export PDF",
+                    tint = MaterialTheme.colorScheme.secondary,
+                    modifier = Modifier.padding(end = 10.dp)
 
                 )
-                IconButton(
-                    onClick = {
-                            scope.launch {
-                                val pdfFile = exportToPdf(
-                                    pdfExporter = pdfExporter,
-                                    drugName = drugName,
-                                    totalCount = "456",
-                                    description = "adasdnaudbahbdahd",
-                                    ndc = ndc,
-                                    expiry = expiry,
-                                    batch = "5454545",
-                                    date = date,
-                                    time = time
-                                )
-
-                                if (pdfFile != null) {
-                                    // Open the PDF file
-                                    openPdfFile(context, pdfFile)
-                                    exportSuccess = true
-                                    exportMessage = "PDF exported and opened successfully!"
-                                } else {
-                                    exportSuccess = false
-                                    exportMessage = "Failed to export PDF. Please try again."
-                                }
-                                showExportResult = true
-                            }
-
-                    }
-                ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.pdf),
-                        contentDescription = "Export PDF",
-                        tint = MaterialTheme.colorScheme.secondary,
-                        modifier = Modifier.padding(end = 20.dp)
-                            .height(36.dp)
-                    )
-                }
-
             }
 
-            DrugInfoSection(
-                appTheme = appTheme,
-                navController = navController,
-                drugName = drugName,
-                ndc = ndc,
-                images = images,
-                expiry = expiry,
-                batch = batch,
-                date = date,
-                time = time,
-                )
         }
 
-    } else {
-        Column(
-            modifier = Modifier
-                .fillMaxSize(),
-
-            verticalArrangement = Arrangement.SpaceEvenly
-
-        ) {
-            DrugInfoSection(
-                appTheme = appTheme,
-                navController = navController,
-                drugName = drugName,
-                ndc = ndc,
-                images = images,
-                expiry = expiry,
-                batch = batch,
-                date = date,
-                time = time
-            )
-        }
+        DrugInfoSection(
+            ndc = ndc,
+            images = images,
+            expiry = expiry,
+            lotNo = lotNo,
+            date = date,
+            time = time,
+            note = note
+        )
     }
 }
 
@@ -239,26 +175,28 @@ private fun sharePdfFile(context: Context, pdfFile: File) {
     try {
         val shareIntent = Intent(Intent.ACTION_SEND).apply {
             type = "application/pdf"
-            val uri = FileProvider.getUriForFile(context, "${context.packageName}.provider", pdfFile)
+            val uri =
+                FileProvider.getUriForFile(context, "${context.packageName}.provider", pdfFile)
             putExtra(Intent.EXTRA_STREAM, uri)
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         }
 
-        val chooserIntent = Intent.createChooser(shareIntent, "Share PDF via")
+        val chooserIntent = Intent.createChooser(shareIntent, context.getString(R.string.sharePdfVia))
         context.startActivity(chooserIntent)
-    } catch (e: Exception) {
+    } catch (_: Exception) {
         Toast.makeText(context, "PDF saved to: ${pdfFile.absolutePath}", Toast.LENGTH_LONG).show()
     }
 }
+
 // Updated PDF export function to return File object
 private suspend fun exportToPdf(
     pdfExporter: PdfExporter,
     drugName: String,
     totalCount: String,
-    description: String,
+    notes: String,
     ndc: String,
     expiry: String,
-    batch: String,
+    lotNo: String,
     date: String,
     time: String
 ): File? {
@@ -267,10 +205,10 @@ private suspend fun exportToPdf(
             pdfExporter.generateDrugHistoryPdf(
                 drugName = drugName,
                 totalCount = totalCount,
-                description = description,
+                notes = notes,
                 ndc = ndc,
                 expiry = expiry,
-                batch = batch,
+                lotNo = lotNo,
                 date = date,
                 time = time
             )

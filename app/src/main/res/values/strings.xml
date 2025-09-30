@@ -99,6 +99,8 @@
     <string name="pill_info_add_manually">Enter Pill Info Manually</string>
     <string name="drugname">Drug Name</string>
     <string name="ndc">Ndc</string>
+    <string name="expiry">Expiry</string>
+    <string name="lotNo">Lot No.</string>
     <string name="cancel">Cancel</string>
     <string name="ok">Ok</string>
 
@@ -161,5 +163,9 @@
     <string name="status">Status</string>
     <string name="count_type_two_lines">Count \\nType</string>
     <string name="confirm_delete_title">Confirm Delete</string>
+    <string name="date">Date</string>
+    <string name="time">Time</string>
+    <string name="sharePdfVia">Share PDF via</string>
+    <string name="total_count">Total Count</string>
 
 </resources>
