@@ -123,5 +123,18 @@ sealed interface Screen {
         fun createRoute(type: String) = "$ROUTE_PREFIX/$type"
     }
 
+    data object HistoryDetailScreen : Screen {
+        private const val ROUTE_PREFIX = "history_details_screen"
+        const val ARG_TYPE = "txnId"
+
+        override val route: String = "$ROUTE_PREFIX/{$ARG_TYPE}"
+
+        val navArguments: List<NamedNavArgument> = listOf(
+            navArgument(ARG_TYPE) { type = NavType.StringType }
+        )
+
+        fun createRoute(txnId: String) = "$ROUTE_PREFIX/$txnId"
+    }
+
 }
 
