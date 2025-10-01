@@ -21,9 +21,10 @@ import javax.inject.Inject
 /**
  * ViewModel responsible for managing and exposing application settings to the UI layer.
  *
- * This ViewModel:
+ * Responsibilities:
  * - Loads cached theme from [PreferenceHelper] immediately for fast startup.
  * - Fetches remote settings in the background and updates both UI + cache.
+ * - Determines if app should show maintenance/update screen based on remote flags.
  * - Falls back to hardcoded defaults if neither cache nor remote settings are available.
  *
  * This ensures the user never waits on a blocking loading screen for theme data.
@@ -87,11 +88,16 @@ class ApplicationSettingsViewModel @Inject constructor(
     private fun applyAndStoreSettings(settings: ApiResponse<SettingsDataDto>) {
         logger.i("Successfully fetched remote settings.")
 
-        val theme = settings.data?.settings?.colors
+        val dto = settings.data
+        val theme = dto?.settings?.colors
+
         _uiState.update {
             it.copy(
                 colorSettings = theme ?: it.colorSettings, // keep existing if null
-                appLogoUrl = settings.data?.settings?.appLogo ?: it.appLogoUrl
+                appLogoUrl = dto?.settings?.appLogo ?: it.appLogoUrl,
+                appSettings = dto,
+                isMaintenanceMode = dto?.isMaintenanceMode ?: false,
+                isUpdateRequired = isUpdateRequired(dto?.version)
             )
         }
 
@@ -135,8 +141,50 @@ class ApplicationSettingsViewModel @Inject constructor(
         _uiState.update {
             it.copy(
                 colorSettings = fallbackColors,
-                appLogoUrl = "default_logo_placeholder"
+                appLogoUrl = "default_logo_placeholder",
+                isMaintenanceMode = false,
+                isUpdateRequired = false
             )
         }
+    }
+
+    /**
+     * Checks if update is required based on remote version vs current app version.
+     */
+    private fun isUpdateRequired(remoteVersion: String?): Boolean {
+        if (remoteVersion.isNullOrBlank()) return false
+        return try {
+            val current = getCurrentAppVersion()
+            compareVersions(remoteVersion, current) > 0
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    /** Gets current app versionName from PackageManager. */
+    private fun getCurrentAppVersion(): String {
+        return try {
+            val ctx = preferenceHelper.getContext()
+            ctx.packageManager.getPackageInfo(ctx.packageName, 0).versionName ?: "0.0.0"
+        } catch (_: Exception) {
+            "0.0.0"
+        }
+    }
+
+    /**
+     * Compare two semantic version strings.
+     * @return >0 if v1 > v2, <0 if v1 < v2, 0 if equal.
+     */
+    private fun compareVersions(v1: String, v2: String): Int {
+        val parts1 = v1.split(".")
+        val parts2 = v2.split(".")
+        val maxLength = maxOf(parts1.size, parts2.size)
+
+        for (i in 0 until maxLength) {
+            val num1 = parts1.getOrNull(i)?.toIntOrNull() ?: 0
+            val num2 = parts2.getOrNull(i)?.toIntOrNull() ?: 0
+            if (num1 != num2) return num1 - num2
+        }
+        return 0
     }
 }

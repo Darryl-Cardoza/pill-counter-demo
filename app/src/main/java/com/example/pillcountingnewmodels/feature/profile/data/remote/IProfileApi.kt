@@ -32,5 +32,7 @@ interface IProfileApi {
      * @return [ProfileDeleteResponse] indicating success or failure.
      */
     @DELETE(URLConstant.DELETE_PROFILE)
-    suspend fun deleteProfile(): ProfileDeleteResponse
+    suspend fun deleteProfile(
+        @Header("Authorization") authorization: String,
+    ): ProfileDeleteResponse
 }

@@ -4,7 +4,7 @@ package com.example.pillcountingnewmodels.feature.dashboard.domain.model
  * Represents the aggregated UI state for the Dashboard screen.
  *
  * This data class encapsulates both static dashboard metrics and dynamic states such as
- * user detail loading, error handling, and authentication-related feedback.
+ * user detail loading, error handling, navigation flags, and authentication-related feedback.
  *
  * All count values are [String] because they are intended for direct UI display.
  * The user detail is retrieved from the API and stored as a nullable [UserDetail] object.
@@ -16,6 +16,8 @@ package com.example.pillcountingnewmodels.feature.dashboard.domain.model
  * @property isLoadingUserDetail Whether the user detail API is currently loading.
  * @property userDetailError Error message from user detail fetch operation, if any.
  * @property userDetail Authenticated user's profile detail.
+ * @property navigateToProfile Navigation flag to redirect user to profile completion screen
+ *                              if their profile is incomplete or missing required fields.
  */
 data class DashboardUiState(
 
@@ -38,5 +40,8 @@ data class DashboardUiState(
     val userDetailError: String? = null,
 
     /** Represents the currently authenticated user's details. */
-    val userDetail: UserDetail? = null
+    val userDetail: UserDetail? = null,
+
+    /** Triggers navigation to Profile screen if profile details are incomplete. */
+    val navigateToProfile: Boolean = false
 )

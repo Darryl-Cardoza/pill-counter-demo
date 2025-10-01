@@ -33,5 +33,6 @@ data class PillScanningUiState(
     val restrictAdd: Boolean = false,
     val showConfirmDialog: Boolean = false,
     val showNoTransaction: Boolean = false,
-    val showTargetCountDialog: Boolean = false
+    val showTargetCountDialog: Boolean = false,
+    val showIdleOverlay: Boolean = false
 )

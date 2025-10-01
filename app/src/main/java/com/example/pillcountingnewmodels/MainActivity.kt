@@ -1,5 +1,6 @@
 package com.example.pillcountingnewmodels
 
+import android.content.Intent
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.os.Build
@@ -21,12 +22,15 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.core.net.toUri
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.rememberNavController
 import com.example.pillcountingnewmodels.core.api.viewmodel.ApplicationSettingsViewModel
 import com.example.pillcountingnewmodels.core.utils.PreferenceHelper
 import com.example.pillcountingnewmodels.core.utils.compose.CommonDialog
 import com.example.pillcountingnewmodels.core.utils.compose.HelperFunctions.getStartDestination
+import com.example.pillcountingnewmodels.core.utils.compose.MaintenanceScreen
+import com.example.pillcountingnewmodels.core.utils.compose.UpdateScreen
 import com.example.pillcountingnewmodels.core.utils.toColor
 import com.example.pillcountingnewmodels.navigation.AppNavGraph
 import com.example.pillcountingnewmodels.ui.theme.ExtendedColors
@@ -38,8 +42,12 @@ import kotlin.system.exitProcess
 /**
  * Main entry point of the application.
  *
- * Performs runtime environment hardening to ensure the app does not run on
- * insecure or tampered devices.
+ * Decides whether to show:
+ * - MaintenanceScreen (if backend says maintenance mode is ON)
+ * - UpdateScreen (if newer app version required)
+ * - AppNavGraph (normal flow)
+ *
+ * Also performs runtime environment hardening checks.
  */
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -49,7 +57,6 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Normal app UI
         setContent {
             val settingsState by settingsViewModel.uiState.collectAsStateWithLifecycle()
 
@@ -102,23 +109,53 @@ class MainActivity : ComponentActivity() {
                         val preferenceHelper = remember { PreferenceHelper(this) }
                         val startDestination = remember { getStartDestination(preferenceHelper) }
 
-                        // Build the normal navigation graph
-                        AppNavGraph(
-                            navController = navController,
-                            startDestination = startDestination
-                        )
+                        // Decide which screen to show
+                        when {
+                            settingsState.isMaintenanceMode -> {
+                                MaintenanceScreen()
+                            }
 
-                        // Overlay SecurityErrorDialog if violation is detected
-//                        val violations = getSecurityViolations()
-//                        if (violations.isNotEmpty()) {
-//                            SecurityErrorDialog(violations)
-//                        }
+                            settingsState.isUpdateRequired -> {
+                                UpdateScreen(
+                                    onUpdateClick = {
+                                        val appPackageName = packageName // your app's package
+                                        try {
+                                            startActivity(
+                                                Intent(
+                                                    Intent.ACTION_VIEW,
+                                                    "market://details?id=$appPackageName".toUri()
+                                                )
+                                            )
+                                        } catch (e: android.content.ActivityNotFoundException) {
+                                            // fallback if Play Store app not installed
+                                            startActivity(
+                                                Intent(
+                                                    Intent.ACTION_VIEW,
+                                                    "https://play.google.com/store/apps/details?id=$appPackageName".toUri()
+                                                )
+                                            )
+                                        }
+                                    }
+                                )
+                            }
 
+                            else -> {
+                                AppNavGraph(
+                                    navController = navController,
+                                    startDestination = startDestination
+                                )
+                            }
+                        }
+
+                        // Security check overlay if you want:
+                        // val violations = getSecurityViolations()
+                        // if (violations.isNotEmpty()) {
+                        //     SecurityErrorDialog(violations)
+                        // }
                     }
                 }
             }
         }
-
 
         configureImmersiveFullscreen()
     }
@@ -203,16 +240,13 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-
     /** Verify installation source is Google Play. */
     @Suppress("DEPRECATION")
     private fun isFromPlayStore(): Boolean {
         return try {
             val installer = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                // API 30+
                 packageManager.getInstallSourceInfo(packageName).installingPackageName
             } else {
-                // Legacy method for older versions
                 packageManager.getInstallerPackageName(packageName)
             }
             installer == "com.android.vending"
@@ -220,7 +254,6 @@ class MainActivity : ComponentActivity() {
             false
         }
     }
-
 
     /** Configure fullscreen immersive mode. */
     private fun configureImmersiveFullscreen() {
@@ -258,7 +291,6 @@ fun SecurityErrorDialog(violations: List<String>) {
         onCancel = { exitApp() }
     )
 }
-
 
 /** Terminates the app. */
 private fun exitApp() {

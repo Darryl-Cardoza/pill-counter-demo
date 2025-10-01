@@ -4,9 +4,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.pillcountingnewmodels.core.room.dao.PillCountTxnDao
 import com.example.pillcountingnewmodels.core.room.dao.UserDao
+import com.example.pillcountingnewmodels.core.room.models.UserEntity
 import com.example.pillcountingnewmodels.core.room.models.enums.CountStatus
 import com.example.pillcountingnewmodels.core.room.models.enums.CountType
-import com.example.pillcountingnewmodels.core.room.models.UserEntity
 import com.example.pillcountingnewmodels.core.utils.AppLogger
 import com.example.pillcountingnewmodels.core.utils.PreferenceHelper
 import com.example.pillcountingnewmodels.core.utils.compose.HelperFunctions.mapCounts
@@ -30,12 +30,13 @@ import javax.inject.Inject
  * - Fetch user profile details from [IUserDetailRepository] using an access token.
  * - Persist user details into Room via [UserDao].
  * - Keep preferences ([PreferenceHelper]) up-to-date with userId and localId.
+ * - Expose navigation flag when profile is incomplete (to redirect user to Profile screen).
  *
- * Threading:
+ * ### Threading
  * - Database operations are executed on `Dispatchers.IO`.
  * - Results are mapped and posted to UI state using [MutableStateFlow].
  *
- * Logging:
+ * ### Logging
  * - All lifecycle and error events are logged using [AppLogger].
  */
 @HiltViewModel
@@ -91,6 +92,7 @@ class DashboardViewModel @Inject constructor(
      * - Persists the user profile into [UserDao].
      * - Saves `userId` and `localId` into [PreferenceHelper] for later use.
      * - Updates [DashboardUiState] with either success or error state.
+     * - Sets [DashboardUiState.navigateToProfile] to `true` if profile is incomplete.
      */
     private fun fetchUserDetail() {
         viewModelScope.launch(Dispatchers.IO) {
@@ -124,11 +126,16 @@ class DashboardViewModel @Inject constructor(
                             preferenceHelper.saveLocalId(localId)
                             logger.i("User persisted locally with localId=$localId")
                         }
+
+                        // Check if profile is incomplete
+                        val isProfileIncomplete = uiUser?.profile?.isProfileCompleted == false
+
                         _uiState.update {
                             it.copy(
                                 userDetail = uiUser,
                                 isLoadingUserDetail = false,
-                                userDetailError = null
+                                userDetailError = null,
+                                navigateToProfile = isProfileIncomplete
                             )
                         }
                     } catch (dbErr: Throwable) {
@@ -182,4 +189,3 @@ private fun UserDetail.toUserEntity(jwtUserId: String?): UserEntity {
         createdAt = System.currentTimeMillis()
     )
 }
-

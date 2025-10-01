@@ -2,6 +2,7 @@ package com.example.pillcountingnewmodels.feature.profile.data
 
 import com.example.pillcountingnewmodels.core.room.dao.UserDao
 import com.example.pillcountingnewmodels.core.utils.AppLogger
+import com.example.pillcountingnewmodels.core.utils.PreferenceHelper
 import com.example.pillcountingnewmodels.feature.profile.data.remote.IProfileApi
 import com.example.pillcountingnewmodels.feature.profile.domain.data.IProfileRepository
 import com.example.pillcountingnewmodels.feature.profile.domain.model.ProfileDeleteResponse
@@ -10,7 +11,6 @@ import com.example.pillcountingnewmodels.feature.profile.domain.model.ProfileUpd
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
-import com.example.pillcountingnewmodels.core.utils.PreferenceHelper
 
 /**
  * Default implementation of [IProfileRepository].
@@ -59,7 +59,9 @@ class ProfileRepository @Inject constructor(
         withContext(ioDispatcher) {
             try {
                 logger.i("Deleting user profile.")
-                val response = profileApi.deleteProfile()
+                val response = profileApi.deleteProfile(
+                    authorization = "Bearer ${preferenceHelper.getAccessToken()}",
+                )
                 logger.i("Profile deletion successful.")
                 Result.success(response)
             } catch (e: Exception) {

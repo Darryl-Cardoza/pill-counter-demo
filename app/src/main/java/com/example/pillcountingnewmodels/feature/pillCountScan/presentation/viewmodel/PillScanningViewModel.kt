@@ -7,23 +7,25 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.pillcountingnewmodels.core.room.dao.PillCountTxnDao
 import com.example.pillcountingnewmodels.core.room.dao.PillCountTxnDetailsDao
+import com.example.pillcountingnewmodels.core.room.models.PillCountTxnDetailsEntity
 import com.example.pillcountingnewmodels.core.room.models.enums.CountStatus
 import com.example.pillcountingnewmodels.core.room.models.enums.CountType
-import com.example.pillcountingnewmodels.core.room.models.PillCountTxnDetailsEntity
 import com.example.pillcountingnewmodels.core.utils.AppLogger
 import com.example.pillcountingnewmodels.core.utils.PreferenceHelper
 import com.example.pillcountingnewmodels.core.utils.saveBitmapToFile
 import com.example.pillcountingnewmodels.feature.pillCountScan.domain.data.FixedCountPillScanningEvent
 import com.example.pillcountingnewmodels.feature.pillCountScan.domain.data.NavigationEvent
-import com.example.pillcountingnewmodels.feature.pillCountScan.domain.model.TxnDetail
 import com.example.pillcountingnewmodels.feature.pillCountScan.domain.model.DetectedPill
 import com.example.pillcountingnewmodels.feature.pillCountScan.domain.model.PillScanningUiState
+import com.example.pillcountingnewmodels.feature.pillCountScan.domain.model.TxnDetail
 import com.example.pillcountingnewmodels.feature.pillCountScan.presentation.logic.PillAnalyzer
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.tensorflow.lite.Interpreter
@@ -31,8 +33,6 @@ import java.io.FileInputStream
 import java.nio.MappedByteBuffer
 import java.nio.channels.FileChannel
 import javax.inject.Inject
-import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.receiveAsFlow
 
 
 /**
@@ -102,6 +102,28 @@ class PillScanningViewModel @Inject constructor(
                 }
         }
     }*/
+
+    private var lastDetectedSnapshot: List<Int> = emptyList()
+    private var lastChangeTimestamp: Long = System.currentTimeMillis()
+
+
+    fun checkIdleState(newDetected: List<Int>) {
+        if (newDetected == lastDetectedSnapshot) {
+            val elapsed = System.currentTimeMillis() - lastChangeTimestamp
+            if (elapsed >= 15_000) { // 15 seconds
+                _uiState.update { it.copy(showIdleOverlay = true) }
+            }
+        } else {
+            lastDetectedSnapshot = newDetected
+            lastChangeTimestamp = System.currentTimeMillis()
+            _uiState.update { it.copy(showIdleOverlay = false) }
+        }
+    }
+
+    fun resetIdleOverlay() {
+        _uiState.update { it.copy(showIdleOverlay = false) }
+        lastChangeTimestamp = System.currentTimeMillis()
+    }
 
     fun observeTxnDetailsForTxn(countType: String) {
         viewModelScope.launch {

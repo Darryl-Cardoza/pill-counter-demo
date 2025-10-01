@@ -1,5 +1,6 @@
-package com.example.pillcountingnewmodels.navigatio
+package com.example.pillcountingnewmodels.navigation
 
+import Screen
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
@@ -8,7 +9,6 @@ import com.example.pillcountingnewmodels.feature.forgotPassword.presentation.com
 import com.example.pillcountingnewmodels.feature.login.presentation.LoginScreen
 import com.example.pillcountingnewmodels.feature.otp.presentation.compose.OTPScreen
 import com.example.pillcountingnewmodels.feature.register.presentation.RegisterScreen
-import com.example.pillcountingnewmodels.navigation.AUTH_GRAPH_ROUTE
 
 /**
  * Encapsulates the authentication flow (Login, Register, OTP, etc.)

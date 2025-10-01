@@ -167,5 +167,18 @@
     <string name="time">Time</string>
     <string name="sharePdfVia">Share PDF via</string>
     <string name="total_count">Total Count</string>
+    <string name="login_button_text">LOGIN</string>
+    <string name="update_button_text">UPDATE</string>
+
+    <!-- fresh login -->
+    <string name="suspecious_activity_text">Our system spotted a suspicious \'double dosage\' from another device. Time to \nverify with a fresh login.</string>>
+
+    <!-- maintenance text -->
+    <string name="maintenance_text">
+The counter is at the pharmacist\'s desk for a quick check-up. Back soon\nwith accurate counts!</string>
+
+    <!-- version update screen -->
+    <string name="update_version_text">Your current version has expired - time to get a fresh prescription. Update now for \nthe right dose of features!</string>
+    <string name="confirm_delete_profile">Are you sure you want to delete your profile? This action cannot be undone.</string>
 
 </resources>
