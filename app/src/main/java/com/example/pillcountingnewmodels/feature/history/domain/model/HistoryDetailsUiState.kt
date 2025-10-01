@@ -1,10 +1,7 @@
 package com.example.pillcountingnewmodels.feature.history.domain.model
 
+import com.example.pillcountingnewmodels.core.room.models.dtos.TxnWithDetails
+
 data class HistoryDetailsUiState(
-    val pillCount: Int = 0,
-    val ndc: String? = null,
-    val expiry: String? = null,
-    val lotNo: String? = null,
-    val dateTime: Long = 0,
-    val note: String? = null,
+    val txnInfo: TxnWithDetails? = null
 )

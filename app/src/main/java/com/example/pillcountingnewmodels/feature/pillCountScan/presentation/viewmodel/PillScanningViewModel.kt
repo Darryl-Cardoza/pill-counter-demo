@@ -415,7 +415,7 @@ class PillScanningViewModel @Inject constructor(
 
     fun showTxnInfo() {
         viewModelScope.launch {
-            val txnInfo = pillCountTxnDao.getTxnInfo(preferenceHelper.getTxnId())
+            val txnInfo = pillCountTxnDao.getTxnWithDetails(preferenceHelper.getTxnId())
             _uiState.update { currentState ->
                 currentState.copy(
                     drugName = txnInfo?.drugName ?: "",

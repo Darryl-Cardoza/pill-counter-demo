@@ -23,3 +23,15 @@ fun Long?.toFormattedDate(): String {
         }
     } else "-"
 }
+
+fun Long.toDateString(pattern: String = "dd MMM yyyy"): String {
+    val date = Date(this)
+    val formatter = SimpleDateFormat(pattern, Locale.getDefault())
+    return formatter.format(date)
+}
+
+fun Long.toTimeString(pattern: String = "hh:mm a"): String {
+    val date = Date(this)
+    val formatter = SimpleDateFormat(pattern, Locale.getDefault())
+    return formatter.format(date)
+}

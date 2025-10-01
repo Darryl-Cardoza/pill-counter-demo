@@ -6,9 +6,8 @@ import com.example.pillcountingnewmodels.core.room.models.enums.CountType
 import com.example.pillcountingnewmodels.core.room.models.PillCountTxnEntity
 import com.example.pillcountingnewmodels.core.room.models.dtos.PillCountWithDrugAndTotal
 import com.example.pillcountingnewmodels.core.room.models.dtos.StatusTypeCount
-import com.example.pillcountingnewmodels.core.room.models.dtos.TxnInfo
+import com.example.pillcountingnewmodels.core.room.models.dtos.TxnWithDetails
 import com.example.pillcountingnewmodels.core.room.relation.PillCountTxnWithDetails
-import com.example.pillcountingnewmodels.feature.history.domain.model.PillCountWithDrug
 import com.example.pillcountingnewmodels.feature.history.domain.model.TxnWithDrugDto
 import kotlinx.coroutines.flow.Flow
 
@@ -296,16 +295,31 @@ interface PillCountTxnDao {
     fun observeDashboardCountsGrouped(): Flow<List<StatusTypeCount>>
 
 
+    @Transaction
     @Query(
         """
-        SELECT dm.drugName, pct.targetCount
-        FROM pill_count_txn AS pct
-        LEFT JOIN drug_master AS dm ON pct.drugId = dm.drugId
-        WHERE pct.txnId = :transactionId
-        LIMIT 1
-        """
+    SELECT 
+        pct.txnId,
+        dm.drugName,
+        dm.ndc,
+        pct.targetCount,
+        pct.expiry,
+        pct.lotNo,
+        pct.note,
+        pct.createdAt,
+        pct.barcodeImage,
+        IFNULL(SUM(pcd.pillCount), 0) AS totalPillCount
+    FROM pill_count_txn AS pct
+    LEFT JOIN drug_master AS dm 
+        ON pct.drugId = dm.drugId
+    LEFT JOIN pill_count_txn_details AS pcd 
+        ON pct.txnId = pcd.txnId AND pcd.isDeleted = 0
+    WHERE pct.txnId = :transactionId AND pct.isDeleted = 0
+    GROUP BY pct.txnId
+    """
     )
-    suspend fun getTxnInfo(transactionId: Long): TxnInfo?
+    suspend fun getTxnWithDetails(transactionId: Long): TxnWithDetails?
+
 
     @Query("UPDATE pill_count_txn SET status = :newStatus, updatedAt = :updatedAt WHERE txnId = :txnId")
     suspend fun updateTxnStatus(

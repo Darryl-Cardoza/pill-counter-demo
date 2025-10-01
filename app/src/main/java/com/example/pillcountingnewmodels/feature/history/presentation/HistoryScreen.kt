@@ -45,7 +45,6 @@ fun HistoryScreen(
     viewModel: HistoryViewModel = hiltViewModel(),
     onBackClick: () -> Unit = {}
 ) {
-    val appTheme = AppTheme
     val context = LocalContext.current
 
     // Observe selected date and counts from ViewModel
@@ -69,13 +68,12 @@ fun HistoryScreen(
         modifier = Modifier
             .fillMaxSize()
             .systemBarsPadding()
-            .background(appTheme.extendedColors.secondaryBackground)
+            .background(AppTheme.extendedColors.secondaryBackground)
     ) {
         SplitResponsive(
             topOrLeft = {
                 // Calendar section
                 CalendarSection(
-                    appTheme = appTheme,
                     calendarState = calendarState,
                     selectedDate = selectedDate,
                     onDateSelected = { viewModel.selectDate(it) },
@@ -87,7 +85,6 @@ fun HistoryScreen(
                 // Counts section
                 val openPdfWith = stringResource(R.string.open_pdf_with)
                 CountsSection(
-                    appTheme = appTheme,
                     counts = counts,
                     onExportClick = {
                         val file = pdfExporter.generateHistoryPdf(counts, selectedDate.toString())

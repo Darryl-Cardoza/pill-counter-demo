@@ -8,44 +8,41 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import com.example.pillcountingnewmodels.R
-import com.example.pillcountingnewmodels.core.utils.compose.Dimens.medium
-import com.example.pillcountingnewmodels.core.utils.compose.Dimens.xxLarge
-import com.example.pillcountingnewmodels.core.utils.compose.FilledButton
-import com.example.pillcountingnewmodels.core.utils.compose.HollowButton
+import com.example.pillcountingnewmodels.core.room.models.dtos.TxnDetailInfo
 
 @Composable
 fun DrugInfoSection(
     ndc: String,
-    images: List<Int>,
     expiry: String,
     lotNo: Any,
     date: String,
     time: String,
     note: String?,
+    totalPillCount: String,
+    barcodeImage: String?,
+    transactionDetails: List<TxnDetailInfo>,
+    onDelete: () -> Unit,
+    onOk: () -> Unit
 ) {
     val configuration = LocalConfiguration.current
-    val landscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+    val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
 
-    if (landscape) {
+    if (isLandscape) {
         Row(
             modifier = Modifier.fillMaxSize(),
             verticalAlignment = Alignment.Top
         ) {
             Column(modifier = Modifier.weight(0.85f)) {
                 Row(
-                    verticalAlignment = Alignment.Top,
-                    modifier = Modifier.weight(0.8f)
+                    modifier = Modifier.weight(0.8f),
+                    verticalAlignment = Alignment.Top
                 ) {
                     Column(
                         modifier = Modifier
@@ -54,7 +51,7 @@ fun DrugInfoSection(
                             .padding(start = 20.dp),
                         verticalArrangement = Arrangement.SpaceEvenly
                     ) {
-                        ImageWithCount()
+                        ImageWithCount(totalPillCount, barcodeImage)
                         Spacer(Modifier.height(15.dp))
                         HistoryNote(note)
                     }
@@ -63,92 +60,31 @@ fun DrugInfoSection(
                         modifier = Modifier.weight(0.4f),
                         contentAlignment = Alignment.Center
                     ) {
-                        HistoryDrugDetails(
-                            ndc = ndc,
-                            expiry = expiry,
-                            lotNo = lotNo.toString(),
-                            date = date,
-                            time = time
-                        )
+                        HistoryDrugDetails(ndc, expiry, lotNo.toString(), date, time)
                     }
                 }
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 10.dp, vertical = 10.dp)
-                        .weight(0.2f),
-                    horizontalArrangement = Arrangement.Center
-                ) {
-                    HollowButton(
-                        text = stringResource(R.string.delete).uppercase(),
-                        onClick = {},
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier
-                            .padding(end = 20.dp)
-                    )
 
-                    FilledButton(
-                        text = stringResource(R.string.ok).uppercase(),
-                        onClick = {},
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier
-                            .padding(start = 20.dp)
-                    )
-                }
+                ButtonsRow(onDelete = onDelete, onOk = onOk)
             }
-
 
             Box(
                 modifier = Modifier
                     .weight(0.15f)
                     .fillMaxHeight()
             ) {
-                TransactionDetailsList(imageResources = images)
+                TransactionDetailsList(transactionDetails)
             }
         }
-
     } else {
         Column(
             modifier = Modifier.fillMaxSize(),
             verticalArrangement = Arrangement.SpaceBetween
         ) {
-            ImageWithCount()
-
-            HistoryDrugDetails(
-                ndc = ndc,
-                expiry = expiry,
-                lotNo = lotNo.toString(),
-                date = date,
-                time = time
-            )
-
+            ImageWithCount(totalPillCount, barcodeImage)
+            HistoryDrugDetails(ndc, expiry, lotNo.toString(), date, time)
             HistoryNote(note)
-
-            TransactionDetailsList(imageResources = images)
-
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = xxLarge, start = medium, end = medium),
-
-                horizontalArrangement = Arrangement.Center
-            ) {
-                HollowButton(
-                    text = stringResource(R.string.delete).uppercase(),
-                    onClick = {},
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.padding(end = 20.dp)
-
-                )
-
-                FilledButton(
-                    text = stringResource(R.string.ok).uppercase(),
-                    onClick = {},
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.padding(start = 20.dp)
-                )
-            }
+            TransactionDetailsList(transactionDetails)
+            ButtonsRow(onDelete = onDelete, onOk = onOk)
         }
     }
-
 }

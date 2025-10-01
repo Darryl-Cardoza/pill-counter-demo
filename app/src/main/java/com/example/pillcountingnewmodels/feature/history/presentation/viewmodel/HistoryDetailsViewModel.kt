@@ -1,23 +1,16 @@
 package com.example.pillcountingnewmodels.feature.history.presentation.viewmodel
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.pillcountingnewmodels.core.room.dao.PillCountTxnDao
 import com.example.pillcountingnewmodels.core.utils.PreferenceHelper
-import com.example.pillcountingnewmodels.feature.dashboard.domain.model.DashboardUiState
-import com.example.pillcountingnewmodels.feature.history.data.HistoryRepository
 import com.example.pillcountingnewmodels.feature.history.domain.model.HistoryDetailsUiState
-import com.example.pillcountingnewmodels.feature.history.domain.model.TxnWithDrugDto
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.time.LocalDate
 import javax.inject.Inject
 
 /**
@@ -27,14 +20,36 @@ import javax.inject.Inject
 
 @HiltViewModel
 class HistoryDetailsViewModel @Inject constructor(
-    preferenceHelper: PreferenceHelper
+    private val preferenceHelper: PreferenceHelper,
+    private val pillCountTxnDao: PillCountTxnDao
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(HistoryDetailsUiState())
     val uiState = _uiState.asStateFlow()
 
     init {
-        Log.d("HistoryDetailsViewModel", "HistoryDetailsViewModel initialized ${preferenceHelper.getTxnId()}")
+        getTransactionDetails()
+    }
+
+    private fun getTransactionDetails() {
+        viewModelScope.launch {
+            val txnInfo = pillCountTxnDao.getTxnWithDetails(preferenceHelper.getTxnId())
+            _uiState.update { currentState ->
+                currentState.copy(
+                    txnInfo = txnInfo,
+                )
+            }
+        }
+    }
+
+    fun deleteTransaction() {
+        viewModelScope.launch {
+            try {
+                pillCountTxnDao.softDelete(preferenceHelper.getTxnId())
+            } catch (e: Exception) {
+                if (e !is CancellationException) e.printStackTrace()
+            }
+        }
     }
 }
 

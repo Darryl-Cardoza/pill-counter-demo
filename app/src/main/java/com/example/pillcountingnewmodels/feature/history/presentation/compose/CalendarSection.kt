@@ -39,7 +39,6 @@ import java.util.Locale
  */
 @Composable
 fun CalendarSection(
-    appTheme: AppTheme,
     calendarState: CalendarState,
     selectedDate: LocalDate,
     onDateSelected: (LocalDate) -> Unit,
@@ -49,7 +48,7 @@ fun CalendarSection(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(appTheme.extendedColors.secondaryBackground)
+            .background(AppTheme.extendedColors.secondaryBackground)
     ) {
         // Top bar: back button + screen title
         Row(
@@ -63,7 +62,7 @@ fun CalendarSection(
                 text = stringResource(R.string.history_title),
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Medium,
-                color = appTheme.extendedColors.textColor,
+                color = AppTheme.extendedColors.textColor,
                 textAlign = TextAlign.Center
             )
         }

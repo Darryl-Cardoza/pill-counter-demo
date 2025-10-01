@@ -167,5 +167,8 @@
     <string name="time">Time</string>
     <string name="sharePdfVia">Share PDF via</string>
     <string name="total_count">Total Count</string>
+    <string name="drug_history_details">Drug History Details</string>
+    <string name="note">Note</string>
+    <string name="generated_on">Generated on:</string>
 
 </resources>

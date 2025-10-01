@@ -1,6 +1,7 @@
 package com.example.pillcountingnewmodels.core.utils
 
 import android.content.Context
+import com.example.pillcountingnewmodels.R
 import com.itextpdf.kernel.colors.ColorConstants
 import com.itextpdf.kernel.pdf.PdfDocument
 import com.itextpdf.kernel.pdf.PdfWriter
@@ -14,7 +15,7 @@ import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
 
-class PdfExporter(private val context: Context) {
+class HistoryDetailsPDFExporter(private val context: Context) {
 
     // Generate a consistent filename based on drug data
     private fun generateFileName(drugName: String, ndc: String, batch: String): String {
@@ -81,7 +82,7 @@ class PdfExporter(private val context: Context) {
     ) {
         // Title
         document.add(
-            Paragraph("Drug History Report")
+            Paragraph(context.getString(R.string.drug_history_details))
                 .setTextAlignment(TextAlignment.CENTER)
                 .setFontSize(20f)
                 .setBold()
@@ -109,25 +110,25 @@ class PdfExporter(private val context: Context) {
         drugInfo.addHeaderCell(createHeaderCell("Value"))
 
         // Add data rows
-        drugInfo.addCell(createCell("Drug Name", true))
+        drugInfo.addCell(createCell(context.getString(R.string.drugname), true))
         drugInfo.addCell(createCell(drugName))
 
-        drugInfo.addCell(createCell("Total Count", true))
+        drugInfo.addCell(createCell(context.getString(R.string.total_count), true))
         drugInfo.addCell(createCell("$totalCount Pills"))
 
-        drugInfo.addCell(createCell("NDC", true))
+        drugInfo.addCell(createCell(context.getString(R.string.ndc).uppercase(), true))
         drugInfo.addCell(createCell(ndc))
 
-        drugInfo.addCell(createCell("Expiry Date", true))
+        drugInfo.addCell(createCell(context.getString(R.string.expiry), true))
         drugInfo.addCell(createCell(expiry))
 
-        drugInfo.addCell(createCell("Batch Number", true))
+        drugInfo.addCell(createCell(context.getString(R.string.lotNo), true))
         drugInfo.addCell(createCell(batch))
 
-        drugInfo.addCell(createCell("Count Date", true))
+        drugInfo.addCell(createCell(context.getString(R.string.date), true))
         drugInfo.addCell(createCell(date))
 
-        drugInfo.addCell(createCell("Count Time", true))
+        drugInfo.addCell(createCell(context.getString(R.string.time), true))
         drugInfo.addCell(createCell(time))
 
         document.add(drugInfo)
@@ -135,7 +136,7 @@ class PdfExporter(private val context: Context) {
 
         // Description
         document.add(
-            Paragraph("Description")
+            Paragraph(context.getString(R.string.note))
                 .setFontSize(16f)
                 .setBold()
                 .setTextAlignment(TextAlignment.CENTER)
@@ -148,7 +149,7 @@ class PdfExporter(private val context: Context) {
         // Footer
         document.add(Paragraph("\n\n"))
         document.add(
-            Paragraph("Generated on: ${SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).format(Date())}")
+            Paragraph("${context.getString(R.string.generated_on)} ${SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).format(Date())}")
                 .setFontSize(10f)
                 .setTextAlignment(TextAlignment.CENTER)
                 .setItalic()

@@ -23,7 +23,6 @@ import com.example.pillcountingnewmodels.ui.theme.AppTheme
  * - Receives preformatted row data from the ViewModel.
  * - UI only handles rendering.
  *
- * @param appTheme Theme wrapper for colors and typography.
  * @param counts List of row data from ViewModel.
  * @param onExportClick Callback when export icon is clicked.
  * @param onDeleteClick Callback when delete icon is clicked.
@@ -32,7 +31,6 @@ import com.example.pillcountingnewmodels.ui.theme.AppTheme
  */
 @Composable
 fun CountsSection(
-    appTheme: AppTheme,
     counts: List<TxnWithDrugDto>,
     onExportClick: () -> Unit = {},
     onDeleteClick: () -> Unit = {},
@@ -58,7 +56,7 @@ fun CountsSection(
                     text = stringResource(R.string.counts_label, counts.size),
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Medium,
-                    color = appTheme.extendedColors.textColor,
+                    color = AppTheme.extendedColors.textColor,
                     textAlign = TextAlign.Center
                 )
 
@@ -100,7 +98,7 @@ fun CountsSection(
                 Text(
                     text = stringResource(R.string.no_data_found),
                     fontSize = 18.sp,
-                    color = appTheme.extendedColors.textColor.copy(alpha = 0.6f),
+                    color = AppTheme.extendedColors.textColor.copy(alpha = 0.6f),
                     textAlign = TextAlign.Center
                 )
             }
@@ -112,7 +110,6 @@ fun CountsSection(
                 items(counts) { rowData ->
                     CountRow(
                         rowData = rowData,
-                        appTheme = appTheme,
                         onTxnClick = { onTxnClick(rowData.txnId) })
                 }
             }

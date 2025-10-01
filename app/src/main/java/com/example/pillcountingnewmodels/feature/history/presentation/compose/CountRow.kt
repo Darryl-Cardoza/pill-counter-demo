@@ -39,7 +39,6 @@ import java.io.File
 @Composable
 fun CountRow(
     rowData: TxnWithDrugDto,
-    appTheme: AppTheme,
     onTxnClick: () -> Unit
 ) {
     Column {
@@ -102,12 +101,12 @@ fun CountRow(
                     text = rowData.drugName.toString(),
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Medium,
-                    color = appTheme.extendedColors.textColor
+                    color = AppTheme.extendedColors.textColor
                 )
                 Text(
                     text = rowData.createdAt.toFormattedDate(),
                     fontSize = 12.sp,
-                    color = appTheme.extendedColors.textColor
+                    color = AppTheme.extendedColors.textColor
                 )
             }
 
@@ -135,7 +134,7 @@ fun CountRow(
                 text = rowData.pillCount.toString(),
                 fontSize = 16.sp,
                 fontWeight = FontWeight.SemiBold,
-                color = appTheme.extendedColors.textColor,
+                color = AppTheme.extendedColors.textColor,
                 modifier = Modifier.padding(end = 8.dp)
             )
         }
