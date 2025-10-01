@@ -20,7 +20,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.example.pillcountingnewmodels.R
 import com.example.pillcountingnewmodels.core.utils.compose.Dimens.medium
-import com.example.pillcountingnewmodels.core.utils.compose.Dimens.small
 import com.example.pillcountingnewmodels.core.utils.compose.Dimens.xxLarge
 import com.example.pillcountingnewmodels.core.utils.compose.FilledButton
 import com.example.pillcountingnewmodels.core.utils.compose.HollowButton

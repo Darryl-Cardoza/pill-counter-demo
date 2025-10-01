@@ -26,6 +26,10 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -44,9 +48,11 @@ import androidx.compose.ui.window.DialogProperties
 import coil.compose.rememberAsyncImagePainter
 import coil.request.ImageRequest
 import com.example.pillcountingnewmodels.R
+import com.example.pillcountingnewmodels.core.utils.compose.CommonDialog
 import com.example.pillcountingnewmodels.core.utils.compose.FilledButton
 import com.example.pillcountingnewmodels.core.utils.compose.HollowButton
 import com.example.pillcountingnewmodels.core.utils.toFormattedDate
+import com.example.pillcountingnewmodels.feature.pillCountScan.domain.data.FixedCountPillScanningEvent
 import com.example.pillcountingnewmodels.feature.pillCountScan.domain.model.TxnDetail
 import com.example.pillcountingnewmodels.ui.theme.AppTheme
 import java.io.File
@@ -59,6 +65,7 @@ fun TxnDetailDialog(
     onDismiss: () -> Unit,
     details: TxnDetail
 ) {
+    var showConfirmDeleteDialog by remember { mutableStateOf(false) }
     Dialog(
         onDismissRequest = { onDismiss() },
         properties = DialogProperties(
@@ -197,14 +204,16 @@ fun TxnDetailDialog(
                 // Action Buttons Row
                 val buttonSpacing = 25.dp
                 Row(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = buttonSpacing * 2),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = buttonSpacing * 2),
                     horizontalArrangement = Arrangement.SpaceAround,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
 
                     HollowButton(
                         text = stringResource(R.string.cd_delete).uppercase(),
-                        onClick = onDelete,
+                        onClick = { showConfirmDeleteDialog = true },
                         color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.weight(1f)
                     )
@@ -218,5 +227,18 @@ fun TxnDetailDialog(
                 }
             }
         }
+    }
+    if (showConfirmDeleteDialog) {
+        CommonDialog(
+            message = stringResource(R.string.delete_item_text),
+            title = "",//empty title
+            confirmText = stringResource(R.string.delete),
+            cancelText = stringResource(R.string.cancel),
+            onConfirm = {
+                onDelete()
+                showConfirmDeleteDialog = false
+            },
+            onCancel = { showConfirmDeleteDialog = false }
+        )
     }
 }
