@@ -11,14 +11,16 @@ import com.example.pillcountingnewmodels.R
  *
  * @property id Unique identifier for the item. Defaults to a randomly generated UUID.
  * @property name Name of the medicine or item.
- * @property quantity The quantity counted for this item.
+ * @property pillCount The quantity counted for this item.
  * @property date The timestamp when this count was recorded.
  * @property image Drawable resource ID for the item's icon. Defaults to [R.drawable.logo].
  */
 data class CountItem(
     val id: Long,
     val name: String,
-    val quantity: Int,
+    val pillCount: Int,
+    val target: Int,
+    val barcodeImage: String?,
     val date: String,
     val image: Int = R.drawable.logo
 )

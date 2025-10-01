@@ -189,4 +189,11 @@ dependencies {
 
     implementation("androidx.security:security-crypto:1.1.0-alpha06")
 
+    //Coil
+    implementation("io.coil-kt:coil-compose:2.7.0")
+
+    //pdfExporter
+    implementation ("com.itextpdf:itext7-core:7.2.5")
+    implementation("com.google.accompanist:accompanist-permissions:0.28.0")
+
 }

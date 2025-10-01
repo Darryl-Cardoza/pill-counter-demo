@@ -14,7 +14,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.pillcountingnewmodels.R
-import com.example.pillcountingnewmodels.feature.history.domain.model.CountRowData
+import com.example.pillcountingnewmodels.feature.history.domain.model.TxnWithDrugDto
 import com.example.pillcountingnewmodels.ui.theme.AppTheme
 
 /**
@@ -33,10 +33,11 @@ import com.example.pillcountingnewmodels.ui.theme.AppTheme
 @Composable
 fun CountsSection(
     appTheme: AppTheme,
-    counts: List<CountRowData>,
+    counts: List<TxnWithDrugDto>,
     onExportClick: () -> Unit = {},
     onDeleteClick: () -> Unit = {},
     onFilterClick: () -> Unit = {},
+    onTxnClick: (Long) -> Unit = {},
     onSearchClick: () -> Unit = {}
 ) {
     Column(
@@ -47,46 +48,48 @@ fun CountsSection(
         Spacer(Modifier.height(16.dp))
 
         // Header row with count label and action icons
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = stringResource(R.string.counts_label, counts.size),
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Medium,
-                color = appTheme.extendedColors.textColor,
-                textAlign = TextAlign.Center
-            )
-
+        if (counts.isNotEmpty()) {
             Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                ActionIcon(
-                    iconRes = R.drawable.pdf,
-                    contentDescription = stringResource(R.string.export_content_description),
-                    onClick = onExportClick
+                Text(
+                    text = stringResource(R.string.counts_label, counts.size),
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = appTheme.extendedColors.textColor,
+                    textAlign = TextAlign.Center
                 )
-                ActionIcon(
-                    iconRes = R.drawable.delete,
-                    contentDescription = stringResource(R.string.delete_content_description),
-                    onClick = onDeleteClick
-                )
-                /*ActionIcon(
+
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    ActionIcon(
+                        iconRes = R.drawable.pdf,
+                        contentDescription = stringResource(R.string.export_content_description),
+                        onClick = onExportClick
+                    )
+                    ActionIcon(
+                        iconRes = R.drawable.delete,
+                        contentDescription = stringResource(R.string.delete_content_description),
+                        onClick = onDeleteClick
+                    )
+                    /*ActionIcon(
                     iconRes = R.drawable.filter,
                     contentDescription = stringResource(R.string.filter_content_description),
                     onClick = onFilterClick
-                )
-                ActionIcon(
-                    iconRes = R.drawable.search,
-                    contentDescription = stringResource(R.string.search_content_description),
-                    onClick = onSearchClick
-                )*/
+                    )
+                    ActionIcon(
+                        iconRes = R.drawable.search,
+                        contentDescription = stringResource(R.string.search_content_description),
+                        onClick = onSearchClick
+                    )*/
+                }
             }
-        }
 
-        Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(16.dp))
+        }
 
 
         if (counts.isEmpty()) {
@@ -107,7 +110,10 @@ fun CountsSection(
                 contentPadding = PaddingValues(bottom = 16.dp)
             ) {
                 items(counts) { rowData ->
-                    CountRow(rowData = rowData, appTheme = appTheme)
+                    CountRow(
+                        rowData = rowData,
+                        appTheme = appTheme,
+                        onTxnClick = { onTxnClick(rowData.txnId) })
                 }
             }
         }

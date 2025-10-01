@@ -7,8 +7,8 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.pillcountingnewmodels.core.room.dao.PillCountTxnDao
 import com.example.pillcountingnewmodels.core.room.dao.PillCountTxnDetailsDao
-import com.example.pillcountingnewmodels.core.room.models.CountStatus
-import com.example.pillcountingnewmodels.core.room.models.CountType
+import com.example.pillcountingnewmodels.core.room.models.enums.CountStatus
+import com.example.pillcountingnewmodels.core.room.models.enums.CountType
 import com.example.pillcountingnewmodels.core.room.models.PillCountTxnDetailsEntity
 import com.example.pillcountingnewmodels.core.utils.AppLogger
 import com.example.pillcountingnewmodels.core.utils.PreferenceHelper
@@ -84,27 +84,51 @@ class PillScanningViewModel @Inject constructor(
         private const val TAG = "PillScanningVM"
     }
 
-    init {
-        preferenceHelper.getTxnId()?.let { observeBatchesForTxn(it) }
-    }
-
-    fun observeBatchesForTxn(txnId: Long) {
+    /*fun observeBatchesForTxn(countType: String) {
         viewModelScope.launch {
-            pillCountTxnDetailsDao.observeAllForTxn(txnId).collectLatest { entities ->
-                _uiState.update { currentState ->
-                    currentState.copy(
-                        txnDetailHistory = entities.map { e ->
+            pillCountTxnDetailsDao.observeAllForTxn(preferenceHelper.getTxnId())
+                .collectLatest { entities ->
+                    _uiState.update { currentState ->
+                        currentState.copy(
+                            txnDetailHistory = entities.map { e ->
+                                TxnDetail(
+                                    txnDetailId = e.txnDetailsId,
+                                    count = e.pillCount ?: 0,
+                                    thumbnail = null,
+                                )
+                            }
+                        )
+                    }
+                }
+        }
+    }*/
+
+    fun observeTxnDetailsForTxn(countType: String) {
+        viewModelScope.launch {
+            pillCountTxnDetailsDao.observeAllForTxn(preferenceHelper.getTxnId())
+                .collectLatest { entities ->
+                    _uiState.update { currentState ->
+                        val history = entities.map { e ->
                             TxnDetail(
                                 txnDetailId = e.txnDetailsId,
                                 count = e.pillCount ?: 0,
-                                thumbnail = null,
+                                image = e.imagePath,
+                                createdAt = e.createdAt
                             )
                         }
-                    )
+
+                        val shouldShowDialog =
+                            countType == CountType.FIXED.toString() && history.isEmpty() && !currentState.showTargetCountDialog // only once
+
+                        currentState.copy(
+                            txnDetailHistory = history,
+                            showTargetCountDialog = shouldShowDialog
+                        )
+                    }
                 }
-            }
         }
     }
+
 
     /**
      * Initializes the TensorFlow Lite interpreter with retry support.
@@ -251,7 +275,7 @@ class PillScanningViewModel @Inject constructor(
      */
     fun onEvent(event: FixedCountPillScanningEvent) {
         when (event) {
-            is FixedCountPillScanningEvent.AddBatchClicked -> {
+            is FixedCountPillScanningEvent.AddTransactionDetailClicked -> {
                 val totalBatchCount = _uiState.value.txnDetailHistory.sumOf { it.count }
                 val targetCount = _uiState.value.targetCount
                 val currentCount = _uiState.value.detectedPills.size
@@ -259,7 +283,7 @@ class PillScanningViewModel @Inject constructor(
                 // Predict the total after adding the current batch
                 val predictedTotal = totalBatchCount + currentCount
 
-                if (_uiState.value.scanType == CountType.FIXED.toString() &&predictedTotal > targetCount) {
+                if (_uiState.value.scanType == CountType.FIXED.toString() && predictedTotal > targetCount) {
                     logger.w("Skipping add transaction detail because predicted total exceeds target.")
                     _uiState.update {
                         it.copy(
@@ -312,7 +336,7 @@ class PillScanningViewModel @Inject constructor(
             is FixedCountPillScanningEvent.DoneClicked -> {
                 logger.i("Done clicked — finalize process")
                 viewModelScope.launch {
-                    val txnId = preferenceHelper.getTxnId() ?: 0
+                    val txnId = preferenceHelper.getTxnId()
                     val totalPillCount = pillCountTxnDetailsDao.getTotalPillCountForTxn(txnId)
                     if (totalPillCount == 0) {
                         _uiState.update {
@@ -323,14 +347,13 @@ class PillScanningViewModel @Inject constructor(
                         }
                         return@launch
                     }
+                    _uiState.update { it.copy(showConfirmDialog = true) }
                 }
-                _uiState.update { it.copy(showConfirmDialog = true) }
-
             }
 
             is FixedCountPillScanningEvent.ConfirmDone -> {
                 viewModelScope.launch {
-                    val txnId = preferenceHelper.getTxnId() ?: 0
+                    val txnId = preferenceHelper.getTxnId()
                     val totalPillCount = pillCountTxnDetailsDao.getTotalPillCountForTxn(txnId)
                     val txn =
                         pillCountTxnDao.getById(txnId) // get txn to know countType & targetCount
@@ -369,6 +392,13 @@ class PillScanningViewModel @Inject constructor(
             is FixedCountPillScanningEvent.CancelDone -> {
                 _uiState.update { it.copy(showConfirmDialog = false) }
             }
+
+            is FixedCountPillScanningEvent.TransactionDetailDeleted -> {
+                viewModelScope.launch {
+                    logger.i("Transaction detail deleted: ${event.txnDetailId}")
+                    pillCountTxnDetailsDao.softDelete(event.txnDetailId)
+                }
+            }
         }
     }
 
@@ -379,26 +409,26 @@ class PillScanningViewModel @Inject constructor(
     fun updateTargetCount(target: Int) {
         _uiState.update { it.copy(targetCount = target) }
         viewModelScope.launch {
-            pillCountTxnDao.updateTargetCount(preferenceHelper.getTxnId() ?: 0, target)
+            pillCountTxnDao.updateTargetCount(preferenceHelper.getTxnId(), target)
         }
     }
 
-    fun showDrugName() {
+    fun showTxnInfo() {
         viewModelScope.launch {
-            _uiState.update {
-                it.copy(
-                    drugName = pillCountTxnDao.getDrugNameForTransaction(
-                        preferenceHelper.getTxnId() ?: 0
-                    ).toString()
+            val txnInfo = pillCountTxnDao.getTxnInfo(preferenceHelper.getTxnId())
+            _uiState.update { currentState ->
+                currentState.copy(
+                    drugName = txnInfo?.drugName ?: "",
+                    targetCount = txnInfo?.targetCount ?: 0
                 )
             }
-
         }
     }
 
     fun resetRestrictAdd() {
         _uiState.update { it.copy(restrictAdd = false) }
     }
+
     fun resetNoTransaction() {
         _uiState.update { it.copy(showNoTransaction = false) }
     }

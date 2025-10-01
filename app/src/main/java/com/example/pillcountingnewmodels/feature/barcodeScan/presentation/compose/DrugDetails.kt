@@ -6,6 +6,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import com.example.pillcountingnewmodels.R
 import com.example.pillcountingnewmodels.core.utils.compose.Dimens.medium
 
 @Composable
@@ -16,12 +18,12 @@ fun DrugDetails(
     lotNo: String = ""
 ) {
     Column(modifier = Modifier.fillMaxWidth().padding(horizontal = medium)) {
-        DetailRow(label = "Drug name", value = drugName) //not add strings for now, will add after anurag,s resources setup merge
+        DetailRow(label = stringResource(R.string.drugname), value = drugName) //not add strings for now, will add after anurag,s resources setup merge
         HorizontalDivider()
-        DetailRow(label = "NDC", value = ndc)
+        DetailRow(label = stringResource(R.string.ndc).uppercase(), value = ndc)
         HorizontalDivider()
-        DetailRow(label = "Expiry", value = expiry)
+        DetailRow(label = stringResource(R.string.expiry), value = expiry)
         HorizontalDivider()
-        DetailRow(label = "Lot No.", value = lotNo)
+        DetailRow(label = stringResource(R.string.lotNo), value = lotNo)
     }
 }

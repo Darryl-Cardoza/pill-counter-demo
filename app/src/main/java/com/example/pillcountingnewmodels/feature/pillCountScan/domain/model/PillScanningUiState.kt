@@ -1,6 +1,6 @@
 package com.example.pillcountingnewmodels.feature.pillCountScan.domain.model
 
-import com.example.pillcountingnewmodels.core.room.models.CountType
+import com.example.pillcountingnewmodels.core.room.models.enums.CountType
 
 /**
  * Represents the UI state for the pill counting process.
@@ -33,4 +33,5 @@ data class PillScanningUiState(
     val restrictAdd: Boolean = false,
     val showConfirmDialog: Boolean = false,
     val showNoTransaction: Boolean = false,
+    val showTargetCountDialog: Boolean = false
 )

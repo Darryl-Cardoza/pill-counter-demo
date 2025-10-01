@@ -25,6 +25,7 @@ sealed interface FixedCountsEvent : ResumeEvent {
      * @param item The [CountItem] that was swiped.
      */
     data class ItemSwipedToDelete(val item: CountItem) : FixedCountsEvent
+    data class ForceCompleteTransaction(val item: CountItem) : FixedCountsEvent
 
     /**
      * Triggered when the user selects or deselects an item in multi-select mode.
@@ -32,4 +33,6 @@ sealed interface FixedCountsEvent : ResumeEvent {
      * @param item The [CountItem] that was selected/deselected.
      */
     data class SelectItem(val item: CountItem) : FixedCountsEvent
+
+    data class resumeTransaction(val item: CountItem) : FixedCountsEvent
 }

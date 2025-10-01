@@ -18,6 +18,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.pillcountingnewmodels.R
+import com.example.pillcountingnewmodels.core.room.models.enums.CountType
 import com.example.pillcountingnewmodels.core.utils.compose.BackButton
 import com.example.pillcountingnewmodels.core.utils.compose.Dimens.medium
 import com.example.pillcountingnewmodels.feature.menu.presentation.compose.MenuItemRow
@@ -53,14 +54,16 @@ fun MenuScreen(
             // Fixed Count
             MenuItemRow(
                 icon = R.drawable.fixed_count,
-                iconTint = MaterialTheme.colorScheme.secondary,
                 title = stringResource(R.string.menu_fixed_count),
                 completed = stringResource(R.string.menu_completed, uiState.fixedCompleted),
                 partial = stringResource(R.string.menu_partial, uiState.fixedPartial),
+                iconTint = MaterialTheme.colorScheme.secondary,
                 completedTint = MaterialTheme.colorScheme.secondary,
                 partialTint = MaterialTheme.colorScheme.secondary,
                 completedIcon = R.drawable.tick,
-                partialIcon = R.drawable.partial
+                partialIcon = R.drawable.partial,
+                mainClick = { navController.navigate(Screen.ScanBarcode.createRoute(CountType.FIXED.toString())) },
+                onPartialClick = { navController.navigate(Screen.ResumeFixedCounts.createRoute(CountType.FIXED.toString())) },
             )
 
             HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
@@ -68,14 +71,16 @@ fun MenuScreen(
             // Regular Count
             MenuItemRow(
                 icon = R.drawable.regular_count,
-                iconTint = MaterialTheme.colorScheme.primary,
                 title = stringResource(R.string.menu_regular_count),
                 completed = stringResource(R.string.menu_completed, uiState.regularCompleted),
                 partial = stringResource(R.string.menu_partial, uiState.regularPartial),
+                iconTint = MaterialTheme.colorScheme.primary,
                 completedTint = MaterialTheme.colorScheme.primary,
                 partialTint = MaterialTheme.colorScheme.primary,
                 completedIcon = R.drawable.tick,
-                partialIcon = R.drawable.partial
+                partialIcon = R.drawable.partial,
+                mainClick = { navController.navigate(Screen.ScanBarcode.createRoute(CountType.REGULAR.toString())) },
+                onPartialClick = { navController.navigate(Screen.ResumeRegularCounts.createRoute(CountType.REGULAR.toString())) },
             )
 
             HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))

@@ -70,9 +70,8 @@
     <string name="error_invalid_otp">Invalid Pin entered.</string>
 
 
-    <string name="partial_count_title">Partial Count</string>
-    <string name="fixed_partial_counts_label">Fixed Partial \nCounts</string>
-    <string name="regular_partial_counts_label">Regular Partial \nCounts</string>
+    <string name="fixed_partial_count_title">Fixed Partial Counts</string>
+    <string name="regular_partial_count_title">Regular Partial Counts</string>
     <string name="partial_icon_description">Partial Fill Icons</string>
 
     <string name="cd_close_selection">Close Selection</string>
@@ -100,6 +99,8 @@
     <string name="pill_info_add_manually">Enter Pill Info Manually</string>
     <string name="drugname">Drug Name</string>
     <string name="ndc">Ndc</string>
+    <string name="expiry">Expiry</string>
+    <string name="lotNo">Lot No.</string>
     <string name="cancel">Cancel</string>
     <string name="ok">Ok</string>
 
@@ -148,5 +149,23 @@
     <string name="confirm_done">Confirm Completion</string>
     <string name="confirm_done_desc_regular">Are you sure you want to mark this transaction as completed?</string>
     <string name="confirm_done_desc_fixed">Target not reached. This transaction will be marked as PARTIAL.</string>
+    <string name="resume">Resume</string>
+    <string name="drug">Drug</string>
+    <string name="select_option">Select Option</string>
+    <string name="force_complete">Force Complete</string>
+    <string name="pills_count">Pills Count</string>
+    <string name="searchWithDots">Search…</string>
+    <string name="transaction_detail">Transaction Detail</string>
+    <string name="confirm_delete_message">Are you sure you want to delete the records for the selected date? This action cannot be undone.</string>
+    <string name="no_data_found">No Data Found</string>
+    <string name="open_pdf_with">Open PDF with</string>
+    <string name="drugname_two_lines">Drug \\nName</string>
+    <string name="status">Status</string>
+    <string name="count_type_two_lines">Count \\nType</string>
+    <string name="confirm_delete_title">Confirm Delete</string>
+    <string name="date">Date</string>
+    <string name="time">Time</string>
+    <string name="sharePdfVia">Share PDF via</string>
+    <string name="total_count">Total Count</string>
 
 </resources>

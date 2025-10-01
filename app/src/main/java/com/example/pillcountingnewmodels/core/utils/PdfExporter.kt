@@ -32,22 +32,22 @@ class PdfExporter(private val context: Context) {
     fun generateDrugHistoryPdf(
         drugName: String,
         totalCount: String,
-        description: String,
+        notes: String,
         ndc: String,
         expiry: String,
-        batch: String,
+        lotNo: String,
         date: String,
         time: String
     ): File? {
         return try {
             // First check if PDF already exists
-            val existingFile = doesPdfExist(drugName, ndc, batch)
+            val existingFile = doesPdfExist(drugName, ndc, lotNo)
             if (existingFile != null) {
                 return existingFile
             }
 
             // Create new PDF file if it doesn't exist
-            val fileName = generateFileName(drugName, ndc, batch)
+            val fileName = generateFileName(drugName, ndc, lotNo)
             val file = File(context.getExternalFilesDir(null), fileName)
 
             // Initialize PDF writer and document
@@ -56,7 +56,7 @@ class PdfExporter(private val context: Context) {
             val document = Document(pdfDocument)
 
             // Add content to PDF
-            addPdfContent(document, drugName, totalCount, description, ndc, expiry, batch, date, time)
+            addPdfContent(document, drugName, totalCount, notes, ndc, expiry, lotNo, date, time)
 
             // Close document
             document.close()

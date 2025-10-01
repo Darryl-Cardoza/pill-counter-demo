@@ -6,6 +6,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import com.example.pillcountingnewmodels.R
 import com.example.pillcountingnewmodels.core.utils.compose.Dimens.medium
 import com.example.pillcountingnewmodels.feature.barcodeScan.presentation.compose.DetailRow
 
@@ -13,20 +15,20 @@ import com.example.pillcountingnewmodels.feature.barcodeScan.presentation.compos
 fun HistoryDrugDetails(
     ndc: String = "",
     expiry: String = "",
-    batch: String = "",
+    lotNo: String = "",
     date: String = "",
     time: String = ""
 ) {
     Column(modifier = Modifier.fillMaxWidth().padding(horizontal = medium)) {
-        DetailRow(label = "NDC", value = ndc)
+        DetailRow(label = stringResource(R.string.ndc).uppercase(), value = ndc)
         HorizontalDivider()
-        DetailRow(label = "Expiry", value = expiry)
+        DetailRow(label = stringResource(R.string.expiry), value = expiry)
         HorizontalDivider()
-        DetailRow(label = "Batch", value = batch)
+        DetailRow(label = stringResource(R.string.lotNo), value = lotNo)
         HorizontalDivider()
-        DetailRow(label = "Date", value = date)
+        DetailRow(label = stringResource(R.string.date), value = date)
         HorizontalDivider()
-        DetailRow(label = "Time", value = time)
+        DetailRow(label = stringResource(R.string.time), value = time)
 
     }
 }

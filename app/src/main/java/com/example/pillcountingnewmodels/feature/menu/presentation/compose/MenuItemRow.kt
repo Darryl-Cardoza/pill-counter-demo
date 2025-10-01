@@ -1,6 +1,7 @@
 package com.example.pillcountingnewmodels.feature.menu.presentation.compose
 
 import android.content.res.Configuration
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -72,7 +73,9 @@ fun MenuItemRow(
     completedTint: Color,
     partialTint: Color,
     completedIcon: Int,
-    partialIcon: Int
+    partialIcon: Int,
+    mainClick: () -> Unit,
+    onPartialClick: () -> Unit
 ) {
     val configuration = LocalConfiguration.current
     val isPortrait = configuration.orientation == Configuration.ORIENTATION_PORTRAIT
@@ -81,6 +84,7 @@ fun MenuItemRow(
         modifier = Modifier
             .fillMaxWidth()
             .padding(start = 12.dp, top = 8.dp, bottom = 8.dp)
+            .clickable(onClick = mainClick)
     ) {
         Spacer(modifier = Modifier.height(8.dp))
 
@@ -115,14 +119,16 @@ fun MenuItemRow(
                         text = completed,
                         tint = completedTint,
                         icon = completedIcon,
-                        hasBackground = false
+                        hasBackground = false,
+                        onBadgeClick = {},
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     StatBadge(
                         text = partial,
                         tint = partialTint,
                         icon = partialIcon,
-                        hasBackground = true
+                        hasBackground = true,
+                        onBadgeClick = { onPartialClick},
                     )
                 }
             }
@@ -140,13 +146,15 @@ fun MenuItemRow(
                     text = completed,
                     tint = completedTint,
                     icon = completedIcon,
-                    hasBackground = false
+                    hasBackground = false,
+                    onBadgeClick = { },
                 )
                 StatBadge(
                     text = partial,
                     tint = partialTint,
                     icon = partialIcon,
-                    hasBackground = true
+                    hasBackground = true,
+                    onBadgeClick = onPartialClick,
                 )
             }
         }

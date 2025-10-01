@@ -1,8 +1,8 @@
 package com.example.pillcountingnewmodels.feature.history.presentation.compose
 
 import android.content.Context
-import androidx.compose.ui.text.style.LineBreak.Companion.Paragraph
-import com.example.pillcountingnewmodels.feature.history.domain.model.CountRowData
+import com.example.pillcountingnewmodels.R
+import com.example.pillcountingnewmodels.feature.history.domain.model.TxnWithDrugDto
 import com.itextpdf.kernel.colors.ColorConstants
 import com.itextpdf.kernel.pdf.PdfDocument
 import com.itextpdf.kernel.pdf.PdfWriter
@@ -22,7 +22,7 @@ import java.util.Locale
 
 class HistoryPdfExporter(private val context: Context) {
 
-    fun generateHistoryPdf(counts: List<CountRowData>, selectedDate: String): File? {
+    fun generateHistoryPdf(counts: List<TxnWithDrugDto>, selectedDate: String): File? {
         return try {
             val fileName = "DrugHistory_${selectedDate}_${System.currentTimeMillis()}.pdf"
             val file = File(context.getExternalFilesDir(null), fileName)
@@ -46,7 +46,7 @@ class HistoryPdfExporter(private val context: Context) {
 
     private fun addHistoryPdfContent(
         document: Document,
-        counts: List<CountRowData>,
+        counts: List<TxnWithDrugDto>,
         selectedDate: String
     ) {
         // Title
@@ -84,25 +84,19 @@ class HistoryPdfExporter(private val context: Context) {
             table.setWidth(UnitValue.createPercentValue(95f))
 
             // Add header row
-            table.addHeaderCell(createHeaderCell("Drug \nName"))
-            table.addHeaderCell(createHeaderCell("NDC"))
-            table.addHeaderCell(createHeaderCell("Total \nPill Count"))
-            table.addHeaderCell(createHeaderCell("Status"))
-            table.addHeaderCell(createHeaderCell("Count \nType"))
+            table.addHeaderCell(createHeaderCell(context.getString(R.string.drugname_two_lines)))
+            table.addHeaderCell(createHeaderCell(context.getString(R.string.ndc)))
+            table.addHeaderCell(createHeaderCell(context.getString(R.string.pills_count)))
+            table.addHeaderCell(createHeaderCell(context.getString(R.string.status)))
+            table.addHeaderCell(createHeaderCell(context.getString(R.string.count_type_two_lines)))
 
             // Add data rows
             counts.forEach { countData ->
-//                table.addCell(createCell(countData.drugName ?: "N/A"))
-//                table.addCell(createCell(countData.ndc ?: "N/A"))
-//                table.addCell(createCell(countData.totalCount?.toString() ?: "0"))
-//                table.addCell(createCell(countData.status ?: "N/A"))
-//                table.addCell(createCell(countData.countType ?: "N/A"))
-
-                table.addCell(createCell(countData.name ?: "N/A"))
-                table.addCell(createCell("123"))
-                table.addCell(createCell(countData.count ?.toString()?: "N/A"))
-                table.addCell(createCell( "Partial"))
-                table.addCell(createCell("Regular"))
+                table.addCell(createCell(countData.drugName.toString()))
+                table.addCell(createCell(countData.ndc ?: "N/A"))
+                table.addCell(createCell(countData.pillCount?.toString() ?: "0"))
+                table.addCell(createCell(countData.status.toString()))
+                table.addCell(createCell(countData.countType.toString()))
 
             }
 

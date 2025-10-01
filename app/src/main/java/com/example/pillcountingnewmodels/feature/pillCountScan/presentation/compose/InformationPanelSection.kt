@@ -1,6 +1,11 @@
 package com.example.pillcountingnewmodels.feature.pillCountScan.presentation.compose
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -33,13 +38,27 @@ fun InformationPanelSection(
 
         // Drug Info: Name, Batch, Total
         DrugInformation(uiState)
-        Column(modifier = Modifier.weight(1f),
+        Column(
+            modifier = Modifier.weight(1f),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.SpaceEvenly){
+            verticalArrangement = Arrangement.SpaceEvenly
+        ) {
             // Main Count Display and Add Button
-            CurrentCountDisplay(uiState) { onEvent(FixedCountPillScanningEvent.AddBatchClicked) }
+            CurrentCountDisplay(uiState) { onEvent(FixedCountPillScanningEvent.AddTransactionDetailClicked) }
             // Horizontal list of previous batch counts
-            TxnDetailHistory(uiState.txnDetailHistory)
+            LazyRow(
+                horizontalArrangement = Arrangement.spacedBy(medium),
+            ) {
+                itemsIndexed(uiState.txnDetailHistory) { index, txnDetail ->
+                    // Pass the entire batch object to the Chip
+                    Chip(
+                        txnDetail = txnDetail,
+                        index = uiState.txnDetailHistory.size - index,
+                        onDelete = { txnDetailId ->
+                            onEvent(FixedCountPillScanningEvent.TransactionDetailDeleted(txnDetailId))
+                        })
+                }
+            }
         }
 
         // Action Buttons: Rescan, Pause, Done

@@ -1,6 +1,8 @@
 package com.example.pillcountingnewmodels.feature.menu.presentation.compose
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -13,6 +15,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -52,7 +55,8 @@ fun StatBadge(
     text: String,
     tint: Color,
     icon: Int,
-    hasBackground: Boolean
+    hasBackground: Boolean,
+    onBadgeClick: () -> Unit
 ) {
     val modifier = if (hasBackground) {
         Modifier
@@ -63,6 +67,10 @@ fun StatBadge(
                 shape = RoundedCornerShape(20.dp)
             )
             .padding(horizontal = 8.dp)
+            .clickable(
+                onClick = onBadgeClick,
+                indication = null, // disables ripple
+                interactionSource = remember { MutableInteractionSource() })
     } else {
         Modifier.padding(horizontal = 4.dp)
     }

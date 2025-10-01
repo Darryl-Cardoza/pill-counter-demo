@@ -3,7 +3,11 @@ package com.example.pillcountingnewmodels.feature.countResume.presentation.viewm
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.pillcountingnewmodels.core.room.dao.PillCountTxnDao
-import com.example.pillcountingnewmodels.core.room.models.CountType
+import com.example.pillcountingnewmodels.core.room.models.enums.CountStatus
+import com.example.pillcountingnewmodels.core.room.models.enums.CountType
+import com.example.pillcountingnewmodels.core.utils.PreferenceHelper
+import com.example.pillcountingnewmodels.core.utils.toFormattedDate
+import com.example.pillcountingnewmodels.feature.countResume.domain.data.NavigationEvent
 import com.example.pillcountingnewmodels.feature.countResume.domain.data.FixedCountsEvent
 import com.example.pillcountingnewmodels.feature.countResume.domain.data.RegularCountsEvent
 import com.example.pillcountingnewmodels.feature.countResume.domain.model.CountItem
@@ -11,11 +15,13 @@ import com.example.pillcountingnewmodels.feature.countResume.domain.model.FixedC
 import com.example.pillcountingnewmodels.feature.countResume.domain.model.RegularCountsUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -34,7 +40,8 @@ import javax.inject.Inject
  */
 @HiltViewModel
 class CountsViewModel @Inject constructor(
-    private val pillCountTxnDao: PillCountTxnDao
+    private val pillCountTxnDao: PillCountTxnDao,
+    private val preferenceHelper: PreferenceHelper
 ) : ViewModel() {
 
     /* ------------------------- State Flows ------------------------- */
@@ -49,8 +56,11 @@ class CountsViewModel @Inject constructor(
     /** Public immutable state for UI to observe. */
     val regularUiState: StateFlow<RegularCountsUiState> = _regularUiState.asStateFlow()
 
+    private val _navigationEvent = Channel<NavigationEvent>()
+    val navigationEvent = _navigationEvent.receiveAsFlow()
+
     /** Formatter for displaying human-readable dates from epoch millis. */
-    private val dateFormatter = SimpleDateFormat("dd-MM-yyyy hh:mm a", Locale.getDefault())
+
 
     init {
         observeFixedCounts()
@@ -69,6 +79,8 @@ class CountsViewModel @Inject constructor(
             FixedCountsEvent.DeleteClicked -> handleFixedDeleteClick()
             FixedCountsEvent.ToggleMultiSelectMode -> toggleFixedMultiSelectMode()
             FixedCountsEvent.CloseMultiSelectMode -> closeFixedMultiSelectMode()
+            is FixedCountsEvent.resumeTransaction -> resumeTransaction(CountType.FIXED, event.item)
+            is FixedCountsEvent.ForceCompleteTransaction -> forceCompleteTransaction(event.item)
         }
     }
 
@@ -82,9 +94,27 @@ class CountsViewModel @Inject constructor(
             RegularCountsEvent.DeleteClicked -> handleRegularDeleteClick()
             RegularCountsEvent.ToggleMultiSelectMode -> toggleRegularMultiSelectMode()
             RegularCountsEvent.CloseMultiSelectMode -> closeRegularMultiSelectMode()
+            is RegularCountsEvent.resumeTransaction -> resumeTransaction(CountType.REGULAR, event.item)
+            is RegularCountsEvent.ForceCompleteTransaction -> forceCompleteTransaction(event.item)
         }
     }
 
+    private fun forceCompleteTransaction(item: CountItem) {
+        viewModelScope.launch {
+            pillCountTxnDao.updateTxnStatus(item.id, CountStatus.FORCE_COMPLETED)
+        }
+    }
+
+    private fun resumeTransaction(countType: CountType, item: CountItem) {
+        viewModelScope.launch {
+            preferenceHelper.saveTxnId(item.id)
+            _navigationEvent.send(
+                NavigationEvent.NavigateToPillCount(
+                    countType = countType
+                )
+            )
+        }
+    }
     /* ------------------------- Fixed Counts Logic ------------------------- */
 
     /**
@@ -92,15 +122,16 @@ class CountsViewModel @Inject constructor(
      */
     private fun observeFixedCounts() {
         viewModelScope.launch {
-            pillCountTxnDao.observeAllActive()
+            pillCountTxnDao.observePartialByCountType(CountType.FIXED)
                 .map { txns ->
-                    txns.filter { it.countType == CountType.FIXED }
-                        .map {
+                    txns.map {
                             CountItem(
                                 id = it.txnId,
-                                name = it.note ?: "Unnamed Fixed Count",
-                                quantity = it.targetCount ?: 0,
-                                date = formatDate(it.createdAt)
+                                name = it.drugName ?: "",
+                                pillCount = it.totalPillCount,
+                                target = it.targetCount ?: 0,
+                                barcodeImage = it.barcodeImage,
+                                date = it.createdAt.toFormattedDate()
                             )
                         }
                 }
@@ -169,15 +200,16 @@ class CountsViewModel @Inject constructor(
      */
     private fun observeRegularCounts() {
         viewModelScope.launch {
-            pillCountTxnDao.observeAllActive()
+            pillCountTxnDao.observePartialByCountType(countType = CountType.REGULAR)
                 .map { txns ->
-                    txns.filter { it.countType == CountType.REGULAR }
-                        .map {
+                    txns.map {
                             CountItem(
                                 id = it.txnId,
-                                name = it.note ?: "Unnamed Regular Count",
-                                quantity = it.targetCount ?: 0,
-                                date = formatDate(it.createdAt)
+                                name = it.drugName ?: "",
+                                pillCount = it.totalPillCount,
+                                target = it.targetCount ?: 0,
+                                barcodeImage = it.barcodeImage,
+                                date = it.createdAt.toFormattedDate()
                             )
                         }
                 }
@@ -243,13 +275,4 @@ class CountsViewModel @Inject constructor(
      * @param millis Timestamp to format.
      * @return Human-readable formatted date, or "-" if invalid.
      */
-    private fun formatDate(millis: Long?): String {
-        return if (millis != null && millis > 0) {
-            try {
-                dateFormatter.format(Date(millis))
-            } catch (e: Exception) {
-                "-"
-            }
-        } else "-"
-    }
 }

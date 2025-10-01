@@ -2,7 +2,6 @@ package com.example.pillcountingnewmodels.feature.history.presentation
 
 import android.content.Context
 import android.content.Intent
-import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.fillMaxSize
@@ -65,8 +64,6 @@ fun HistoryScreen(
         firstDayOfWeek = DayOfWeek.SUNDAY
     )
 
-    BackHandler { /* kept empty to consume back press and prevent navigation */ }
-
 
     Box(
         modifier = Modifier
@@ -88,17 +85,22 @@ fun HistoryScreen(
             },
             bottomOrRight = {
                 // Counts section
+                val openPdfWith = stringResource(R.string.open_pdf_with)
                 CountsSection(
                     appTheme = appTheme,
                     counts = counts,
-                    onExportClick = {  val file = pdfExporter.generateHistoryPdf(counts, selectedDate.toString())
+                    onExportClick = {
+                        val file = pdfExporter.generateHistoryPdf(counts, selectedDate.toString())
                         file?.let {
                             // Share or open the PDF
-                            sharePdfFile(context, it)
-                        } },
+                            sharePdfFile(context, it, openPdfWith)
+                        }
+                    },
                     onDeleteClick = { showDeleteConfirmationDialog = true },
-                    onFilterClick = { /* Handle filter */ },
-                    onSearchClick = { /* Handle search */ }
+                    onTxnClick = { txnId ->
+                        viewModel.selectCurrentTransaction(txnId)
+                        navController.navigate(Screen.HistoryDetail.route)
+                    }
                 )
             }
         )
@@ -107,7 +109,7 @@ fun HistoryScreen(
     if (showDeleteConfirmationDialog) {
         CommonDialog(
             message = stringResource(R.string.confirm_delete_message),
-            title = stringResource(R.string.confirm_exit_title),
+            title = stringResource(R.string.confirm_delete_title),
             confirmText = stringResource(R.string.yes),
             cancelText = stringResource(R.string.no),
             onConfirm = {
@@ -119,7 +121,7 @@ fun HistoryScreen(
     }
 }
 
-private fun sharePdfFile(context: Context, file: File) {
+private fun sharePdfFile(context: Context, file: File, title: CharSequence) {
     val uri = FileProvider.getUriForFile(
         context,
         "${context.packageName}.provider",
@@ -132,6 +134,6 @@ private fun sharePdfFile(context: Context, file: File) {
         addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY)
     }
 
-    val shareIntent = Intent.createChooser(intent, "Open PDF with")
+    val shareIntent = Intent.createChooser(intent, title)
     context.startActivity(shareIntent)
 }

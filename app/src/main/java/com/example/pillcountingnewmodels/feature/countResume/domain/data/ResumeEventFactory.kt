@@ -27,10 +27,14 @@ interface ResumeEventFactory<E : ResumeEvent> {
      */
     fun itemSwipedToDelete(item: CountItem): E
 
+    fun forceCompleteTransaction(item: CountItem): E
+
     /**
      * Creates an event for selecting or deselecting a specific item in multi-select mode.
      *
      * @param item The [CountItem] being selected/deselected.
      */
     fun selectItem(item: CountItem): E
+
+    fun resumeTransaction(item: CountItem): E
 }
