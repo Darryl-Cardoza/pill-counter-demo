@@ -13,6 +13,8 @@ import androidx.compose.ui.graphics.Color
 import com.example.pillcountingnewmodels.core.utils.compose.Dimens.buttonCornerRadius
 import com.example.pillcountingnewmodels.core.utils.compose.Dimens.buttonHeight
 import com.example.pillcountingnewmodels.core.utils.compose.Dimens.buttonInnerHorizontalPadding
+import com.example.pillcountingnewmodels.ui.theme.AppTheme
+
 
 @Composable
 fun ActionButtonPrimary(
@@ -20,7 +22,8 @@ fun ActionButtonPrimary(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     color: Color = MaterialTheme.colorScheme.primary,
-    useContentPadding: Boolean = true
+    useContentPadding: Boolean = true,
+    enabled: Boolean = true
 ) {
     Button(
         onClick = onClick,
@@ -29,16 +32,18 @@ fun ActionButtonPrimary(
         colors = ButtonDefaults.buttonColors(
             containerColor = color,
             contentColor = Color.White,
+            disabledContainerColor = AppTheme.extendedColors.secondaryBackground, // or use a theme color
+            disabledContentColor = Color.LightGray // or use a theme color
         ),
         shape = RoundedCornerShape(buttonCornerRadius),
         contentPadding = if (useContentPadding) {
             PaddingValues(horizontal = buttonInnerHorizontalPadding)
         } else {
             ButtonDefaults.ContentPadding
-        }
+        },
+        enabled = enabled
     ) {
         Text(text)
     }
 }
-
 

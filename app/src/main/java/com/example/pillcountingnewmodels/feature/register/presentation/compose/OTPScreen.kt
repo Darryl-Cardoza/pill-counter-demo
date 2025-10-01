@@ -75,6 +75,7 @@ fun OTPScreen(
     var secondsRemaining by remember { mutableIntStateOf(timerDuration) }
     var isTimerRunning by remember { mutableStateOf(true) }
     var showExitConfirmationDialog by remember { mutableStateOf(false) }
+    val isOtpComplete = otp.length == 4
 
     // Mask the email for privacy display
     val maskedEmail = remember(userEmail) { maskEmail(userEmail) }
@@ -197,14 +198,17 @@ fun OTPScreen(
                         }
                     }
 
+
+
                     ActionButtonPrimary(
                         text = stringResource(R.string.verify).uppercase(),
                         onClick = {
-                            if (verifyPinUiState !is VerifyPinUiState.Loading) {
+                            if (isOtpComplete && verifyPinUiState !is VerifyPinUiState.Loading) {
                                 viewModel.verifyPin(userEmail, otp)
                             }
                         },
-                        modifier = Modifier.align(Alignment.CenterHorizontally)
+                        modifier = Modifier.align(Alignment.CenterHorizontally),
+                        enabled = isOtpComplete && verifyPinUiState !is VerifyPinUiState.Loading
                     )
                 }
             }
