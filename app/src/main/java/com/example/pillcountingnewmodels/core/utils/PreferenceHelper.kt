@@ -40,7 +40,7 @@ import javax.inject.Singleton
  */
 @Singleton
 class PreferenceHelper @Inject constructor(
-    @ApplicationContext context: Context
+    @ApplicationContext private val context: Context
 ) {
 
     companion object {
@@ -60,6 +60,8 @@ class PreferenceHelper @Inject constructor(
 
         // Keys for Theme Caching
         private const val KEY_THEME_COLORS = "theme_colors"
+
+        private const val KEY_DO_NOT_ASK_AGAIN = "do_not_ask_again"
     }
 
     /** Secure SharedPreferences instance used for all storage operations. */
@@ -272,4 +274,32 @@ class PreferenceHelper @Inject constructor(
         prefs.edit { remove(KEY_THEME_COLORS) }
         logger.w("Cleared theme colors from secure storage.")
     }
+
+    // ─────────────────────────── Do Not Ask Again ───────────────────────────
+
+    /**
+     * Saves the "Do not ask again" preference.
+     *
+     * @param doNotAsk Whether the user chose not to be asked again.
+     */
+    fun saveDoNotAskAgain(doNotAsk: Boolean) {
+        prefs.edit { putBoolean(KEY_DO_NOT_ASK_AGAIN, doNotAsk) }
+        logger.i("Saved DoNotAskAgain preference: $doNotAsk")
+    }
+
+    /**
+     * Retrieves the "Do not ask again" preference.
+     *
+     * @return true if the user has chosen not to be asked again, false otherwise.
+     */
+    fun isDoNotAskAgain(): Boolean {
+        val value = prefs.getBoolean(KEY_DO_NOT_ASK_AGAIN, false)
+        logger.d("Retrieved DoNotAskAgain preference: $value")
+        return value
+    }
+
+
+    /** Provides application context when required (e.g., PackageManager checks). */
+    fun getContext(): Context = context
+
 }

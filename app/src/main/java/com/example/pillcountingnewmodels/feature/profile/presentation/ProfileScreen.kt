@@ -21,12 +21,17 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -37,14 +42,16 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.pillcountingnewmodels.R
+import com.example.pillcountingnewmodels.core.utils.PreferenceHelper
 import com.example.pillcountingnewmodels.core.utils.compose.ActionButtonPrimary
 import com.example.pillcountingnewmodels.core.utils.compose.BackButton
+import com.example.pillcountingnewmodels.core.utils.compose.CommonDialog
 import com.example.pillcountingnewmodels.core.utils.compose.FloatingLabelTextField
 import com.example.pillcountingnewmodels.core.utils.compose.HollowButton
 import com.example.pillcountingnewmodels.feature.profile.domain.model.ProfileDeleteUiState
-import com.example.pillcountingnewmodels.feature.profile.domain.model.ProfileField
 import com.example.pillcountingnewmodels.feature.profile.domain.model.ProfileUpdateUiState
 import com.example.pillcountingnewmodels.feature.profile.presentation.viewmodel.ProfileViewModel
+import com.example.pillcountingnewmodels.navigation.AUTH_GRAPH_ROUTE
 import com.example.pillcountingnewmodels.ui.theme.AppTheme
 
 @Composable
@@ -56,64 +63,27 @@ fun ProfileScreen(
     val configuration = LocalConfiguration.current
     val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
     val focusManager = LocalFocusManager.current
+    val preferenceHelper = PreferenceHelper(LocalContext.current)
 
     // Observe states
     val updateUiState by viewModel.updateUiState.collectAsState()
     val deleteUiState by viewModel.deleteUiState.collectAsState()
 
-    // Fields
-    val fields = listOf(
-        ProfileField(
-            placeholder = stringResource(id = R.string.first_name),
-            value = viewModel.firstName
-        ),
-        ProfileField(
-            placeholder = stringResource(id = R.string.last_name),
-            value = viewModel.lastName
-        ),
-        ProfileField(
-            placeholder = stringResource(id = R.string.pharmacy_name),
-            value = viewModel.pharmacyName
-        ),
-        ProfileField(
-            placeholder = stringResource(id = R.string.phone_number),
-            value = viewModel.phoneNumber,
-            keyboardType = KeyboardType.Phone
-        ),
-        ProfileField(
-            placeholder = stringResource(id = R.string.email),
-            value = viewModel.email,
-            keyboardType = KeyboardType.Email
-        ),
-        ProfileField(
-            placeholder = stringResource(id = R.string.npi_number),
-            value = viewModel.npi
-        )
-    )
+    // Local state for delete confirmation
+    var showDeleteDialog by remember { mutableStateOf(false) }
 
-    val fieldSetters = listOf<(String) -> Unit>(
-        { viewModel.firstName = it },
-        { viewModel.lastName = it },
-        { viewModel.pharmacyName = it },
-        { viewModel.phoneNumber = it },
-        { viewModel.email = it },
-        { viewModel.npi = it },
-    )
-
-    BackHandler { /* kept empty to consume back press and prevent navigation */ }
+    BackHandler { /* consume back press to prevent navigation */ }
 
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(AppTheme.extendedColors.primaryBackground)
-            .pointerInput(Unit) {
-                detectTapGestures(onTap = { focusManager.clearFocus() })
-            }
+            .pointerInput(Unit) { detectTapGestures { focusManager.clearFocus() } }
     ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .verticalScroll(rememberScrollState()),
+                .verticalScroll(rememberScrollState())
         ) {
             // Top bar
             Row(
@@ -131,47 +101,50 @@ fun ProfileScreen(
                 Spacer(modifier = Modifier.width(48.dp))
             }
 
-            // Fields
-            if (isLandscape) {
-                fields.chunked(2).forEachIndexed { rowIndex, pair ->
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp)
-                    ) {
-                        pair.forEachIndexed { colIndex, field ->
-                            val index = rowIndex * 2 + colIndex
-                            val isLast = index == fields.lastIndex
-                            FloatingLabelTextField(
-                                value = field.value,
-                                onValueChange = fieldSetters[index],
-                                label = field.placeholder,
-                                keyboardType = field.keyboardType,
-                                imeAction = if (isLast) ImeAction.Done else field.imeAction,
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .padding(horizontal = 4.dp)
-                            )
-                        }
-                    }
-                    Spacer(Modifier.height(8.dp))
-                }
-            } else {
-                fields.forEachIndexed { index, field ->
-                    val isLast = index == fields.lastIndex
-                    FloatingLabelTextField(
-                        value = field.value,
-                        onValueChange = fieldSetters[index],
-                        label = field.placeholder,
-                        keyboardType = field.keyboardType,
-                        imeAction = if (isLast) ImeAction.Done else field.imeAction,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp)
-                    )
-                    Spacer(Modifier.height(8.dp))
-                }
-            }
+            // -------------------- INPUT FIELDS --------------------
+            ProfileTextField(
+                value = viewModel.firstName,
+                onValueChange = { viewModel.firstName = it },
+                label = stringResource(R.string.first_name),
+                error = viewModel.firstNameError?.let { stringResource(it) }
+            )
+
+            ProfileTextField(
+                value = viewModel.lastName,
+                onValueChange = { viewModel.lastName = it },
+                label = stringResource(R.string.last_name),
+                error = viewModel.lastNameError?.let { stringResource(it) }
+            )
+
+            ProfileTextField(
+                value = viewModel.pharmacyName,
+                onValueChange = { viewModel.pharmacyName = it },
+                label = stringResource(R.string.pharmacy_name),
+                error = viewModel.pharmacyNameError?.let { stringResource(it) }
+            )
+
+            ProfileTextField(
+                value = viewModel.phoneNumber,
+                onValueChange = { viewModel.phoneNumber = it },
+                label = stringResource(R.string.phone_number),
+                keyboardType = KeyboardType.Phone,
+                error = viewModel.phoneError?.let { stringResource(it) }
+            )
+
+            ProfileTextField(
+                value = viewModel.email,
+                onValueChange = { viewModel.email = it },
+                label = stringResource(R.string.email),
+                keyboardType = KeyboardType.Email,
+                error = viewModel.emailError?.let { stringResource(it) }
+            )
+
+            ProfileTextField(
+                value = viewModel.npi,
+                onValueChange = { viewModel.npi = it },
+                label = stringResource(R.string.npi_number),
+                error = viewModel.npiError?.let { stringResource(it) }
+            )
 
             Spacer(Modifier.height(10.dp))
 
@@ -182,7 +155,10 @@ fun ProfileScreen(
             ) {
                 Checkbox(
                     checked = viewModel.doNotAskAgain,
-                    onCheckedChange = { viewModel.doNotAskAgain = it }
+                    onCheckedChange = {
+                        viewModel.doNotAskAgain = it
+                        preferenceHelper.saveDoNotAskAgain(it) // persist securely
+                    }
                 )
                 Text(
                     stringResource(R.string.do_not_ask),
@@ -192,108 +168,70 @@ fun ProfileScreen(
 
             Spacer(Modifier.height(20.dp))
 
-            // State feedback
-
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                when (updateUiState) {
-                    is ProfileUpdateUiState.Idle -> {}
-                    is ProfileUpdateUiState.Loading -> {
-                        Column(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            CircularProgressIndicator()
-                        }
+            // -------------------- STATE FEEDBACK --------------------
+            when (updateUiState) {
+                is ProfileUpdateUiState.Loading -> {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(bottom = 16.dp)
+                    ) {
+                        CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
                     }
+                }
 
-                    is ProfileUpdateUiState.Success -> {
-                        Column(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            Text(
-                                text = "Profile updated successfully!",
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                        }
+                is ProfileUpdateUiState.Success -> {
+                    Text(
+                        text = "Profile updated successfully!",
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.align(Alignment.CenterHorizontally)
+                    )
+                }
+
+                is ProfileUpdateUiState.Error -> {
+                    Text(
+                        text = (updateUiState as ProfileUpdateUiState.Error).message,
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.align(Alignment.CenterHorizontally)
+                    )
+                }
+
+                else -> {}
+            }
+
+            when (deleteUiState) {
+                is ProfileDeleteUiState.Loading -> {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(bottom = 16.dp)
+                    ) {
+                        CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
                     }
+                }
 
-                    is ProfileUpdateUiState.Error -> {
-                        Column(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            Text(
-                                text = (updateUiState as ProfileUpdateUiState.Error).message,
-                                color = MaterialTheme.colorScheme.error
-                            )
+                is ProfileDeleteUiState.Success -> {
+                    LaunchedEffect(Unit) {
+                        navController.navigate(AUTH_GRAPH_ROUTE) {
+                            popUpTo(0) { inclusive = true }
                         }
                     }
                 }
-            }
 
-
-            // Delete state feedback
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                when (deleteUiState) {
-                    is ProfileDeleteUiState.Idle -> {}
-                    is ProfileDeleteUiState.Loading -> {
-                        Column(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            CircularProgressIndicator()
-                            Spacer(Modifier.height(20.dp))
-
-                        }
-                    }
-
-                    is ProfileDeleteUiState.Success -> {
-                        Column(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            Text(
-                                text = "Profile deleted successfully!",
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                            Spacer(Modifier.height(10.dp))
-
-                        }
-                    }
-
-                    is ProfileDeleteUiState.Error -> {
-                        Column(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            Text(
-                                text = (deleteUiState as ProfileDeleteUiState.Error).message,
-                                color = MaterialTheme.colorScheme.error
-                            )
-                        }
-                    }
+                is ProfileDeleteUiState.Error -> {
+                    Text(
+                        text = (deleteUiState as ProfileDeleteUiState.Error).message,
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.align(Alignment.CenterHorizontally)
+                    )
                 }
+
+                else -> {}
             }
 
+            Spacer(Modifier.weight(1f))
 
-            Spacer(Modifier.height(20.dp))
-            Spacer(modifier = Modifier.weight(1f))
-            // Buttons
+            // -------------------- BUTTONS --------------------
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -302,7 +240,7 @@ fun ProfileScreen(
             ) {
                 HollowButton(
                     text = stringResource(R.string.delete),
-                    onClick = { viewModel.deleteProfile() },
+                    onClick = { showDeleteDialog = true },
                     color = MaterialTheme.colorScheme.primary,
                     modifier = if (isLandscape) Modifier else Modifier.weight(1f)
                 )
@@ -321,7 +259,57 @@ fun ProfileScreen(
             }
 
             Spacer(Modifier.height(20.dp))
+        }
+    }
 
+    // -------------------- DELETE CONFIRMATION DIALOG --------------------
+    if (showDeleteDialog) {
+        CommonDialog(
+            title = stringResource(R.string.confirm_delete_title),
+            message = stringResource(R.string.confirm_delete_profile),
+            confirmText = stringResource(R.string.delete),
+            cancelText = stringResource(R.string.cancel),
+            onConfirm = {
+                showDeleteDialog = false
+                viewModel.deleteProfile()
+            },
+            onCancel = { showDeleteDialog = false }
+        )
+    }
+}
+
+/**
+ * Reusable profile field with validation error shown under it.
+ */
+@Composable
+private fun ProfileTextField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    label: String,
+    keyboardType: KeyboardType = KeyboardType.Text,
+    imeAction: ImeAction = ImeAction.Next,
+    error: String?
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 4.dp)
+    ) {
+        FloatingLabelTextField(
+            value = value,
+            onValueChange = onValueChange,
+            label = label,
+            keyboardType = keyboardType,
+            imeAction = imeAction,
+            modifier = Modifier.fillMaxWidth()
+        )
+        if (!error.isNullOrEmpty()) {
+            Text(
+                text = error,
+                color = MaterialTheme.colorScheme.error,
+                fontSize = 12.sp,
+                modifier = Modifier.padding(start = 4.dp, top = 2.dp)
+            )
         }
     }
 }

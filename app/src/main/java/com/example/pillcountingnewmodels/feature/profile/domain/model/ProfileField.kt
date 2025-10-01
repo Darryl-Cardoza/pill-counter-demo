@@ -7,5 +7,6 @@ data class ProfileField(
     val placeholder: String,
     var value: String,
     val keyboardType: KeyboardType = KeyboardType.Text,
-    val imeAction: ImeAction = ImeAction.Next
+    val imeAction: ImeAction = ImeAction.Next,
+    val error: String? = null
 )
