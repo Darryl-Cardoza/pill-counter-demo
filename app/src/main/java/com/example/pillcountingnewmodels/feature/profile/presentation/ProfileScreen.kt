@@ -1,5 +1,6 @@
 package com.example.pillcountingnewmodels.feature.profile.presentation
 
+import Screen
 import android.content.res.Configuration
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
@@ -31,7 +32,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -42,7 +42,6 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.pillcountingnewmodels.R
-import com.example.pillcountingnewmodels.core.utils.PreferenceHelper
 import com.example.pillcountingnewmodels.core.utils.compose.ActionButtonPrimary
 import com.example.pillcountingnewmodels.core.utils.compose.BackButton
 import com.example.pillcountingnewmodels.core.utils.compose.CommonDialog
@@ -58,12 +57,12 @@ import com.example.pillcountingnewmodels.ui.theme.AppTheme
 fun ProfileScreen(
     navController: NavController,
     viewModel: ProfileViewModel = hiltViewModel(),
-    onBackClick: () -> Unit = {}
+    onBackClick: () -> Unit = {},
+    fromRoute: String? = navController.previousBackStackEntry?.destination?.route
 ) {
     val configuration = LocalConfiguration.current
     val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
     val focusManager = LocalFocusManager.current
-    val preferenceHelper = PreferenceHelper(LocalContext.current)
 
     // Observe states
     val updateUiState by viewModel.updateUiState.collectAsState()
@@ -149,24 +148,23 @@ fun ProfileScreen(
             Spacer(Modifier.height(10.dp))
 
             // Checkbox
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.padding(horizontal = 16.dp)
-            ) {
-                Checkbox(
-                    checked = viewModel.doNotAskAgain,
-                    onCheckedChange = {
-                        viewModel.doNotAskAgain = it
-                        preferenceHelper.saveDoNotAskAgain(it) // persist securely
-                    }
-                )
-                Text(
-                    stringResource(R.string.do_not_ask),
-                    color = AppTheme.extendedColors.textColor
-                )
-            }
+            if (fromRoute?.contains(Screen.Dashboard.route, ignoreCase = true) == true) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(horizontal = 16.dp)
+                ) {
+                    Checkbox(
+                        checked = viewModel.doNotAskAgain,
+                        onCheckedChange = { checked -> viewModel.toggleDoNotAskAgain(checked) }
+                    )
+                    Text(
+                        stringResource(R.string.do_not_ask),
+                        color = AppTheme.extendedColors.textColor
+                    )
+                }
 
-            Spacer(Modifier.height(20.dp))
+                Spacer(Modifier.height(20.dp))
+            }
 
             // -------------------- STATE FEEDBACK --------------------
             when (updateUiState) {

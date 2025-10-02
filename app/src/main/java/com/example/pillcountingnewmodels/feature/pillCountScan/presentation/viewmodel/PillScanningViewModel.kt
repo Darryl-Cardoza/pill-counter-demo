@@ -72,6 +72,9 @@ class PillScanningViewModel @Inject constructor(
     // Pause state
     private var isPaused: Boolean = false
 
+    // Keep track of last saved detection snapshot
+    private var lastSavedDetectionSignature: Int? = null
+
     companion object {
         private const val MODEL_FILENAME = "best_float32_new.tflite"
         private const val ZERO_DETECTIONS_THRESHOLD = 10
@@ -174,7 +177,7 @@ class PillScanningViewModel @Inject constructor(
         val sameAsLast = detections.map { it.hashCode() } == lastDetectedSnapshot
         val elapsed = System.currentTimeMillis() - lastChangeTimestamp
         if (sameAsLast && elapsed >= IDLE_TIMEOUT_MS) {
-            logger.w("⚠️ Idle overlay triggered after ${elapsed}ms unchanged")
+            logger.w("Idle overlay triggered after ${elapsed}ms unchanged")
             _uiState.update { it.copy(showIdleOverlay = true) }
         } else if (!sameAsLast) {
             lastDetectedSnapshot = detections.map { it.hashCode() }
@@ -184,7 +187,7 @@ class PillScanningViewModel @Inject constructor(
 
         // Show overlay if 10 consecutive zeros
         if (allZero) {
-            logger.w("⚠️ Overlay triggered: last 10 frames had zero detections")
+            logger.w("Overlay triggered: last 10 frames had zero detections")
             _uiState.update { it.copy(showIdleOverlay = true) }
             isPaused = true
         }
@@ -292,6 +295,7 @@ class PillScanningViewModel @Inject constructor(
             is FixedCountPillScanningEvent.AddTransactionDetailClicked -> addTxnDetail()
             is FixedCountPillScanningEvent.RescanClicked -> {
                 logger.i("Rescan requested")
+                lastSavedDetectionSignature = null
                 _uiState.update { it.copy(detectedPills = emptyList()) }
             }
             is FixedCountPillScanningEvent.PauseClicked -> {
@@ -315,8 +319,22 @@ class PillScanningViewModel @Inject constructor(
     private fun addTxnDetail() {
         val totalBatchCount = _uiState.value.txnDetailHistory.sumOf { it.count }
         val targetCount = _uiState.value.targetCount
-        val currentCount = _uiState.value.detectedPills.size
+        val currentPills = _uiState.value.detectedPills
+        val currentCount = currentPills.size
         val predictedTotal = totalBatchCount + currentCount
+
+        // === Duplicate prevention ===
+        val currentSignature = currentPills.hashCode() xor currentCount
+        if (lastSavedDetectionSignature != null && lastSavedDetectionSignature == currentSignature) {
+            logger.w("Skipping add → duplicate batch (no new scan detected)")
+            _uiState.update {
+                it.copy(
+                    error = "Duplicate batch: please rescan before adding again.",
+                    restrictAdd = true
+                )
+            }
+            return
+        }
 
         if (_uiState.value.scanType == CountType.FIXED.toString() && predictedTotal > targetCount) {
             logger.w("Skipping add detail → predicted total $predictedTotal exceeds target $targetCount")
@@ -352,6 +370,9 @@ class PillScanningViewModel @Inject constructor(
             )
             pillCountTxnDetailsDao.insert(detail)
             logger.i("Transaction detail saved → count=$currentCount, file=$filePath")
+
+            // Update last saved snapshot signature
+            lastSavedDetectionSignature = currentSignature
         }
         currentFrameBitmap = null
     }
@@ -372,6 +393,7 @@ class PillScanningViewModel @Inject constructor(
                 return@launch
             }
             _uiState.update { it.copy(showConfirmDialog = true) }
+            lastSavedDetectionSignature = null
         }
     }
 
@@ -395,7 +417,7 @@ class PillScanningViewModel @Inject constructor(
 
             pillCountTxnDao.updateTxnStatus(txnId, finalStatus)
             logger.i("Transaction finalized → status=$finalStatus, total=$totalPillCount")
-
+            lastSavedDetectionSignature = null
             _navigationEvent.send(NavigationEvent.NavigateToDashboard)
         }
     }

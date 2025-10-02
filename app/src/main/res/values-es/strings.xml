@@ -1,33 +1,180 @@
 <resources>
-    <string name="app_name">PillCountingNewModels</string>
-
+    <!-- ================== APP INFO ================== -->
+    <string name="app_name">Conteo de Pastillas</string>
     <string name="rite_title">RITE TECHNOLOGIES</string>
     <string name="version">Versión</string>
 
+    <!-- ================== AUTH / LOGIN / REGISTER ================== -->
     <string name="email">Correo electrónico</string>
     <string name="password">Contraseña</string>
-    <string name="remember_me">Recordarme</string>
-    <string name="register">Registrarse</string>
+    <string name="remember_me">Recuérdame</string>
+    <string name="register">Registrar</string>
     <string name="forgot_password">¿Olvidaste tu contraseña?</string>
     <string name="confirm_password">Confirmar contraseña</string>
     <string name="code_sent_to">Se ha enviado un código de seguridad a</string>
     <string name="pre_resend_code">Reenviar código en %1$d s</string>
     <string name="resend_code">Reenviar código</string>
     <string name="verify">Verificar</string>
+    <string name="login_button_text">INICIAR SESIÓN</string>
+    <string name="update_button_text">ACTUALIZAR</string>
 
-    <string name="password_recovery">Recuperación de contraseña</string>
-    <string name="password_recovery_desc">Ingrese su correo electrónico registrado y le enviaremos instrucciones sobre cómo restablecerla.</string>
+    <!-- ================== FORGOT PASSWORD ================== -->
+    <string name="password_recovery">Recuperación de Contraseña</string>
+    <string name="password_recovery_desc">Ingresa tu correo electrónico registrado y te enviaremos instrucciones para restablecerla.</string>
     <string name="your_registered_email">Tu correo electrónico registrado</string>
     <string name="send_otp">Enviar OTP</string>
 
+    <!-- ================== DASHBOARD ================== -->
     <string name="fixed_count">Conteo Fijo</string>
     <string name="fixed_count_desc">Para contar cantidades fijas</string>
     <string name="regular_count">Conteo Regular</string>
-    <string name="regular_count_desc">Para conteos regulares del día a día</string>
+    <string name="regular_count_desc">Para conteos regulares diarios</string>
     <string name="completed">completado</string>
     <string name="partial">parcial</string>
+    <string name="barcode_scan">Escanear Código de Barras</string>
 
-    <string name="barcode_scan">Escaneo de código de barras</string>
-    <string name="add">Add</string>
+    <!-- ================== SETTINGS ================== -->
+    <string name="settings_title" translatable="false">SETTINGS</string>
+    <string name="setting_barcode_scan_first">Siempre realizar el escaneo de código de barras primero</string>
+    <string name="setting_ask_to_add_notes">Siempre preguntar para añadir notas</string>
+    <string name="setting_save_history_for">Guardar historial por</string>
 
+    <string-array name="history_options">
+        <item>1 semana (predeterminado)</item>
+        <item>15 días</item>
+        <item>1 mes</item>
+        <item>2 meses</item>
+        <item>3 meses</item>
+    </string-array>
+
+    <!-- ================== HISTORY ================== -->
+    <string name="history_title">HISTORIAL</string>
+    <string name="counts_label">%d conteos</string>
+    <string name="menu_history_duration">3 meses</string>
+    <string name="no_data_found">No se encontraron datos</string>
+    <string name="drug_history_details">Detalles del historial del medicamento</string>
+
+    <!-- ================== VALIDATION ERRORS ================== -->
+    <string name="error_email_empty">El correo electrónico no puede estar vacío.</string>
+    <string name="error_email_invalid">Por favor, introduce una dirección de correo válida.</string>
+    <string name="error_password_too_short">La contraseña debe tener al menos 8 caracteres.</string>
+    <string name="error_password_no_uppercase">La contraseña debe contener al menos una letra mayúscula.</string>
+    <string name="error_password_no_lowercase">La contraseña debe contener al menos una letra minúscula.</string>
+    <string name="error_password_no_digit">La contraseña debe contener al menos un número.</string>
+    <string name="error_password_no_special">La contraseña debe contener al menos un carácter especial.</string>
+    <string name="error_passwords_do_not_match">Las contraseñas no coinciden.</string>
+    <string name="error_unknown">Algo salió mal.</string>
+    <string name="error_invalid_otp">PIN inválido.</string>
+    <string name="error_phone_invalid">Número de teléfono inválido</string>
+    <string name="error_name_invalid">El nombre no puede contener números</string>
+    <string name="error_pharmacy_name_invalid">El nombre de la farmacia es demasiado corto</string>
+    <string name="error_npi_invalid">Número NPI inválido</string>
+
+    <!-- ================== PARTIAL COUNTS ================== -->
+    <string name="fixed_partial_count_title">Conteos Fijos Parciales</string>
+    <string name="regular_partial_count_title">Conteos Regulares Parciales</string>
+    <string name="partial_icon_description">Íconos de llenado parcial</string>
+
+    <!-- ================== COMMON BUTTONS ================== -->
+    <string name="redo">Rehacer</string>
+    <string name="skip">Omitir</string>
+    <string name="scan">Escanear</string>
+    <string name="rescane">Reescanear</string>
+    <string name="pause">Pausar</string>
+    <string name="done">Hecho</string>
+    <string name="add">Agregar</string>
+    <string name="count">Contar</string>
+    <string name="ok">Aceptar</string>
+    <string name="cancel">Cancelar</string>
+    <string name="yes">Sí</string>
+    <string name="no">No</string>
+    <string name="save">GUARDAR</string>
+    <string name="delete">ELIMINAR</string>
+    <string name="resume">Reanudar</string>
+    <string name="manual">Manual</string>
+    <string name="skip_alt">OMITIR</string>
+
+    <!-- ================== PILL COUNT ================== -->
+    <string name="pill_count_title">Conteo de Pastillas</string>
+    <string name="pill_info_add_manually">Ingresar información de la pastilla manualmente</string>
+    <string name="drugname">Nombre del medicamento</string>
+    <string name="ndc">Ndc</string>
+    <string name="expiry">Caducidad</string>
+    <string name="lotNo">Lote</string>
+    <string name="pills_count">Conteo de pastillas</string>
+    <string name="pill_required">Pastillas requeridas</string>
+
+    <!-- ================== TRANSACTIONS ================== -->
+    <string name="txn_detail">Detalle de Transacción</string>
+    <string name="transaction_detail">Detalle de Transacción</string>
+    <string name="total">Total</string>
+    <string name="total_count">Conteo Total</string>
+    <string name="max_count_reached">El total de detalles de transacción excede el objetivo.</string>
+    <string name="no_transaction_found">No se encontró ninguna transacción, por favor comience a contar pastillas</string>
+    <string name="confirm_done">Confirmar Finalización</string>
+    <string name="confirm_done_desc_regular">¿Está seguro de que desea marcar esta transacción como completada?</string>
+    <string name="confirm_done_desc_fixed">Objetivo no alcanzado. Esta transacción se marcará como PARCIAL.</string>
+    <string name="force_complete">Forzar Finalización</string>
+
+    <!-- ================== PROFILE ================== -->
+    <string name="profile_title">PERFIL</string>
+    <string name="first_name">Nombre</string>
+    <string name="last_name">Apellido</string>
+    <string name="pharmacy_name">Nombre de la Farmacia</string>
+    <string name="phone_number">Número de Teléfono</string>
+    <string name="npi_number">NPI No.</string>
+    <string name="do_not_ask">No volver a preguntar</string>
+    <string name="confirm_delete_profile">¿Está seguro de que desea eliminar su perfil? Esta acción no se puede deshacer.</string>
+
+    <!-- ================== MENUS ================== -->
+    <string name="menu_fixed_count">Conteo Fijo</string>
+    <string name="menu_regular_count">Conteo Regular</string>
+    <string name="menu_profile">Perfil</string>
+    <string name="menu_history">Historial</string>
+    <string name="menu_settings">Configuración</string>
+    <string name="menu_logout">Cerrar sesión</string>
+    <string name="menu_completed">%1$d completados</string>
+    <string name="menu_partial">%1$d parciales</string>
+
+    <!-- ================== UI CONTENT DESCRIPTIONS ================== -->
+    <string name="back_content_description">Navegar atrás</string>
+    <string name="export_content_description">Exportar</string>
+    <string name="delete_content_description">Eliminar</string>
+    <string name="filter_content_description">Filtrar</string>
+    <string name="search_content_description">Buscar</string>
+    <string name="cd_close_selection">Cerrar selección</string>
+    <string name="cd_delete_selected">Eliminar elementos seleccionados</string>
+    <string name="cd_search">Buscar</string>
+    <string name="cd_select_items_to_delete">Seleccionar elementos para eliminar</string>
+    <string name="cd_delete">Eliminar</string>
+
+    <!-- ================== DIALOGS ================== -->
+    <string name="confirm_exit_title">Confirmar Salida</string>
+    <string name="confirm_exit_message">¿Está seguro de que desea cancelar el proceso de inicio de sesión?</string>
+    <string name="exit_text">¿Está seguro de que desea salir de la aplicación?</string>
+    <string name="delete_item_text">¿Está seguro de que desea eliminar?</string>
+    <string name="delete_selected_items_text">¿Está seguro de que desea eliminar los elementos seleccionados?</string>
+    <string name="confirm_delete_message">¿Está seguro de que desea eliminar los registros de la fecha seleccionada? Esta acción no se puede deshacer.</string>
+    <string name="confirm_delete_title">Confirmar Eliminación</string>
+
+    <!-- ================== TABLE HEADERS / LABELS ================== -->
+    <string name="drug">Medicamento</string>
+    <string name="drugname_two_lines">Nombre \\nMedicamento</string>
+    <string name="status">Estado</string>
+    <string name="count_type_two_lines">Tipo \\nConteo</string>
+    <string name="date">Fecha</string>
+    <string name="time">Hora</string>
+    <string name="note">Nota</string>
+    <string name="select_option">Select Option</string>
+    <string name="generated_on">Generado el:</string>
+    <string name="searchWithDots">Buscar…</string>
+
+    <!-- ================== PDF & SHARING ================== -->
+    <string name="open_pdf_with">Abrir PDF con</string>
+    <string name="sharePdfVia">Compartir PDF vía</string>
+
+    <!-- ================== SYSTEM NOTICES ================== -->
+    <string name="suspecious_activity_text">Nuestro sistema detectó una sospechosa \'doble dosis\' desde otro dispositivo. Es hora de \nverificar con un nuevo inicio de sesión.</string>
+    <string name="maintenance_text">El contador está en el mostrador del farmacéutico para una rápida revisión. ¡Volveremos pronto\ncon conteos precisos!</string>
+    <string name="update_version_text">Tu versión actual ha expirado - es hora de obtener una nueva receta. ¡Actualiza ahora para \nla dosis correcta de funciones!</string>
 </resources>
