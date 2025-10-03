@@ -84,25 +84,6 @@ class PillScanningViewModel @Inject constructor(
         private const val TAG = "PillScanningVM"
     }
 
-    /*fun observeBatchesForTxn(countType: String) {
-        viewModelScope.launch {
-            pillCountTxnDetailsDao.observeAllForTxn(preferenceHelper.getTxnId())
-                .collectLatest { entities ->
-                    _uiState.update { currentState ->
-                        currentState.copy(
-                            txnDetailHistory = entities.map { e ->
-                                TxnDetail(
-                                    txnDetailId = e.txnDetailsId,
-                                    count = e.pillCount ?: 0,
-                                    thumbnail = null,
-                                )
-                            }
-                        )
-                    }
-                }
-        }
-    }*/
-
     private var lastDetectedSnapshot: List<Int> = emptyList()
     private var lastChangeTimestamp: Long = System.currentTimeMillis()
 
@@ -125,7 +106,7 @@ class PillScanningViewModel @Inject constructor(
         lastChangeTimestamp = System.currentTimeMillis()
     }
 
-    fun observeTxnDetailsForTxn(countType: String) {
+    fun observeTxnDetailsForTxn() {
         viewModelScope.launch {
             pillCountTxnDetailsDao.observeAllForTxn(preferenceHelper.getTxnId())
                 .collectLatest { entities ->
@@ -139,12 +120,8 @@ class PillScanningViewModel @Inject constructor(
                             )
                         }
 
-                        val shouldShowDialog =
-                            countType == CountType.FIXED.toString() && history.isEmpty() && !currentState.showTargetCountDialog // only once
-
                         currentState.copy(
-                            txnDetailHistory = history,
-                            showTargetCountDialog = shouldShowDialog
+                            txnDetailHistory = history
                         )
                     }
                 }
@@ -435,13 +412,20 @@ class PillScanningViewModel @Inject constructor(
         }
     }
 
-    fun showTxnInfo() {
+    fun showTxnInfo(countType: String) {
         viewModelScope.launch {
             val txnInfo = pillCountTxnDao.getTxnWithDetails(preferenceHelper.getTxnId())
             _uiState.update { currentState ->
+
+                val shouldShowDialog =
+                    countType == CountType.FIXED.toString() &&
+                            (txnInfo?.targetCount == null || txnInfo.targetCount == 0) &&
+                            !currentState.showTargetCountDialog
+
                 currentState.copy(
                     drugName = txnInfo?.drugName ?: "",
-                    targetCount = txnInfo?.targetCount ?: 0
+                    targetCount = txnInfo?.targetCount ?: 0,
+                    showTargetCountDialog = shouldShowDialog
                 )
             }
         }

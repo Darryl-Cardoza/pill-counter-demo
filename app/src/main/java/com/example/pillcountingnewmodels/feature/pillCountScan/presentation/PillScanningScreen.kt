@@ -114,8 +114,8 @@ fun PillScanningScreen(
     // --- Init + Navigation events ---
     LaunchedEffect(Unit) {
         viewModel.initializeInterpreter(retryCount = 2)
-        viewModel.showTxnInfo()
-        viewModel.observeTxnDetailsForTxn(countType)
+        viewModel.showTxnInfo(countType)
+        viewModel.observeTxnDetailsForTxn()
 
         viewModel.navigationEvent.collect { event ->
             when (event) {
