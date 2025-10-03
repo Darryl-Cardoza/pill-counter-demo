@@ -13,8 +13,8 @@ import com.example.pillcountingnewmodels.core.room.models.enums.CountType
 import com.example.pillcountingnewmodels.core.utils.AppLogger
 import com.example.pillcountingnewmodels.core.utils.PreferenceHelper
 import com.example.pillcountingnewmodels.core.utils.saveBitmapToFile
-import com.example.pillcountingnewmodels.feature.pillCountScan.domain.data.PillScanningEvent
 import com.example.pillcountingnewmodels.feature.pillCountScan.domain.data.NavigationEvent
+import com.example.pillcountingnewmodels.feature.pillCountScan.domain.data.PillScanningEvent
 import com.example.pillcountingnewmodels.feature.pillCountScan.domain.model.DetectedPill
 import com.example.pillcountingnewmodels.feature.pillCountScan.domain.model.PillScanningUiState
 import com.example.pillcountingnewmodels.feature.pillCountScan.domain.model.TxnDetail
@@ -331,38 +331,38 @@ class PillScanningViewModel @Inject constructor(
                     return
                 }
 
-        if (currentCount == 0) {
-            logger.w("Skipping add detail → current detected count is 0")
-            return
-        }
+                if (currentCount == 0) {
+                    logger.w("Skipping add detail → current detected count is 0")
+                    return
+                }
 
-        logger.i("Adding transaction detail with count=$currentCount")
+                logger.i("Adding transaction detail with count=$currentCount")
 
-        val filePath = currentFrameBitmap?.let {
-            saveBitmapToFile(
-                getApplication(),
-                it,
-                "txn_detail_${System.currentTimeMillis()}.jpg",
-                "transaction_details"
-            )
-        }
+                val filePath = currentFrameBitmap?.let {
+                    saveBitmapToFile(
+                        getApplication(),
+                        it,
+                        "txn_detail_${System.currentTimeMillis()}.jpg",
+                        "transaction_details"
+                    )
+                }
 
-        viewModelScope.launch {
-            val detail = PillCountTxnDetailsEntity(
-                txnId = preferenceHelper.getTxnId(),
-                pillCount = currentCount,
-                imagePath = filePath,
-                createdAt = System.currentTimeMillis(),
-                updatedAt = System.currentTimeMillis()
-            )
-            pillCountTxnDetailsDao.insert(detail)
-            logger.i("Transaction detail saved → count=$currentCount, file=$filePath")
+                viewModelScope.launch {
+                    val detail = PillCountTxnDetailsEntity(
+                        txnId = preferenceHelper.getTxnId(),
+                        pillCount = currentCount,
+                        imagePath = filePath,
+                        createdAt = System.currentTimeMillis(),
+                        updatedAt = System.currentTimeMillis()
+                    )
+                    pillCountTxnDetailsDao.insert(detail)
+                    logger.i("Transaction detail saved → count=$currentCount, file=$filePath")
 
-            // Update last saved snapshot signature
-            //lastSavedDetectionSignature = currentSignature
-        }
-        currentFrameBitmap = null
-    }
+                    // Update last saved snapshot signature
+                    //lastSavedDetectionSignature = currentSignature
+                }
+                currentFrameBitmap = null
+            }
 
             is PillScanningEvent.RescanClicked -> {
                 logger.i("Rescan requested")

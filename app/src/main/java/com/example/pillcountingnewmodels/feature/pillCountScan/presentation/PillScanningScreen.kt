@@ -28,8 +28,8 @@ import com.example.pillcountingnewmodels.core.utils.compose.ActionButtonPrimary
 import com.example.pillcountingnewmodels.core.utils.compose.BackButton
 import com.example.pillcountingnewmodels.core.utils.compose.CommonDialog
 import com.example.pillcountingnewmodels.core.utils.compose.SplitResponsive
-import com.example.pillcountingnewmodels.feature.pillCountScan.domain.data.PillScanningEvent
 import com.example.pillcountingnewmodels.feature.pillCountScan.domain.data.NavigationEvent
+import com.example.pillcountingnewmodels.feature.pillCountScan.domain.data.PillScanningEvent
 import com.example.pillcountingnewmodels.feature.pillCountScan.presentation.compose.AddNoteDialog
 import com.example.pillcountingnewmodels.feature.pillCountScan.presentation.compose.CameraPreviewSection
 import com.example.pillcountingnewmodels.feature.pillCountScan.presentation.compose.InformationPanelSection
@@ -37,6 +37,7 @@ import com.example.pillcountingnewmodels.feature.pillCountScan.presentation.comp
 import com.example.pillcountingnewmodels.feature.pillCountScan.presentation.viewmodel.PillScanningViewModel
 import com.example.pillcountingnewmodels.ui.theme.AppTheme
 import kotlinx.coroutines.flow.collectLatest
+import java.util.Locale
 
 @Composable
 fun PillScanningScreen(
@@ -50,12 +51,25 @@ fun PillScanningScreen(
 
     val logger = remember { AppLogger("PillScanningScreen") }
 
+    // Buffer of last 10 detections
+    var lastTenDetections by remember { mutableStateOf<List<Int>>(emptyList()) }
+
+    // Whenever detected pills update, push into buffer
+    LaunchedEffect(uiState.detectedPills) {
+        val currentCount = uiState.detectedPills.size
+        lastTenDetections = (lastTenDetections + currentCount).takeLast(10)
+    }
+
+    // Check if last 10 counts are all zero
+    val isLastTenAllZero = lastTenDetections.size == 10 && lastTenDetections.all { it == 0 }
+
     // === Toasts ===
     if (uiState.restrictAdd) {
         ToastUtils.show(context, stringResource(id = R.string.max_count_reached))
         logger.w("Toast: Max count reached")
         viewModel.resetRestrictAdd()
     }
+
     if (uiState.showNoTransaction) {
         ToastUtils.show(context, stringResource(id = R.string.no_transaction_found))
         logger.w("Toast: No transaction found")
@@ -189,7 +203,7 @@ fun PillScanningScreen(
                 contentAlignment = Alignment.Center
             ) {
                 ActionButtonPrimary(
-                    text = stringResource(R.string.resume).toUpperCase(),
+                    text = stringResource(R.string.resume).toUpperCase(Locale.ROOT),
                     onClick = {
                         viewModel.resetIdleOverlay()
                     },

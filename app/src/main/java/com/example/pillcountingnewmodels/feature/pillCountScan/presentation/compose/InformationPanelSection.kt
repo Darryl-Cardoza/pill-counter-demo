@@ -38,6 +38,7 @@ fun InformationPanelSection(
 
         // Drug Info: Name, Batch, Total
         DrugInformation(uiState)
+
         Column(
             modifier = Modifier.weight(1f),
             horizontalAlignment = Alignment.CenterHorizontally,
