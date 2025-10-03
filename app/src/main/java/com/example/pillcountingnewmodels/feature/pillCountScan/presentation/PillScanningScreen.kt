@@ -42,7 +42,6 @@ fun PillScanningScreen(
     viewModel: PillScanningViewModel = hiltViewModel()
 ) {
     val context = navController.context
-    var showTargetCountDialog by rememberSaveable { mutableStateOf(false) }
 
     val uiState by viewModel.uiState.collectAsState()
 
@@ -89,6 +88,19 @@ fun PillScanningScreen(
         )
     }
 
+    if (uiState.showTargetCountDialog) {
+        TargetPillsCountDialog(
+            onDismiss = {
+                viewModel.setTargetCountDialogShown(false)
+                navController.popBackStack()
+            },
+            onOkay = { count ->
+                viewModel.updateTargetCount(count)
+                viewModel.setTargetCountDialogShown(false)
+            }
+        )
+    }
+
     // --- Overlay Logic ---
     val shouldShowOverlay =
         uiState.showIdleOverlay || (countType == "15" && isLastTenAllZero)
@@ -130,12 +142,6 @@ fun PillScanningScreen(
         viewModel.setScanType(countType)
     }
 
-    LaunchedEffect(uiState.showTargetCountDialog) {
-        if (uiState.showTargetCountDialog) {
-            showTargetCountDialog = true
-        }
-    }
-
     // --- Layout ---
     Box(
         modifier = Modifier
@@ -167,18 +173,5 @@ fun PillScanningScreen(
         BackButton(navController) {
             navController.popBackStack()
         }
-    }
-
-    if (showTargetCountDialog) {
-        TargetPillsCountDialog(
-            onDismiss = {
-                showTargetCountDialog = false
-                navController.popBackStack()
-            },
-            onOkay = { count ->
-                viewModel.updateTargetCount(count)
-                showTargetCountDialog = false
-            }
-        )
     }
 }

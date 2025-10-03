@@ -436,4 +436,8 @@ class PillScanningViewModel @Inject constructor(
     fun resetNoTransaction() {
         _uiState.update { it.copy(showNoTransaction = false) }
     }
+
+    fun setTargetCountDialogShown(shown: Boolean) {
+        _uiState.update { it.copy(showTargetCountDialog = shown) }
+    }
 }
