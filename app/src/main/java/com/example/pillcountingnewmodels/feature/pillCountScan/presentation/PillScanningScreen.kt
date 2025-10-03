@@ -12,7 +12,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -27,8 +26,9 @@ import com.example.pillcountingnewmodels.core.utils.compose.ActionButtonPrimary
 import com.example.pillcountingnewmodels.core.utils.compose.BackButton
 import com.example.pillcountingnewmodels.core.utils.compose.CommonDialog
 import com.example.pillcountingnewmodels.core.utils.compose.SplitResponsive
-import com.example.pillcountingnewmodels.feature.pillCountScan.domain.data.FixedCountPillScanningEvent
+import com.example.pillcountingnewmodels.feature.pillCountScan.domain.data.PillScanningEvent
 import com.example.pillcountingnewmodels.feature.pillCountScan.domain.data.NavigationEvent
+import com.example.pillcountingnewmodels.feature.pillCountScan.presentation.compose.AddNoteDialog
 import com.example.pillcountingnewmodels.feature.pillCountScan.presentation.compose.CameraPreviewSection
 import com.example.pillcountingnewmodels.feature.pillCountScan.presentation.compose.InformationPanelSection
 import com.example.pillcountingnewmodels.feature.pillCountScan.presentation.compose.TargetPillsCountDialog
@@ -67,6 +67,31 @@ fun PillScanningScreen(
         viewModel.resetNoTransaction()
     }
 
+    if (uiState.showTargetCountDialog) {
+        TargetPillsCountDialog(
+            onDismiss = {
+                viewModel.setTargetCountDialogShown(false)
+                navController.popBackStack()
+            },
+            onOkay = { count ->
+                viewModel.updateTargetCount(count)
+                viewModel.setTargetCountDialogShown(false)
+            }
+        )
+    }
+
+    if (uiState.showNotesDialog) {
+        AddNoteDialog(
+            onDismiss = { viewModel.setNoteDialogShown(false) },
+            onSkip = {
+                viewModel.onEvent(PillScanningEvent.NoteSkip)
+            },
+            onSave = { note ->
+                viewModel.onEvent(PillScanningEvent.NoteSaved(note))
+            }
+        )
+    }
+
     // --- Confirm Dialog ---
     if (uiState.showConfirmDialog) {
         val warningText = if (
@@ -83,21 +108,8 @@ fun PillScanningScreen(
             title = stringResource(R.string.confirm_done),
             confirmText = stringResource(R.string.ok),
             cancelText = stringResource(R.string.cancel),
-            onConfirm = { viewModel.onEvent(FixedCountPillScanningEvent.ConfirmDone) },
-            onCancel = { viewModel.onEvent(FixedCountPillScanningEvent.CancelDone) }
-        )
-    }
-
-    if (uiState.showTargetCountDialog) {
-        TargetPillsCountDialog(
-            onDismiss = {
-                viewModel.setTargetCountDialogShown(false)
-                navController.popBackStack()
-            },
-            onOkay = { count ->
-                viewModel.updateTargetCount(count)
-                viewModel.setTargetCountDialogShown(false)
-            }
+            onConfirm = { viewModel.onEvent(PillScanningEvent.ConfirmDone) },
+            onCancel = { viewModel.onEvent(PillScanningEvent.CancelDone) }
         )
     }
 

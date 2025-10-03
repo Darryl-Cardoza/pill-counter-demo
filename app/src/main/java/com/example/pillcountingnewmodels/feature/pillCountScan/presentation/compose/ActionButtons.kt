@@ -13,7 +13,7 @@ import com.example.pillcountingnewmodels.core.utils.compose.Dimens.medium
 import com.example.pillcountingnewmodels.core.utils.compose.Dimens.small
 import com.example.pillcountingnewmodels.core.utils.compose.FilledButton
 import com.example.pillcountingnewmodels.core.utils.compose.HollowButton
-import com.example.pillcountingnewmodels.feature.pillCountScan.domain.data.FixedCountPillScanningEvent
+import com.example.pillcountingnewmodels.feature.pillCountScan.domain.data.PillScanningEvent
 
 /**
  * A row of action buttons for the Fixed Pill Count Scanning screen.
@@ -27,7 +27,7 @@ import com.example.pillcountingnewmodels.feature.pillCountScan.domain.data.Fixed
  */
 @Composable
 fun ActionButtons(
-    onEvent: (FixedCountPillScanningEvent) -> Unit
+    onEvent: (PillScanningEvent) -> Unit
 ) {
     Row(
         modifier = Modifier
@@ -37,19 +37,19 @@ fun ActionButtons(
     ) {
         HollowButton(
             text = stringResource(R.string.rescane).uppercase(),
-            onClick = { onEvent(FixedCountPillScanningEvent.RescanClicked) },
+            onClick = { onEvent(PillScanningEvent.RescanClicked) },
             color = MaterialTheme.colorScheme.primary,
             modifier = Modifier.weight(1f) // takes equal width
         )
         HollowButton(
             text = stringResource(R.string.pause).uppercase(),
-            onClick = { onEvent(FixedCountPillScanningEvent.PauseClicked) },
+            onClick = { onEvent(PillScanningEvent.PauseClicked) },
             color = MaterialTheme.colorScheme.primary,
             modifier = Modifier.weight(1f)
         )
         FilledButton(
             text = stringResource(R.string.done).uppercase(),
-            onClick = { onEvent(FixedCountPillScanningEvent.DoneClicked) },
+            onClick = { onEvent(PillScanningEvent.DoneClicked) },
             color = MaterialTheme.colorScheme.secondary,
             modifier = Modifier.weight(1f)
         )

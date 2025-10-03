@@ -11,7 +11,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavController
 import com.example.pillcountingnewmodels.core.utils.compose.Dimens.medium
-import com.example.pillcountingnewmodels.feature.pillCountScan.domain.data.FixedCountPillScanningEvent
+import com.example.pillcountingnewmodels.feature.pillCountScan.domain.data.PillScanningEvent
 import com.example.pillcountingnewmodels.feature.pillCountScan.domain.model.PillScanningUiState
 
 /**
@@ -26,7 +26,7 @@ import com.example.pillcountingnewmodels.feature.pillCountScan.domain.model.Pill
 fun InformationPanelSection(
     navController: NavController,
     uiState: PillScanningUiState,
-    onEvent: (FixedCountPillScanningEvent) -> Unit
+    onEvent: (PillScanningEvent) -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -44,7 +44,7 @@ fun InformationPanelSection(
             verticalArrangement = Arrangement.SpaceEvenly
         ) {
             // Main Count Display and Add Button
-            CurrentCountDisplay(uiState) { onEvent(FixedCountPillScanningEvent.AddTransactionDetailClicked) }
+            CurrentCountDisplay(uiState) { onEvent(PillScanningEvent.AddTransactionDetailClicked) }
             // Horizontal list of previous batch counts
             LazyRow(
                 horizontalArrangement = Arrangement.spacedBy(medium),
@@ -55,7 +55,7 @@ fun InformationPanelSection(
                         txnDetail = txnDetail,
                         index = uiState.txnDetailHistory.size - index,
                         onDelete = { txnDetailId ->
-                            onEvent(FixedCountPillScanningEvent.TransactionDetailDeleted(txnDetailId))
+                            onEvent(PillScanningEvent.TransactionDetailDeleted(txnDetailId))
                         })
                 }
             }

@@ -62,6 +62,8 @@ class PreferenceHelper @Inject constructor(
         private const val KEY_THEME_COLORS = "theme_colors"
 
         private const val KEY_DO_NOT_ASK_AGAIN = "do_not_ask_again"
+
+        private const val KEY_SHOW_NOTES_DIALOG = "key_show_notes_dialog"
     }
 
     /** Secure SharedPreferences instance used for all storage operations. */
@@ -301,5 +303,18 @@ class PreferenceHelper @Inject constructor(
 
     /** Provides application context when required (e.g., PackageManager checks). */
     fun getContext(): Context = context
+
+
+
+    fun saveShowNotesDialogSetting(show: Boolean) {
+        prefs.edit { putBoolean(KEY_SHOW_NOTES_DIALOG, show) }
+        logger.i("Saved showNotesDialog: $show")
+    }
+
+    fun getShowNotesDialogSetting(): Boolean {
+        val value = prefs.getBoolean(KEY_SHOW_NOTES_DIALOG, true)
+        logger.d("ShowNotesDialog retrieved: $value")
+        return value
+    }
 
 }

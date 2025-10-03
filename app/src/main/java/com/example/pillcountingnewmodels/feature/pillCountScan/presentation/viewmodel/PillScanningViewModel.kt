@@ -13,7 +13,7 @@ import com.example.pillcountingnewmodels.core.room.models.enums.CountType
 import com.example.pillcountingnewmodels.core.utils.AppLogger
 import com.example.pillcountingnewmodels.core.utils.PreferenceHelper
 import com.example.pillcountingnewmodels.core.utils.saveBitmapToFile
-import com.example.pillcountingnewmodels.feature.pillCountScan.domain.data.FixedCountPillScanningEvent
+import com.example.pillcountingnewmodels.feature.pillCountScan.domain.data.PillScanningEvent
 import com.example.pillcountingnewmodels.feature.pillCountScan.domain.data.NavigationEvent
 import com.example.pillcountingnewmodels.feature.pillCountScan.domain.model.DetectedPill
 import com.example.pillcountingnewmodels.feature.pillCountScan.domain.model.PillScanningUiState
@@ -272,9 +272,9 @@ class PillScanningViewModel @Inject constructor(
      * - [PauseClicked]: Placeholder to stop camera flow temporarily.
      * - [DoneClicked]: Placeholder to finalize and save results.
      */
-    fun onEvent(event: FixedCountPillScanningEvent) {
+    fun onEvent(event: PillScanningEvent) {
         when (event) {
-            is FixedCountPillScanningEvent.AddTransactionDetailClicked -> {
+            is PillScanningEvent.AddTransactionDetailClicked -> {
                 val totalBatchCount = _uiState.value.txnDetailHistory.sumOf { it.count }
                 val targetCount = _uiState.value.targetCount
                 val currentCount = _uiState.value.detectedPills.size
@@ -321,34 +321,52 @@ class PillScanningViewModel @Inject constructor(
 
             }
 
-            is FixedCountPillScanningEvent.RescanClicked -> {
+            is PillScanningEvent.RescanClicked -> {
                 logger.i("Rescan requested")
                 _uiState.update { it.copy(detectedPills = emptyList()) }
             }
 
-            is FixedCountPillScanningEvent.PauseClicked -> {
+            is PillScanningEvent.PauseClicked -> {
                 logger.i("Pause clicked")
                 // TODO: stop camera flow temporarily
             }
 
-            is FixedCountPillScanningEvent.DoneClicked -> {
-                logger.i("Done clicked — finalize process")
+            PillScanningEvent.DoneClicked -> {
                 viewModelScope.launch {
                     val txnId = preferenceHelper.getTxnId()
                     val totalPillCount = pillCountTxnDetailsDao.getTotalPillCountForTxn(txnId)
+
                     if (totalPillCount == 0) {
-                        _uiState.update {
-                            it.copy(
-                                showNoTransaction = true
-                            )
-                        }
+                        _uiState.update { it.copy(showNoTransaction = true) }
                         return@launch
                     }
-                    _uiState.update { it.copy(showConfirmDialog = true) }
+
+                    // proceeding because Pill count > 0
+                    if (preferenceHelper.getShowNotesDialogSetting()) {
+                        _uiState.update { it.copy(showNotesDialog = true) }
+                    } else {
+                        showConfirmDialogAfterDone()
+                    }
                 }
             }
 
-            is FixedCountPillScanningEvent.ConfirmDone -> {
+            is PillScanningEvent.NoteSaved -> {
+                setNoteDialogShown(false)
+                viewModelScope.launch {
+                    pillCountTxnDao.updateNote(
+                        txnId = preferenceHelper.getTxnId(),
+                        note = event.note
+                    )
+                    showConfirmDialogAfterDone()
+                }
+            }
+
+            PillScanningEvent.NoteSkip -> {
+                setNoteDialogShown(false)
+                showConfirmDialogAfterDone()
+            }
+
+            is PillScanningEvent.ConfirmDone -> {
                 viewModelScope.launch {
                     val txnId = preferenceHelper.getTxnId()
                     val totalPillCount = pillCountTxnDetailsDao.getTotalPillCountForTxn(txnId)
@@ -386,17 +404,21 @@ class PillScanningViewModel @Inject constructor(
                 }
             }
 
-            is FixedCountPillScanningEvent.CancelDone -> {
+            is PillScanningEvent.CancelDone -> {
                 _uiState.update { it.copy(showConfirmDialog = false) }
             }
 
-            is FixedCountPillScanningEvent.TransactionDetailDeleted -> {
+            is PillScanningEvent.TransactionDetailDeleted -> {
                 viewModelScope.launch {
                     logger.i("Transaction detail deleted: ${event.txnDetailId}")
                     pillCountTxnDetailsDao.softDelete(event.txnDetailId)
                 }
             }
         }
+    }
+
+    private fun showConfirmDialogAfterDone() {
+        _uiState.update { it.copy(showConfirmDialog = true) }
     }
 
     fun setScanType(type: String) {
@@ -439,5 +461,9 @@ class PillScanningViewModel @Inject constructor(
 
     fun setTargetCountDialogShown(shown: Boolean) {
         _uiState.update { it.copy(showTargetCountDialog = shown) }
+    }
+
+    fun setNoteDialogShown(shown: Boolean) {
+        _uiState.update { it.copy(showNotesDialog = shown) }
     }
 }

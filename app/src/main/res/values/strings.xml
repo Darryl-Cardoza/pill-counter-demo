@@ -145,7 +145,7 @@
     <string name="total">Total</string>
     <string name="pill_required">Pills Required</string>
     <string name="max_count_reached">Total Transaction Details count exceeds target.</string>
-    <string name="no_transaction_found">No Transaction Found, please start counting pills</string>
+    <string name="no_transaction_found">No Transaction Detail Found, please start counting pills</string>
     <string name="confirm_done">Confirm Completion</string>
     <string name="confirm_done_desc_regular">Are you sure you want to mark this transaction as completed?</string>
     <string name="confirm_done_desc_fixed">Target not reached. This transaction will be marked as PARTIAL.</string>
@@ -183,5 +183,7 @@ The counter is at the pharmacist\'s desk for a quick check-up. Back soon\nwith a
     <!-- version update screen -->
     <string name="update_version_text">Your current version has expired - time to get a fresh prescription. Update now for \nthe right dose of features!</string>
     <string name="confirm_delete_profile">Are you sure you want to delete your profile? This action cannot be undone.</string>
+    <string name="add_note">Add Note</string>
+    <string name="add_note_error">Please enter a note or tap Skip</string>
 
 </resources>
