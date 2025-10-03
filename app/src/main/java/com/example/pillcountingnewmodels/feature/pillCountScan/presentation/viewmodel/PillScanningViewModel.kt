@@ -286,7 +286,6 @@ class PillScanningViewModel @Inject constructor(
                     logger.w("Skipping add transaction detail because predicted total exceeds target.")
                     _uiState.update {
                         it.copy(
-                            error = "Total transaction detail count exceeds target.",
                             restrictAdd = true
                         )
                     }
@@ -340,7 +339,6 @@ class PillScanningViewModel @Inject constructor(
                     if (totalPillCount == 0) {
                         _uiState.update {
                             it.copy(
-                                error = "Please add at least one transaction detail before finishing.",
                                 showNoTransaction = true
                             )
                         }
@@ -359,10 +357,10 @@ class PillScanningViewModel @Inject constructor(
                     if (txn == null) {
                         return@launch
                     }
+                    //safety check
                     if (totalPillCount == 0) {
                         _uiState.update {
                             it.copy(
-                                error = "Please add at least one transaction detail before finishing.",
                                 showConfirmDialog = false
                             )
                         }
