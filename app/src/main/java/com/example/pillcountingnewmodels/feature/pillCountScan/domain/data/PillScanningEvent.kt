@@ -1,7 +1,5 @@
 package com.example.pillcountingnewmodels.feature.pillCountScan.domain.data
 
-import android.R
-
 sealed interface PillScanningEvent {
     data object AddTransactionDetailClicked : PillScanningEvent
 
