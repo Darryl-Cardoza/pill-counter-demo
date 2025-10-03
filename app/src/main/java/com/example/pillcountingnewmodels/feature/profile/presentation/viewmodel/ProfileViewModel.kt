@@ -88,11 +88,21 @@ class ProfileViewModel @Inject constructor(
 
     init {
         val localId = preferenceHelper.getLocalId()
-        if (localId != null) {
+        if (localId != null && localId != 0L) {
             observeUser(localId)
         } else {
             logger.w("No localId found in preferences — skipping prefill.")
         }
+
+        // Load the saved "Do Not Ask Again" preference
+        doNotAskAgain = preferenceHelper.isDoNotAskAgain()
+        logger.i("Initialized doNotAskAgain = $doNotAskAgain")
+    }
+
+    fun toggleDoNotAskAgain(value: Boolean) {
+        doNotAskAgain = value
+        preferenceHelper.saveDoNotAskAgain(value)
+        logger.i("DoNotAskAgain updated → $value")
     }
 
     /**
@@ -115,7 +125,7 @@ class ProfileViewModel @Inject constructor(
                     phoneNumber = it.phoneNumber.orEmpty()
                     email = it.email.orEmpty()
                     npi = it.npiId.orEmpty()
-                    doNotAskAgain = !(it.notifications ?: true)
+                    doNotAskAgain = preferenceHelper.isDoNotAskAgain()
                 }
             }
         }
@@ -178,7 +188,7 @@ class ProfileViewModel @Inject constructor(
                     logger.i("Profile update success")
 
                     val localId = preferenceHelper.getLocalId()
-                    if (localId != null) {
+                    if (localId != null && localId != 0L) {
                         val entity = UserEntity(
                             localId = localId,
                             userId = preferenceHelper.getUserId().orEmpty(),
@@ -195,6 +205,8 @@ class ProfileViewModel @Inject constructor(
                         userDao.update(entity)
                         logger.i("User entity updated in Room via localId=$localId")
                     }
+
+                    preferenceHelper.saveDoNotAskAgain(doNotAskAgain)
 
                     _updateUiState.value = ProfileUpdateUiState.Success
                 }

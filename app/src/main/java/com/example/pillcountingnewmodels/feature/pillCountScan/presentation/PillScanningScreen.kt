@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBarsPadding
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -21,6 +22,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.pillcountingnewmodels.R
 import com.example.pillcountingnewmodels.core.room.models.enums.CountType
+import com.example.pillcountingnewmodels.core.utils.AppLogger
 import com.example.pillcountingnewmodels.core.utils.ToastUtils
 import com.example.pillcountingnewmodels.core.utils.compose.ActionButtonPrimary
 import com.example.pillcountingnewmodels.core.utils.compose.BackButton
@@ -34,6 +36,7 @@ import com.example.pillcountingnewmodels.feature.pillCountScan.presentation.comp
 import com.example.pillcountingnewmodels.feature.pillCountScan.presentation.compose.TargetPillsCountDialog
 import com.example.pillcountingnewmodels.feature.pillCountScan.presentation.viewmodel.PillScanningViewModel
 import com.example.pillcountingnewmodels.ui.theme.AppTheme
+import kotlinx.coroutines.flow.collectLatest
 
 @Composable
 fun PillScanningScreen(
@@ -45,25 +48,17 @@ fun PillScanningScreen(
 
     val uiState by viewModel.uiState.collectAsState()
 
-    // Buffer of last 10 detections
-    var lastTenDetections by remember { mutableStateOf<List<Int>>(emptyList()) }
+    val logger = remember { AppLogger("PillScanningScreen") }
 
-    // Whenever detected pills update, push into buffer
-    LaunchedEffect(uiState.detectedPills) {
-        val currentCount = uiState.detectedPills.size
-        lastTenDetections = (lastTenDetections + currentCount).takeLast(10)
-    }
-
-    // Check if last 10 counts are all zero
-    val isLastTenAllZero = lastTenDetections.size == 10 && lastTenDetections.all { it == 0 }
-
-    // --- Toasts ---
+    // === Toasts ===
     if (uiState.restrictAdd) {
         ToastUtils.show(context, stringResource(id = R.string.max_count_reached))
+        logger.w("Toast: Max count reached")
         viewModel.resetRestrictAdd()
     }
     if (uiState.showNoTransaction) {
         ToastUtils.show(context, stringResource(id = R.string.no_transaction_found))
+        logger.w("Toast: No transaction found")
         viewModel.resetNoTransaction()
     }
 
@@ -102,7 +97,6 @@ fun PillScanningScreen(
         } else {
             stringResource(R.string.confirm_done_desc_regular)
         }
-
         CommonDialog(
             message = warningText,
             title = stringResource(R.string.confirm_done),
@@ -135,13 +129,13 @@ fun PillScanningScreen(
         }
     }
 
-    // --- Init + Navigation events ---
+    // === Init & Navigation ===
     LaunchedEffect(Unit) {
         viewModel.initializeInterpreter(retryCount = 2)
         viewModel.showTxnInfo(countType)
         viewModel.observeTxnDetailsForTxn()
 
-        viewModel.navigationEvent.collect { event ->
+        viewModel.navigationEvent.collectLatest { event ->
             when (event) {
                 is NavigationEvent.NavigateToDashboard -> {
                     navController.navigate(Screen.Dashboard.route)
@@ -161,6 +155,7 @@ fun PillScanningScreen(
             .systemBarsPadding()
             .background(AppTheme.extendedColors.secondaryBackground)
     ) {
+        // Camera + Info
         SplitResponsive(
             topOrLeft = {
                 CameraPreviewSection(
@@ -182,8 +177,26 @@ fun PillScanningScreen(
             portraitRatio = 0.5f to 0.5f
         )
 
-        BackButton(navController) {
-            navController.popBackStack()
+        BackButton(navController) { navController.popBackStack() }
+
+        // === Overlay placed last → ensures it is on top ===
+        if (uiState.showIdleOverlay) {
+            logger.i("Overlay visible")
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(AppTheme.extendedColors.secondaryBackground.copy(alpha = 0.5f)),
+                contentAlignment = Alignment.Center
+            ) {
+                ActionButtonPrimary(
+                    text = stringResource(R.string.resume).toUpperCase(),
+                    onClick = {
+                        viewModel.resetIdleOverlay()
+                    },
+                    modifier = Modifier.padding(16.dp),
+                    color = MaterialTheme.colorScheme.secondary
+                )
+            }
         }
     }
 }
