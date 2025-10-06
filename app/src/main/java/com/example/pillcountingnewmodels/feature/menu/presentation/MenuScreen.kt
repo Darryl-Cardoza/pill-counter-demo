@@ -8,31 +8,55 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.pillcountingnewmodels.R
 import com.example.pillcountingnewmodels.core.room.models.enums.CountType
 import com.example.pillcountingnewmodels.core.utils.compose.BackButton
 import com.example.pillcountingnewmodels.core.utils.compose.Dimens.medium
+import com.example.pillcountingnewmodels.feature.login.domain.model.LogoutUiState
+import com.example.pillcountingnewmodels.feature.login.viewmodel.LoginViewModel
 import com.example.pillcountingnewmodels.feature.menu.presentation.compose.MenuItemRow
 import com.example.pillcountingnewmodels.feature.menu.presentation.compose.SimpleMenuRow
 import com.example.pillcountingnewmodels.feature.menu.presentation.viewmodel.MenuViewModel
 import com.example.pillcountingnewmodels.navigation.AUTH_GRAPH_ROUTE
 import com.example.pillcountingnewmodels.ui.theme.AppTheme.extendedColors
 
+/**
+ * Renders the **Menu Screen**, which serves as the main navigation hub for the application's
+ * key operations — including count management, user profile access, history, settings, and logout.
+ * ---
+ * @param navController The [NavController] used for in-app navigation between screens.
+ * @param viewModel The [MenuViewModel] managing count-related data displayed in the menu.
+ * @param loginViewModel The [LoginViewModel] used to handle logout API requests and state.
+ *
+ * @see MenuItemRow For menu items with completion/partial count indicators.
+ * @see SimpleMenuRow For single-action menu rows like Profile, History, and Logout.
+ */
 @Composable
 fun MenuScreen(
     navController: NavController,
-    viewModel: MenuViewModel = hiltViewModel()
+    viewModel: MenuViewModel = hiltViewModel(),
+    loginViewModel: LoginViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val logoutState by loginViewModel.logoutUiState.collectAsState()
+    var showLogoutLoading by remember { mutableStateOf(false) }
 
     BackHandler { /* consume back press */ }
 
@@ -41,7 +65,6 @@ fun MenuScreen(
             .fillMaxSize()
             .background(extendedColors.secondaryBackground)
     ) {
-
         BackButton(navController)
 
         Column(
@@ -126,11 +149,70 @@ fun MenuScreen(
                 iconTint = MaterialTheme.colorScheme.primary,
                 title = stringResource(R.string.menu_logout),
                 onClick = {
-                    navController.navigate(AUTH_GRAPH_ROUTE) {
-                        popUpTo(Screen.Dashboard.route) { inclusive = true }
+                    showLogoutLoading = true
+                    val refreshToken = loginViewModel.preferenceHelper.getRefreshToken()
+                    if (!refreshToken.isNullOrBlank()) {
+                        loginViewModel.logout(refreshToken)
+                    } else {
+                        // Fallback: clear session locally if token missing
+                        loginViewModel.preferenceHelper.clearTokens()
+                        loginViewModel.preferenceHelper.setUserLoggedIn(false)
+                        showLogoutLoading = false
+                        navController.navigate(AUTH_GRAPH_ROUTE) {
+                            popUpTo(0) { inclusive = true }
+                        }
                     }
                 }
             )
+
+            // Logout UI Feedback
+            when (val state = logoutState) {
+                is LogoutUiState.Loading -> {
+                    if (showLogoutLoading) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(top = 40.dp)
+                        ) {
+                            CircularProgressIndicator()
+                            Text(
+                                text = stringResource(R.string.logging_out),
+                                color = MaterialTheme.colorScheme.primary,
+                                style = MaterialTheme.typography.bodyMedium,
+                                modifier = Modifier.padding(top = 8.dp)
+                            )
+                        }
+                    }
+                }
+
+                is LogoutUiState.Error -> {
+                    showLogoutLoading = false
+                    Text(
+                        text = state.message,
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.padding(top = 16.dp)
+                    )
+                }
+
+                is LogoutUiState.Success -> {
+                    LaunchedEffect(Unit) {
+                        // Clear user session on successful logout
+                        loginViewModel.preferenceHelper.clearTokens()
+                        loginViewModel.preferenceHelper.setUserLoggedIn(false)
+                        loginViewModel.clearAllStates()
+                        showLogoutLoading = false
+
+                        // Navigate back to login/auth graph
+                        navController.navigate(AUTH_GRAPH_ROUTE) {
+                            popUpTo(0) { inclusive = true }
+                        }
+                    }
+                }
+
+                else -> {}
+            }
         }
     }
 }

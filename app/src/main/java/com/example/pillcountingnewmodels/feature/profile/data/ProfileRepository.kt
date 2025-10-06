@@ -1,5 +1,7 @@
 package com.example.pillcountingnewmodels.feature.profile.data
 
+import com.example.pillcountingnewmodels.core.models.RefreshTokenRequest
+import com.example.pillcountingnewmodels.core.network.IApplicationSettingInterface
 import com.example.pillcountingnewmodels.core.room.dao.UserDao
 import com.example.pillcountingnewmodels.core.utils.AppLogger
 import com.example.pillcountingnewmodels.core.utils.PreferenceHelper
@@ -10,18 +12,22 @@ import com.example.pillcountingnewmodels.feature.profile.domain.model.ProfileUpd
 import com.example.pillcountingnewmodels.feature.profile.domain.model.ProfileUpdateResponse
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
+import retrofit2.HttpException
 import javax.inject.Inject
 
 /**
- * Default implementation of [IProfileRepository].
+ * Repository responsible for managing user profile update and delete operations.
  *
- * Interacts with remote [IProfileApi] and local Room database [UserDao].
+ * It automatically handles:
+ * - Authorization headers via [PreferenceHelper].
+ * - Token refresh when encountering HTTP 401 (Invalid or expired token).
  */
 class ProfileRepository @Inject constructor(
     private val userDao: UserDao,
     private val profileApi: IProfileApi,
     private val ioDispatcher: CoroutineDispatcher,
     private val preferenceHelper: PreferenceHelper,
+    private val applicationSettingApi: IApplicationSettingInterface
 ) : IProfileRepository {
 
     private val logger = AppLogger.create<ProfileRepository>()
@@ -34,39 +40,90 @@ class ProfileRepository @Inject constructor(
      */
     override suspend fun updateProfile(
         request: ProfileUpdateRequest
-    ): Result<ProfileUpdateResponse> =
-        withContext(ioDispatcher) {
-            try {
-                logger.i("Updating profile for user: ${request.fullName}")
-                val response = profileApi.updateProfile(
-                    authorization = "Bearer ${preferenceHelper.getAccessToken()}",
-                    request = request
-                )
-                logger.i("Profile update successful.")
-                Result.success(response)
-            } catch (e: Exception) {
-                logger.e("Profile update failed.", e)
-                Result.failure(e)
+    ): Result<ProfileUpdateResponse> = withContext(ioDispatcher) {
+        try {
+            logger.i("Updating profile for user: ${request.fullName}")
+            val token = preferenceHelper.getAccessToken().orEmpty()
+            val response = profileApi.updateProfile("Bearer $token", request)
+            logger.i("Profile update successful.")
+            Result.success(response)
+
+        } catch (e: HttpException) {
+            if (e.code() == 401) {
+                logger.w("Access token invalid or expired. Attempting refresh...")
+
+                return@withContext handleTokenRefreshAndRetry {
+                    val newToken = preferenceHelper.getAccessToken().orEmpty()
+                    profileApi.updateProfile("Bearer $newToken", request)
+                }
             }
+            logger.e("Profile update failed with HttpException", e)
+            Result.failure(e)
+        } catch (e: Exception) {
+            logger.e("Profile update failed", e)
+            Result.failure(e)
         }
+    }
 
     /**
      * Delete the user profile permanently from the remote server.
      *
      * @return [Result] containing [ProfileDeleteResponse] on success, or an exception on failure.
      */
-    override suspend fun deleteProfile(): Result<ProfileDeleteResponse> =
-        withContext(ioDispatcher) {
-            try {
-                logger.i("Deleting user profile.")
-                val response = profileApi.deleteProfile(
-                    authorization = "Bearer ${preferenceHelper.getAccessToken()}",
-                )
-                logger.i("Profile deletion successful.")
-                Result.success(response)
-            } catch (e: Exception) {
-                logger.e("Profile deletion failed.", e)
-                Result.failure(e)
+    override suspend fun deleteProfile(): Result<ProfileDeleteResponse> = withContext(ioDispatcher) {
+        try {
+            logger.i("Deleting user profile.")
+            val token = preferenceHelper.getAccessToken().orEmpty()
+            val response = profileApi.deleteProfile("Bearer $token")
+            logger.i("Profile deletion successful.")
+            Result.success(response)
+
+        } catch (e: HttpException) {
+            if (e.code() == 401) {
+                logger.w("Access token invalid or expired. Attempting refresh...")
+
+                return@withContext handleTokenRefreshAndRetry {
+                    val newToken = preferenceHelper.getAccessToken().orEmpty()
+                    profileApi.deleteProfile("Bearer $newToken")
+                }
             }
+            logger.e("Profile delete failed with HttpException", e)
+            Result.failure(e)
+        } catch (e: Exception) {
+            logger.e("Profile deletion failed", e)
+            Result.failure(e)
         }
+    }
+
+    // ─────────────────────────── Token Refresh Handler ───────────────────────────
+    /**
+     * Handles access token refresh logic and retries the failed API call.
+     */
+    private suspend fun <T> handleTokenRefreshAndRetry(apiCall: suspend () -> T): Result<T> {
+        return try {
+            val refreshToken = preferenceHelper.getRefreshToken()
+                ?: return Result.failure(Exception("No refresh token available"))
+
+            val refreshResponse = applicationSettingApi.refreshToken(RefreshTokenRequest(refreshToken))
+
+            if (!refreshResponse.accessToken.isNullOrBlank()) {
+                logger.i("Token refreshed successfully.")
+                preferenceHelper.saveTokens(
+                    accessToken = refreshResponse.accessToken,
+                    refreshToken = refreshResponse.refreshToken ?: refreshToken
+                )
+
+                // Retry API with new token
+                val retryResponse = apiCall()
+                logger.i("API retried successfully after token refresh.")
+                Result.success(retryResponse)
+            } else {
+                logger.e("Token refresh failed: ${refreshResponse.message}")
+                Result.failure(Exception("Failed to refresh token: ${refreshResponse.message}"))
+            }
+        } catch (ex: Exception) {
+            logger.e("Token refresh or retry failed", ex)
+            Result.failure(ex)
+        }
+    }
 }

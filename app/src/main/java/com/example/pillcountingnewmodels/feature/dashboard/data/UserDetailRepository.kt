@@ -14,12 +14,11 @@ import retrofit2.HttpException
 import javax.inject.Inject
 
 /**
- * Default implementation of [IUserDetailRepository] that interacts with
- * a remote API to fetch user details, handling token expiration.
+ * Repository for fetching user details from the backend.
  *
- * @property api Retrofit service for user details API.
- * @property preferenceHelper Helper for managing stored tokens.
- * @property ioDispatcher Coroutine dispatcher for offloading I/O operations.
+ * - Automatically adds bearer token from [PreferenceHelper].
+ * - Refreshes tokens if access token is invalid or expired (HTTP 401).
+ * - Retries the API call seamlessly after refreshing the token.
  */
 class UserDetailRepository @Inject constructor(
     private val api: IUserDetailAPI,
@@ -31,73 +30,91 @@ class UserDetailRepository @Inject constructor(
     private val logger = AppLogger.create<UserDetailRepository>()
 
     /**
-     * Fetches the authenticated user's details from the server,
-     * automatically refreshing the access token if expired.
-     *
-     * @param token Current access token for authorization.
-     * @return A [Result] wrapping either a [UserDetail] on success,
-     * or an exception on failure.
+     * Fetches user details using the stored access token.
+     * If the access token is invalid, it attempts a token refresh and retries the request.
      */
     override suspend fun getUserDetail(token: String): Result<ApiResponse<UserDetail>> =
         withContext(ioDispatcher) {
             try {
-                logger.i("Fetching user detail with token: $token")
+                logger.i("Fetching user detail with token: ${token.take(10)}...")
                 val response = api.getUserDetail("Bearer $token")
 
-                if (response.isSuccessful) {
-                    response.body()?.let {
-                        logger.i("User detail fetched successfully.")
-                        Result.success(it)
-                    } ?: run {
-                        logger.e("Empty response body while fetching user detail.")
-                        Result.failure(Exception("Empty response body"))
-                    }
-                } else if (response.code() == 401) {
-                    logger.w("Access token expired. Attempting token refresh...")
-
-                    val refreshToken = preferenceHelper.getRefreshToken()
-                        ?: return@withContext Result.failure(Exception("No refresh token available"))
-
-                    val refreshResponse = try {
-                        applicationSettingApi.refreshToken(RefreshTokenRequest(refreshToken))
-                    } catch (e: Exception) {
-                        logger.e("Token refresh request failed", e)
-                        return@withContext Result.failure(e)
-                    }
-
-                    if (refreshResponse.accessToken != null) {
-                        logger.i("Token refreshed successfully. Saving new tokens.")
-                        preferenceHelper.saveTokens(
-                            accessToken = refreshResponse.accessToken,
-                            refreshToken = refreshResponse.refreshToken ?: refreshToken
-                        )
-
-                        // Retry original request with new access token
-                        val retryResponse = api.getUserDetail("Bearer ${refreshResponse.accessToken}")
-                        if (retryResponse.isSuccessful) {
-                            retryResponse.body()?.let {
-                                return@withContext Result.success(it)
-                            } ?: run {
-                                return@withContext Result.failure(Exception("Empty response body after retry"))
-                            }
-                        } else {
-                            return@withContext Result.failure(
-                                Exception("Failed to fetch user detail after token refresh: HTTP ${retryResponse.code()}")
-                            )
+                val result: Result<ApiResponse<UserDetail>> = when {
+                    response.isSuccessful -> {
+                        response.body()?.let {
+                            logger.i("User detail fetched successfully.")
+                            Result.success(it)
+                        } ?: run {
+                            logger.e("Empty response body while fetching user detail.")
+                            Result.failure(Exception("Empty response body"))
                         }
-                    } else {
-                        return@withContext Result.failure(Exception("Failed to refresh token: ${refreshResponse.message}"))
                     }
-                } else {
-                    logger.e("Error fetching user detail. HTTP code: ${response.code()}")
-                    Result.failure(Exception("Error fetching user detail: ${response.code()}"))
+
+                    response.code() == 401 -> {
+                        logger.w("Access token invalid or expired. Attempting refresh...")
+                        handleTokenRefreshAndRetry {
+                            val newToken = preferenceHelper.getAccessToken().orEmpty()
+                            val retryResponse = api.getUserDetail("Bearer $newToken")
+                            if (retryResponse.isSuccessful) {
+                                retryResponse.body()?.let {
+                                    logger.i("User detail fetched successfully after token refresh.")
+                                    Result.success(it)
+                                } ?: Result.failure(Exception("Empty response body after retry"))
+                            } else {
+                                Result.failure(
+                                    Exception("Failed after token refresh: HTTP ${retryResponse.code()}")
+                                )
+                            }
+                        }
+                    }
+
+                    else -> {
+                        logger.e("Error fetching user detail. HTTP code: ${response.code()}")
+                        Result.failure(Exception("Server returned ${response.code()}"))
+                    }
                 }
+
+                result //
             } catch (e: HttpException) {
-                logger.e("HttpException while fetching user detail", e)
+                logger.e("HttpException during getUserDetail()", e)
                 Result.failure(e)
             } catch (e: Exception) {
-                logger.e("Unexpected error while fetching user detail", e)
+                logger.e("Unexpected error fetching user detail", e)
                 Result.failure(e)
             }
         }
+
+
+    // ─────────────────────────── Token Refresh & Retry Handler ───────────────────────────
+    /**
+     * Handles access token refresh and retries the failed API request.
+     *
+     * @param apiCall A suspend function representing the API to retry after refresh.
+     * @return [Result] wrapping success or failure.
+     */
+    private suspend fun <T> handleTokenRefreshAndRetry(apiCall: suspend () -> Result<T>): Result<T> {
+        return try {
+            val refreshToken = preferenceHelper.getRefreshToken()
+                ?: return Result.failure(Exception("No refresh token available"))
+
+            val refreshResponse = applicationSettingApi.refreshToken(RefreshTokenRequest(refreshToken))
+
+            if (!refreshResponse.accessToken.isNullOrBlank()) {
+                logger.i("Token refreshed successfully. Saving new tokens.")
+                preferenceHelper.saveTokens(
+                    accessToken = refreshResponse.accessToken,
+                    refreshToken = refreshResponse.refreshToken ?: refreshToken
+                )
+
+                // Retry API call with new access token
+                apiCall()
+            } else {
+                logger.e("Token refresh failed: ${refreshResponse.message}")
+                Result.failure(Exception("Failed to refresh token: ${refreshResponse.message}"))
+            }
+        } catch (ex: Exception) {
+            logger.e("Token refresh or retry failed", ex)
+            Result.failure(ex)
+        }
+    }
 }

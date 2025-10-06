@@ -152,7 +152,7 @@ fun ProfileScreen(
                     Text(
                         text = (updateUiState as ProfileUpdateUiState.Error).message,
                         color = MaterialTheme.colorScheme.error,
-                        modifier = Modifier.align(Alignment.CenterHorizontally)
+                        modifier = Modifier.align(Alignment.CenterHorizontally).padding(start = 16.dp)
                     )
                 }
 
@@ -182,7 +182,7 @@ fun ProfileScreen(
                     Text(
                         text = (deleteUiState as ProfileDeleteUiState.Error).message,
                         color = MaterialTheme.colorScheme.error,
-                        modifier = Modifier.align(Alignment.CenterHorizontally)
+                        modifier = Modifier.align(Alignment.CenterHorizontally).padding(start = 16.dp)
                     )
                 }
 

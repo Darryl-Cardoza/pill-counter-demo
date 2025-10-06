@@ -69,6 +69,17 @@
     <string name="error_name_invalid">Name cannot contain numbers</string>
     <string name="error_pharmacy_name_invalid">Pharmacy name too short</string>
     <string name="error_npi_invalid">Invalid NPI number</string>
+    <string name="error_no_internet">No internet connection. Please check your network and try again.</string>
+    <string name="error_timeout">The request took too long. Please try again later.</string>
+    <string name="error_server_unavailable">Server is temporarily unavailable. Please try again later.</string>
+    <string name="error_generic">Something went wrong. Please try again.</string>
+    <string name="error_invalid_email">Please enter a valid email address.</string>
+    <string name="error_empty_email">Please enter your email address.</string>
+    <string name="error_server_down">Server is temporarily unavailable. Please try again later.</string>
+    <string name="error_unauthorized">Your session has expired. Please log in again.</string>
+    <string name="error_invalid_input">Invalid input. Please verify your details.</string>
+    <string name="error_not_found">Requested resource not found.</string>
+
 
     <!-- ================== PARTIAL COUNTS ================== -->
     <string name="fixed_partial_count_title">Fixed Partial Counts</string>
@@ -125,6 +136,7 @@
     <string name="npi_number">NPI No.</string>
     <string name="do_not_ask">Do not ask again</string>
     <string name="confirm_delete_profile">Are you sure you want to delete your profile? This action cannot be undone.</string>
+    <string name="logging_out">Logging out...</string>
 
     <!-- ================== MENUS ================== -->
     <string name="menu_fixed_count">Fixed Count</string>

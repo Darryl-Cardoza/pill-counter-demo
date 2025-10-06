@@ -66,9 +66,9 @@ fun LoginScreen(
 ) {
     var email by remember { mutableStateOf("") }
     var rememberMe by remember { mutableStateOf(false) }
+    var localError by remember { mutableStateOf<String?>(null) }
 
     val loginUiState by viewModel.uiState.collectAsState()
-
     val context = LocalContext.current
 
     Box(
@@ -98,6 +98,7 @@ fun LoginScreen(
                             value = email,
                             onValueChange = {
                                 email = it
+                                localError = null
                                 viewModel.resetLoginState()
                             },
                             placeholder = stringResource(R.string.email),
@@ -106,6 +107,18 @@ fun LoginScreen(
                             keyboardType = KeyboardType.Email,
                             imeAction = ImeAction.Done
                         )
+
+                        // Local validation message (Empty field)
+                        if (!localError.isNullOrEmpty()) {
+                            Text(
+                                text = localError!!,
+                                color = MaterialTheme.colorScheme.error,
+                                style = MaterialTheme.typography.bodyMedium,
+                                modifier = Modifier
+                                    .padding(top = 8.dp)
+                                    .align(Alignment.Start)
+                            )
+                        }
 
                         Spacer(Modifier.height(25.dp))
 
@@ -166,7 +179,6 @@ fun LoginScreen(
 
                             is LoginUiState.Success -> {
                                 LaunchedEffect(Unit) {
-
                                     viewModel.clearAllStates()
                                     navController.navigate(
                                         Screen.OtpVerify.createRoute(
@@ -178,21 +190,27 @@ fun LoginScreen(
                                     rememberMe = false
                                 }
                             }
-
                         }
 
-                        // Login Button
+                        // LOGIN BUTTON
                         ActionButtonPrimary(
                             text = "LOGIN",
-                            onClick = { viewModel.login(email = email) },
+                            onClick = {
+                                if (email.isBlank()) {
+                                    localError = context.getString(R.string.error_empty_email)
+                                } else {
+                                    localError = null
+                                    viewModel.login(email)
+                                }
+                            },
                             modifier = Modifier.align(Alignment.CenterHorizontally)
                         )
                     }
 
                     Spacer(Modifier.height(20.dp))
-
                 }
             }
         )
     }
 }
+

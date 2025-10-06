@@ -1,4 +1,4 @@
-package com.example.pillcountingnewmodels.feature.otp.viewmodel
+package com.example.pillcountingnewmodels.feature.register.presentation.viewmodel
 
 import android.content.Context
 import androidx.lifecycle.ViewModel
@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.pillcountingnewmodels.R
 import com.example.pillcountingnewmodels.core.models.ErrorResponse
 import com.example.pillcountingnewmodels.core.utils.AppLogger
+import com.example.pillcountingnewmodels.core.utils.NetworkUtils
 import com.example.pillcountingnewmodels.core.utils.PreferenceHelper
 import com.example.pillcountingnewmodels.feature.otp.data.VerifyPinRepository
 import com.example.pillcountingnewmodels.feature.register.domain.model.VerifyPinUiState
@@ -15,16 +16,24 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import retrofit2.HttpException
+import java.io.IOException
 import javax.inject.Inject
 
 /**
- * Manages the UI state and business logic for the OTP verification screen.
+ * ViewModel responsible for verifying OTP codes and managing token persistence.
  *
- * Responsibilities:
- * - Validates OTP input
- * - Calls the repository to verify the OTP
- * - Updates [uiState] with loading/success/failure
- * - Persists tokens on success
+ * ---
+ * ### Responsibilities
+ * - Validate and verify OTP input via [VerifyPinRepository].
+ * - Persist access/refresh tokens on successful verification.
+ * - Update [uiState] with friendly error or success states.
+ * - Ensure user feedback is meaningful, masking technical details.
+ *
+ * ---
+ * @param repository The [VerifyPinRepository] handling OTP verification API.
+ * @param context The application context, used for localized messages.
+ * @param prefs Secure storage for tokens and login state.
  */
 @HiltViewModel
 class VerifyPinViewModel @Inject constructor(
@@ -41,72 +50,96 @@ class VerifyPinViewModel @Inject constructor(
     /**
      * Verifies the entered OTP against the backend.
      *
-     * @param email User's email address (used for logging/debugging).
-     * @param otp 4-digit OTP entered by the user.
+     * @param email User’s email address (for logging/debug).
+     * @param otp The 4-digit OTP entered by the user.
      */
     fun verifyPin(email: String, otp: String) {
         if (otp.length != 4) {
-            _uiState.value = VerifyPinUiState.Error(context.getString(R.string.error_invalid_otp))
+            _uiState.value = VerifyPinUiState.Error(
+                context.getString(R.string.error_invalid_otp)
+            )
             return
         }
 
         if (_uiState.value is VerifyPinUiState.Loading) return
 
         viewModelScope.launch {
-            logger.i("Attempting OTP verification for email: $email")
+            // Check network connectivity before calling API
+            if (!NetworkUtils.isNetworkAvailable(context)) {
+                _uiState.value = VerifyPinUiState.Error(
+                    context.getString(R.string.error_no_internet)
+                )
+                logger.w("OTP verification aborted: no internet connection.")
+                return@launch
+            }
 
+            logger.i("Attempting OTP verification for email: $email")
             _uiState.value = VerifyPinUiState.Loading
 
             repository.verifyPin(email, otp)
                 .onSuccess { response ->
-                    logger.i("OTP verification successful. Status: ${response.status}, Message: ${response.message}")
+                    logger.i("OTP verification success: ${response.status} / ${response.message}")
 
                     val data = response.data
-
                     val accessToken = data?.accessToken
                     val refreshToken = data?.refreshToken
                     val user = data?.user
 
-                    logger.d("Access Token: ${accessToken?.take(15)}...") // log only prefix
-                    logger.d("Refresh Token: ${refreshToken?.take(15)}...")
-
+                    // ✅ Persist tokens if available
                     if (!accessToken.isNullOrBlank() && !refreshToken.isNullOrBlank()) {
-                        prefs.saveTokens(accessToken = accessToken, refreshToken = refreshToken)
-                        logger.i("Tokens saved to SharedPreferences.")
+                        prefs.saveTokens(accessToken, refreshToken)
+                        logger.i("Access and refresh tokens saved securely.")
                     } else {
-                        logger.w("Missing access or refresh token. Tokens not saved.")
+                        logger.w("Missing access or refresh token in response.")
                     }
 
-                    if (user != null) {
-                        logger.i("User verified: email=${user.email}, isVerified=${user.isVerified}, role=${user.role}")
-                    } else {
-                        logger.w("User object is null in response.")
-                    }
+                    // Log user info (safely)
+                    user?.let {
+                        logger.i("User verified: email=${it.email}, verified=${it.isVerified}, role=${it.role}")
+                    } ?: logger.w("User object is null in response.")
 
                     _uiState.value = VerifyPinUiState.Success
-                    logger.i("UI state set to Success.")
                 }
                 .onFailure { exception ->
                     logger.e("OTP verification failed for user: $email", exception)
-
-                    val errorMessage = if (exception is retrofit2.HttpException) {
-                        val errorBody = exception.response()?.errorBody()?.string()
-                        errorBody?.let {
-                            try {
-                                val errorResponse = Gson().fromJson(it, ErrorResponse::class.java)
-                                logger.w("Parsed error message: ${errorResponse.message}")
-                                errorResponse.message
-                            } catch (e: Exception) {
-                                logger.e("Failed to parse error response", e)
-                                context.getString(R.string.error_unknown)
-                            }
-                        } ?: context.getString(R.string.error_unknown)
-                    } else {
-                        exception.message ?: context.getString(R.string.error_unknown)
-                    }
-
-                    _uiState.value = VerifyPinUiState.Error(errorMessage)
+                    val message = mapExceptionToUserMessage(exception)
+                    _uiState.value = VerifyPinUiState.Error(message)
                 }
+        }
+    }
+
+    /**
+     * Converts a thrown exception into a clear, user-friendly message.
+     */
+    private fun mapExceptionToUserMessage(exception: Throwable): String {
+        return when (exception) {
+            is IOException -> {
+                // Network or server connectivity issue
+                context.getString(R.string.error_server_unavailable)
+            }
+            is HttpException -> {
+                val code = exception.code()
+                val errorBody = exception.response()?.errorBody()?.string()
+                val apiMessage = errorBody?.let {
+                    try {
+                        val errorResponse = Gson().fromJson(it, ErrorResponse::class.java)
+                        errorResponse.message
+                    } catch (e: Exception) {
+                        logger.e("Error parsing error response", e)
+                        null
+                    }
+                }
+
+                when {
+                    code == 401 -> context.getString(R.string.error_unauthorized)
+                    code == 400 -> apiMessage ?: context.getString(R.string.error_invalid_otp)
+                    code in 500..599 -> context.getString(R.string.error_server_down)
+                    else -> apiMessage ?: context.getString(R.string.error_unknown)
+                }
+            }
+            else -> {
+                context.getString(R.string.error_unknown)
+            }
         }
     }
 

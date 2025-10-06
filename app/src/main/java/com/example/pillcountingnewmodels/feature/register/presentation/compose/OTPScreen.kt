@@ -41,7 +41,7 @@ import com.example.pillcountingnewmodels.core.utils.compose.HelperFunctions.mask
 import com.example.pillcountingnewmodels.core.utils.compose.OTPTextField
 import com.example.pillcountingnewmodels.core.utils.compose.SplitResponsive
 import com.example.pillcountingnewmodels.feature.login.viewmodel.LoginViewModel
-import com.example.pillcountingnewmodels.feature.otp.viewmodel.VerifyPinViewModel
+import com.example.pillcountingnewmodels.feature.register.presentation.viewmodel.VerifyPinViewModel
 import com.example.pillcountingnewmodels.feature.register.domain.model.VerifyPinUiState
 import com.example.pillcountingnewmodels.ui.theme.AppTheme
 import kotlinx.coroutines.delay

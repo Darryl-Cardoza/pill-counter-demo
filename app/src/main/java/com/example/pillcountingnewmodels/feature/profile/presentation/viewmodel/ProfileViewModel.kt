@@ -1,23 +1,32 @@
 package com.example.pillcountingnewmodels.feature.profile.presentation.viewmodel
 
+import android.content.Context
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.pillcountingnewmodels.R
+import com.example.pillcountingnewmodels.core.models.ErrorResponse
 import com.example.pillcountingnewmodels.core.room.dao.UserDao
 import com.example.pillcountingnewmodels.core.room.models.UserEntity
 import com.example.pillcountingnewmodels.core.utils.AppLogger
+import com.example.pillcountingnewmodels.core.utils.NetworkUtils
 import com.example.pillcountingnewmodels.core.utils.PreferenceHelper
 import com.example.pillcountingnewmodels.feature.login.domain.CredentialsValidator
 import com.example.pillcountingnewmodels.feature.profile.data.ProfileRepository
 import com.example.pillcountingnewmodels.feature.profile.domain.model.ProfileDeleteUiState
 import com.example.pillcountingnewmodels.feature.profile.domain.model.ProfileUpdateRequest
 import com.example.pillcountingnewmodels.feature.profile.domain.model.ProfileUpdateUiState
+import com.google.gson.Gson
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import retrofit2.HttpException
+import java.net.SocketTimeoutException
+import java.net.UnknownHostException
 import javax.inject.Inject
 
 /**
@@ -28,57 +37,36 @@ import javax.inject.Inject
  * - Validate fields using [CredentialsValidator].
  * - Handle profile update and delete operations via [ProfileRepository].
  * - Manage state flows ([ProfileUpdateUiState], [ProfileDeleteUiState]) for Compose UI.
- *
- * @property repository Repository for profile API operations.
- * @property preferenceHelper Shared preferences helper for storing user session data.
- * @property userDao Room DAO for persisting and observing user data locally.
- * @property validator Validation utility for checking profile field inputs.
+ * - Provide user-friendly network and API error messages.
  */
 @HiltViewModel
 class ProfileViewModel @Inject constructor(
     private val repository: ProfileRepository,
     private val preferenceHelper: PreferenceHelper,
     private val userDao: UserDao,
-    private val validator: CredentialsValidator
+    private val validator: CredentialsValidator,
+    @ApplicationContext private val context: Context
 ) : ViewModel() {
 
     private val logger = AppLogger.create<ProfileViewModel>()
 
     // ─────────────────────────── UI States ───────────────────────────
-
-    /** State flow representing the status of profile update operations. */
     private val _updateUiState = MutableStateFlow<ProfileUpdateUiState>(ProfileUpdateUiState.Idle)
     val updateUiState = _updateUiState.asStateFlow()
 
-    /** State flow representing the status of profile delete operations. */
     private val _deleteUiState = MutableStateFlow<ProfileDeleteUiState>(ProfileDeleteUiState.Idle)
     val deleteUiState = _deleteUiState.asStateFlow()
 
     // ─────────────────────────── Profile Fields ───────────────────────────
-
-    /** User's first name input. */
     var firstName by mutableStateOf("")
-
-    /** User's last name input. */
     var lastName by mutableStateOf("")
-
-    /** Pharmacy name input. */
     var pharmacyName by mutableStateOf("")
-
-    /** Phone number input. */
     var phoneNumber by mutableStateOf("")
-
-    /** Email input. */
     var email by mutableStateOf("")
-
-    /** NPI (National Provider Identifier) input. */
     var npi by mutableStateOf("")
-
-    /** Checkbox state for "Do not ask again". */
     var doNotAskAgain by mutableStateOf(false)
 
     // ─────────────────────────── Validation Errors ───────────────────────────
-
     var firstNameError by mutableStateOf<Int?>(null)
     var lastNameError by mutableStateOf<Int?>(null)
     var pharmacyNameError by mutableStateOf<Int?>(null)
@@ -94,7 +82,6 @@ class ProfileViewModel @Inject constructor(
             logger.w("No localId found in preferences — skipping prefill.")
         }
 
-        // Load the saved "Do Not Ask Again" preference
         doNotAskAgain = preferenceHelper.isDoNotAskAgain()
         logger.i("Initialized doNotAskAgain = $doNotAskAgain")
     }
@@ -105,12 +92,6 @@ class ProfileViewModel @Inject constructor(
         logger.i("DoNotAskAgain updated → $value")
     }
 
-    /**
-     * Observes the [UserEntity] in Room by [localId].
-     * Automatically updates UI fields when the user record changes.
-     *
-     * @param localId The Room PK of the user.
-     */
     private fun observeUser(localId: Long) {
         viewModelScope.launch {
             userDao.observeByLocalId(localId).collect { user ->
@@ -120,7 +101,6 @@ class ProfileViewModel @Inject constructor(
                     val parts = it.name?.trim()?.split(" ") ?: emptyList()
                     firstName = parts.firstOrNull() ?: ""
                     lastName = if (parts.size > 1) parts.drop(1).joinToString(" ") else ""
-
                     pharmacyName = it.pharmacyName.orEmpty()
                     phoneNumber = it.phoneNumber.orEmpty()
                     email = it.email.orEmpty()
@@ -132,13 +112,6 @@ class ProfileViewModel @Inject constructor(
     }
 
     // ─────────────────────────── Validation ───────────────────────────
-
-    /**
-     * Validates all profile fields. Fields are optional,
-     * but if filled they must be valid.
-     *
-     * @return true if all inputs are valid, false otherwise.
-     */
     private fun validateInputs(): Boolean {
         firstNameError = validator.validateName(firstName).errorMessageResId
         lastNameError = validator.validateName(lastName).errorMessageResId
@@ -148,29 +121,27 @@ class ProfileViewModel @Inject constructor(
         npiError = validator.validateNpi(npi).errorMessageResId
 
         return listOf(
-            firstNameError,
-            lastNameError,
-            pharmacyNameError,
-            phoneError,
-            emailError,
-            npiError
+            firstNameError, lastNameError, pharmacyNameError,
+            phoneError, emailError, npiError
         ).all { it == null }
     }
 
     // ─────────────────────────── API Actions ───────────────────────────
-
-    /**
-     * Updates the user's profile after validation.
-     */
     fun updateProfile() {
         if (!validateInputs()) {
             logger.w("Validation failed. Aborting update.")
             return
         }
 
+        // Network check using NetworkUtils
+        if (!NetworkUtils.isNetworkAvailable(context)) {
+            _updateUiState.value =
+                ProfileUpdateUiState.Error(context.getString(R.string.error_no_internet))
+            return
+        }
+
         viewModelScope.launch {
             _updateUiState.value = ProfileUpdateUiState.Loading
-
             val request = ProfileUpdateRequest(
                 fullName = "$firstName $lastName".trim(),
                 pharmacyName = pharmacyName,
@@ -207,25 +178,24 @@ class ProfileViewModel @Inject constructor(
                     }
 
                     preferenceHelper.saveDoNotAskAgain(doNotAskAgain)
-
                     _updateUiState.value = ProfileUpdateUiState.Success
                 }
                 .onFailure { e ->
                     logger.e("Profile update failed", e)
-                    _updateUiState.value = ProfileUpdateUiState.Error(
-                        e.message ?: "Profile update failed"
-                    )
+                    _updateUiState.value =
+                        ProfileUpdateUiState.Error(getFriendlyErrorMessage(e))
                 }
         }
     }
 
-    /**
-     * Deletes the user's profile.
-     *
-     * Note: Local Room record is not deleted immediately
-     * to prevent accidental data loss.
-     */
     fun deleteProfile() {
+        // Check internet before delete
+        if (!NetworkUtils.isNetworkAvailable(context)) {
+            _deleteUiState.value =
+                ProfileDeleteUiState.Error(context.getString(R.string.error_no_internet))
+            return
+        }
+
         viewModelScope.launch {
             _deleteUiState.value = ProfileDeleteUiState.Loading
 
@@ -236,19 +206,46 @@ class ProfileViewModel @Inject constructor(
                 }
                 .onFailure { e ->
                     logger.e("Profile delete failed", e)
-                    _deleteUiState.value = ProfileDeleteUiState.Error(
-                        e.message ?: "Profile deletion failed"
-                    )
+                    _deleteUiState.value =
+                        ProfileDeleteUiState.Error(getFriendlyErrorMessage(e))
                 }
         }
     }
 
-    /** Resets profile update UI state back to [ProfileUpdateUiState.Idle]. */
+    // ─────────────────────────── Friendly Error Mapping ───────────────────────────
+    private fun getFriendlyErrorMessage(exception: Throwable): String {
+        return when (exception) {
+            is HttpException -> {
+                val errorBody = exception.response()?.errorBody()?.string()
+                val parsedMessage = errorBody?.let {
+                    try {
+                        val errorResponse = Gson().fromJson(it, ErrorResponse::class.java)
+                        errorResponse.message
+                    } catch (e: Exception) {
+                        logger.e("Failed to parse error response", e)
+                        null
+                    }
+                }
+                when (exception.code()) {
+                    400 -> parsedMessage ?: context.getString(R.string.error_invalid_input)
+                    401 -> context.getString(R.string.error_unauthorized)
+                    404 -> context.getString(R.string.error_not_found)
+                    500 -> context.getString(R.string.error_server_unavailable)
+                    else -> parsedMessage ?: context.getString(R.string.error_generic)
+                }
+            }
+            is UnknownHostException -> context.getString(R.string.error_no_internet)
+            is SocketTimeoutException -> context.getString(R.string.error_timeout)
+            else -> exception.message?.takeIf { it.isNotBlank() }
+                ?: context.getString(R.string.error_generic)
+        }
+    }
+
+    // ─────────────────────────── State Reset ───────────────────────────
     fun resetUpdateState() {
         _updateUiState.value = ProfileUpdateUiState.Idle
     }
 
-    /** Resets profile delete UI state back to [ProfileDeleteUiState.Idle]. */
     fun resetDeleteState() {
         _deleteUiState.value = ProfileDeleteUiState.Idle
     }

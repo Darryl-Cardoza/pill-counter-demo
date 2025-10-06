@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.pillcountingnewmodels.R
 import com.example.pillcountingnewmodels.core.models.ErrorResponse
 import com.example.pillcountingnewmodels.core.utils.AppLogger
+import com.example.pillcountingnewmodels.core.utils.NetworkUtils
 import com.example.pillcountingnewmodels.core.utils.PreferenceHelper
 import com.example.pillcountingnewmodels.feature.login.data.LoginRepository
 import com.example.pillcountingnewmodels.feature.login.domain.CredentialsValidator
@@ -17,6 +18,9 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import retrofit2.HttpException
+import java.net.SocketTimeoutException
+import java.net.UnknownHostException
 import javax.inject.Inject
 
 /**
@@ -38,44 +42,35 @@ class LoginViewModel @Inject constructor(
     private val repository: LoginRepository,
     private val validator: CredentialsValidator,
     @ApplicationContext private val context: Context,
-    private val preferenceHelper: PreferenceHelper
+    val preferenceHelper: PreferenceHelper
 ) : ViewModel() {
 
     private val logger = AppLogger.create<LoginViewModel>()
 
-    // Mutable state backing for login UI state
     private val _uiState = MutableStateFlow<LoginUiState>(LoginUiState.Idle)
-
-    /** Exposed immutable state flow representing the login UI state. */
     val uiState = _uiState.asStateFlow()
 
-    // Mutable state backing for logout UI state
     private val _logoutUiState = MutableStateFlow<LogoutUiState>(LogoutUiState.Idle)
-
-    /** Exposed immutable state flow representing the logout UI state. */
     val logoutUiState = _logoutUiState.asStateFlow()
 
-    /**
-     * Initiates a login attempt using the given email address.
-     *
-     * - Validates the email locally.
-     * - If valid, sends the login request to the backend.
-     * - Emits [LoginUiState.Loading], then [Success] or [Error] depending on outcome.
-     *
-     * @param email The user's email address to authenticate.
-     */
+    // -------------------------------------------------------------------------
+    // LOGIN FLOW
+    // -------------------------------------------------------------------------
     fun login(email: String) {
         val validationResult = validator.validateEmail(email)
 
         if (!validationResult.isSuccess) {
             val errorMessage = validationResult.errorMessageResId?.let { context.getString(it) }
-                ?: context.getString(R.string.error_unknown)
+                ?: context.getString(R.string.error_invalid_email)
             _uiState.value = LoginUiState.Error(errorMessage)
             return
         }
 
-        if (_uiState.value is LoginUiState.Loading) {
-            // Prevent multiple simultaneous login attempts
+        if (_uiState.value is LoginUiState.Loading) return
+
+        // Use centralized NetworkUtils
+        if (!NetworkUtils.isNetworkAvailable(context)) {
+            _uiState.value = LoginUiState.Error(context.getString(R.string.error_no_internet))
             return
         }
 
@@ -85,43 +80,26 @@ class LoginViewModel @Inject constructor(
 
             repository.login(email)
                 .onSuccess {
-                    logger.i("Login successful for user: $email. Token received.")
+                    logger.i("Login successful for user: $email.")
                     _uiState.value = LoginUiState.Success
                 }
                 .onFailure { exception ->
                     logger.e("Login failed for user: $email", exception)
-                    val errorMessage = if (exception is retrofit2.HttpException) {
-                        val errorBody = exception.response()?.errorBody()?.string()
-                        errorBody?.let {
-                            try {
-                                val errorResponse = Gson().fromJson(it, ErrorResponse::class.java)
-                                errorResponse.message
-                            } catch (e: Exception) {
-                                context.getString(R.string.error_unknown)
-                            }
-                        } ?: context.getString(R.string.error_unknown)
-                    } else {
-                        context.getString(R.string.error_unknown)
-                    }
-
-                    _uiState.value = LoginUiState.Error(
-                        errorMessage
-                    )
+                    _uiState.value = LoginUiState.Error(getFriendlyErrorMessage(exception))
                 }
         }
     }
 
-    /**
-     * Initiates a logout operation using the given refresh token.
-     *
-     * - Sends a logout request to the backend.
-     * - Updates [logoutUiState] to reflect the progress and result.
-     *
-     * @param refreshToken The refresh token to invalidate on logout.
-     */
+    // -------------------------------------------------------------------------
+    // LOGOUT FLOW
+    // -------------------------------------------------------------------------
     fun logout(refreshToken: String) {
-        if (_logoutUiState.value is LogoutUiState.Loading) {
-            return // Avoid duplicate logout calls
+        if (_logoutUiState.value is LogoutUiState.Loading) return
+
+        // Use centralized NetworkUtils
+        if (!NetworkUtils.isNetworkAvailable(context)) {
+            _logoutUiState.value = LogoutUiState.Error(context.getString(R.string.error_no_internet))
+            return
         }
 
         viewModelScope.launch {
@@ -135,53 +113,68 @@ class LoginViewModel @Inject constructor(
                 }
                 .onFailure { exception ->
                     logger.e("Logout failed", exception)
-                    val errorMessage = if (exception is retrofit2.HttpException) {
-                        val errorBody = exception.response()?.errorBody()?.string()
-                        errorBody?.let {
-                            try {
-                                val errorResponse = Gson().fromJson(it, ErrorResponse::class.java)
-                                errorResponse.message
-                            } catch (e: Exception) {
-                                context.getString(R.string.error_unknown)
-                            }
-                        } ?: context.getString(R.string.error_unknown)
-                    } else {
-                        exception.message ?: context.getString(R.string.error_unknown)
-                    }
-
-                    _logoutUiState.value = LogoutUiState.Error(errorMessage)
-
+                    _logoutUiState.value = LogoutUiState.Error(getFriendlyErrorMessage(exception))
                 }
         }
     }
 
-    /**
-     * Resets the login UI state back to [LoginUiState.Idle].
-     * This is useful after a login failure or success to clean up the UI.
-     */
+    // -------------------------------------------------------------------------
+    // STATE RESET HELPERS
+    // -------------------------------------------------------------------------
     fun resetLoginState() {
         if (_uiState.value !is LoginUiState.Idle) {
             _uiState.value = LoginUiState.Idle
         }
     }
 
-    /**
-     * Resets the logout UI state back to [LogoutUiState.Idle].
-     * Should be called after logout error/success messages are no longer needed.
-     */
     fun resetLogoutState() {
         if (_logoutUiState.value !is LogoutUiState.Idle) {
             _logoutUiState.value = LogoutUiState.Idle
         }
     }
 
-    /**
-     * Clears both login and logout UI states to idle.
-     * Useful when navigating away from the login/logout flow.
-     */
     fun clearAllStates() {
         _uiState.value = LoginUiState.Idle
         _logoutUiState.value = LogoutUiState.Idle
     }
 
+    // -------------------------------------------------------------------------
+    // FRIENDLY ERROR HANDLING
+    // -------------------------------------------------------------------------
+    private fun getFriendlyErrorMessage(exception: Throwable): String {
+        return when (exception) {
+            is HttpException -> {
+                val errorBody = exception.response()?.errorBody()?.string()
+                val parsedMessage = errorBody?.let {
+                    try {
+                        val errorResponse = Gson().fromJson(it, ErrorResponse::class.java)
+                        errorResponse.message
+                    } catch (e: Exception) {
+                        logger.e("Error parsing error response", e)
+                        null
+                    }
+                }
+                when (exception.code()) {
+                    400 -> parsedMessage ?: context.getString(R.string.error_invalid_email)
+                    401 -> context.getString(R.string.error_unauthorized)
+                    500 -> context.getString(R.string.error_server_unavailable)
+                    else -> parsedMessage ?: context.getString(R.string.error_generic)
+                }
+            }
+
+            is UnknownHostException -> context.getString(R.string.error_no_internet)
+            is SocketTimeoutException -> context.getString(R.string.error_timeout)
+            else -> exception.message?.takeIf { it.isNotBlank() }
+                ?: context.getString(R.string.error_generic)
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // SESSION MANAGEMENT HELPERS
+    // -------------------------------------------------------------------------
+    fun clearSession() {
+        preferenceHelper.clearTokens()
+        preferenceHelper.setUserLoggedIn(false)
+        logger.i("User session cleared.")
+    }
 }
