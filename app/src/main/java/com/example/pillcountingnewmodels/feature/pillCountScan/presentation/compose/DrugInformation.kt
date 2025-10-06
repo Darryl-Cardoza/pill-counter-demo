@@ -14,6 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.pillcountingnewmodels.R
@@ -44,7 +45,9 @@ fun DrugInformation(uiState: PillScanningUiState) {
             fontSize = 14.sp,
             fontFamily = FontFamily.Default,
             fontWeight = FontWeight.Normal,
-            color = AppTheme.extendedColors.textColor
+            color = AppTheme.extendedColors.textColor,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
         )
 
         Spacer(modifier = Modifier.height(8.dp))
