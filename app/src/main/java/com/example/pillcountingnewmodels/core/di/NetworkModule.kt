@@ -125,20 +125,6 @@ object NetworkModule {
             .build()
     }
 
-    /**
-     * Provides a singleton instance of [Retrofit] specifically for the Drug (FDA) API.
-     */
-    @Provides
-    @Singleton
-    @DrugApiQualifier
-    fun provideDrugRetrofit(okHttpClient: OkHttpClient, moshi: Moshi): Retrofit {
-        return Retrofit.Builder()
-            .baseUrl(DRUG_API_BASE_URL)
-            .client(okHttpClient)
-            .addConverterFactory(MoshiConverterFactory.create(moshi))
-            .build()
-    }
-
     // --- API Service Providers ---
 
     /**
@@ -305,13 +291,15 @@ object NetworkModule {
         api: IProfileApi,
         ioDispatcher: CoroutineDispatcher,
         userDao: UserDao,
-        preferenceHelper: PreferenceHelper
+        preferenceHelper: PreferenceHelper,
+        applicationSettingApi: IApplicationSettingInterface,
     ): IProfileRepository {
         return ProfileRepository(
             profileApi = api,
             userDao = userDao,
             ioDispatcher = ioDispatcher,
-            preferenceHelper = preferenceHelper
+            preferenceHelper = preferenceHelper,
+            applicationSettingApi = applicationSettingApi,
         )
     }
 

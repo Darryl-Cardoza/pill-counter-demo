@@ -2,6 +2,7 @@ package com.example.pillcountingnewmodels.feature.pillCountScan.presentation.vie
 
 import android.app.Application
 import android.graphics.Bitmap
+import android.graphics.Matrix
 import androidx.camera.core.ImageProxy
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -11,6 +12,7 @@ import com.example.pillcountingnewmodels.core.room.models.PillCountTxnDetailsEnt
 import com.example.pillcountingnewmodels.core.room.models.enums.CountStatus
 import com.example.pillcountingnewmodels.core.room.models.enums.CountType
 import com.example.pillcountingnewmodels.core.utils.AppLogger
+import com.example.pillcountingnewmodels.core.utils.OverlayUtils
 import com.example.pillcountingnewmodels.core.utils.PreferenceHelper
 import com.example.pillcountingnewmodels.core.utils.saveBitmapToFile
 import com.example.pillcountingnewmodels.feature.pillCountScan.domain.data.NavigationEvent
@@ -68,6 +70,7 @@ class PillScanningViewModel @Inject constructor(
     private val lastTenDetections: ArrayDeque<Int> = ArrayDeque()
     private var lastDetectedSnapshot: List<Int> = emptyList()
     private var lastChangeTimestamp: Long = System.currentTimeMillis()
+    private var lastTransformationMatrix: Matrix? = null
 
     // Pause state
     private var isPaused: Boolean = false
@@ -134,10 +137,9 @@ class PillScanningViewModel @Inject constructor(
                             interpreter = tflite,
                             viewWidth = viewWidth,
                             viewHeight = viewHeight
-                        ) { count, detections, bitmap ->
-                            processDetections(count, detections, bitmap, viewWidth, viewHeight)
+                        ) { count, detections, bitmap, matrix ->
+                            processDetections(count, detections, bitmap, matrix, viewWidth, viewHeight)
                         }
-
                         val duration = System.currentTimeMillis() - start
                         logger.i("Interpreter ready in ${duration}ms")
                         _modelState.value = ModelState.Ready(analyzer)
@@ -167,6 +169,7 @@ class PillScanningViewModel @Inject constructor(
         count: Int,
         detections: List<PillAnalyzer.Detection>,
         bitmap: Bitmap,
+        matrix: Matrix,
         viewWidth: Int,
         viewHeight: Int
     ) {
@@ -182,6 +185,7 @@ class PillScanningViewModel @Inject constructor(
         // Replace current bitmap
         currentFrameBitmap?.recycle()
         currentFrameBitmap = bitmap
+        lastTransformationMatrix = Matrix(matrix)
 
         // Update rolling buffer
         if (lastTenDetections.size >= ZERO_DETECTIONS_THRESHOLD) {
@@ -318,16 +322,11 @@ class PillScanningViewModel @Inject constructor(
                 val targetCount = _uiState.value.targetCount
                 val currentCount = _uiState.value.detectedPills.size
 
-                // Predict the total after adding the current batch
                 val predictedTotal = totalBatchCount + currentCount
 
                 if (_uiState.value.scanType == CountType.FIXED.toString() && predictedTotal > targetCount) {
                     logger.w("Skipping add transaction detail because predicted total exceeds target.")
-                    _uiState.update {
-                        it.copy(
-                            restrictAdd = true
-                        )
-                    }
+                    _uiState.update { it.copy(restrictAdd = true) }
                     return
                 }
 
@@ -338,7 +337,14 @@ class PillScanningViewModel @Inject constructor(
 
                 logger.i("Adding transaction detail with count=$currentCount")
 
-                val filePath = currentFrameBitmap?.let {
+                val overlayBitmap = currentFrameBitmap?.let { base ->
+                    lastTransformationMatrix?.let { matrix ->
+                        OverlayUtils.drawDetectionsOnBitmap(base, _uiState.value.detectedPills, matrix)
+                    } ?: base
+                }
+
+
+                val filePath = overlayBitmap?.let {
                     saveBitmapToFile(
                         getApplication(),
                         it,
@@ -357,12 +363,12 @@ class PillScanningViewModel @Inject constructor(
                     )
                     pillCountTxnDetailsDao.insert(detail)
                     logger.i("Transaction detail saved → count=$currentCount, file=$filePath")
-
-                    // Update last saved snapshot signature
-                    //lastSavedDetectionSignature = currentSignature
                 }
+
+                overlayBitmap?.recycle()
                 currentFrameBitmap = null
             }
+
 
             is PillScanningEvent.RescanClicked -> {
                 logger.i("Rescan requested")

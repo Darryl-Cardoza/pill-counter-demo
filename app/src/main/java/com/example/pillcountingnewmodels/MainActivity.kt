@@ -22,6 +22,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.core.net.toUri
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.rememberNavController
@@ -168,16 +169,17 @@ class MainActivity : ComponentActivity() {
     private fun getSecurityViolations(): List<String> {
         val violations = mutableListOf<String>()
 
-        if (isAdbEnabled()) violations.add("Developer options / ADB debugging enabled")
-        if (isDeviceRooted()) violations.add("Device is rooted or jailbroken")
-        if (isDebuggerAttached()) violations.add("Debugger is attached")
-        if (isRunningOnEmulator()) violations.add("Running on emulator")
-        if (isAppDebuggable()) violations.add("App is built as debuggable")
-        if (!isSignatureValid()) violations.add("App signature mismatch")
-        if (!isFromPlayStore()) violations.add("App not installed from Play Store")
+        if (isAdbEnabled()) violations.add(getString(R.string.violation_adb_enabled))
+        if (isDeviceRooted()) violations.add(getString(R.string.violation_rooted))
+        if (isDebuggerAttached()) violations.add(getString(R.string.violation_debugger_attached))
+        if (isRunningOnEmulator()) violations.add(getString(R.string.violation_emulator))
+        if (isAppDebuggable()) violations.add(getString(R.string.violation_debuggable_build))
+        if (!isSignatureValid()) violations.add(getString(R.string.violation_signature_mismatch))
+        if (!isFromPlayStore()) violations.add(getString(R.string.violation_not_from_playstore))
 
         return violations
     }
+
 
     /** Developer options enabled (ADB debugging). */
     private fun isAdbEnabled(): Boolean {
@@ -277,20 +279,27 @@ class MainActivity : ComponentActivity() {
 /** Security error dialog shown on violations. */
 @Composable
 fun SecurityErrorDialog(violations: List<String>) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val title = stringResource(R.string.security_alert_title)
+    val confirmText = stringResource(R.string.exit_app)
+    val cancelText = stringResource(R.string.close_app)
+
     val message = buildString {
-        append("The application cannot run on this device due to the following security violations:\n\n")
+        append(stringResource(R.string.security_violation_intro))
+        append("\n\n")
         violations.forEach { append("• $it\n") }
     }
 
     CommonDialog(
-        title = "Security Alert",
+        title = title,
         message = message,
-        confirmText = "Exit",
-        cancelText = "Close",
+        confirmText = confirmText,
+        cancelText = cancelText,
         onConfirm = { exitApp() },
         onCancel = { exitApp() }
     )
 }
+
 
 /** Terminates the app. */
 private fun exitApp() {

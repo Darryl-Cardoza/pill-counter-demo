@@ -186,10 +186,29 @@
     <string name="open_pdf_with">Open PDF with</string>
     <string name="sharePdfVia">Share PDF via</string>
 
+    <!-- ================== Security / Environment Protection ================== -->
+    <string name="security_alert_title">Security Alert</string>
+    <string name="exit_app">Exit</string>
+    <string name="close_app">Close</string>
+    <string name="security_violation_intro">
+        The application cannot run on this device due to the following security violations:
+    </string>
+
+    <!-- ================== Security violation messages ================== -->
+    <string name="violation_adb_enabled">Developer options or ADB debugging is enabled</string>
+    <string name="violation_rooted">Device is rooted or jailbroken</string>
+    <string name="violation_debugger_attached">A debugger is currently attached to the application</string>
+    <string name="violation_emulator">App is running on an emulator</string>
+    <string name="violation_debuggable_build">App is built as a debuggable version</string>
+    <string name="violation_signature_mismatch">App signature does not match the official release signature</string>
+    <string name="violation_not_from_playstore">App was not installed from the Google Play Store</string>
+
+
     <!-- ================== SYSTEM NOTICES ================== -->
     <string name="suspecious_activity_text">Our system spotted a suspicious \'double dosage\' from another device. Time to \nverify with a fresh login.</string>
     <string name="maintenance_text">The counter is at the pharmacist\'s desk for a quick check-up. Back soon\nwith accurate counts!</string>
     <string name="update_version_text">Your current version has expired - time to get a fresh prescription. Update now for \nthe right dose of features!</string>
+
     <string name="add_note">Add Note</string>
     <string name="add_note_error">Please enter a note or tap Skip</string>
 
