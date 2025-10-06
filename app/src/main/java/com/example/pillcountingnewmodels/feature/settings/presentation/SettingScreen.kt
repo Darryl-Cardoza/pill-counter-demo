@@ -17,9 +17,11 @@ import androidx.compose.ui.res.stringArrayResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.pillcountingnewmodels.R
 import com.example.pillcountingnewmodels.core.utils.compose.BackButton
+import com.example.pillcountingnewmodels.feature.settings.presentation.viewmodel.SettingsViewModel
 import com.example.pillcountingnewmodels.ui.theme.AppTheme
 import com.example.pillcountingnewmodels.ui.theme.LocalExtendedColors
 
@@ -31,11 +33,12 @@ import com.example.pillcountingnewmodels.ui.theme.LocalExtendedColors
  */
 @Composable
 fun SettingsScreen(
-    navController: NavController
+    navController: NavController,
+    viewModel: SettingsViewModel = hiltViewModel()
 ) {
     // State holders for preferences
-    var isBarcodeScanFirst by remember { mutableStateOf(true) }
-    var isAskToAddNotes by remember { mutableStateOf(false) }
+    //var isBarcodeScanFirst by remember { mutableStateOf(true) }
+    val isAskToAddNotes by viewModel.isAskToAddNotes.collectAsState()
 
     // Load history options from resources
     val historyOptions = stringArrayResource(R.array.history_options).toList()
@@ -46,8 +49,6 @@ fun SettingsScreen(
 
     val extendedColors = LocalExtendedColors.current
     val colorScheme = MaterialTheme.colorScheme
-
-    BackHandler { /* kept empty to consume back press and prevent navigation */ }
 
     Column(
         modifier = Modifier
@@ -78,19 +79,21 @@ fun SettingsScreen(
         ) {
 
             // Toggle: Barcode scan first
-            SettingSwitch(
+            /*SettingSwitch(
                 labelRes = R.string.setting_barcode_scan_first,
                 checked = isBarcodeScanFirst,
                 onCheckedChange = { isBarcodeScanFirst = it }
             )
 
-            HorizontalDivider(color = colorScheme.outlineVariant)
+            HorizontalDivider(color = colorScheme.outlineVariant)*/
 
             // Toggle: Ask to add notes
             SettingSwitch(
                 labelRes = R.string.setting_ask_to_add_notes,
                 checked = isAskToAddNotes,
-                onCheckedChange = { isAskToAddNotes = it }
+                onCheckedChange = { newValue ->
+                    viewModel.toggleAskToAddNotes(newValue)
+                }
             )
 
             HorizontalDivider(color = colorScheme.outlineVariant)
