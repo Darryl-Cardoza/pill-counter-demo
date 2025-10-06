@@ -1,6 +1,7 @@
 package com.example.pillcountingnewmodels.feature.dashboard.presentation.viewmodel
 
 import app.cash.turbine.test
+import com.example.pillcountingnewmodels.core.models.ApiResponse
 import com.example.pillcountingnewmodels.core.room.dao.PillCountTxnDao
 import com.example.pillcountingnewmodels.core.room.dao.UserDao
 import com.example.pillcountingnewmodels.core.room.models.CountStatus
@@ -17,20 +18,12 @@ import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
-import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
-import kotlinx.coroutines.test.setMain
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNull
-import org.junit.Assert.assertTrue
+import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -57,7 +50,7 @@ class DashboardViewModelTest {
 
         // Default stub for repository to avoid MockKException
         coEvery { mockUserDetailRepo.getUserDetail(any()) } returns Result.success(
-            UserDetailResponse(status = 200, isSuccess = true, message = "Success", token = "abcd", data = null)
+            ApiResponse(status = 200, isSuccess = true, message = "Success", token = "abcd", data = null)
         )
 
         viewModel = DashboardViewModel(
@@ -120,21 +113,21 @@ class DashboardViewModelTest {
     @Test
     fun `fetchUserDetail - success persists user`() = runTest {
         val userDetail = UserDetail(
-            email = "test@test.com",
-            role = "admin",
-            isVerified = true,
-            profile = UserProfile("Tester", "12345", "url"),
+            profile = UserProfile(
+                fullName = "Tester",
+                email = "tester@example.com",
+                phoneNumber = "12345",
+                avatarUrl = "url",
+                role = UserRole("admin",  "Pharma")
+            ),
             settings = UserSettings(
                 notificationsEnabled = true,
                 language = "en",
-                timezone = "UTC",
-                theme = "dark",
-                fontSize = "14",
-                experimentalFeatures = listOf("x", "y")
+                timezone = "UTC"
             )
         )
 
-        val response = UserDetailResponse(
+        val response = ApiResponse(
             status = 200,
             isSuccess = true,
             message = "Success",
@@ -148,10 +141,10 @@ class DashboardViewModelTest {
 
         viewModel.uiState.test {
             val loading = awaitItem()
-            assertEquals(true, loading.isLoadingUserDetail)
+            assertTrue(loading.isLoadingUserDetail)
 
             val success = awaitItem()
-            assertEquals(userDetail.email, success.userDetail?.email)
+            assertEquals("tester@example.com", success.userDetail?.profile?.email)
             assertFalse(success.isLoadingUserDetail)
             assertNull(success.userDetailError)
         }
@@ -161,7 +154,7 @@ class DashboardViewModelTest {
 
     @Test
     fun `fetchUserDetail - success but userDetail is null`() = runTest {
-        val emptyResponse = UserDetailResponse(
+        val emptyResponse: ApiResponse<UserDetail> = ApiResponse(
             status = 200,
             isSuccess = true,
             message = "No user data",
@@ -169,22 +162,27 @@ class DashboardViewModelTest {
             data = null
         )
         coEvery { mockUserDetailRepo.getUserDetail("valid-token") } returns Result.success(emptyResponse)
+
         viewModel.fetchUserDetail()
         runCurrent()
+
         viewModel.uiState.test {
             val state = awaitItem()
             assertNull(state.userDetail)
             assertFalse(state.isLoadingUserDetail)
             assertNull(state.userDetailError)
         }
+
         coVerify(exactly = 0) { mockUserDao.upsertPreservingLocalId(any()) }
     }
 
-
     @Test
     fun `fetchUserDetail - success but persistence fails`() = runTest {
-        val userDetail = UserDetail(email = "fail@test.com", role = "user", isVerified = false)
-        val response = UserDetailResponse(
+        val userDetail = UserDetail(
+            profile = UserProfile(fullName = "Failer", email = "fail@test.com"),
+            settings = null
+        )
+        val response = ApiResponse(
             status = 200,
             isSuccess = true,
             message = "Success",
@@ -215,18 +213,19 @@ class DashboardViewModelTest {
             val state = awaitItem()
             assertNull(state.userDetail)
             assertFalse(state.isLoadingUserDetail)
+            assertEquals("Network error", state.userDetailError)
             coVerify { mockUserDetailRepo.getUserDetail("valid-token") }
         }
     }
 
     @Test
     fun `fetchUserDetail - API returns isSuccess false`() = runTest {
-        val response = UserDetailResponse(
+        val response: ApiResponse<UserDetail> = ApiResponse(
             status = 200,
             isSuccess = false,
             message = "API failure",
             token = "abcd1234",
-            data = null
+            data = null // still allowed
         )
         coEvery { mockUserDetailRepo.getUserDetail("valid-token") } returns Result.success(response)
 
@@ -248,6 +247,7 @@ class DashboardViewModelTest {
             cancelAndIgnoreRemainingEvents()
         }
     }
+
 
     @Test
     fun `fetchUserDetail - token empty string updates error`() = runTest {
@@ -286,5 +286,4 @@ class DashboardViewModelTest {
             cancelAndIgnoreRemainingEvents()
         }
     }
-
 }

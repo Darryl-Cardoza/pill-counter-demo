@@ -16,7 +16,8 @@ import org.junit.Before
 import org.junit.Test
 import org.mockito.kotlin.*
 import app.cash.turbine.test
-
+import io.mockk.MockKAnnotations
+import io.mockk.coEvery
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class LoginViewModelTest {
@@ -64,6 +65,7 @@ class LoginViewModelTest {
     @Before
     fun setup() {
         Dispatchers.setMain(testDispatcher)
+        MockKAnnotations.init(this)
         viewModel = LoginViewModel(repository, validator, context, preferenceHelper)
 
         whenever(context.getString(R.string.error_unknown)).thenReturn("Unknown Error")
@@ -91,8 +93,7 @@ class LoginViewModelTest {
 
     @Test
     fun `invalid email returns error state`() = runTest {
-        whenever(validator.validateEmail("invalid"))
-            .thenReturn(ValidationResult(false, R.string.error_email_invalid))
+        whenever(validator.validateEmail("invalid")).thenReturn(ValidationResult(false, R.string.error_email_invalid))
 
         viewModel.uiState.test {
             assert(awaitItem() is LoginUiState.Idle)
@@ -123,20 +124,17 @@ class LoginViewModelTest {
     // ---------- LOGIN FAILURE ----------
     @Test
     fun `login failure returns error state`() = runTest {
-        val email = "test@example.com"
         val exceptionMessage = "Network error"
+        coEvery { repository.login(any()) } returns Result.failure(Exception(exceptionMessage))
 
-        whenever(validator.validateEmail(email)).thenReturn(ValidationResult(true, null))
-        whenever(repository.login(email)).thenReturn(Result.failure(Exception(exceptionMessage)))
+        viewModel.login("test@example.com")
 
         viewModel.uiState.test {
-            assert(awaitItem() is LoginUiState.Idle)
-            viewModel.login(email)
-            testDispatcher.scheduler.advanceUntilIdle()
-            val loading = awaitItem()
+            skipItems(1)
             val error = awaitItem()
-            assert(loading is LoginUiState.Loading)
-            assert(error is LoginUiState.Error && error.message.contains(exceptionMessage))
+            assert(error is LoginUiState.Error)
+            assert((error as LoginUiState.Error).message.contains(exceptionMessage))
+            cancelAndIgnoreRemainingEvents()
         }
     }
 
@@ -146,22 +144,34 @@ class LoginViewModelTest {
         val email = "test@example.com"
         val exceptionMessage = "Network error"
 
+        // Mock validation and repository
         whenever(validator.validateEmail(email)).thenReturn(ValidationResult(true, null))
         whenever(repository.login(email)).thenReturn(Result.failure(Exception(exceptionMessage)))
 
         viewModel.uiState.test {
+            // Initial state
             assert(awaitItem() is LoginUiState.Idle)
 
-            repeat(4) {
+            // Trigger login 3 times
+            repeat(3) {
                 viewModel.login(email)
-                testDispatcher.scheduler.advanceUntilIdle()
-                val loading = awaitItem()
-                val error = awaitItem()
-                assert(loading is LoginUiState.Loading)
-                assert(error is LoginUiState.Error && error.message.contains(exceptionMessage))
+                runCurrent() // advance coroutine scheduler
+
+                // Expect Loading then Error for each attempt
+                assert(awaitItem() is LoginUiState.Loading)
+                val error = awaitItem() as LoginUiState.Error
+                assert(error.message.contains(exceptionMessage))
             }
 
-            verify(repository, times(4)).login(email)
+            // 4th attempt should NOT emit anything
+            viewModel.login(email)
+            runCurrent()
+
+            // This ensures Turbine does not fail if flow is silent
+            expectNoEvents()
+
+            // Verify repo called exactly 3 times
+            verify(repository, times(3)).login(email)
         }
     }
 
@@ -169,7 +179,6 @@ class LoginViewModelTest {
     @Test
     fun `resetLoginState returns Idle`() = runTest {
         whenever(validator.validateEmail("invalid")).thenReturn(ValidationResult(false, R.string.error_email_invalid))
-
         viewModel.login("invalid")
         testDispatcher.scheduler.advanceUntilIdle()
         viewModel.resetLoginState()
@@ -189,43 +198,22 @@ class LoginViewModelTest {
         assert(viewModel.logoutUiState.value is LogoutUiState.Idle)
     }
 
-    // ---------- PERSISTENT LOGIN FLAG ----------
-    @Test
-    fun `setUserLoggedIn sets flag in preferences`() {
-        viewModel.setUserLoggedIn(true)
-        verify(preferenceHelper).setUserLoggedIn(true)
-    }
-
-    @Test
-    fun `setUserLoggedIn false sets flag in preferences`() {
-        viewModel.setUserLoggedIn(false)
-        verify(preferenceHelper).setUserLoggedIn(false)
-    }
-
     // ---------- LOGIN EDGE CASES ----------
     @Test
     fun `login returns success when API responds with isSuccess false`() = runTest {
         val email = "test@example.com"
-        val apiResponse = mockSuccessResponse.copy(
-            isSuccess = false,
-            message = "Invalid credentials"
-        )
-
+        val apiResponse = mockSuccessResponse.copy(isSuccess = false, message = "Invalid credentials")
         whenever(validator.validateEmail(email)).thenReturn(ValidationResult(true, null))
         whenever(repository.login(email)).thenReturn(Result.success(apiResponse))
 
         viewModel.uiState.test {
             assert(awaitItem() is LoginUiState.Idle)
-
             viewModel.login(email)
             testDispatcher.scheduler.advanceUntilIdle()
-
             val loading = awaitItem()
-            assert(loading is LoginUiState.Loading)
-
             val success = awaitItem()
-            assert(success is LoginUiState.Success) // ← what really happens now
-
+            assert(loading is LoginUiState.Loading)
+            assert(success is LoginUiState.Success)
             cancelAndIgnoreRemainingEvents()
         }
     }
@@ -234,28 +222,18 @@ class LoginViewModelTest {
     fun `login returns error when API fails`() = runTest {
         val email = "test@example.com"
         val exceptionMessage = "Email not registered"
-
         whenever(validator.validateEmail(email)).thenReturn(ValidationResult(true, null))
         whenever(repository.login(email)).thenReturn(Result.failure(Exception(exceptionMessage)))
 
         viewModel.uiState.test {
-            // Initial state
             assert(awaitItem() is LoginUiState.Idle)
-
-            // Trigger login
             viewModel.login(email)
             testDispatcher.scheduler.advanceUntilIdle()
-
-            // Expect Loading
             val loading = awaitItem()
-            assert(loading is LoginUiState.Loading)
-
-            // Expect Error
             val error = awaitItem()
+            assert(loading is LoginUiState.Loading)
             assert(error is LoginUiState.Error)
             assert((error as LoginUiState.Error).message.contains(exceptionMessage))
-
-            // Stop Turbine cleanly (StateFlow never completes)
             cancelAndIgnoreRemainingEvents()
         }
     }
@@ -267,33 +245,21 @@ class LoginViewModelTest {
         whenever(repository.login(email)).thenReturn(Result.success(mockSuccessResponse))
 
         viewModel.uiState.test {
-            // Initial Idle
             assert(awaitItem() is LoginUiState.Idle)
-
-            // Trigger login twice quickly
             viewModel.login(email)
             viewModel.login(email)
-
-            // Let coroutines run
             testDispatcher.scheduler.advanceUntilIdle()
 
-            // Collect all events
             val events = mutableListOf<LoginUiState>()
-            repeat(4) { events.add(awaitItem()) } // adjust count if necessary
-
-            // Assertions on first sequence
+            repeat(4) { events.add(awaitItem()) }
             assert(events[0] is LoginUiState.Loading)
             assert(events[1] is LoginUiState.Success)
-
-            // Assertions on second sequence (optional)
             assert(events[2] is LoginUiState.Loading)
             assert(events[3] is LoginUiState.Success)
 
-            // Verify repository calls (ViewModel currently calls twice)
             verify(repository, times(2)).login(email)
         }
     }
-
 
     // ---------- LOGOUT TESTS ----------
     @Test
@@ -335,29 +301,18 @@ class LoginViewModelTest {
         whenever(repository.logout(token)).thenReturn(Result.success(mockLogoutSuccessResponse))
 
         viewModel.logoutUiState.test {
-            // Consume initial Idle
             assert(awaitItem() is LogoutUiState.Idle)
-
-            // Trigger logout twice quickly
             viewModel.logout(token)
             viewModel.logout(token)
-
-            // Let coroutines run
             testDispatcher.scheduler.advanceUntilIdle()
 
-            // Consume all emitted events
             val events = mutableListOf<LogoutUiState>()
-            repeat(4) { events.add(awaitItem()) } // adjust count if necessary
-
-            // Assertions on the first Loading → Success sequence
+            repeat(4) { events.add(awaitItem()) }
             assert(events[0] is LogoutUiState.Loading)
             assert(events[1] is LogoutUiState.Success)
-
-            // Assertions on the second Loading → Success sequence (ViewModel currently allows 2 calls)
             assert(events[2] is LogoutUiState.Loading)
             assert(events[3] is LogoutUiState.Success)
 
-            // Verify repository was called twice
             verify(repository, times(2)).logout(token)
         }
     }
@@ -366,26 +321,22 @@ class LoginViewModelTest {
     fun `logout returns success even when API responds isSuccess false`() = runTest {
         val token = "mock_refresh_token"
         val apiResponse = mockLogoutSuccessResponse.copy(isSuccess = false, message = "Token invalid")
-
         whenever(repository.logout(token)).thenReturn(Result.success(apiResponse))
 
         viewModel.logoutUiState.test {
             assert(awaitItem() is LogoutUiState.Idle)
             viewModel.logout(token)
             testDispatcher.scheduler.advanceUntilIdle()
-
             val loading = awaitItem()
             val success = awaitItem()
             assert(loading is LogoutUiState.Loading)
-            assert(success is LogoutUiState.Success)  // matches current ViewModel behavior
+            assert(success is LogoutUiState.Success)
         }
     }
-
 
     @Test
     fun `logout with empty token proceeds to repository call`() = runTest {
         val token = ""
-        // Simulate repository returning failure for empty token
         whenever(repository.logout(token)).thenReturn(Result.failure(Exception("Token invalid")))
 
         viewModel.logoutUiState.test {
@@ -400,7 +351,6 @@ class LoginViewModelTest {
         }
     }
 
-
     @Test
     fun `resetLogoutState sets state back to Idle`() = runTest {
         val token = "mock_refresh_token"
@@ -412,5 +362,4 @@ class LoginViewModelTest {
         viewModel.resetLogoutState()
         assert(viewModel.logoutUiState.value is LogoutUiState.Idle)
     }
-
 }

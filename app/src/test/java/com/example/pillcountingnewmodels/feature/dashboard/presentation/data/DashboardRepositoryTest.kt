@@ -1,5 +1,6 @@
 package com.example.pillcountingnewmodels.feature.dashboard.presentation.data
 
+import com.example.pillcountingnewmodels.core.models.ApiResponse
 import com.example.pillcountingnewmodels.core.models.RefreshTokenRequest
 import com.example.pillcountingnewmodels.core.models.RefreshTokenResponse
 import com.example.pillcountingnewmodels.core.network.IApplicationSettingInterface
@@ -44,9 +45,6 @@ class UserDetailRepositoryTest {
     private lateinit var repository: UserDetailRepository
 
     private val mockUserDetail = UserDetail(
-        email = "john.doe@example.com",
-        isVerified = true,
-        role = "admin",
         profile = UserProfile(
             fullName = "John Doe",
             phoneNumber = "+1 555 123 4567",
@@ -56,13 +54,10 @@ class UserDetailRepositoryTest {
             notificationsEnabled = true,
             language = "en",
             timezone = "America/New_York",
-            theme = "dark",
-            fontSize = "medium",
-            experimentalFeatures = listOf("beta-dashboard", "voice-input")
         )
     )
 
-    private val mockUserDetailResponse = UserDetailResponse(
+    private val mockUserDetailResponse = ApiResponse(
         status = 200,
         isSuccess = true,
         message = "User details fetched successfully",
