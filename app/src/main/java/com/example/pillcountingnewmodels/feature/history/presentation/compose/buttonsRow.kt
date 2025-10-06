@@ -33,7 +33,7 @@ fun ButtonsRow(
         FilledButton(
             text = stringResource(R.string.ok).uppercase(),
             onClick = onOk,
-            color = MaterialTheme.colorScheme.primary,
+            color = MaterialTheme.colorScheme.secondary,
             modifier = Modifier.padding(start = 20.dp)
         )
     }
