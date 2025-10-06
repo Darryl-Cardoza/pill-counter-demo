@@ -1,6 +1,5 @@
 package com.example.pillcountingnewmodels.core.utils.compose
 
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -14,7 +13,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.example.pillcountingnewmodels.core.utils.compose.Dimens.buttonCornerRadius
 import com.example.pillcountingnewmodels.core.utils.compose.Dimens.buttonHeight
-import com.example.pillcountingnewmodels.core.utils.compose.Dimens.buttonInnerHorizontalPadding
 import com.example.pillcountingnewmodels.ui.theme.AppTheme
 
 
@@ -39,11 +37,11 @@ fun ActionButtonPrimary(
             disabledContentColor = Color.LightGray // or use a theme color
         ),
         shape = RoundedCornerShape(buttonCornerRadius),
-        contentPadding = if (useContentPadding) {
-            PaddingValues(horizontal = buttonInnerHorizontalPadding)
-        } else {
-            ButtonDefaults.ContentPadding
-        },
+//        contentPadding = if (useContentPadding) {
+//            PaddingValues(horizontal = buttonInnerHorizontalPadding)
+//        } else {
+//            ButtonDefaults.ContentPadding
+//        },  //Causing error in the profile field to extend
         enabled = enabled
     ) {
         Text(text)

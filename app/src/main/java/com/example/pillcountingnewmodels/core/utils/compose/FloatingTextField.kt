@@ -81,7 +81,8 @@ fun FloatingLabelTextField(
     isPassword: Boolean = false,
     keyboardType: KeyboardType = KeyboardType.Text,
     imeAction: ImeAction = ImeAction.Done,
-    onImeAction: (() -> Unit)? = null
+    onImeAction: (() -> Unit)? = null,
+    enabled: Boolean = true
 ) {
     val focusManager = LocalFocusManager.current
     var passwordVisible by remember { mutableStateOf(!isPassword) }
@@ -128,6 +129,8 @@ fun FloatingLabelTextField(
                 value = value,
                 onValueChange = onValueChange,
                 singleLine = true,
+                enabled = enabled,
+                readOnly = !enabled,
                 textStyle = LocalTextStyle.current.copy(
                     color = AppTheme.extendedColors.textColor,
                     fontSize = 16.sp

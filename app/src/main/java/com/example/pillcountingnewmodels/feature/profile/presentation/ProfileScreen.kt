@@ -48,6 +48,7 @@ import com.example.pillcountingnewmodels.core.utils.compose.CommonDialog
 import com.example.pillcountingnewmodels.core.utils.compose.FloatingLabelTextField
 import com.example.pillcountingnewmodels.core.utils.compose.HollowButton
 import com.example.pillcountingnewmodels.feature.profile.domain.model.ProfileDeleteUiState
+import com.example.pillcountingnewmodels.feature.profile.domain.model.ProfileField
 import com.example.pillcountingnewmodels.feature.profile.domain.model.ProfileUpdateUiState
 import com.example.pillcountingnewmodels.feature.profile.presentation.viewmodel.ProfileViewModel
 import com.example.pillcountingnewmodels.navigation.AUTH_GRAPH_ROUTE
@@ -101,48 +102,9 @@ fun ProfileScreen(
             }
 
             // -------------------- INPUT FIELDS --------------------
-            ProfileTextField(
-                value = viewModel.firstName,
-                onValueChange = { viewModel.firstName = it },
-                label = stringResource(R.string.first_name),
-                error = viewModel.firstNameError?.let { stringResource(it) }
-            )
-
-            ProfileTextField(
-                value = viewModel.lastName,
-                onValueChange = { viewModel.lastName = it },
-                label = stringResource(R.string.last_name),
-                error = viewModel.lastNameError?.let { stringResource(it) }
-            )
-
-            ProfileTextField(
-                value = viewModel.pharmacyName,
-                onValueChange = { viewModel.pharmacyName = it },
-                label = stringResource(R.string.pharmacy_name),
-                error = viewModel.pharmacyNameError?.let { stringResource(it) }
-            )
-
-            ProfileTextField(
-                value = viewModel.phoneNumber,
-                onValueChange = { viewModel.phoneNumber = it },
-                label = stringResource(R.string.phone_number),
-                keyboardType = KeyboardType.Phone,
-                error = viewModel.phoneError?.let { stringResource(it) }
-            )
-
-            ProfileTextField(
-                value = viewModel.email,
-                onValueChange = { viewModel.email = it },
-                label = stringResource(R.string.email),
-                keyboardType = KeyboardType.Email,
-                error = viewModel.emailError?.let { stringResource(it) }
-            )
-
-            ProfileTextField(
-                value = viewModel.npi,
-                onValueChange = { viewModel.npi = it },
-                label = stringResource(R.string.npi_number),
-                error = viewModel.npiError?.let { stringResource(it) }
+            ResponsiveProfileFields(
+                isLandscape = isLandscape,
+                viewModel = viewModel
             )
 
             Spacer(Modifier.height(10.dp))
@@ -251,7 +213,6 @@ fun ProfileScreen(
                 ActionButtonPrimary(
                     text = stringResource(R.string.save),
                     onClick = { viewModel.updateProfile() },
-                    useContentPadding = isLandscape,
                     modifier = if (isLandscape) Modifier else Modifier.weight(1f)
                 )
             }
@@ -286,20 +247,23 @@ private fun ProfileTextField(
     label: String,
     keyboardType: KeyboardType = KeyboardType.Text,
     imeAction: ImeAction = ImeAction.Next,
-    error: String?
+    error: String?,
+    modifier: Modifier = Modifier,
+    readOnly: Boolean = false
 ) {
     Column(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 4.dp)
     ) {
         FloatingLabelTextField(
             value = value,
-            onValueChange = onValueChange,
+            onValueChange = { if (!readOnly) onValueChange(it) }, // disable editing
             label = label,
             keyboardType = keyboardType,
             imeAction = imeAction,
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            enabled = !readOnly
         )
         if (!error.isNullOrEmpty()) {
             Text(
@@ -311,3 +275,105 @@ private fun ProfileTextField(
         }
     }
 }
+
+
+@Composable
+private fun ResponsiveProfileFields(
+    isLandscape: Boolean,
+    viewModel: ProfileViewModel
+) {
+    val fields = listOf(
+        ProfileField(
+            viewModel.firstName,
+            { v -> viewModel.firstName = v },
+            R.string.first_name,
+            viewModel.firstNameError
+        ),
+        ProfileField(
+            viewModel.lastName,
+            { v -> viewModel.lastName = v },
+            R.string.last_name,
+            viewModel.lastNameError
+        ),
+        ProfileField(
+            viewModel.pharmacyName,
+            { v -> viewModel.pharmacyName = v },
+            R.string.pharmacy_name,
+            viewModel.pharmacyNameError
+        ),
+        ProfileField(
+            viewModel.phoneNumber,
+            { v -> viewModel.phoneNumber = v },
+            R.string.phone_number,
+            viewModel.phoneError
+        ),
+        ProfileField(
+            viewModel.email,
+            { _ -> },
+            R.string.email,
+            viewModel.emailError,
+            readOnly = true
+        ), // <— Email read-only
+        ProfileField(
+            viewModel.npi,
+            { v -> viewModel.npi = v },
+            R.string.npi_number,
+            viewModel.npiError
+        )
+    )
+
+    val errors = listOf(
+        viewModel.firstNameError,
+        viewModel.lastNameError,
+        viewModel.pharmacyNameError,
+        viewModel.phoneError,
+        viewModel.emailError,
+        viewModel.npiError
+    )
+
+    if (isLandscape) {
+        for (i in fields.indices step 2) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                val field1 = fields[i]
+                ProfileTextField(
+                    value = field1.value,
+                    onValueChange = field1.onChange,
+                    label = stringResource(field1.labelRes),
+                    error = field1.error?.let { stringResource(it) },
+                    modifier = Modifier.weight(1f),
+                    readOnly = field1.readOnly
+                )
+
+                if (i + 1 < fields.size) {
+                    val field2 = fields[i + 1]
+                    ProfileTextField(
+                        value = field2.value,
+                        onValueChange = field2.onChange,
+                        label = stringResource(field2.labelRes),
+                        error = field2.error?.let { stringResource(it) },
+                        modifier = Modifier.weight(1f),
+                        readOnly = field2.readOnly
+                    )
+                } else {
+                    Spacer(modifier = Modifier.weight(1f))
+                }
+            }
+        }
+        Spacer(Modifier.height(20.dp))
+    } else {
+        fields.forEach { field ->
+            ProfileTextField(
+                value = field.value,
+                onValueChange = field.onChange,
+                label = stringResource(field.labelRes),
+                error = field.error?.let { stringResource(it) },
+                readOnly = field.readOnly
+            )
+        }
+    }
+
+}
+
