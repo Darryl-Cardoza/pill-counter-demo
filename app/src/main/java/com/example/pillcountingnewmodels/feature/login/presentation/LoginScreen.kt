@@ -3,6 +3,7 @@ package com.example.pillcountingnewmodels.feature.login.presentation
 import Screen
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -18,9 +19,16 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.outlined.ArrowDropDown
+import androidx.compose.material.icons.outlined.ArrowDropUp
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -34,14 +42,18 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.toSize
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.pillcountingnewmodels.R
+import com.example.pillcountingnewmodels.core.utils.PreferenceHelper
 import com.example.pillcountingnewmodels.core.utils.compose.ActionButtonPrimary
 import com.example.pillcountingnewmodels.core.utils.compose.AppInfo
 import com.example.pillcountingnewmodels.core.utils.compose.DrawableIconTextField
@@ -67,9 +79,13 @@ fun LoginScreen(
     var email by remember { mutableStateOf("") }
     var rememberMe by remember { mutableStateOf(false) }
     var localError by remember { mutableStateOf<String?>(null) }
-
-    val loginUiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
+    val preferenceHelper = remember { PreferenceHelper(context) }
+    var showDropdown by remember { mutableStateOf(false) }
+    val recentEmails = remember { mutableStateOf(preferenceHelper.getRecentLogins()) }
+    val loginUiState by viewModel.uiState.collectAsState()
+    var textFieldSize by remember { mutableStateOf(androidx.compose.ui.geometry.Size.Zero) }
+
 
     Box(
         modifier = Modifier
@@ -94,19 +110,116 @@ fun LoginScreen(
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         // Email Input Field
-                        DrawableIconTextField(
-                            value = email,
-                            onValueChange = {
-                                email = it
-                                localError = null
-                                viewModel.resetLoginState()
-                            },
-                            placeholder = stringResource(R.string.email),
-                            iconRes = R.drawable.profile,
-                            iconColor = MaterialTheme.colorScheme.secondary,
-                            keyboardType = KeyboardType.Email,
-                            imeAction = ImeAction.Done
-                        )
+                        Box {
+                            Box {
+
+                                DrawableIconTextField(
+                                    value = email,
+                                    onValueChange = {
+                                        email = it
+                                        localError = null
+                                        viewModel.resetLoginState()
+                                    },
+                                    placeholder = stringResource(R.string.email),
+                                    iconRes = R.drawable.profile,
+                                    iconColor = MaterialTheme.colorScheme.secondary,
+                                    keyboardType = KeyboardType.Email,
+                                    imeAction = ImeAction.Done,
+                                    trailingIcon = {
+                                        IconButton(onClick = { showDropdown = !showDropdown }) {
+                                            Icon(
+                                                imageVector = if (showDropdown)
+                                                    Icons.Outlined.ArrowDropUp
+                                                else Icons.Outlined.ArrowDropDown,
+                                                contentDescription = "Toggle recent logins",
+                                                modifier = Modifier.size(28.dp),
+                                                tint = AppTheme.extendedColors.textColor
+                                            )
+                                        }
+                                    },
+                                    modifier = Modifier.onGloballyPositioned { coords ->
+                                        textFieldSize = coords.size.toSize()
+                                    }
+                                )
+
+                                if (showDropdown) {
+                                    DropdownMenu(
+                                        containerColor = AppTheme.extendedColors.inputBackground,
+                                        expanded = showDropdown,
+                                        onDismissRequest = { showDropdown = false },
+                                        modifier = Modifier
+                                            .width(with(LocalDensity.current) { textFieldSize.width.toDp() })
+                                            .background(AppTheme.extendedColors.inputBackground, RoundedCornerShape(12.dp))
+                                            .border(0.0.dp, AppTheme.extendedColors.inputBackground, RoundedCornerShape(12.dp))
+                                            .padding(horizontal = 8.dp)
+                                            .padding(top = 16.dp)
+                                    ) {
+                                        if (recentEmails.value.isEmpty()) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .padding(vertical = 12.dp),
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                Text(
+                                                    text = "No recent logins",
+                                                    color = Color.Gray,
+                                                    style = MaterialTheme.typography.bodyMedium
+                                                )
+                                            }
+                                        } else {
+                                            recentEmails.value.forEachIndexed { index, emailEntry ->
+                                                Row(
+                                                    modifier = Modifier
+                                                        .fillMaxWidth()
+                                                        .padding(vertical = 8.dp)
+                                                        .background(Color.Transparent)
+                                                        .clickable {
+                                                            email = emailEntry
+                                                            showDropdown = false
+                                                        },
+                                                    verticalAlignment = Alignment.CenterVertically,
+                                                    horizontalArrangement = Arrangement.SpaceBetween
+                                                ) {
+                                                    Text(
+                                                        text = emailEntry,
+                                                        color = AppTheme.extendedColors.textColor,
+                                                        style = MaterialTheme.typography.bodyMedium
+                                                    )
+
+                                                    IconButton(
+                                                        onClick = {
+                                                            preferenceHelper.removeRecentLogin(emailEntry)
+                                                            recentEmails.value = preferenceHelper.getRecentLogins()
+                                                        },
+                                                        modifier = Modifier.size(24.dp).padding(end = 8.dp)
+                                                    ) {
+                                                        Icon(
+                                                            imageVector = Icons.Default.Close,
+                                                            contentDescription = "Remove email",
+                                                            tint = AppTheme.extendedColors.textColor
+                                                        )
+                                                    }
+                                                }
+
+                                                if (index != recentEmails.value.lastIndex) {
+                                                    Box(
+                                                        modifier = Modifier
+                                                            .fillMaxWidth()
+                                                            .height(0.5.dp)
+                                                            .background(AppTheme.extendedColors.textColor.copy(alpha = 0.2f))
+                                                    )
+                                                }
+                                            }
+
+                                        }
+                                    }
+
+                                }
+                            }
+
+
+                        }
 
                         // Local validation message (Empty field)
                         if (!localError.isNullOrEmpty()) {
@@ -200,6 +313,7 @@ fun LoginScreen(
                                     localError = context.getString(R.string.error_empty_email)
                                 } else {
                                     localError = null
+                                    preferenceHelper.addRecentLogin(email) // Add to recent logins
                                     viewModel.login(email)
                                 }
                             },

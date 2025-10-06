@@ -1,5 +1,6 @@
 package com.example.pillcountingnewmodels.core.utils
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.SharedPreferences
 import androidx.core.content.edit
@@ -64,6 +65,8 @@ class PreferenceHelper @Inject constructor(
         private const val KEY_DO_NOT_ASK_AGAIN = "do_not_ask_again"
 
         private const val KEY_SHOW_NOTES_DIALOG = "key_show_notes_dialog"
+
+        private const val KEY_RECENT_LOGINS = "recent_logins"
     }
 
     /** Secure SharedPreferences instance used for all storage operations. */
@@ -315,6 +318,37 @@ class PreferenceHelper @Inject constructor(
         val value = prefs.getBoolean(KEY_SHOW_NOTES_DIALOG, true)
         logger.d("ShowNotesDialog retrieved: $value")
         return value
+    }
+
+    /**
+     * Saves a login email into the recent login history.
+     * Keeps only the latest 5 unique entries (most recent first).
+     */
+    @SuppressLint("NewApi")
+    fun addRecentLogin(email: String) {
+        val current = getRecentLogins().toMutableList()
+        current.remove(email) // remove duplicates
+        current.add(0, email) // add on top
+        while (current.size > 5) current.removeLast() // keep only 5
+        prefs.edit { putStringSet(KEY_RECENT_LOGINS, current.toSet()) }
+        logger.i("Added recent login: $email (total=${current.size})")
+    }
+
+    /**
+     * Returns the list of recent login emails (most recent first).
+     */
+    fun getRecentLogins(): List<String> {
+        val set = prefs.getStringSet(KEY_RECENT_LOGINS, emptySet()) ?: emptySet()
+        return set.toList()
+    }
+
+    /**
+     * Removes a specific email from the recent logins.
+     */
+    fun removeRecentLogin(email: String) {
+        val updated = getRecentLogins().filterNot { it == email }
+        prefs.edit { putStringSet(KEY_RECENT_LOGINS, updated.toSet()) }
+        logger.i("Removed recent login: $email (remaining=${updated.size})")
     }
 
 }

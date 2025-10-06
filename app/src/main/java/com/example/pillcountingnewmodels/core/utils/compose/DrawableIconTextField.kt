@@ -54,7 +54,8 @@ fun DrawableIconTextField(
     isPassword: Boolean = false,
     keyboardType: KeyboardType = KeyboardType.Text,
     imeAction: ImeAction = ImeAction.Done,
-    onImeAction: (() -> Unit)? = null
+    onImeAction: (() -> Unit)? = null,
+    trailingIcon: (@Composable (() -> Unit))? = null
 ) {
     var passwordVisible by remember { mutableStateOf(!isPassword) }
 
@@ -66,22 +67,35 @@ fun DrawableIconTextField(
             .padding(horizontal = 15.dp),
         contentAlignment = Alignment.CenterStart
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            // Leading icon
             Icon(
                 painter = painterResource(id = iconRes),
                 contentDescription = null,
                 tint = iconColor,
                 modifier = Modifier.size(30.dp)
             )
+
             Spacer(modifier = Modifier.width(15.dp))
+
+            // Vertical divider
             Box(
                 modifier = Modifier
                     .width(0.5.dp)
                     .fillMaxHeight()
                     .background(Color.Gray)
             )
+
             Spacer(modifier = Modifier.width(15.dp))
-            Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.CenterStart) {
+
+            // Text Field
+            Box(
+                modifier = Modifier.weight(1f),
+                contentAlignment = Alignment.CenterStart
+            ) {
                 BasicTextField(
                     value = value,
                     onValueChange = onValueChange,
@@ -100,7 +114,10 @@ fun DrawableIconTextField(
                             contentAlignment = Alignment.CenterStart
                         ) {
                             if (value.isEmpty()) {
-                                Text(placeholder, color = AppTheme.extendedColors.textColor)
+                                Text(
+                                    text = placeholder,
+                                    color = AppTheme.extendedColors.textColor.copy(alpha = 0.6f)
+                                )
                             }
                             innerTextField()
                         }
@@ -108,16 +125,24 @@ fun DrawableIconTextField(
                 )
             }
 
-            // Optional trailing icon for password visibility
+            // Password visibility toggle (if needed)
             if (isPassword) {
                 Spacer(modifier = Modifier.width(10.dp))
                 IconButton(onClick = { passwordVisible = !passwordVisible }) {
                     Icon(
-                        imageVector = if (passwordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff,
+                        imageVector = if (passwordVisible)
+                            Icons.Filled.Visibility
+                        else
+                            Icons.Filled.VisibilityOff,
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.primary
                     )
                 }
+            }
+
+            // Custom trailing icon (e.g., dropdown arrow)
+            if (trailingIcon != null) {
+                trailingIcon()
             }
         }
     }
