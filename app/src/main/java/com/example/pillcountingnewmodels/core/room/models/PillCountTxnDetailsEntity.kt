@@ -28,7 +28,7 @@ import androidx.room.PrimaryKey
             entity = PillCountTxnEntity::class,
             parentColumns = ["txnId"],
             childColumns = ["txnId"],
-            onDelete = ForeignKey.SET_NULL
+            onDelete = ForeignKey.CASCADE
         )
     ],
     indices = [

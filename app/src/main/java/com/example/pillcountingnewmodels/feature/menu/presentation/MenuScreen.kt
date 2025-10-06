@@ -21,12 +21,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringArrayResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.pillcountingnewmodels.R
 import com.example.pillcountingnewmodels.core.room.models.enums.CountType
+import com.example.pillcountingnewmodels.core.utils.HistoryRetention
 import com.example.pillcountingnewmodels.core.utils.compose.BackButton
 import com.example.pillcountingnewmodels.core.utils.compose.Dimens.medium
 import com.example.pillcountingnewmodels.feature.login.domain.model.LogoutUiState
@@ -86,7 +88,13 @@ fun MenuScreen(
                 completedIcon = R.drawable.tick,
                 partialIcon = R.drawable.partial,
                 mainClick = { navController.navigate(Screen.ScanBarcode.createRoute(CountType.FIXED.toString())) },
-                onPartialClick = { navController.navigate(Screen.ResumeFixedCounts.createRoute(CountType.FIXED.toString())) },
+                onPartialClick = {
+                    navController.navigate(
+                        Screen.ResumeFixedCounts.createRoute(
+                            CountType.FIXED.toString()
+                        )
+                    )
+                },
             )
 
             HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
@@ -103,7 +111,13 @@ fun MenuScreen(
                 completedIcon = R.drawable.tick,
                 partialIcon = R.drawable.partial,
                 mainClick = { navController.navigate(Screen.ScanBarcode.createRoute(CountType.REGULAR.toString())) },
-                onPartialClick = { navController.navigate(Screen.ResumeRegularCounts.createRoute(CountType.REGULAR.toString())) },
+                onPartialClick = {
+                    navController.navigate(
+                        Screen.ResumeRegularCounts.createRoute(
+                            CountType.REGULAR.toString()
+                        )
+                    )
+                },
             )
 
             HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
@@ -119,13 +133,23 @@ fun MenuScreen(
 
             HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
 
+            // Load options from strings.xml
+            val historyOptions = stringArrayResource(R.array.history_options).toList()
+
+            // Get the saved history retention (number of days)
+            val selectedOptionDays = viewModel.getSavedHistoryOption()
+
+            // Map the number of days to a display string
+            val trailingText = HistoryRetention.getTrailingText(selectedOptionDays, historyOptions)
+
+
             // History
             SimpleMenuRow(
                 navController = navController,
                 icon = R.drawable.history,
                 iconTint = MaterialTheme.colorScheme.primary,
                 title = stringResource(R.string.menu_history),
-                trailingText = stringResource(R.string.menu_history_duration),
+                trailingText = trailingText,
                 onClick = { navController.navigate(Screen.History.route) }
             )
 

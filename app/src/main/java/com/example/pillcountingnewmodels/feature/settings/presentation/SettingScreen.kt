@@ -1,18 +1,34 @@
 package com.example.pillcountingnewmodels.feature.settings.presentation
 
 import android.content.res.Configuration
-import androidx.activity.compose.BackHandler
 import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.RadioButton
+import androidx.compose.material3.RadioButtonDefaults
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringArrayResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -20,9 +36,10 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.pillcountingnewmodels.R
+import com.example.pillcountingnewmodels.core.api.viewmodel.ApplicationSettingsViewModel
+import com.example.pillcountingnewmodels.core.utils.HistoryRetention
 import com.example.pillcountingnewmodels.core.utils.compose.BackButton
-import com.example.pillcountingnewmodels.feature.settings.presentation.viewmodel.SettingsViewModel
-import com.example.pillcountingnewmodels.ui.theme.AppTheme
+import com.example.pillcountingnewmodels.core.utils.compose.CommonDialog
 import com.example.pillcountingnewmodels.ui.theme.LocalExtendedColors
 
 /**
@@ -34,7 +51,7 @@ import com.example.pillcountingnewmodels.ui.theme.LocalExtendedColors
 @Composable
 fun SettingsScreen(
     navController: NavController,
-    viewModel: SettingsViewModel = hiltViewModel()
+    viewModel: ApplicationSettingsViewModel = hiltViewModel()
 ) {
     // State holders for preferences
     //var isBarcodeScanFirst by remember { mutableStateOf(true) }
@@ -42,7 +59,12 @@ fun SettingsScreen(
 
     // Load history options from resources
     val historyOptions = stringArrayResource(R.array.history_options).toList()
-    var selectedHistoryOption by remember { mutableStateOf(historyOptions.first()) }
+    val historyOptionDays = HistoryRetention.optionsDays
+
+    val selectedDays by viewModel.selectedHistoryOption.collectAsState()
+    val selectedOption = historyOptions[historyOptionDays.indexOf(selectedDays)]
+    var showConfirmationDialog by remember { mutableStateOf(false) }
+    var tempSelectedOption by remember { mutableStateOf("") }
 
     // Detect orientation for layout adjustments
     val isLandscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
@@ -112,11 +134,32 @@ fun SettingsScreen(
 
             SettingRadioGroup(
                 options = historyOptions,
-                selectedOption = selectedHistoryOption,
-                onOptionSelected = { selectedHistoryOption = it },
+                selectedOption = selectedOption,
+                onOptionSelected = { option ->
+                    if (option != tempSelectedOption) {
+                        tempSelectedOption = option
+                        showConfirmationDialog = true
+                    }
+                },
                 isLandscape = isLandscape
             )
         }
+    }
+
+    if (showConfirmationDialog) {
+        val days = historyOptionDays[historyOptions.indexOf(tempSelectedOption)]
+        CommonDialog(
+            message = "${stringResource(R.string.save_history_confirmation)} $tempSelectedOption ${stringResource(R.string.save_history_note)}",
+            confirmText = stringResource(R.string.yes),
+            cancelText = stringResource(R.string.no),
+            onConfirm = {
+                viewModel.updateHistoryOption(days)
+                showConfirmationDialog = false
+            },
+            onCancel = {
+                showConfirmationDialog = false
+            }
+        )
     }
 
 }

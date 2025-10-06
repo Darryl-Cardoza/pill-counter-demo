@@ -67,6 +67,8 @@ class PreferenceHelper @Inject constructor(
         private const val KEY_SHOW_NOTES_DIALOG = "key_show_notes_dialog"
 
         private const val KEY_RECENT_LOGINS = "recent_logins"
+
+        private const val KEY_HISTORY_RETENTION = "history_retention"
     }
 
     /** Secure SharedPreferences instance used for all storage operations. */
@@ -349,6 +351,14 @@ class PreferenceHelper @Inject constructor(
         val updated = getRecentLogins().filterNot { it == email }
         prefs.edit { putStringSet(KEY_RECENT_LOGINS, updated.toSet()) }
         logger.i("Removed recent login: $email (remaining=${updated.size})")
+    }
+
+    fun saveHistoryRetention(days: Int) {
+        prefs.edit { putInt(KEY_HISTORY_RETENTION, days) }
+    }
+
+    fun getHistoryRetention(): Int {
+        return prefs.getInt(KEY_HISTORY_RETENTION, 7) // default 1 week
     }
 
 }

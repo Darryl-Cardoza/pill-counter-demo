@@ -3,6 +3,7 @@ package com.example.pillcountingnewmodels.feature.menu.presentation.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.pillcountingnewmodels.core.room.dao.PillCountTxnDao
+import com.example.pillcountingnewmodels.core.utils.PreferenceHelper
 import com.example.pillcountingnewmodels.core.utils.compose.HelperFunctions.mapCounts
 import com.example.pillcountingnewmodels.feature.menu.domain.model.MenuUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -28,7 +29,8 @@ import javax.inject.Inject
  */
 @HiltViewModel
 class MenuViewModel @Inject constructor(
-    private val pillCountTxnDao: PillCountTxnDao
+    private val pillCountTxnDao: PillCountTxnDao,
+    private val preferenceHelper: PreferenceHelper
 ) : ViewModel() {
 
     /** Backing state flow for the Menu UI. */
@@ -67,6 +69,10 @@ class MenuViewModel @Inject constructor(
                 }
                 .collect { state -> _uiState.value = state }
         }
+    }
+
+    fun getSavedHistoryOption(): Int {
+        return preferenceHelper.getHistoryRetention()
     }
 }
 

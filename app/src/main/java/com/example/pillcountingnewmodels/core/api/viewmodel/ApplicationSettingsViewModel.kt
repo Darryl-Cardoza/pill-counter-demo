@@ -1,21 +1,29 @@
 package com.example.pillcountingnewmodels.core.api.viewmodel
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.pillcountingnewmodels.core.models.ApiResponse
 import com.example.pillcountingnewmodels.core.models.ApplicationSettingsUiState
 import com.example.pillcountingnewmodels.core.models.ColorSettings
 import com.example.pillcountingnewmodels.core.models.SettingsDataDto
+import com.example.pillcountingnewmodels.core.room.dao.PillCountTxnDao
 import com.example.pillcountingnewmodels.core.utils.AppLogger
 import com.example.pillcountingnewmodels.core.utils.PreferenceHelper
 import com.example.pillcountingnewmodels.feature.settings.data.model.ThemeColors
 import com.example.pillcountingnewmodels.feature.settings.domain.repository.IApplicationSettingsRepository
 import com.example.pillcountingnewmodels.feature.settings.domain.viewmodel.IApplicationSettingsViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.io.File
+import java.util.Calendar
+import java.util.Date
+import java.util.TimeZone
 import javax.inject.Inject
 
 /**
@@ -32,10 +40,24 @@ import javax.inject.Inject
 @HiltViewModel
 class ApplicationSettingsViewModel @Inject constructor(
     private val repository: IApplicationSettingsRepository,
-    private val preferenceHelper: PreferenceHelper
+    private val preferenceHelper: PreferenceHelper,
+    private val txnDao: PillCountTxnDao
 ) : ViewModel(), IApplicationSettingsViewModel {
 
     private val logger = AppLogger.create<ApplicationSettingsViewModel>()
+
+    // Holds the current state of "Ask to Add Notes"
+    private val _isAskToAddNotes = MutableStateFlow(preferenceHelper.getShowNotesDialogSetting())
+    val isAskToAddNotes: StateFlow<Boolean> = _isAskToAddNotes
+
+    private val _selectedHistoryOption = MutableStateFlow(preferenceHelper.getHistoryRetention())
+    val selectedHistoryOption: StateFlow<Int> = _selectedHistoryOption
+
+    // Called when user toggles the switch
+    fun toggleAskToAddNotes(newValue: Boolean) {
+        _isAskToAddNotes.value = newValue
+        preferenceHelper.saveShowNotesDialogSetting(newValue)
+    }
 
     private val _uiState = MutableStateFlow(ApplicationSettingsUiState())
     override val uiState = _uiState.asStateFlow()
@@ -46,6 +68,10 @@ class ApplicationSettingsViewModel @Inject constructor(
 
         // Start fetching remote theme in background
         fetchApplicationSettings()
+
+        viewModelScope.launch(Dispatchers.IO) {
+            deleteOldTransactions()
+        }
     }
 
     /**
@@ -187,4 +213,61 @@ class ApplicationSettingsViewModel @Inject constructor(
         }
         return 0
     }
+
+    fun updateHistoryOption(optionDays: Int) {
+        _selectedHistoryOption.value = optionDays
+        preferenceHelper.saveHistoryRetention(optionDays)
+
+        viewModelScope.launch(Dispatchers.IO) {
+            deleteOldTransactions()
+        }
+    }
+
+    private suspend fun deleteOldTransactions() {
+        val optionDays = preferenceHelper.getHistoryRetention()
+
+        try {
+            // Compute cutoff in UTC to match DB timestamps
+            val nowUtc = Calendar.getInstance(TimeZone.getTimeZone("UTC"))
+            val cutoff = nowUtc.timeInMillis - optionDays * 24 * 60 * 60 * 1000L
+
+            Log.d("DELETE_TXN", "Retention days: $optionDays, cutoff=${Date(cutoff)}")
+
+            // Get all transactions older than cutoff regardless of isDeleted
+            val oldTransactions = txnDao.getTransactionsBefore(cutoff)
+            Log.d("DELETE_TXN", "Found ${oldTransactions.size} transactions to delete")
+
+            oldTransactions.forEach { txn ->
+                val filesToDelete = mutableListOf<String>()
+
+                // Collect barcode image
+                txn.barcodeImage?.let { filesToDelete.add(it) }
+
+                // Collect details images
+                val detailImages = txnDao.getTransactionDetailsImages(txn.txnId)
+                filesToDelete.addAll(detailImages)
+
+                // Delete transaction (assumes cascade deletes details)
+                txnDao.deleteTransaction(txn.txnId)
+
+                // Delete files from storage
+                filesToDelete.forEach { path ->
+                    val file = File(path)
+                    if (file.exists()) {
+                        if (file.delete()) {
+                            Log.d("DELETE_TXN", "Deleted file: $path")
+                        } else {
+                            Log.w("DELETE_TXN", "Failed to delete file: $path")
+                        }
+                    }
+                }
+            }
+
+        } catch (e: Exception) {
+            Log.e("DELETE_TXN", "Error deleting old transactions", e)
+        }
+    }
+
+
+
 }
