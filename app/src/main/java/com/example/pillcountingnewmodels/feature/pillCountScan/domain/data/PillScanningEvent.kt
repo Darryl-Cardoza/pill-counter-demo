@@ -2,7 +2,6 @@ package com.example.pillcountingnewmodels.feature.pillCountScan.domain.data
 
 sealed interface PillScanningEvent {
     data object AddTransactionDetailClicked : PillScanningEvent
-
     data class TransactionDetailDeleted(val txnDetailId: Long) : PillScanningEvent
     data object RescanClicked : PillScanningEvent
     data object PauseClicked : PillScanningEvent
