@@ -35,7 +35,6 @@ import com.example.pillcountingnewmodels.feature.pillCountScan.presentation.comp
 import com.example.pillcountingnewmodels.feature.pillCountScan.presentation.compose.InformationPanelSection
 import com.example.pillcountingnewmodels.feature.pillCountScan.presentation.compose.TargetPillsCountDialog
 import com.example.pillcountingnewmodels.feature.pillCountScan.presentation.viewmodel.PillScanningViewModel
-import com.example.pillcountingnewmodels.navigation.AUTH_GRAPH_ROUTE
 import com.example.pillcountingnewmodels.ui.theme.AppTheme
 import kotlinx.coroutines.flow.collectLatest
 import java.util.Locale
@@ -54,6 +53,8 @@ fun PillScanningScreen(
 
     // Buffer of last 10 detections
     var lastTenDetections by remember { mutableStateOf<List<Int>>(emptyList()) }
+
+    var filteredPillCount by remember { mutableStateOf(0) }
 
     // Whenever detected pills update, push into buffer
     LaunchedEffect(uiState.detectedPills) {
@@ -178,6 +179,7 @@ fun PillScanningScreen(
                     onFrame = { imageProxy ->
                         viewModel.onFrameCaptured(imageProxy)
                     },
+                    onFilteredCountChanged = { count -> filteredPillCount = count },
                     modifier = Modifier.fillMaxSize()
                 )
             },
@@ -185,7 +187,8 @@ fun PillScanningScreen(
                 InformationPanelSection(
                     navController = navController,
                     uiState = uiState,
-                    onEvent = viewModel::onEvent
+                    onEvent = viewModel::onEvent,
+                    filteredPillCount = filteredPillCount
                 )
             },
             landscapeRatio = 0.6f to 0.4f,

@@ -104,7 +104,7 @@ class CameraHelper(
                 preview = Preview.Builder()
                     .setTargetResolution(targetResolution)
                     .build()
-                    .also { it.setSurfaceProvider(previewView.surfaceProvider) }
+                    .also { it.surfaceProvider = previewView.surfaceProvider }
 
                 // Select the default back camera
                 val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA

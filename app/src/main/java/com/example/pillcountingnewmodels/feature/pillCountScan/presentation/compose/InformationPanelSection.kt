@@ -26,7 +26,8 @@ import com.example.pillcountingnewmodels.feature.pillCountScan.domain.model.Pill
 fun InformationPanelSection(
     navController: NavController,
     uiState: PillScanningUiState,
-    onEvent: (PillScanningEvent) -> Unit
+    onEvent: (PillScanningEvent) -> Unit,
+    filteredPillCount: Int
 ) {
     Column(
         modifier = Modifier
@@ -45,7 +46,7 @@ fun InformationPanelSection(
             verticalArrangement = Arrangement.SpaceEvenly
         ) {
             // Main Count Display and Add Button
-            CurrentCountDisplay(uiState) { onEvent(PillScanningEvent.AddTransactionDetailClicked) }
+            CurrentCountDisplay(uiState= uiState,filteredCount = filteredPillCount) { onEvent(PillScanningEvent.AddTransactionDetailClicked(filteredPillCount)) }
             // Horizontal list of previous batch counts
             LazyRow(
                 horizontalArrangement = Arrangement.spacedBy(medium),

@@ -23,6 +23,7 @@ import com.example.pillcountingnewmodels.feature.pillCountScan.domain.model.Pill
 @Composable
 fun CurrentCountDisplay(
     uiState: PillScanningUiState,
+    filteredCount: Int,
     onAddClicked: () -> Unit
 ) {
     Row(
@@ -32,7 +33,7 @@ fun CurrentCountDisplay(
         horizontalArrangement = Arrangement.SpaceAround
     ) {
         // Circular count indicator reflects the live detected pill count.
-        CircularCountIndicator(count = uiState.detectedPills.size)
+        CircularCountIndicator(count = /*uiState.detectedPills.size*/filteredCount)
 
         FilledButton(
             text = stringResource(R.string.add).uppercase(),

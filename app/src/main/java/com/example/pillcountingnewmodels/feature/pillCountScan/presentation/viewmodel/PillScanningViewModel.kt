@@ -320,7 +320,7 @@ class PillScanningViewModel @Inject constructor(
             is PillScanningEvent.AddTransactionDetailClicked -> {
                 val totalBatchCount = _uiState.value.txnDetailHistory.sumOf { it.count }
                 val targetCount = _uiState.value.targetCount
-                val currentCount = _uiState.value.detectedPills.size
+                val currentCount = /*_uiState.value.detectedPills.size*/event.filteredCount
 
                 val predictedTotal = totalBatchCount + currentCount
 
