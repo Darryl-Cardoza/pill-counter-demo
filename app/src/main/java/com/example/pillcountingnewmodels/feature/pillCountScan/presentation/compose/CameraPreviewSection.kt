@@ -15,6 +15,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.Fill
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -124,14 +126,14 @@ fun CameraPreviewSection(
                 color = Color.Black.copy(alpha = 0.05f),
                 topLeft = boxOffset,
                 size = boxSize,
-                style = androidx.compose.ui.graphics.drawscope.Fill
+                style = Fill
             )
 
             drawRect(
                 color = Color.Black.copy(alpha = 0.5f),
                 topLeft = boxOffset,
                 size = boxSize,
-                style = androidx.compose.ui.graphics.drawscope.Stroke(width = 3.dp.toPx())
+                style = Stroke(width = 3.dp.toPx())
             )
 
             // Draw resize handle (bottom-right corner)
@@ -155,8 +157,7 @@ fun CameraPreviewSection(
                     canvasWidth = canvasWidth,
                     canvasHeight = canvasHeight
                 )
-                offset.x in boxOffset.x..(boxOffset.x + boxSize.width) &&
-                        offset.y in boxOffset.y..(boxOffset.y + boxSize.height)
+                offset.x in boxOffset.x..(boxOffset.x + boxSize.width) && offset.y in boxOffset.y..(boxOffset.y + boxSize.height)
             }
 
             // Update pill count state
