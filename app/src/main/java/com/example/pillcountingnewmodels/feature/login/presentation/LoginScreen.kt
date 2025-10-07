@@ -86,7 +86,6 @@ fun LoginScreen(
     val loginUiState by viewModel.uiState.collectAsState()
     var textFieldSize by remember { mutableStateOf(androidx.compose.ui.geometry.Size.Zero) }
 
-
     Box(
         modifier = Modifier
             .fillMaxSize()
