@@ -365,5 +365,14 @@ interface PillCountTxnDao {
         end: Long
     )
 
+    @Query("SELECT * FROM pill_count_txn WHERE createdAt < :cutoff")
+    suspend fun getTransactionsBefore(cutoff: Long): List<PillCountTxnEntity>
+
+    @Query("SELECT imagePath FROM pill_count_txn_details WHERE txnId = :txnId")
+    suspend fun getTransactionDetailsImages(txnId: Long): List<String>
+
+    @Query("DELETE FROM pill_count_txn WHERE txnId = :txnId")
+    suspend fun deleteTransaction(txnId: Long)
+
 
 }

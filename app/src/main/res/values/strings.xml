@@ -211,5 +211,7 @@
 
     <string name="add_note">Add Note</string>
     <string name="add_note_error">Please enter a note or tap Skip</string>
+    <string name="save_history_confirmation">Are you sure you want to keep history for</string>>
+    <string name="save_history_note">\n\nNote: Data older than this period will be permanently deleted.</string>>
 
 </resources>
