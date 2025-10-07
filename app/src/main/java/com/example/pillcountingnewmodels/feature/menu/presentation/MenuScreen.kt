@@ -60,8 +60,6 @@ fun MenuScreen(
     val logoutState by loginViewModel.logoutUiState.collectAsState()
     var showLogoutLoading by remember { mutableStateOf(false) }
 
-    BackHandler { /* consume back press */ }
-
     Column(
         modifier = Modifier
             .fillMaxSize()

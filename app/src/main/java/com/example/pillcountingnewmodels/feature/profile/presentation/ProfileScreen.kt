@@ -72,8 +72,6 @@ fun ProfileScreen(
     // Local state for delete confirmation
     var showDeleteDialog by remember { mutableStateOf(false) }
 
-    BackHandler { /* consume back press to prevent navigation */ }
-
     Box(
         modifier = Modifier
             .fillMaxSize()

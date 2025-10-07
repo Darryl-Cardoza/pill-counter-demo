@@ -35,6 +35,7 @@ import com.example.pillcountingnewmodels.feature.pillCountScan.presentation.comp
 import com.example.pillcountingnewmodels.feature.pillCountScan.presentation.compose.InformationPanelSection
 import com.example.pillcountingnewmodels.feature.pillCountScan.presentation.compose.TargetPillsCountDialog
 import com.example.pillcountingnewmodels.feature.pillCountScan.presentation.viewmodel.PillScanningViewModel
+import com.example.pillcountingnewmodels.navigation.AUTH_GRAPH_ROUTE
 import com.example.pillcountingnewmodels.ui.theme.AppTheme
 import kotlinx.coroutines.flow.collectLatest
 import java.util.Locale
@@ -191,7 +192,11 @@ fun PillScanningScreen(
             portraitRatio = 0.5f to 0.5f
         )
 
-        BackButton(navController) { navController.popBackStack() }
+        BackButton(navController) {
+            navController.navigate(Screen.Dashboard.route) {
+                popUpTo(0) { inclusive = true }
+            }
+        }
 
         // === Overlay placed last → ensures it is on top ===
         if (uiState.showIdleOverlay) {
