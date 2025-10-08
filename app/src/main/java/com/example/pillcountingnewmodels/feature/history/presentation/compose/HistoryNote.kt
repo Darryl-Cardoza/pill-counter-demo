@@ -14,8 +14,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import com.example.pillcountingnewmodels.core.utils.compose.Dimens.medium
-import com.example.pillcountingnewmodels.core.utils.compose.Dimens.small
+import com.example.pillcountingnewmodels.core.utils.Dimens.medium
+import com.example.pillcountingnewmodels.core.utils.Dimens.small
 import com.example.pillcountingnewmodels.ui.theme.AppTheme
 
 

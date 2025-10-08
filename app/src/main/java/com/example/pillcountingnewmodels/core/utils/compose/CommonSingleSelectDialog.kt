@@ -26,7 +26,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.pillcountingnewmodels.R
-import com.example.pillcountingnewmodels.core.utils.compose.Dimens.small
+import com.example.pillcountingnewmodels.core.utils.Dimens.small
 import com.example.pillcountingnewmodels.ui.theme.AppTheme
 
 @Composable

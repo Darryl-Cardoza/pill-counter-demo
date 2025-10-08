@@ -30,7 +30,7 @@ object GS1Decoder {
      * @param rawBarcode the input GS1 barcode string
      * @return Map<String, String> with decoded key-value pairs
      */
-    fun decode(rawBarcode: String): Map<String, String> {
+    fun decode(rawBarcode: String): Map<String, String> { //TODO(Instead of return the model not the map of string)
         // Clean GS1 escape sequences
         val barcode = rawBarcode.replace(Regex("\\](?i)(c1|j1|q3|e0|d2)"), "")
 

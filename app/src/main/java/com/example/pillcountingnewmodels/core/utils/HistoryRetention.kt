@@ -1,6 +1,6 @@
 package com.example.pillcountingnewmodels.core.utils
 
-object HistoryRetention {
+object HistoryRetention { //TODO(Change in the viewmodel to get it from the api for the second phase)
     val optionsDays = listOf(7, 15, 30, 60, 90)
 
     // Map days to index in string-array (or directly to display string if you want)

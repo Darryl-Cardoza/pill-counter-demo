@@ -30,7 +30,7 @@ import com.example.pillcountingnewmodels.R
 import com.example.pillcountingnewmodels.core.room.models.enums.CountType
 import com.example.pillcountingnewmodels.core.utils.HistoryRetention
 import com.example.pillcountingnewmodels.core.utils.compose.BackButton
-import com.example.pillcountingnewmodels.core.utils.compose.Dimens.medium
+import com.example.pillcountingnewmodels.core.utils.Dimens.medium
 import com.example.pillcountingnewmodels.feature.login.domain.model.LogoutUiState
 import com.example.pillcountingnewmodels.feature.login.viewmodel.LoginViewModel
 import com.example.pillcountingnewmodels.feature.menu.presentation.compose.MenuItemRow

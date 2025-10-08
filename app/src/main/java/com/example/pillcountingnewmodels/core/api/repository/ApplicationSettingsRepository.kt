@@ -1,12 +1,12 @@
-package com.example.pillcountingnewmodels.feature.settings.data.repository
+package com.example.pillcountingnewmodels.core.api.repository
 
+import com.example.pillcountingnewmodels.core.api.implementation.IApplicationSettingsRepository
+import com.example.pillcountingnewmodels.core.api.`interface`.IApplicationSettingInterface
 import com.example.pillcountingnewmodels.core.models.ApiResponse
 import com.example.pillcountingnewmodels.core.models.RefreshTokenRequest
 import com.example.pillcountingnewmodels.core.models.SettingsDataDto
-import com.example.pillcountingnewmodels.core.network.IApplicationSettingInterface
 import com.example.pillcountingnewmodels.core.utils.AppLogger
 import com.example.pillcountingnewmodels.core.utils.PreferenceHelper
-import com.example.pillcountingnewmodels.feature.settings.domain.repository.IApplicationSettingsRepository
 import retrofit2.HttpException
 import javax.inject.Inject
 

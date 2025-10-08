@@ -141,7 +141,7 @@ class LoginViewModel @Inject constructor(
     // -------------------------------------------------------------------------
     // FRIENDLY ERROR HANDLING
     // -------------------------------------------------------------------------
-    private fun getFriendlyErrorMessage(exception: Throwable): String {
+    private fun getFriendlyErrorMessage(exception: Throwable): String { //TODO(Shift this to the utils for the helper function)
         return when (exception) {
             is HttpException -> {
                 val errorBody = exception.response()?.errorBody()?.string()

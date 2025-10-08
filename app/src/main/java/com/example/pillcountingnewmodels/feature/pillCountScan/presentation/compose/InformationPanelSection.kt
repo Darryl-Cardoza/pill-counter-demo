@@ -10,7 +10,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavController
-import com.example.pillcountingnewmodels.core.utils.compose.Dimens.medium
+import com.example.pillcountingnewmodels.core.utils.Dimens.medium
 import com.example.pillcountingnewmodels.feature.pillCountScan.domain.data.PillScanningEvent
 import com.example.pillcountingnewmodels.feature.pillCountScan.domain.model.PillScanningUiState
 

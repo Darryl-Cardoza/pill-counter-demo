@@ -3,6 +3,7 @@ package com.example.pillcountingnewmodels.core.api.viewmodel
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.pillcountingnewmodels.core.api.implementation.IApplicationSettingsRepository
 import com.example.pillcountingnewmodels.core.models.ApiResponse
 import com.example.pillcountingnewmodels.core.models.ApplicationSettingsUiState
 import com.example.pillcountingnewmodels.core.models.ColorSettings
@@ -11,7 +12,6 @@ import com.example.pillcountingnewmodels.core.room.dao.PillCountTxnDao
 import com.example.pillcountingnewmodels.core.utils.AppLogger
 import com.example.pillcountingnewmodels.core.utils.PreferenceHelper
 import com.example.pillcountingnewmodels.feature.settings.data.model.ThemeColors
-import com.example.pillcountingnewmodels.feature.settings.domain.repository.IApplicationSettingsRepository
 import com.example.pillcountingnewmodels.feature.settings.domain.viewmodel.IApplicationSettingsViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
@@ -228,9 +228,12 @@ class ApplicationSettingsViewModel @Inject constructor(
 
         try {
             // Compute cutoff in UTC to match DB timestamps
+
+            //TODO(Move this to the dateUtils)
             val nowUtc = Calendar.getInstance(TimeZone.getTimeZone("UTC"))
             val cutoff = nowUtc.timeInMillis - optionDays * 24 * 60 * 60 * 1000L
 
+            //TODO(Change to the logger)
             Log.d("DELETE_TXN", "Retention days: $optionDays, cutoff=${Date(cutoff)}")
 
             // Get all transactions older than cutoff regardless of isDeleted

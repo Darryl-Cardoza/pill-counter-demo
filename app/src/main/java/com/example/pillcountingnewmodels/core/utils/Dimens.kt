@@ -1,4 +1,4 @@
-package com.example.pillcountingnewmodels.core.utils.compose
+package com.example.pillcountingnewmodels.core.utils
 
 import androidx.compose.ui.unit.dp
 

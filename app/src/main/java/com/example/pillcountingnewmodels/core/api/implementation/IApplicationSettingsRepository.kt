@@ -1,4 +1,4 @@
-package com.example.pillcountingnewmodels.feature.settings.domain.repository
+package com.example.pillcountingnewmodels.core.api.implementation
 
 import com.example.pillcountingnewmodels.core.models.ApiResponse
 import com.example.pillcountingnewmodels.core.models.SettingsDataDto

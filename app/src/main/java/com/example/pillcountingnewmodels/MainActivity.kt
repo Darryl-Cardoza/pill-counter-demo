@@ -29,7 +29,7 @@ import androidx.navigation.compose.rememberNavController
 import com.example.pillcountingnewmodels.core.api.viewmodel.ApplicationSettingsViewModel
 import com.example.pillcountingnewmodels.core.utils.PreferenceHelper
 import com.example.pillcountingnewmodels.core.utils.compose.CommonDialog
-import com.example.pillcountingnewmodels.core.utils.compose.HelperFunctions.getStartDestination
+import com.example.pillcountingnewmodels.core.utils.HelperFunctions.getStartDestination
 import com.example.pillcountingnewmodels.core.utils.compose.MaintenanceScreen
 import com.example.pillcountingnewmodels.core.utils.compose.UpdateScreen
 import com.example.pillcountingnewmodels.core.utils.toColor
@@ -53,7 +53,7 @@ import kotlin.system.exitProcess
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
-    private val settingsViewModel: ApplicationSettingsViewModel by viewModels()
+    private val settingsViewModel: ApplicationSettingsViewModel by viewModels() //TODO(Rename the viewmodel to mainActivity)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

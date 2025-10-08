@@ -13,8 +13,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.example.pillcountingnewmodels.core.utils.compose.Dimens.buttonCornerRadius
-import com.example.pillcountingnewmodels.core.utils.compose.Dimens.buttonHeight
+import com.example.pillcountingnewmodels.core.utils.Dimens.buttonCornerRadius
+import com.example.pillcountingnewmodels.core.utils.Dimens.buttonHeight
 
 @Composable
 fun FilledButton(

@@ -1,4 +1,4 @@
-package com.example.pillcountingnewmodels.core.network
+package com.example.pillcountingnewmodels.core.api.`interface`
 
 import com.example.pillcountingnewmodels.core.models.ApiResponse
 import com.example.pillcountingnewmodels.core.models.RefreshTokenRequest
@@ -27,7 +27,7 @@ interface IApplicationSettingInterface {
      */
     @POST(URLConstant.REFRESH_TOKEN)
     @Headers("Content-Type: ${URLConstant.CONTENT_TYPE}")
-    suspend fun refreshToken(
+    suspend fun refreshToken( //TODO(Shift to the user detail repo)
         @Body request: RefreshTokenRequest
     ): RefreshTokenResponse
 

@@ -50,7 +50,7 @@ fun ScannerView(
                 implementationMode = PreviewView.ImplementationMode.COMPATIBLE
             }
 
-            cameraProviderFuture.addListener({
+            cameraProviderFuture.addListener({  //TODO(Change the use from barcode analyzer)
                 try {
                     cameraProvider = cameraProviderFuture.get()
 

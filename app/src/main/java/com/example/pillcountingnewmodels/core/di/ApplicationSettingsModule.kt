@@ -2,8 +2,8 @@ package com.example.pillcountingnewmodels.core.di
 
 import com.example.pillcountingnewmodels.core.network.IApplicationSettingInterface
 import com.example.pillcountingnewmodels.core.utils.PreferenceHelper
-import com.example.pillcountingnewmodels.feature.settings.data.repository.ApplicationSettingsRepository
-import com.example.pillcountingnewmodels.feature.settings.domain.repository.IApplicationSettingsRepository
+import com.example.pillcountingnewmodels.core.api.repository.ApplicationSettingsRepository
+import com.example.pillcountingnewmodels.core.api.implementation.IApplicationSettingsRepository
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn

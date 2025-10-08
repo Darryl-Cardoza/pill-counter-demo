@@ -9,7 +9,7 @@ import com.squareup.moshi.ToJson
  * A custom Moshi adapter to convert between a hex color String (e.g., "#FF0000")
  * and a Jetpack Compose Color object.
  */
-class ColorAdapter {
+class ColorAdapter { //TODO(Removed)
 
     @ToJson
     fun toJson(color: Color): String {

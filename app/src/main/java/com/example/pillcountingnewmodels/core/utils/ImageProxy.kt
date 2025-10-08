@@ -10,7 +10,7 @@ import java.io.File
 import java.io.FileOutputStream
 
 // Convert ImageProxy to Bitmap
-fun ImageProxy.toBitmap(): Bitmap? {
+fun ImageProxy.toBitmap(): Bitmap? { //TODO(Delete unused)
     val yBuffer = planes[0].buffer // Y
     val uBuffer = planes[1].buffer // U
     val vBuffer = planes[2].buffer // V

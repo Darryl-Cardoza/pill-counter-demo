@@ -1,10 +1,9 @@
-package com.example.pillcountingnewmodels.core.utils.compose
+package com.example.pillcountingnewmodels.core.utils
 
 import Screen
+import com.example.pillcountingnewmodels.core.room.models.dtos.StatusTypeCount
 import com.example.pillcountingnewmodels.core.room.models.enums.CountStatus
 import com.example.pillcountingnewmodels.core.room.models.enums.CountType
-import com.example.pillcountingnewmodels.core.room.models.dtos.StatusTypeCount
-import com.example.pillcountingnewmodels.core.utils.PreferenceHelper
 import com.example.pillcountingnewmodels.feature.menu.domain.model.CountBuckets
 import com.example.pillcountingnewmodels.navigation.AUTH_GRAPH_ROUTE
 
@@ -76,7 +75,7 @@ object HelperFunctions {
      * - If not, navigate to the authentication graph.
      *
      * @param preferenceHelper A wrapper for user/session preferences.
-     * @return Navigation route string (`Screen.Dashboard.route` or [AUTH_GRAPH_ROUTE]).
+     * @return Navigation route string (`Screen.Dashboard.route` or [com.example.pillcountingnewmodels.navigation.AUTH_GRAPH_ROUTE]).
      */
     fun getStartDestination(preferenceHelper: PreferenceHelper): String {
         return if (preferenceHelper.isUserLoggedIn()) {
@@ -87,15 +86,15 @@ object HelperFunctions {
     }
 
     /**
-     * Maps aggregated dashboard rows from the database into structured [CountBuckets].
+     * Maps aggregated dashboard rows from the database into structured [com.example.pillcountingnewmodels.feature.menu.domain.model.CountBuckets].
      *
-     * Iterates over [StatusTypeCount] rows (grouped by [CountType] and [CountStatus]) and
+     * Iterates over [com.example.pillcountingnewmodels.core.room.models.dtos.StatusTypeCount] rows (grouped by [com.example.pillcountingnewmodels.core.room.models.enums.CountType] and [com.example.pillcountingnewmodels.core.room.models.enums.CountStatus]) and
      * separates them into:
      * - Fixed → Completed / Partial
      * - Regular → Completed / Partial
      *
      * @param rows List of aggregated transaction counts grouped by status and type.
-     * @return [CountBuckets] with distributed counts for Fixed & Regular categories.
+     * @return [com.example.pillcountingnewmodels.feature.menu.domain.model.CountBuckets] with distributed counts for Fixed & Regular categories.
      */
     fun mapCounts(rows: List<StatusTypeCount>): CountBuckets {
         var fixedCompleted = 0

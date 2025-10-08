@@ -6,16 +6,19 @@ import com.itextpdf.kernel.colors.ColorConstants
 import com.itextpdf.kernel.pdf.PdfDocument
 import com.itextpdf.kernel.pdf.PdfWriter
 import com.itextpdf.layout.Document
-import com.itextpdf.layout.element.*
+import com.itextpdf.layout.element.Cell
+import com.itextpdf.layout.element.Paragraph
+import com.itextpdf.layout.element.Table
 import com.itextpdf.layout.properties.HorizontalAlignment
 import com.itextpdf.layout.properties.TextAlignment
 import com.itextpdf.layout.properties.UnitValue
 import com.itextpdf.layout.properties.VerticalAlignment
 import java.io.File
 import java.text.SimpleDateFormat
-import java.util.*
+import java.util.Date
+import java.util.Locale
 
-class HistoryDetailsPDFExporter(private val context: Context) {
+class HistoryDetailsPDFExporter(private val context: Context) { //TODO(Rename to the pdf helper and exporter)
 
     // Generate a consistent filename based on drug data
     private fun generateFileName(drugName: String, ndc: String, batch: String): String {

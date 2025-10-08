@@ -37,7 +37,7 @@ import com.example.pillcountingnewmodels.core.utils.compose.ActionButtonPrimary
 import com.example.pillcountingnewmodels.core.utils.compose.AppInfo
 import com.example.pillcountingnewmodels.core.utils.compose.BackButton
 import com.example.pillcountingnewmodels.core.utils.compose.CommonDialog
-import com.example.pillcountingnewmodels.core.utils.compose.HelperFunctions.maskEmail
+import com.example.pillcountingnewmodels.core.utils.HelperFunctions.maskEmail
 import com.example.pillcountingnewmodels.core.utils.compose.OTPTextField
 import com.example.pillcountingnewmodels.core.utils.compose.SplitResponsive
 import com.example.pillcountingnewmodels.feature.login.viewmodel.LoginViewModel

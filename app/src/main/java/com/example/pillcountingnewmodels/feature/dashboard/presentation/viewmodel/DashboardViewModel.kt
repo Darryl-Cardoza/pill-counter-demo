@@ -8,8 +8,8 @@ import com.example.pillcountingnewmodels.core.room.models.UserEntity
 import com.example.pillcountingnewmodels.core.room.models.enums.CountStatus
 import com.example.pillcountingnewmodels.core.room.models.enums.CountType
 import com.example.pillcountingnewmodels.core.utils.AppLogger
+import com.example.pillcountingnewmodels.core.utils.HelperFunctions.mapCounts
 import com.example.pillcountingnewmodels.core.utils.PreferenceHelper
-import com.example.pillcountingnewmodels.core.utils.compose.HelperFunctions.mapCounts
 import com.example.pillcountingnewmodels.feature.dashboard.domain.data.IUserDetailRepository
 import com.example.pillcountingnewmodels.feature.dashboard.domain.model.DashboardUiState
 import com.example.pillcountingnewmodels.feature.dashboard.domain.model.UserDetail

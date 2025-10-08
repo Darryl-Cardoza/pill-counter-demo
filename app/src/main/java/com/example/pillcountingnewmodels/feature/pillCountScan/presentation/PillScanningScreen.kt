@@ -16,6 +16,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -195,23 +196,25 @@ fun PillScanningScreen(
             portraitRatio = 0.5f to 0.5f
         )
 
-        BackButton(navController) {
-            navController.navigate(Screen.Dashboard.route) {
-                popUpTo(0) { inclusive = true }
+        if (!uiState.showIdleOverlay) {
+            BackButton(navController) {
+                navController.navigate(Screen.Dashboard.route) {
+                    popUpTo(0) { inclusive = true }
+                }
             }
         }
-
         // === Overlay placed last → ensures it is on top ===
         if (uiState.showIdleOverlay) {
             logger.i("Overlay visible")
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(AppTheme.extendedColors.secondaryBackground.copy(alpha = 0.5f)),
+                    .background(AppTheme.extendedColors.secondaryBackground.copy(alpha = 0.5f))
+                    .pointerInput(Unit) {},
                 contentAlignment = Alignment.Center
             ) {
                 ActionButtonPrimary(
-                    text = stringResource(R.string.resume).toUpperCase(Locale.ROOT),
+                    text = stringResource(R.string.resume).uppercase(Locale.ROOT),
                     onClick = {
                         viewModel.resetIdleOverlay()
                     },

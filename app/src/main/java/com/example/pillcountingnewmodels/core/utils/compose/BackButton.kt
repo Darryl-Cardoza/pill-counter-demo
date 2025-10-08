@@ -9,8 +9,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.navigation.NavController
 import com.example.pillcountingnewmodels.R
-import com.example.pillcountingnewmodels.core.utils.compose.Dimens.extraSmall
-import com.example.pillcountingnewmodels.core.utils.compose.Dimens.small
+import com.example.pillcountingnewmodels.core.utils.Dimens.extraSmall
+import com.example.pillcountingnewmodels.core.utils.Dimens.small
 
 @Composable
 fun BackButton(

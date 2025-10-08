@@ -41,8 +41,8 @@ import androidx.compose.ui.unit.dp
 import com.example.pillcountingnewmodels.R
 import com.example.pillcountingnewmodels.core.utils.compose.CommonDialog
 import com.example.pillcountingnewmodels.core.utils.compose.CommonSingleSelectDialog
-import com.example.pillcountingnewmodels.core.utils.compose.Dimens.extraSmall
-import com.example.pillcountingnewmodels.core.utils.compose.Dimens.small
+import com.example.pillcountingnewmodels.core.utils.Dimens.extraSmall
+import com.example.pillcountingnewmodels.core.utils.Dimens.small
 import com.example.pillcountingnewmodels.feature.countResume.domain.data.ResumeEvent
 import com.example.pillcountingnewmodels.feature.countResume.domain.data.ResumeEventFactory
 import com.example.pillcountingnewmodels.feature.countResume.domain.model.CountItem
