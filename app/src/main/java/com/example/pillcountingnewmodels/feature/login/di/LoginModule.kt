@@ -34,7 +34,7 @@ object LoginModule {
     /**
      * Provides a singleton instance of the [ILoginApi].
      *
-     * This API interface defines the network endpoints for performing
+     * This API interfaceDetail defines the network endpoints for performing
      * user authentication operations such as login, token refresh,
      * and credential validation.
      *

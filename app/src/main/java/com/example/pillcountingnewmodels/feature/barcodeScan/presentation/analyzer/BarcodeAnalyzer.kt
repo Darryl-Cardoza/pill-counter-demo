@@ -1,124 +1,210 @@
 package com.example.pillcountingnewmodels.feature.barcodeScan.presentation.analyzer
 
-import androidx.annotation.OptIn
-import androidx.camera.core.ExperimentalGetImage
+import android.annotation.SuppressLint
+import android.content.Context
+import android.util.Log
+import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageProxy
-import com.example.pillcountingnewmodels.core.utils.AppLogger
+import androidx.camera.core.Preview
+import androidx.camera.lifecycle.ProcessCameraProvider
+import androidx.camera.view.PreviewView
+import androidx.core.content.ContextCompat
+import androidx.lifecycle.LifecycleOwner
+import com.example.pillcountingnewmodels.core.utils.saveBitmapToFile
+import com.google.mlkit.vision.barcode.BarcodeScanner
 import com.google.mlkit.vision.barcode.BarcodeScannerOptions
 import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.barcode.common.Barcode
 import com.google.mlkit.vision.common.InputImage
-import java.io.Closeable
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.util.concurrent.atomic.AtomicBoolean
+import javax.inject.Inject
+import javax.inject.Singleton
 
 /**
- * An ImageAnalysis.Analyzer that uses ML Kit to detect barcodes in a camera feed.
- * It processes camera frames, scans for barcodes, and invokes a callback with the result.
- * This analyzer includes state management, intelligent throttling to prevent duplicate scans,
- * and robust lifecycle handling.
+ * A professional and reusable MLKit barcode analyzer.
  *
- * Implements [Closeable] to ensure ML Kit resources are released properly.
- *
- * @param onBarcodeScanned A callback function that receives the raw string value of a detected barcode.
- * @param onError A callback function for propagating exceptions that occur during analysis.
+ * Handles lifecycle events, pause/resume, and robust CameraX binding.
+ * Supports single-scan and continuous-scan modes.
  */
-class BarcodeAnalyzer(
-    private val onBarcodeScanned: (String) -> Unit,
-    private val onError: (Exception) -> Unit
-) : ImageAnalysis.Analyzer, Closeable {
+@Singleton
+class BarcodeAnalyzer @Inject constructor(
+    private val appContext: Context
+) {
 
-    companion object {
-        // Increased interval to prevent accidental re-scans if the user's hand shakes.
-        private const val SCAN_INTERVAL_MS = 1500L
-    }
+    private var cameraProvider: ProcessCameraProvider? = null
+    private var imageAnalysis: ImageAnalysis? = null
+    private var preview: Preview? = null
+    private var scanner: BarcodeScanner? = null
+    private var cameraJob: Job? = null
+    private var isPaused = AtomicBoolean(false)
+    private var isActive = AtomicBoolean(false)
+    private var hasScannedOnce = AtomicBoolean(false)
 
-    private val logger = AppLogger.create<BarcodeAnalyzer>()
+    private val ioScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
-    @Volatile
-    private var isPaused = false
-    private var lastScannedTimestamp = 0L
-    private var lastScannedBarcode: String? = null
-
-    private val options = BarcodeScannerOptions.Builder()
-        .setBarcodeFormats(Barcode.FORMAT_ALL_FORMATS)
-        .build()
-    private val scanner = BarcodeScanning.getClient(options)
-
-    init {
-        logger.d("BarcodeAnalyzer initialized.")
-    }
-
-    @OptIn(ExperimentalGetImage::class)
-    override fun analyze(imageProxy: ImageProxy) {
-        // If the analyzer is paused (e.g., after a successful scan), ignore new frames.
-        if (isPaused) {
-            imageProxy.close()
+    /**
+     * Start the camera and attach MLKit barcode analyzer.
+     *
+     * @param previewView The PreviewView for showing the camera feed
+     * @param lifecycleOwner Lifecycle for automatic binding/unbinding
+     * @param singleScanMode If true, pauses scanning after first success
+     */
+    fun start(
+        previewView: PreviewView,
+        lifecycleOwner: LifecycleOwner,
+        singleScanMode: Boolean = true,
+        barcodeFormats: Int = Barcode.FORMAT_ALL_FORMATS,
+        onBarcodeDetected: (String, String?) -> Unit,
+        onError: (Exception) -> Unit
+    ) {
+        if (isActive.get()) {
+            Log.w(TAG, "Analyzer already running.")
             return
         }
+        isActive.set(true)
+        hasScannedOnce.set(false)
+        isPaused.set(false)
 
+        cameraJob = ioScope.launch(Dispatchers.Main) {
+            try {
+                val providerFuture = ProcessCameraProvider.getInstance(appContext)
+                cameraProvider = providerFuture.get()
+
+                val options = BarcodeScannerOptions.Builder()
+                    .setBarcodeFormats(barcodeFormats)
+                    .build()
+
+                scanner = BarcodeScanning.getClient(options)
+
+                preview = Preview.Builder().build().also {
+                    it.setSurfaceProvider(previewView.surfaceProvider)
+                }
+
+                imageAnalysis = ImageAnalysis.Builder()
+                    .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
+                    .build().apply {
+                        setAnalyzer(ContextCompat.getMainExecutor(appContext)) { imageProxy ->
+                            analyzeImage(imageProxy, singleScanMode, onBarcodeDetected, onError)
+                        }
+                    }
+
+                cameraProvider?.unbindAll()
+                cameraProvider?.bindToLifecycle(
+                    lifecycleOwner,
+                    CameraSelector.DEFAULT_BACK_CAMERA,
+                    preview,
+                    imageAnalysis
+                )
+
+                Log.i(TAG, "Camera and Analyzer started successfully.")
+
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to start camera: ${e.message}")
+                onError(e)
+                stop()
+            }
+        }
+    }
+
+    @SuppressLint("UnsafeOptInUsageError")
+    private fun analyzeImage(
+        imageProxy: ImageProxy,
+        singleScanMode: Boolean,
+        onBarcodeDetected: (String, String?) -> Unit,
+        onError: (Exception) -> Unit
+    ) {
         val mediaImage = imageProxy.image
-        if (mediaImage == null) {
-            logger.w("Frame analysis skipped: mediaImage was null.")
+        if (mediaImage == null || isPaused.get() || !isActive.get()) {
             imageProxy.close()
             return
         }
 
         val image = InputImage.fromMediaImage(mediaImage, imageProxy.imageInfo.rotationDegrees)
-        scanner.process(image)
-            .addOnSuccessListener { barcodes ->
-                val currentTime = System.currentTimeMillis()
-                // Check if enough time has passed since the last successful scan.
-                if (currentTime - lastScannedTimestamp >= SCAN_INTERVAL_MS) {
-                    barcodes.firstOrNull()?.rawValue?.takeIf { it.isNotBlank() }?.let { barcodeValue ->
-                        // Process only if it's a new, unique barcode.
-                        if (barcodeValue != lastScannedBarcode) {
-                            logger.i("Barcode scanned successfully: $barcodeValue")
-                            onBarcodeScanned(barcodeValue)
-                            lastScannedTimestamp = currentTime
-                            lastScannedBarcode = barcodeValue
-                            // Automatically pause to prevent immediate re-scans.
-                            pause()
-                        } else {
-                            logger.d("Duplicate barcode ignored: $barcodeValue")
+
+        scanner?.process(image)
+            ?.addOnSuccessListener { barcodes ->
+                val barcode = barcodes.firstOrNull()
+                if (barcode != null && (!singleScanMode || !hasScannedOnce.get())) {
+                    hasScannedOnce.set(true)
+                    ioScope.launch {
+                        val bitmap = imageProxy.toBitmap()
+                        val filePath = bitmap?.let {
+                            saveBitmapToFile(
+                                appContext,
+                                it,
+                                "barcode_${System.currentTimeMillis()}.jpg"
+                            )
+                        }
+                        withContext(Dispatchers.Main) {
+                            onBarcodeDetected(barcode.rawValue.orEmpty(), filePath)
+                            if (singleScanMode) pause()
                         }
                     }
                 }
             }
-            .addOnFailureListener { exception ->
-                // Propagate errors to the caller for UI feedback.
-                logger.e("Barcode scanning failed.", exception)
-                onError(exception)
+            ?.addOnFailureListener { ex ->
+                Log.e(TAG, "Barcode detection failed: ${ex.message}")
+                onError(ex)
             }
-            .addOnCompleteListener {
-                // It's crucial to close the imageProxy to allow the next frame to be processed.
-                imageProxy.close()
-            }
+            ?.addOnCompleteListener { imageProxy.close() }
     }
 
     /**
-     * Pauses the barcode scanning process. No new frames will be analyzed until resume() is called.
+     * Pause scanning but keep camera feed active.
      */
     fun pause() {
-        logger.d("Analyzer paused.")
-        isPaused = true
+        if (isActive.get()) {
+            isPaused.set(true)
+            Log.d(TAG, "Analyzer paused.")
+        }
     }
 
     /**
-     * Resumes the barcode scanning process and clears the last scanned value to allow for a new scan.
+     * Resume scanning after pause.
      */
     fun resume() {
-        logger.d("Analyzer resumed.")
-        isPaused = false
-        lastScannedBarcode = null
+        if (isActive.get()) {
+            isPaused.set(false)
+            Log.d(TAG, "Analyzer resumed.")
+        }
     }
 
     /**
-     * Closes the underlying ML Kit scanner to release resources.
-     * This must be called when the analyzer is no longer needed to prevent memory leaks.
+     * Completely stop scanning and unbind all resources.
      */
-    override fun close() {
-        logger.d("Closing BarcodeAnalyzer and releasing resources.")
-        scanner.close()
+    fun stop() {
+        try {
+            cameraProvider?.unbindAll()
+            imageAnalysis?.clearAnalyzer()
+            isActive.set(false)
+            isPaused.set(false)
+            hasScannedOnce.set(false)
+            scanner?.close()
+            Log.d(TAG, "Analyzer stopped and resources released.")
+        } catch (e: Exception) {
+            Log.e(TAG, "Stop error: ${e.message}")
+        }
+    }
+
+    /**
+     * Destroy analyzer and cancel background coroutines.
+     */
+    fun destroy() {
+        stop()
+        cameraJob?.cancel()
+        ioScope.cancel()
+        Log.d(TAG, "Analyzer fully destroyed.")
+    }
+
+    companion object {
+        private const val TAG = "BarcodeAnalyzer"
     }
 }
-

@@ -1,6 +1,6 @@
 package com.example.pillcountingnewmodels.feature.profile.di
 
-import com.example.pillcountingnewmodels.core.network.IApplicationSettingInterface
+import com.example.pillcountingnewmodels.core.api.interfaceDetail.IApplicationSettingInterface
 import com.example.pillcountingnewmodels.core.room.dao.UserDao
 import com.example.pillcountingnewmodels.core.utils.PreferenceHelper
 import com.example.pillcountingnewmodels.feature.profile.data.ProfileRepository
@@ -38,7 +38,7 @@ object ProfileModule {
     /**
      * Provides a singleton instance of the [IProfileApi].
      *
-     * This interface defines the Retrofit endpoints responsible for user
+     * This interfaceDetail defines the Retrofit endpoints responsible for user
      * profile operations, such as fetching profile data, updating user
      * information, and managing account details.
      *

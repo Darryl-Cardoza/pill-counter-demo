@@ -11,7 +11,7 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * Concrete implementation of the [IForgotPasswordRepository] interface.
+ * Concrete implementation of the [IForgotPasswordRepository] interfaceDetail.
  *
  * Handles the Forgot Password feature by communicating with the remote [IForgotPasswordAPI].
  * Responsible for sending OTP requests to the backend and wrapping the response

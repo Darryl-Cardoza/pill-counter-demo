@@ -1,7 +1,7 @@
 package com.example.pillcountingnewmodels.core.api.repository
 
 import com.example.pillcountingnewmodels.core.api.implementation.IApplicationSettingsRepository
-import com.example.pillcountingnewmodels.core.api.`interface`.IApplicationSettingInterface
+import com.example.pillcountingnewmodels.core.api.interfaceDetail.IApplicationSettingInterface
 import com.example.pillcountingnewmodels.core.models.ApiResponse
 import com.example.pillcountingnewmodels.core.models.RefreshTokenRequest
 import com.example.pillcountingnewmodels.core.models.SettingsDataDto

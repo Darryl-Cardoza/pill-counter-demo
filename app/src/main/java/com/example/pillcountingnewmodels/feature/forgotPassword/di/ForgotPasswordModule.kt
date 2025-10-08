@@ -16,7 +16,7 @@ import javax.inject.Singleton
  * **Forgot Password** feature of the application.
  *
  * This module defines how to construct and provide the [IForgotPasswordAPI]
- * (Retrofit service interface) and the [IForgotPasswordRepository]
+ * (Retrofit service interfaceDetail) and the [IForgotPasswordRepository]
  * (data repository) which manage the password recovery process.
  *
  * These dependencies handle network communication, token validation,
@@ -36,7 +36,7 @@ object ForgotPasswordModule {
     /**
      * Provides a singleton instance of the [IForgotPasswordAPI].
      *
-     * This API interface defines the Retrofit endpoints for initiating
+     * This API interfaceDetail defines the Retrofit endpoints for initiating
      * password recovery requests such as verifying user credentials,
      * sending reset links or codes, and confirming password resets.
      *

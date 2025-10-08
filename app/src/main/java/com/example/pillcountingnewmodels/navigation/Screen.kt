@@ -5,7 +5,7 @@ import androidx.navigation.NavType
 import androidx.navigation.navArgument
 
 /**
- * A sealed interface to represent all navigable screens in the app.
+ * A sealed interfaceDetail to represent all navigable screens in the app.
  * This approach provides type safety and autocompletion for routes and arguments,
  * preventing common errors associated with string-based navigation.
  */

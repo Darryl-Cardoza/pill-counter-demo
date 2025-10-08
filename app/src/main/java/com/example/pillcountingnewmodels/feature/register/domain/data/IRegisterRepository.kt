@@ -5,9 +5,9 @@ import com.example.pillcountingnewmodels.feature.register.domain.model.RegisterR
 /**
  * Defines the contract for user registration data operations.
  *
- * This interface abstracts the underlying data source (e.g., remote API, local database),
+ * This interfaceDetail abstracts the underlying data source (e.g., remote API, local database),
  * allowing for a clean separation of concerns and improved testability. By depending on this
- * interface, ViewModels remain agnostic of the data layer's implementation details.
+ * interfaceDetail, ViewModels remain agnostic of the data layer's implementation details.
  */
 interface IRegisterRepository {
 

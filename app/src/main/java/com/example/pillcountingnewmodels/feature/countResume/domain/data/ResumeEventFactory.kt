@@ -3,7 +3,7 @@ package com.example.pillcountingnewmodels.feature.countResume.domain.data
 import com.example.pillcountingnewmodels.feature.countResume.domain.model.CountItem
 
 /**
- * Factory interface for creating [ResumeEvent] instances.
+ * Factory interfaceDetail for creating [ResumeEvent] instances.
  *
  * This allows mapping UI interactions to specific events in a type-safe manner.
  *

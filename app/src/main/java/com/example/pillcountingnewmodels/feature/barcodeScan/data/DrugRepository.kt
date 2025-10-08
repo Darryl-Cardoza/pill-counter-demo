@@ -11,7 +11,7 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * Implementation of the [IDrugRepository] interface that fetches
+ * Implementation of the [IDrugRepository] interfaceDetail that fetches
  * drug information from a remote backend API using [IDrugAPI].
  *
  * This repository is responsible for:

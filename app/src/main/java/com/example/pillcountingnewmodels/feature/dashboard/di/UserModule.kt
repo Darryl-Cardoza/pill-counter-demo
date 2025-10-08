@@ -1,6 +1,6 @@
 package com.example.pillcountingnewmodels.feature.dashboard.di
 
-import com.example.pillcountingnewmodels.core.network.IApplicationSettingInterface
+import com.example.pillcountingnewmodels.core.api.interfaceDetail.IApplicationSettingInterface
 import com.example.pillcountingnewmodels.core.utils.PreferenceHelper
 import com.example.pillcountingnewmodels.feature.dashboard.data.UserDetailRepository
 import com.example.pillcountingnewmodels.feature.dashboard.data.remote.IUserDetailAPI
@@ -36,7 +36,7 @@ object UserModule {
     /**
      * Provides a singleton instance of the [IUserDetailAPI].
      *
-     * This API interface defines the Retrofit endpoints responsible for fetching
+     * This API interfaceDetail defines the Retrofit endpoints responsible for fetching
      * user details, preferences, and other account-related data from the backend.
      *
      * @param retrofit The [Retrofit] instance used to create the API implementation.

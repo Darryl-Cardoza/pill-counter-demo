@@ -1,7 +1,7 @@
 package com.example.pillcountingnewmodels.feature.profile.data
 
 import com.example.pillcountingnewmodels.core.models.RefreshTokenRequest
-import com.example.pillcountingnewmodels.core.network.IApplicationSettingInterface
+import com.example.pillcountingnewmodels.core.api.interfaceDetail.IApplicationSettingInterface
 import com.example.pillcountingnewmodels.core.room.dao.UserDao
 import com.example.pillcountingnewmodels.core.utils.AppLogger
 import com.example.pillcountingnewmodels.core.utils.PreferenceHelper

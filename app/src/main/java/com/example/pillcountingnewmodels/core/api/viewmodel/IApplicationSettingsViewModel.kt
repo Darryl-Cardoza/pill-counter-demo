@@ -5,7 +5,7 @@ import kotlinx.coroutines.flow.StateFlow
 
 /**
  * Defines the contract for the ApplicationSettingsViewModel.
- * This interface exposes the UI state and the actions that can be performed from the UI.
+ * This interfaceDetail exposes the UI state and the actions that can be performed from the UI.
  */
 interface IApplicationSettingsViewModel {
 

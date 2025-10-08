@@ -5,7 +5,7 @@ import com.example.pillcountingnewmodels.feature.barcodeScan.domain.model.DrugIn
 
 /**
  * Defines the contract for accessing drug data.
- * This interface abstracts the data source, allowing for flexible implementations
+ * This interfaceDetail abstracts the data source, allowing for flexible implementations
  * (e.g., remote API, local database) and easier testing.
  */
 interface IDrugRepository {

@@ -21,9 +21,9 @@ interface ResumeUiState {
 }
 
 /**
- * Marker interface for events that can occur on a Resume screen.
+ * Marker interfaceDetail for events that can occur on a Resume screen.
  *
  * All user interactions like selection, deletion, and swipe actions
- * should implement this interface.
+ * should implement this interfaceDetail.
  */
 interface ResumeEvent

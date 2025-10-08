@@ -1,4 +1,4 @@
-package com.example.pillcountingnewmodels.core.api.`interface`
+package com.example.pillcountingnewmodels.core.api.interfaceDetail
 
 import com.example.pillcountingnewmodels.core.models.ApiResponse
 import com.example.pillcountingnewmodels.core.models.RefreshTokenRequest

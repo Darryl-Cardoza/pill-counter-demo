@@ -9,7 +9,7 @@ import retrofit2.http.Body
 import retrofit2.http.POST
 
 /**
- * Retrofit service interface for user authentication APIs.
+ * Retrofit service interfaceDetail for user authentication APIs.
  */
 interface ILoginApi {
 

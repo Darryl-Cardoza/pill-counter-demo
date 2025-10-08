@@ -3,7 +3,7 @@ package com.example.pillcountingnewmodels.feature.register.domain.model
 /**
  * Defines the possible states for the OTP Verification screen UI.
  *
- * This sealed interface acts as a state machine, ensuring the UI is always in a
+ * This sealed interfaceDetail acts as a state machine, ensuring the UI is always in a
  * predictable and well-defined state.
  */
 sealed interface VerifyPinUiState {

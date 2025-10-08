@@ -3,7 +3,7 @@ package com.example.pillcountingnewmodels.feature.forgotPassword.domain.model
 /**
  * Represents the UI state of the Forgot Password screen.
  *
- * This sealed interface models the different states in the password recovery flow,
+ * This sealed interfaceDetail models the different states in the password recovery flow,
  * enabling the UI to react accordingly (e.g., show a loading indicator, display an error,
  * or navigate forward on success).
  */

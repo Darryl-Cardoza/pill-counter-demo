@@ -35,7 +35,7 @@ object RegisterModule {
     /**
      * Provides a singleton instance of the [IRegisterAPI].
      *
-     * This interface defines the Retrofit API endpoints related to user
+     * This interfaceDetail defines the Retrofit API endpoints related to user
      * registration — including account creation, validation, and submission
      * of registration data to the backend service.
      *

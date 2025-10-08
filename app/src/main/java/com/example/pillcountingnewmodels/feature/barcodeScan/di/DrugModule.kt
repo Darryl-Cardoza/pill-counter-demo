@@ -38,7 +38,7 @@ object DrugModule {
     /**
      * Provides a singleton instance of the [IDrugAPI].
      *
-     * This API interface defines the Retrofit endpoints for retrieving
+     * This API interfaceDetail defines the Retrofit endpoints for retrieving
      * drug and medication data from remote data sources based on barcode
      * or product identifiers.
      *

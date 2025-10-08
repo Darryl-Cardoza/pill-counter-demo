@@ -1,6 +1,6 @@
 package com.example.pillcountingnewmodels.core.di
 
-import com.example.pillcountingnewmodels.core.network.IApplicationSettingInterface
+import com.example.pillcountingnewmodels.core.api.interfaceDetail.IApplicationSettingInterface
 import com.example.pillcountingnewmodels.core.utils.PreferenceHelper
 import com.example.pillcountingnewmodels.core.api.repository.ApplicationSettingsRepository
 import com.example.pillcountingnewmodels.core.api.implementation.IApplicationSettingsRepository
@@ -30,7 +30,7 @@ object ApplicationSettingsModule {
     /**
      * Provides a singleton instance of the [IApplicationSettingInterface].
      *
-     * This interface defines the Retrofit API endpoints related to application
+     * This interfaceDetail defines the Retrofit API endpoints related to application
      * settings such as configuration parameters, environment setup, and other
      * system-level metadata.
      *

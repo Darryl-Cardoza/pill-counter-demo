@@ -33,7 +33,7 @@ object VerifyPinModule {
     /**
      * Provides a singleton instance of the [IVerifyPinAPI].
      *
-     * This API interface defines the endpoints required to verify
+     * This API interfaceDetail defines the endpoints required to verify
      * one-time PINs or OTPs as part of the user registration or
      * multi-factor authentication process.
      *

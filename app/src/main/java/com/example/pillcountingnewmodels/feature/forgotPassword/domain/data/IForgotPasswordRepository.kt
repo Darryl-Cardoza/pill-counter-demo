@@ -5,11 +5,11 @@ import com.example.pillcountingnewmodels.feature.forgotPassword.domain.model.For
 /**
  * Contract for the Forgot Password feature's data operations.
  *
- * This repository interface abstracts the process of initiating
+ * This repository interfaceDetail abstracts the process of initiating
  * a password recovery request by sending an OTP (One-Time Password)
  * to the user's registered email address.
  *
- * Implementations of this interface should handle the interaction
+ * Implementations of this interfaceDetail should handle the interaction
  * with remote data sources (e.g., a REST API).
  */
 interface IForgotPasswordRepository {

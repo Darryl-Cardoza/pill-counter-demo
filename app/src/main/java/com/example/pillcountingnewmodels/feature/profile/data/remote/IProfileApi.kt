@@ -10,7 +10,7 @@ import retrofit2.http.Header
 import retrofit2.http.POST
 
 /**
- * Retrofit service interface for profile-related API operations.
+ * Retrofit service interfaceDetail for profile-related API operations.
  */
 interface IProfileApi {
 
