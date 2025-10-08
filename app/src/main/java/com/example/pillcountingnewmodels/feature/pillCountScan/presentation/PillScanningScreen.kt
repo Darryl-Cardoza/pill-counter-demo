@@ -192,7 +192,7 @@ fun PillScanningScreen(
                     filteredPillCount = filteredPillCount
                 )
             },
-            landscapeRatio = 0.6f to 0.4f,
+            landscapeRatio = 0.5f to 0.5f,
             portraitRatio = 0.5f to 0.5f
         )
 
