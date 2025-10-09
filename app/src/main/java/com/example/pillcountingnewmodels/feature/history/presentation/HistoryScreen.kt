@@ -14,7 +14,7 @@ import androidx.core.content.FileProvider
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.pillcountingnewmodels.R
-import com.example.pillcountingnewmodels.core.utils.compose.CommonDialog
+import com.example.pillcountingnewmodels.core.utils.common.UserInterfaceUtils.CommonDialog
 import com.example.pillcountingnewmodels.core.utils.compose.SplitResponsive
 import com.example.pillcountingnewmodels.feature.history.presentation.compose.CalendarSection
 import com.example.pillcountingnewmodels.feature.history.presentation.compose.CountsSection

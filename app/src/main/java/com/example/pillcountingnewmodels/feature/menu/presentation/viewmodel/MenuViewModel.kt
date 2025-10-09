@@ -3,8 +3,8 @@ package com.example.pillcountingnewmodels.feature.menu.presentation.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.pillcountingnewmodels.core.room.dao.PillCountTxnDao
-import com.example.pillcountingnewmodels.core.utils.PreferenceHelper
-import com.example.pillcountingnewmodels.core.utils.HelperFunctions.mapCounts
+import com.example.pillcountingnewmodels.core.utils.preference.PreferenceHelper
+import com.example.pillcountingnewmodels.core.utils.common.HelperFunctions.mapCounts
 import com.example.pillcountingnewmodels.feature.menu.domain.model.MenuUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow

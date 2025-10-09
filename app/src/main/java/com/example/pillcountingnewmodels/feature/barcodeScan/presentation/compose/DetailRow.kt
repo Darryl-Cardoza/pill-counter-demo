@@ -10,7 +10,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import com.example.pillcountingnewmodels.core.utils.Dimens.medium
+import com.example.pillcountingnewmodels.core.utils.constants.Dimens.medium
 import com.example.pillcountingnewmodels.ui.theme.AppTheme
 
 @Composable

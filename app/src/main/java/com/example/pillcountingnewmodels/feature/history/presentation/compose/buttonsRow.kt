@@ -10,8 +10,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.example.pillcountingnewmodels.R
-import com.example.pillcountingnewmodels.core.utils.compose.FilledButton
-import com.example.pillcountingnewmodels.core.utils.compose.HollowButton
+import com.example.pillcountingnewmodels.core.utils.common.UserInterfaceUtils.FilledButton
+import com.example.pillcountingnewmodels.core.utils.common.UserInterfaceUtils.HollowButton
 
 @Composable
 fun ButtonsRow(

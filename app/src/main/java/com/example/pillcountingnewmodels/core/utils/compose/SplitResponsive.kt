@@ -17,12 +17,13 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.example.pillcountingnewmodels.ui.theme.AppTheme
 
+/** A responsive layout that splits the screen into two sections (top/bottom or left/right) adapting to orientation with rounded corners. */
 @Composable
 fun SplitResponsive(
     topOrLeft: @Composable () -> Unit,
     bottomOrRight: @Composable () -> Unit,
-    portraitRatio: Pair<Float, Float> = 0.5f to 0.5f, // (top, bottom)
-    landscapeRatio: Pair<Float, Float> = 0.5f to 0.5f, // (left, right)
+    portraitRatio: Pair<Float, Float> = 0.5f to 0.5f,
+    landscapeRatio: Pair<Float, Float> = 0.5f to 0.5f,
     cornerRadius: Dp = 16.dp,
 ) {
     val isLandscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE

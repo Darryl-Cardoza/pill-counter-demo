@@ -1,52 +1,84 @@
 package com.example.pillcountingnewmodels.core.room.dao
 
-import androidx.room.*
+import androidx.room.Dao
+import androidx.room.Insert
+import androidx.room.OnConflictStrategy
+import androidx.room.Query
+import androidx.room.Transaction
+import androidx.room.Update
 import com.example.pillcountingnewmodels.core.room.models.UserEntity
 import kotlinx.coroutines.flow.Flow
 
 /**
- * Data Access Object (DAO) for managing [UserEntity] persistence.
+ * **User Data Access Object (DAO)**
  *
- * This DAO enforces **localId stability**:
- * - `localId` is the Room primary key and the **only FK** exposed to other tables.
- * - `userId` is a unique business identifier (from server/JWT) but is **not** a FK.
- * - Once assigned, a `localId` is stable across app restarts, syncs, or logins.
+ * Manages persistence of [UserEntity] records within the local Room database.
+ * Provides consistent, reactive access to user profile information while
+ * maintaining strict key integrity and avoiding destructive operations.
  *
- * ### Professional Practices
- * - Never use `OnConflictStrategy.REPLACE` → it destroys PKs and breaks FKs.
- * - Always update in place (`update`) to preserve `localId`.
- * - Use `@Transaction` for compound upsert logic.
- * - Use Flow return types for reactive UI updates.
+ * ---
+ * ### ⚙️ Core Principles
+ * - **Stable Primary Key (`localId`)**
+ *   - The Room `localId` acts as the *true internal FK reference* for all related tables.
+ *   - `localId` is never recreated or replaced.
+ * - **Immutable Business Identifier (`userId`)**
+ *   - `userId` corresponds to the server or JWT identifier.
+ *   - It is unique but not used as a foreign key.
+ * - **Upsert Safety**
+ *   - Never use `REPLACE` since it resets primary keys.
+ *   - Use `upsertPreservingLocalId()` to safely insert or update without breaking links.
+ * - **Reactive Design**
+ *   - `Flow` queries are used for live UI updates (e.g., profile screens).
+ *
+ * ---
+ * ### Example Usage
+ * ```kotlin
+ * val userDao: UserDao = db.userDao()
+ * val currentUser = userDao.getByUserId("USR-001")
+ * userDao.upsertPreservingLocalId(newUserEntity)
+ * userDao.observeByLocalId(currentUser.localId).collect { user -> ... }
+ * ```
  */
 @Dao
 interface UserDao {
 
-    /* ────────────────────────── Insert / Update ────────────────────────── */
+    // ───────────────────────────── Insert / Update ─────────────────────────────
 
     /**
-     * Inserts a new [UserEntity].
+     * Inserts a new [UserEntity] record into the database.
      *
-     * - Ignores insert if a duplicate `userId` already exists.
-     * - Returns the new rowId (localId) if inserted, or `-1` if ignored.
+     * - Uses [OnConflictStrategy.IGNORE] to avoid replacing existing rows.
+     * - Ensures that the primary key (`localId`) remains stable.
+     * - Returns `-1` if a duplicate `userId` already exists.
+     *
+     * @param user The user entity to insert.
+     * @return The generated `localId` (row ID) if inserted, or `-1` if ignored.
      */
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertIgnore(user: UserEntity): Long
 
     /**
-     * Updates an existing [UserEntity] (matched on PK = localId).
+     * Updates an existing [UserEntity] based on its primary key (`localId`).
      *
-     * - Only updates non-null fields that are set in [user].
-     * - Use [upsertPreservingLocalId] for safe upsert.
+     * - Only non-null fields in [user] are updated.
+     * - Intended for local profile updates or post-sync state adjustments.
+     * - Does not create new rows — use [upsertPreservingLocalId] for safe creation.
+     *
+     * @param user The user entity with updated values.
      */
     @Update
     suspend fun update(user: UserEntity)
 
     /**
-     * Upserts a [UserEntity] while preserving `localId`.
+     * Safely upserts a [UserEntity] while preserving its `localId`.
      *
-     * - If the user already exists (matched by `userId`), it reuses its `localId` and updates the row.
-     * - If the user does not exist, it inserts a new record (auto-generating a `localId`).
-     * - Returns the stable `localId` for the user.
+     * - If a user with the same `userId` exists, it updates that record in place.
+     * - If no user exists, it inserts a new one and auto-generates a `localId`.
+     * - Prevents destructive replacement of primary keys.
+     *
+     * @param user The user entity to insert or update.
+     * @return The stable `localId` (Room primary key) of the inserted or updated user.
+     * @throws IllegalStateException if the insert fails unexpectedly due to concurrency.
      */
     @Transaction
     suspend fun upsertPreservingLocalId(user: UserEntity): Long {
@@ -58,7 +90,7 @@ interface UserDao {
         } else {
             insertIgnore(user).let { newId ->
                 if (newId == -1L) {
-                    // Race condition: inserted by another coroutine → fetch again
+                    // Race condition: inserted concurrently by another coroutine → re-fetch
                     getByUserId(user.userId)?.localId
                         ?: throw IllegalStateException("User insert failed unexpectedly")
                 } else {
@@ -68,113 +100,29 @@ interface UserDao {
         }
     }
 
-    /**
-     * Bulk upsert with preservation of [localId] stability.
-     * Existing users are updated, new users are inserted.
-     */
-    @Transaction
-    suspend fun upsertAllPreservingLocalId(users: List<UserEntity>): List<Long> {
-        return users.map { upsertPreservingLocalId(it) }
-    }
-
-    /* ─────────────────────────────── Reads ─────────────────────────────── */
+    // ──────────────────────────────── Reads ────────────────────────────────
 
     /**
-     * Retrieves a user by their localId (Room PK).
-     */
-    @Query("SELECT * FROM users WHERE localId = :localId LIMIT 1")
-    suspend fun getByLocalId(localId: Long): UserEntity?
-
-    /**
-     * Observes a user by localId (Room PK).
+     * Observes the [UserEntity] with the specified `localId`.
+     *
+     * - Emits updates whenever the user record changes in the database.
+     * - Commonly used for displaying the active user profile.
+     *
+     * @param localId The Room primary key for the user.
+     * @return A [Flow] emitting the current [UserEntity] or `null` if not found.
      */
     @Query("SELECT * FROM users WHERE localId = :localId LIMIT 1")
     fun observeByLocalId(localId: Long): Flow<UserEntity?>
 
     /**
-     * Retrieves a user by their **business id** (`userId`).
+     * Retrieves a user record using the external or business identifier (`userId`).
+     *
+     * - Typically used during login or sync operations.
+     * - Returns `null` if no user with the given `userId` exists.
+     *
+     * @param userId The external (server-assigned) user ID.
+     * @return The matching [UserEntity], or `null` if not found.
      */
     @Query("SELECT * FROM users WHERE userId = :userId LIMIT 1")
     suspend fun getByUserId(userId: String): UserEntity?
-
-    /**
-     * Observes a user by `userId`.
-     * Emits updates whenever the row changes.
-     */
-    @Query("SELECT * FROM users WHERE userId = :userId LIMIT 1")
-    fun observeByUserId(userId: String): Flow<UserEntity?>
-
-    /**
-     * Retrieves all users ordered by creation timestamp (newest first).
-     */
-    @Query("SELECT * FROM users ORDER BY createdAt DESC")
-    suspend fun getAll(): List<UserEntity>
-
-    /**
-     * Observes all users ordered by creation timestamp (newest first).
-     */
-    @Query("SELECT * FROM users ORDER BY createdAt DESC")
-    fun observeAll(): Flow<List<UserEntity>>
-
-    /**
-     * Finds a user by email.
-     */
-    @Query("SELECT * FROM users WHERE email = :email LIMIT 1")
-    suspend fun findByEmail(email: String): UserEntity?
-
-    /**
-     * Finds a user by phone number.
-     */
-    @Query("SELECT * FROM users WHERE phoneNumber = :phone LIMIT 1")
-    suspend fun findByPhone(phone: String): UserEntity?
-
-    /**
-     * Performs a case-insensitive search by name or email.
-     */
-    @Query(
-        """
-        SELECT * FROM users
-        WHERE (:q IS NULL OR name LIKE '%' || :q || '%' ESCAPE '\' COLLATE NOCASE
-               OR email LIKE '%' || :q || '%' ESCAPE '\' COLLATE NOCASE)
-        ORDER BY createdAt DESC
-        """
-    )
-    suspend fun search(q: String? = null): List<UserEntity>
-
-    /* ─────────────────────────────── Counts ─────────────────────────────── */
-
-    /**
-     * Counts total number of users in the table.
-     */
-    @Query("SELECT COUNT(*) FROM users")
-    suspend fun countAll(): Int
-
-    /**
-     * Checks if a user exists for the given `userId`.
-     */
-    @Query("SELECT EXISTS(SELECT 1 FROM users WHERE userId = :userId)")
-    suspend fun exists(userId: String): Boolean
-
-    /* ────────────────────────────── Deletes ────────────────────────────── */
-
-    /**
-     * Deletes a user by `userId`.
-     */
-    @Query("DELETE FROM users WHERE userId = :userId")
-    suspend fun deleteByUserId(userId: String)
-
-    /**
-     * Bulk delete users by `userId`s.
-     */
-    @Query("DELETE FROM users WHERE userId IN (:userIds)")
-    suspend fun deleteByUserIds(userIds: List<String>)
-
-    /**
-     * Clears the entire table.
-     *
-     * ⚠️ Use with caution: this will break FKs in dependent tables.
-     * Prefer marking users as inactive instead.
-     */
-    @Query("DELETE FROM users")
-    suspend fun clear()
 }

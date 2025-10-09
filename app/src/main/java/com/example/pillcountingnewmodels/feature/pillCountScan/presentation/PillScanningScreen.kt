@@ -2,11 +2,14 @@ package com.example.pillcountingnewmodels.feature.pillCountScan.presentation
 
 import Screen
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -18,16 +21,21 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.pillcountingnewmodels.R
 import com.example.pillcountingnewmodels.core.room.models.enums.CountType
-import com.example.pillcountingnewmodels.core.utils.AppLogger
-import com.example.pillcountingnewmodels.core.utils.ToastUtils
-import com.example.pillcountingnewmodels.core.utils.compose.ActionButtonPrimary
-import com.example.pillcountingnewmodels.core.utils.compose.BackButton
-import com.example.pillcountingnewmodels.core.utils.compose.CommonDialog
+import com.example.pillcountingnewmodels.core.utils.logger.AppLogger
+import com.example.pillcountingnewmodels.core.utils.common.UserInterfaceUtils
+import com.example.pillcountingnewmodels.core.utils.common.UserInterfaceUtils.ActionButtonPrimary
+import com.example.pillcountingnewmodels.core.utils.common.UserInterfaceUtils.BackButton
+import com.example.pillcountingnewmodels.core.utils.common.UserInterfaceUtils.CommonDialog
 import com.example.pillcountingnewmodels.core.utils.compose.SplitResponsive
 import com.example.pillcountingnewmodels.feature.pillCountScan.domain.data.NavigationEvent
 import com.example.pillcountingnewmodels.feature.pillCountScan.domain.data.PillScanningEvent
@@ -47,9 +55,7 @@ fun PillScanningScreen(
     viewModel: PillScanningViewModel = hiltViewModel()
 ) {
     val context = navController.context
-
     val uiState by viewModel.uiState.collectAsState()
-
     val logger = remember { AppLogger("PillScanningScreen") }
 
     // Buffer of last 10 detections
@@ -68,13 +74,13 @@ fun PillScanningScreen(
 
     // === Toasts ===
     if (uiState.restrictAdd) {
-        ToastUtils.show(context, stringResource(id = R.string.max_count_reached))
+        UserInterfaceUtils.showToast(context, stringResource(id = R.string.max_count_reached))
         logger.w("Toast: Max count reached")
         viewModel.resetRestrictAdd()
     }
 
     if (uiState.showNoTransaction) {
-        ToastUtils.show(context, stringResource(id = R.string.no_transaction_found))
+        UserInterfaceUtils.showToast(context, stringResource(id = R.string.no_transaction_found))
         logger.w("Toast: No transaction found")
         viewModel.resetNoTransaction()
     }
@@ -213,14 +219,30 @@ fun PillScanningScreen(
                     .pointerInput(Unit) {},
                 contentAlignment = Alignment.Center
             ) {
-                ActionButtonPrimary(
-                    text = stringResource(R.string.resume).uppercase(Locale.ROOT),
-                    onClick = {
-                        viewModel.resetIdleOverlay()
-                    },
-                    modifier = Modifier.padding(16.dp),
-                    color = MaterialTheme.colorScheme.secondary
-                )
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center,
+                    modifier = Modifier.padding(24.dp)
+                ) {
+                    Text(
+                        text = stringResource(R.string.counting_paused).uppercase(Locale.ROOT),
+                        fontSize = 14.sp,
+                        fontFamily = FontFamily.Default,
+                        fontWeight = FontWeight.Normal,
+                        color = AppTheme.extendedColors.textColor,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(bottom = 16.dp)
+                    )
+
+                    ActionButtonPrimary(
+                        text = stringResource(R.string.resume).uppercase(Locale.ROOT),
+                        onClick = { viewModel.resetIdleOverlay() },
+                        modifier = Modifier.padding(horizontal = 16.dp),
+                        color = MaterialTheme.colorScheme.secondary
+                    )
+                }
             }
         }
     }

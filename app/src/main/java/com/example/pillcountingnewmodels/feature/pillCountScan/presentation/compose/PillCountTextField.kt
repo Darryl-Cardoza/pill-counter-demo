@@ -38,7 +38,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.pillcountingnewmodels.core.utils.Dimens.small
+import com.example.pillcountingnewmodels.core.utils.constants.Dimens.small
 import com.example.pillcountingnewmodels.ui.theme.AppTheme
 
 

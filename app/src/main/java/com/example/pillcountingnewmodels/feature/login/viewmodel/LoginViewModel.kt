@@ -5,11 +5,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.pillcountingnewmodels.R
 import com.example.pillcountingnewmodels.core.models.ErrorResponse
-import com.example.pillcountingnewmodels.core.utils.AppLogger
-import com.example.pillcountingnewmodels.core.utils.NetworkUtils
-import com.example.pillcountingnewmodels.core.utils.PreferenceHelper
+import com.example.pillcountingnewmodels.core.utils.logger.AppLogger
+import com.example.pillcountingnewmodels.core.utils.common.NetworkUtils
+import com.example.pillcountingnewmodels.core.utils.preference.PreferenceHelper
 import com.example.pillcountingnewmodels.feature.login.data.LoginRepository
-import com.example.pillcountingnewmodels.feature.login.domain.CredentialsValidator
+import com.example.pillcountingnewmodels.core.utils.validator.CredentialsValidator
 import com.example.pillcountingnewmodels.feature.login.domain.model.LoginUiState
 import com.example.pillcountingnewmodels.feature.login.domain.model.LogoutUiState
 import com.google.gson.Gson

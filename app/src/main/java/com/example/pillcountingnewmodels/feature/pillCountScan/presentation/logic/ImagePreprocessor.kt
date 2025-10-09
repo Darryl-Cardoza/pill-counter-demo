@@ -6,7 +6,7 @@ import android.graphics.Matrix
 import androidx.core.graphics.get
 import androidx.core.graphics.scale
 import androidx.core.graphics.set
-import com.example.pillcountingnewmodels.core.utils.AppLogger
+import com.example.pillcountingnewmodels.core.utils.logger.AppLogger
 import com.example.pillcountingnewmodels.feature.pillCountScan.presentation.logic.ImagePreprocessor.MODEL_INPUT_SIZE
 import com.example.pillcountingnewmodels.feature.pillCountScan.presentation.logic.ImagePreprocessor.preprocess
 import kotlinx.coroutines.CoroutineDispatcher

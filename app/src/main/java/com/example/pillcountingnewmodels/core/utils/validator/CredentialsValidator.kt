@@ -1,4 +1,4 @@
-package com.example.pillcountingnewmodels.feature.login.domain
+package com.example.pillcountingnewmodels.core.utils.validator
 
 import android.util.Patterns
 import com.example.pillcountingnewmodels.R

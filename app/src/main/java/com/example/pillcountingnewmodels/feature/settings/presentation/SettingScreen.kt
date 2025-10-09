@@ -36,10 +36,10 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.pillcountingnewmodels.R
-import com.example.pillcountingnewmodels.core.api.viewmodel.ApplicationSettingsViewModel
-import com.example.pillcountingnewmodels.core.utils.HistoryRetention
-import com.example.pillcountingnewmodels.core.utils.compose.BackButton
-import com.example.pillcountingnewmodels.core.utils.compose.CommonDialog
+import com.example.pillcountingnewmodels.core.settings.presentation.viewmodel.MainActivityViewModel
+import com.example.pillcountingnewmodels.core.utils.common.HistoryRetention
+import com.example.pillcountingnewmodels.core.utils.common.UserInterfaceUtils.BackButton
+import com.example.pillcountingnewmodels.core.utils.common.UserInterfaceUtils.CommonDialog
 import com.example.pillcountingnewmodels.ui.theme.LocalExtendedColors
 
 /**
@@ -51,7 +51,7 @@ import com.example.pillcountingnewmodels.ui.theme.LocalExtendedColors
 @Composable
 fun SettingsScreen(
     navController: NavController,
-    viewModel: ApplicationSettingsViewModel = hiltViewModel()
+    viewModel: MainActivityViewModel = hiltViewModel()
 ) {
     // State holders for preferences
     //var isBarcodeScanFirst by remember { mutableStateOf(true) }

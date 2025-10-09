@@ -28,14 +28,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.example.pillcountingnewmodels.R
-import com.example.pillcountingnewmodels.core.utils.compose.AppTextField
-import com.example.pillcountingnewmodels.core.utils.Dimens.extraLarge
-import com.example.pillcountingnewmodels.core.utils.Dimens.extraSmall
-import com.example.pillcountingnewmodels.core.utils.Dimens.large
-import com.example.pillcountingnewmodels.core.utils.Dimens.medium
-import com.example.pillcountingnewmodels.core.utils.Dimens.small
-import com.example.pillcountingnewmodels.core.utils.compose.FilledButton
-import com.example.pillcountingnewmodels.core.utils.compose.HollowButton
+import com.example.pillcountingnewmodels.core.utils.common.UserInterfaceUtils.AppTextField
+import com.example.pillcountingnewmodels.core.utils.constants.Dimens.extraLarge
+import com.example.pillcountingnewmodels.core.utils.constants.Dimens.extraSmall
+import com.example.pillcountingnewmodels.core.utils.constants.Dimens.large
+import com.example.pillcountingnewmodels.core.utils.constants.Dimens.medium
+import com.example.pillcountingnewmodels.core.utils.constants.Dimens.small
+import com.example.pillcountingnewmodels.core.utils.common.UserInterfaceUtils.FilledButton
+import com.example.pillcountingnewmodels.core.utils.common.UserInterfaceUtils.HollowButton
 import com.example.pillcountingnewmodels.ui.theme.AppTheme
 
 @Composable

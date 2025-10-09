@@ -9,10 +9,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import com.example.pillcountingnewmodels.R
-import com.example.pillcountingnewmodels.core.utils.Dimens.medium
-import com.example.pillcountingnewmodels.core.utils.Dimens.small
-import com.example.pillcountingnewmodels.core.utils.compose.FilledButton
-import com.example.pillcountingnewmodels.core.utils.compose.HollowButton
+import com.example.pillcountingnewmodels.core.utils.constants.Dimens.medium
+import com.example.pillcountingnewmodels.core.utils.constants.Dimens.small
+import com.example.pillcountingnewmodels.core.utils.common.UserInterfaceUtils.FilledButton
+import com.example.pillcountingnewmodels.core.utils.common.UserInterfaceUtils.HollowButton
 import com.example.pillcountingnewmodels.feature.pillCountScan.domain.data.PillScanningEvent
 
 /**

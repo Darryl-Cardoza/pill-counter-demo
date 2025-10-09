@@ -4,8 +4,8 @@ import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.pillcountingnewmodels.R
-import com.example.pillcountingnewmodels.core.utils.AppLogger
-import com.example.pillcountingnewmodels.feature.login.domain.CredentialsValidator
+import com.example.pillcountingnewmodels.core.utils.logger.AppLogger
+import com.example.pillcountingnewmodels.core.utils.validator.CredentialsValidator
 import com.example.pillcountingnewmodels.feature.register.domain.data.IRegisterRepository
 import com.example.pillcountingnewmodels.feature.register.domain.model.RegisterUiState
 import dagger.hilt.android.lifecycle.HiltViewModel

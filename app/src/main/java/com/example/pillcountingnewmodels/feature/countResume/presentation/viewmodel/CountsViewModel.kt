@@ -5,10 +5,10 @@ import androidx.lifecycle.viewModelScope
 import com.example.pillcountingnewmodels.core.room.dao.PillCountTxnDao
 import com.example.pillcountingnewmodels.core.room.models.enums.CountStatus
 import com.example.pillcountingnewmodels.core.room.models.enums.CountType
-import com.example.pillcountingnewmodels.core.utils.PreferenceHelper
-import com.example.pillcountingnewmodels.core.utils.toFormattedDate
-import com.example.pillcountingnewmodels.feature.countResume.domain.data.NavigationEvent
+import com.example.pillcountingnewmodels.core.utils.preference.PreferenceHelper
+import com.example.pillcountingnewmodels.core.utils.common.UserInterfaceUtils.toFormattedDate
 import com.example.pillcountingnewmodels.feature.countResume.domain.data.FixedCountsEvent
+import com.example.pillcountingnewmodels.feature.countResume.domain.data.NavigationEvent
 import com.example.pillcountingnewmodels.feature.countResume.domain.data.RegularCountsEvent
 import com.example.pillcountingnewmodels.feature.countResume.domain.model.CountItem
 import com.example.pillcountingnewmodels.feature.countResume.domain.model.FixedCountsUiState
@@ -24,9 +24,6 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 import javax.inject.Inject
 
 /**

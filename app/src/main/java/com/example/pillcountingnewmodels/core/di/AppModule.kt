@@ -1,4 +1,4 @@
-package com.example.pillcountingnewmodels.di
+package com.example.pillcountingnewmodels.core.di
 
 import dagger.Module
 import dagger.Provides

@@ -1,14 +1,12 @@
 package com.example.pillcountingnewmodels.feature.menu.presentation
 
 import Screen
-import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -28,9 +26,10 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.pillcountingnewmodels.R
 import com.example.pillcountingnewmodels.core.room.models.enums.CountType
-import com.example.pillcountingnewmodels.core.utils.HistoryRetention
-import com.example.pillcountingnewmodels.core.utils.compose.BackButton
-import com.example.pillcountingnewmodels.core.utils.Dimens.medium
+import com.example.pillcountingnewmodels.core.utils.constants.Dimens.medium
+import com.example.pillcountingnewmodels.core.utils.common.HistoryRetention
+import com.example.pillcountingnewmodels.core.utils.common.UserInterfaceUtils.BackButton
+import com.example.pillcountingnewmodels.core.utils.common.UserInterfaceUtils.LoadingIndicator
 import com.example.pillcountingnewmodels.feature.login.domain.model.LogoutUiState
 import com.example.pillcountingnewmodels.feature.login.viewmodel.LoginViewModel
 import com.example.pillcountingnewmodels.feature.menu.presentation.compose.MenuItemRow
@@ -197,7 +196,7 @@ fun MenuScreen(
                                 .fillMaxSize()
                                 .padding(top = 40.dp)
                         ) {
-                            CircularProgressIndicator()
+                            LoadingIndicator()
                             Text(
                                 text = stringResource(R.string.logging_out),
                                 color = MaterialTheme.colorScheme.primary,

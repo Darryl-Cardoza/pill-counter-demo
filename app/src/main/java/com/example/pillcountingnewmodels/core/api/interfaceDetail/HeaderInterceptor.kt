@@ -1,7 +1,7 @@
-package com.example.pillcountingnewmodels.core.api
+package com.example.pillcountingnewmodels.core.api.interfaceDetail
 
 import com.example.pillcountingnewmodels.BuildConfig
-import com.example.pillcountingnewmodels.core.utils.URLConstant
+import com.example.pillcountingnewmodels.core.utils.constants.URLConstant
 import okhttp3.Interceptor
 import okhttp3.Response
 
@@ -16,7 +16,7 @@ import okhttp3.Response
  * This interceptor ensures these headers are applied consistently across all network calls
  * made through the configured OkHttp client.
  *
- * @see okhttp3.Interceptor
+ * @see Interceptor
  */
 class HeaderInterceptor : Interceptor {
 

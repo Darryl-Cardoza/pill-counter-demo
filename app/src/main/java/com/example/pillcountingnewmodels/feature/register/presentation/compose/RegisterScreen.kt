@@ -1,5 +1,6 @@
-package com.example.pillcountingnewmodels.feature.register.presentation
+package com.example.pillcountingnewmodels.feature.register.presentation.compose
 
+import Screen
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -11,7 +12,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -32,10 +32,11 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.pillcountingnewmodels.R
-import com.example.pillcountingnewmodels.core.utils.compose.ActionButtonPrimary
-import com.example.pillcountingnewmodels.core.utils.compose.AppInfo
-import com.example.pillcountingnewmodels.core.utils.compose.BackButton
-import com.example.pillcountingnewmodels.core.utils.compose.DrawableIconTextField
+import com.example.pillcountingnewmodels.core.utils.common.UserInterfaceUtils.AppInfo
+import com.example.pillcountingnewmodels.core.utils.common.UserInterfaceUtils.BackButton
+import com.example.pillcountingnewmodels.core.utils.common.UserInterfaceUtils.DrawableIconTextField
+import com.example.pillcountingnewmodels.core.utils.common.UserInterfaceUtils.ActionButtonPrimary
+import com.example.pillcountingnewmodels.core.utils.common.UserInterfaceUtils.LoadingIndicator
 import com.example.pillcountingnewmodels.core.utils.compose.SplitResponsive
 import com.example.pillcountingnewmodels.feature.register.domain.model.RegisterUiState
 import com.example.pillcountingnewmodels.feature.register.viewmodel.RegisterViewModel
@@ -65,7 +66,7 @@ fun RegisterScreen(
 
         SplitResponsive(
             topOrLeft = {
-                AppInfo(context)
+                AppInfo()
             },
             bottomOrRight = {
                 Column(
@@ -87,8 +88,7 @@ fun RegisterScreen(
                         iconRes = R.drawable.profile,
                         iconColor = MaterialTheme.colorScheme.secondary,
                         keyboardType = KeyboardType.Email,
-                        imeAction = ImeAction.Next,
-                        onImeAction = { focusManager.moveFocus(androidx.compose.ui.focus.FocusDirection.Down) }
+                        imeAction = ImeAction.Next
                     )
 
                     Spacer(Modifier.height(25.dp))
@@ -105,8 +105,7 @@ fun RegisterScreen(
                         iconColor = MaterialTheme.colorScheme.secondary,
                         keyboardType = KeyboardType.Password,
                         isPassword = true,
-                        imeAction = ImeAction.Next,
-                        onImeAction = { focusManager.moveFocus(androidx.compose.ui.focus.FocusDirection.Down) }
+                        imeAction = ImeAction.Next
                     )
 
                     Spacer(Modifier.height(25.dp))
@@ -123,8 +122,7 @@ fun RegisterScreen(
                         iconColor = MaterialTheme.colorScheme.secondary,
                         keyboardType = KeyboardType.Password,
                         isPassword = true,
-                        imeAction = ImeAction.Done,
-                        onImeAction = { viewModel.register(email, password, confirmPassword) }
+                        imeAction = ImeAction.Done
                     )
 
                     Spacer(Modifier.height(25.dp))
@@ -145,7 +143,7 @@ fun RegisterScreen(
                         }
 
                         is RegisterUiState.Loading -> {
-                            CircularProgressIndicator(modifier = Modifier.padding(bottom = 16.dp))
+                            LoadingIndicator()
                         }
 
                         is RegisterUiState.Success -> {

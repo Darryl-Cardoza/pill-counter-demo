@@ -8,7 +8,7 @@ import androidx.navigation.navigation
 import com.example.pillcountingnewmodels.feature.forgotPassword.presentation.compose.ForgotPasswordScreen
 import com.example.pillcountingnewmodels.feature.login.presentation.LoginScreen
 import com.example.pillcountingnewmodels.feature.otp.presentation.compose.OTPScreen
-import com.example.pillcountingnewmodels.feature.register.presentation.RegisterScreen
+import com.example.pillcountingnewmodels.feature.register.presentation.compose.RegisterScreen
 
 /**
  * Encapsulates the authentication flow (Login, Register, OTP, etc.)

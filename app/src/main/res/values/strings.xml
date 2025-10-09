@@ -114,6 +114,7 @@
     <string name="lotNo">Lot No.</string>
     <string name="pills_count">Pills Count</string>
     <string name="pill_required">Pills Required</string>
+    <string name="counting_paused">Counting paused due to inactivity.</string>
 
     <!-- ================== TRANSACTIONS ================== -->
     <string name="txn_detail">Transaction Detail</string>

@@ -1,7 +1,7 @@
 package com.example.pillcountingnewmodels.feature.login.data
 
 import com.example.pillcountingnewmodels.core.room.dao.UserDao
-import com.example.pillcountingnewmodels.core.utils.AppLogger
+import com.example.pillcountingnewmodels.core.utils.logger.AppLogger
 import com.example.pillcountingnewmodels.feature.login.data.remote.ILoginApi
 import com.example.pillcountingnewmodels.feature.login.domain.data.ILoginRepository
 import com.example.pillcountingnewmodels.feature.login.domain.model.LoginRequest

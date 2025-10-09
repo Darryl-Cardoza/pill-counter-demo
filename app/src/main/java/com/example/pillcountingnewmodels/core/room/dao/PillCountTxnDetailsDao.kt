@@ -4,66 +4,68 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
-import androidx.room.Update
 import com.example.pillcountingnewmodels.core.room.models.PillCountTxnDetailsEntity
 import kotlinx.coroutines.flow.Flow
 
 /**
- * DAO for accessing and managing [PillCountTxnDetailsEntity] records
- * (transaction detail lines).
+ * **Pill Count Transaction Details Data Access Object**
  *
- * Provides CRUD operations, query helpers, soft delete handling,
- * and utility methods for pill counts and images.
+ * Handles persistence and retrieval of [PillCountTxnDetailsEntity] records — the
+ * individual detail lines belonging to a pill count transaction.
+ *
+ * ---
+ * ### Core Responsibilities
+ * - Manage creation and modification of pill count line items.
+ * - Support soft deletion (marking as deleted without physical removal).
+ * - Provide reactive queries using [Flow] for real-time UI updates.
+ * - Compute summary data (e.g., total pill count per transaction).
+ *
+ * ---
+ * ### Design Notes
+ * - Uses [OnConflictStrategy.REPLACE] for inserts to support upserts of line items.
+ * - Physically deleted rows are avoided in favor of logical deletion (`isDeleted = 1`).
+ * - Optimized for live data observation and background synchronization.
  */
 @Dao
 interface PillCountTxnDetailsDao {
 
-    /* ────────────────────────── Create / Update ────────────────────────── */
+    // ─────────────────────────────── Create / Update ───────────────────────────────
 
     /**
-     * Insert or replace a single transaction detail.
+     * Inserts a new transaction detail or replaces an existing one
+     * with the same primary key ([PillCountTxnDetailsEntity.txnDetailsId]).
      *
-     * @param detail The detail to insert or replace.
-     * @return The row ID of the inserted entity.
+     * - Useful when details are edited or rescanned within the same transaction.
+     *
+     * @param detail The detail entity to insert or replace.
+     * @return The newly inserted row ID.
      */
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(detail: PillCountTxnDetailsEntity): Long
 
     /**
-     * Insert or replace multiple transaction details.
+     * Inserts or replaces a list of transaction detail records.
      *
-     * @param details List of details to insert or replace.
-     * @return Row IDs of the inserted entities.
+     * - Efficient for bulk upserts during sync or offline batch operations.
+     * - Existing records are replaced based on their primary key.
+     *
+     * @param details List of detail entities to insert or replace.
+     * @return List of inserted row IDs corresponding to the input entities.
      */
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsertAll(details: List<PillCountTxnDetailsEntity>): List<Long>
 
+    // ──────────────────────────────── Reads ────────────────────────────────
+
     /**
-     * Update an existing transaction detail.
+     * Observes all **non-deleted** detail records associated with a given transaction.
      *
-     * @param detail The entity with updated fields.
-     */
-    @Update
-    suspend fun update(detail: PillCountTxnDetailsEntity)
-
-    /* ─────────────────────────────── Reads ─────────────────────────────── */
-
-    /**
-     * Get a detail by its primary key.
-     *
-     * @param id The detail ID.
-     * @return The matching [PillCountTxnDetailsEntity], or null if not found.
-     */
-    @Query("SELECT * FROM pill_count_txn_details WHERE txnDetailsId = :id LIMIT 1")
-    suspend fun getById(id: Long): PillCountTxnDetailsEntity?
-
-
-    /**
-     * Observe all non-deleted details for a given transaction.
-     * Results are ordered by `createdAt` (newest first).
+     * - Automatically emits updates whenever records are inserted, updated, or soft-deleted.
+     * - Results are ordered by [PillCountTxnDetailsEntity.createdAt] descending
+     *   (newest first).
      *
      * @param txnId The parent transaction ID.
-     * @return A [Flow] emitting updates to the detail list.
+     * @return A [Flow] emitting the current list of [PillCountTxnDetailsEntity] items.
      */
     @Query(
         """
@@ -74,58 +76,39 @@ interface PillCountTxnDetailsDao {
     )
     fun observeAllForTxn(txnId: Long): Flow<List<PillCountTxnDetailsEntity>>
 
-    /* ──────────────────────────── Soft Delete ───────────────────────────── */
+    // ─────────────────────────────── Soft Delete ───────────────────────────────
 
     /**
-     * Soft delete a detail by its ID.
+     * Performs a **soft delete** of a transaction detail record.
      *
-     * @param id  The detail ID.
-     * @param now Timestamp for update (epoch millis).
+     * Instead of removing the record from the database, it marks
+     * the record as deleted (`isDeleted = 1`) while preserving historical data.
+     *
+     * @param id The unique ID of the detail record.
+     * @param now Optional update timestamp (epoch milliseconds). Defaults to the current time.
      */
-    @Query("UPDATE pill_count_txn_details SET isDeleted = 1, updatedAt = :now WHERE txnDetailsId = :id")
+    @Query(
+        "UPDATE pill_count_txn_details SET isDeleted = 1, updatedAt = :now WHERE txnDetailsId = :id"
+    )
     suspend fun softDelete(id: Long, now: Long = System.currentTimeMillis())
 
-    /**
-     * Soft delete all details for a given transaction.
-     *
-     * @param txnId The parent transaction ID.
-     * @param now   Timestamp for update (epoch millis).
-     */
-    @Query("UPDATE pill_count_txn_details SET isDeleted = 1, updatedAt = :now WHERE txnId = :txnId")
-    suspend fun softDeleteByTxnId(txnId: Long, now: Long = System.currentTimeMillis())
-
-    /* ───────────────────────────── Helpers ─────────────────────────────── */
+    // ─────────────────────────────── Aggregations ───────────────────────────────
 
     /**
-     * Get the total pill count across all active details for a transaction.
+     * Computes the **total pill count** for a given transaction.
+     *
+     * - Ignores soft-deleted detail lines.
+     * - Returns `0` if no details exist.
      *
      * @param txnId The parent transaction ID.
-     * @return Sum of pill counts, or null if no details exist.
-     */
-    @Query("SELECT SUM(COALESCE(pillCount, 0)) FROM pill_count_txn_details WHERE txnId = :txnId AND isDeleted = 0")
-    suspend fun sumPillCountForTxn(txnId: Long): Int?
-
-    /**
-     * Get the most recent detail with an image for a transaction.
-     *
-     * @param txnId The parent transaction ID.
-     * @return The latest [PillCountTxnDetailsEntity] with an image, or null if none found.
+     * @return The total pill count (sum of `pillCount` across all valid details).
      */
     @Query(
         """
-        SELECT * FROM pill_count_txn_details 
-        WHERE txnId = :txnId AND imagePath IS NOT NULL AND isDeleted = 0
-        ORDER BY createdAt DESC
-        LIMIT 1
+        SELECT COALESCE(SUM(pillCount), 0) 
+        FROM pill_count_txn_details 
+        WHERE txnId = :txnId AND isDeleted = 0
         """
     )
-    suspend fun getLatestImageDetail(txnId: Long): PillCountTxnDetailsEntity?
-
-    @Query("""
-    SELECT COALESCE(SUM(pillCount), 0) 
-    FROM pill_count_txn_details 
-    WHERE txnId = :txnId
-""")
     suspend fun getTotalPillCountForTxn(txnId: Long): Int
-
 }

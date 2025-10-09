@@ -2,7 +2,6 @@ package com.example.pillcountingnewmodels.feature.profile.presentation
 
 import Screen
 import android.content.res.Configuration
-import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
@@ -18,7 +17,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Checkbox
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -42,11 +40,12 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.pillcountingnewmodels.R
-import com.example.pillcountingnewmodels.core.utils.compose.ActionButtonPrimary
-import com.example.pillcountingnewmodels.core.utils.compose.BackButton
-import com.example.pillcountingnewmodels.core.utils.compose.CommonDialog
-import com.example.pillcountingnewmodels.core.utils.compose.FloatingLabelTextField
-import com.example.pillcountingnewmodels.core.utils.compose.HollowButton
+import com.example.pillcountingnewmodels.core.utils.common.UserInterfaceUtils.BackButton
+import com.example.pillcountingnewmodels.core.utils.common.UserInterfaceUtils.CommonDialog
+import com.example.pillcountingnewmodels.core.utils.common.UserInterfaceUtils.FloatingLabelTextField
+import com.example.pillcountingnewmodels.core.utils.common.UserInterfaceUtils.HollowButton
+import com.example.pillcountingnewmodels.core.utils.common.UserInterfaceUtils.ActionButtonPrimary
+import com.example.pillcountingnewmodels.core.utils.common.UserInterfaceUtils.LoadingIndicator
 import com.example.pillcountingnewmodels.feature.profile.domain.model.ProfileDeleteUiState
 import com.example.pillcountingnewmodels.feature.profile.domain.model.ProfileField
 import com.example.pillcountingnewmodels.feature.profile.domain.model.ProfileUpdateUiState
@@ -134,7 +133,7 @@ fun ProfileScreen(
                             .fillMaxSize()
                             .padding(bottom = 16.dp)
                     ) {
-                        CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
+                        LoadingIndicator()
                     }
                 }
 
@@ -164,7 +163,7 @@ fun ProfileScreen(
                             .fillMaxSize()
                             .padding(bottom = 16.dp)
                     ) {
-                        CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
+                       LoadingIndicator()
                     }
                 }
 

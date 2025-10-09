@@ -11,10 +11,10 @@ import com.example.pillcountingnewmodels.core.room.dao.PillCountTxnDetailsDao
 import com.example.pillcountingnewmodels.core.room.models.PillCountTxnDetailsEntity
 import com.example.pillcountingnewmodels.core.room.models.enums.CountStatus
 import com.example.pillcountingnewmodels.core.room.models.enums.CountType
-import com.example.pillcountingnewmodels.core.utils.AppLogger
-import com.example.pillcountingnewmodels.core.utils.OverlayUtils
-import com.example.pillcountingnewmodels.core.utils.PreferenceHelper
-import com.example.pillcountingnewmodels.core.utils.saveBitmapToFile
+import com.example.pillcountingnewmodels.core.utils.logger.AppLogger
+import com.example.pillcountingnewmodels.core.utils.common.HelperFunctions.saveBitmapToFile
+import com.example.pillcountingnewmodels.core.utils.common.OverlayUtils
+import com.example.pillcountingnewmodels.core.utils.preference.PreferenceHelper
 import com.example.pillcountingnewmodels.feature.pillCountScan.domain.data.NavigationEvent
 import com.example.pillcountingnewmodels.feature.pillCountScan.domain.data.PillScanningEvent
 import com.example.pillcountingnewmodels.feature.pillCountScan.domain.model.DetectedPill

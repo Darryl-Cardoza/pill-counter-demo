@@ -1,7 +1,7 @@
 package com.example.pillcountingnewmodels.feature.dashboard.data.remote
 
 import com.example.pillcountingnewmodels.core.models.ApiResponse
-import com.example.pillcountingnewmodels.core.utils.URLConstant
+import com.example.pillcountingnewmodels.core.utils.constants.URLConstant
 import com.example.pillcountingnewmodels.feature.dashboard.domain.model.UserDetail
 import com.example.pillcountingnewmodels.feature.dashboard.domain.model.UserDetailResponse
 import retrofit2.Response

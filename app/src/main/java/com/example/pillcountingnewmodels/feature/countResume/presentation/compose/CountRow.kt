@@ -40,10 +40,10 @@ import coil.compose.rememberAsyncImagePainter
 import coil.request.ImageRequest
 import com.example.pillcountingnewmodels.R
 import com.example.pillcountingnewmodels.core.room.models.enums.CountType
-import com.example.pillcountingnewmodels.core.utils.Dimens.extraSmall
-import com.example.pillcountingnewmodels.core.utils.Dimens.medium
-import com.example.pillcountingnewmodels.core.utils.Dimens.small
-import com.example.pillcountingnewmodels.core.utils.Dimens.xxLarge
+import com.example.pillcountingnewmodels.core.utils.constants.Dimens.extraSmall
+import com.example.pillcountingnewmodels.core.utils.constants.Dimens.medium
+import com.example.pillcountingnewmodels.core.utils.constants.Dimens.small
+import com.example.pillcountingnewmodels.core.utils.constants.Dimens.xxLarge
 import com.example.pillcountingnewmodels.feature.countResume.domain.model.CountItem
 import com.example.pillcountingnewmodels.ui.theme.AppTheme
 import java.io.File

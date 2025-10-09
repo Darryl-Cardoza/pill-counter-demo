@@ -7,28 +7,26 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import androidx.navigation.NavController
-import com.example.pillcountingnewmodels.core.utils.AppLogger
-import com.example.pillcountingnewmodels.core.utils.compose.BackButton
-import com.example.pillcountingnewmodels.core.utils.compose.LoadingIndicator
+import com.example.pillcountingnewmodels.core.utils.logger.AppLogger
+import com.example.pillcountingnewmodels.core.utils.common.UserInterfaceUtils.BackButton
+import com.example.pillcountingnewmodels.core.utils.common.UserInterfaceUtils.LoadingIndicator
 import com.example.pillcountingnewmodels.core.utils.compose.SplitResponsive
 import com.example.pillcountingnewmodels.feature.barcodeScan.domain.data.ScanBarcodeEvent
 import com.example.pillcountingnewmodels.feature.barcodeScan.domain.model.ScanBarcodeUiState
+import com.example.pillcountingnewmodels.feature.barcodeScan.presentation.analyzer.BarcodeAnalyzer
 import com.example.pillcountingnewmodels.feature.barcodeScan.presentation.compose.InformationPanel
 import com.example.pillcountingnewmodels.feature.barcodeScan.presentation.compose.PermissionDeniedView
 import com.example.pillcountingnewmodels.feature.barcodeScan.presentation.compose.ScannerView
 
 /**
- * The stateless presentation component for the barcode scanning screen. It is responsible for
- * laying out the UI based on the provided state and forwarding user events.
- *
- * @param navController The navigation controller.
- * @param uiState The current state of the UI to be displayed.
- * @param hasCameraPermission Whether the camera permission has been granted.
- * @param onRequestPermission Lambda to request camera permission.
- * @param onEvent A lambda to call when a user action occurs.
+ * Stateless composable for the barcode scanning screen.
+ * Handles lifecycle, permissions, and analyzer interaction.
  */
 @Composable
 fun ScanBarCodeScreenContent(
@@ -36,8 +34,25 @@ fun ScanBarCodeScreenContent(
     uiState: ScanBarcodeUiState,
     hasCameraPermission: Boolean,
     onRequestPermission: () -> Unit,
-    onEvent: (ScanBarcodeEvent) -> Unit
+    onEvent: (ScanBarcodeEvent) -> Unit,
+    analyzer: BarcodeAnalyzer
 ) {
+    val lifecycleOwner = androidx.compose.ui.platform.LocalLifecycleOwner.current
+
+    // Automatically pause/resume camera based on lifecycle
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            when (event) {
+                Lifecycle.Event.ON_RESUME -> analyzer.resume()
+                Lifecycle.Event.ON_PAUSE -> analyzer.pause()
+                Lifecycle.Event.ON_DESTROY -> analyzer.destroy()
+                else -> Unit
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+
     Scaffold(
         modifier = Modifier
             .fillMaxSize()
@@ -55,15 +70,19 @@ fun ScanBarCodeScreenContent(
                 topOrLeft = {
                     if (hasCameraPermission) {
                         ScannerView(
-                            isScannerActive = uiState.isScannerActive,
+                            analyzer = analyzer,
+                            isActive = uiState.isScannerActive,
+                            singleScanMode = true,
                             onBarcodeScanned = { value, imagePath ->
                                 onEvent(
                                     ScanBarcodeEvent.BarcodeScanned(
                                         barcodeValue = value,
-                                        imagePath = imagePath
+                                        imagePath = imagePath ?: ""
                                     )
                                 )
-                                AppLogger("ScanBarcode").i("Barcode=$value, saved image=$imagePath")
+                                AppLogger("ScanBarcode").i(
+                                    "Barcode=$value | Image=$imagePath"
+                                )
                             },
                             onError = { exception ->
                                 onEvent(ScanBarcodeEvent.ScannerError(exception))
@@ -82,7 +101,7 @@ fun ScanBarCodeScreenContent(
                             onEvent = onEvent
                         )
 
-                        // Show loading indicator as an overlay when isLoading is true
+                        // Overlay loading indicator if needed
                         if (uiState.isLoading) {
                             LoadingIndicator()
                         }
@@ -90,8 +109,8 @@ fun ScanBarCodeScreenContent(
                 }
             )
 
+            // Global Back Button
             BackButton(navController)
-
         }
     }
 }

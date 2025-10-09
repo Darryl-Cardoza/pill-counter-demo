@@ -20,7 +20,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.pillcountingnewmodels.R
 import com.example.pillcountingnewmodels.core.room.models.enums.CountType
-import com.example.pillcountingnewmodels.core.utils.compose.BackButton
+import com.example.pillcountingnewmodels.core.utils.common.UserInterfaceUtils.BackButton
 import com.example.pillcountingnewmodels.feature.countResume.domain.data.NavigationEvent
 import com.example.pillcountingnewmodels.feature.countResume.domain.data.RegularCountsEvent
 import com.example.pillcountingnewmodels.feature.countResume.domain.data.ResumeEventFactory

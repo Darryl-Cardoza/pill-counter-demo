@@ -36,11 +36,11 @@ import androidx.core.content.FileProvider
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.pillcountingnewmodels.R
-import com.example.pillcountingnewmodels.core.utils.HistoryDetailsPDFExporter
-import com.example.pillcountingnewmodels.core.utils.compose.BackButton
-import com.example.pillcountingnewmodels.core.utils.compose.CommonDialog
-import com.example.pillcountingnewmodels.core.utils.toDateString
-import com.example.pillcountingnewmodels.core.utils.toTimeString
+import com.example.pillcountingnewmodels.core.utils.common.PDFHelperExporter
+import com.example.pillcountingnewmodels.core.utils.common.UserInterfaceUtils.toDateString
+import com.example.pillcountingnewmodels.core.utils.common.UserInterfaceUtils.toTimeString
+import com.example.pillcountingnewmodels.core.utils.common.UserInterfaceUtils.BackButton
+import com.example.pillcountingnewmodels.core.utils.common.UserInterfaceUtils.CommonDialog
 import com.example.pillcountingnewmodels.feature.history.presentation.compose.DrugInfoSection
 import com.example.pillcountingnewmodels.feature.history.presentation.viewmodel.HistoryDetailsViewModel
 import com.example.pillcountingnewmodels.ui.theme.AppTheme
@@ -60,7 +60,7 @@ fun HistoryDetailScreen(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
-    val historyDetailsPDFExporter = remember { HistoryDetailsPDFExporter(context) }
+    val historyDetailsPDFExporter = remember { PDFHelperExporter(context) }
 
     Column(
         modifier = Modifier
@@ -209,7 +209,7 @@ private fun sharePdfFile(context: Context, pdfFile: File) {
 
 // Updated PDF export function to return File object
 private suspend fun exportToPdf(
-    historyDetailsPDFExporter: HistoryDetailsPDFExporter,
+    historyDetailsPDFExporter: PDFHelperExporter,
     drugName: String,
     totalCount: String,
     notes: String,

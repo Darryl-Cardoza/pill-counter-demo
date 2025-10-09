@@ -48,10 +48,10 @@ import androidx.compose.ui.window.DialogProperties
 import coil.compose.rememberAsyncImagePainter
 import coil.request.ImageRequest
 import com.example.pillcountingnewmodels.R
-import com.example.pillcountingnewmodels.core.utils.compose.CommonDialog
-import com.example.pillcountingnewmodels.core.utils.compose.FilledButton
-import com.example.pillcountingnewmodels.core.utils.compose.HollowButton
-import com.example.pillcountingnewmodels.core.utils.toFormattedDate
+import com.example.pillcountingnewmodels.core.utils.common.UserInterfaceUtils.toFormattedDate
+import com.example.pillcountingnewmodels.core.utils.common.UserInterfaceUtils.CommonDialog
+import com.example.pillcountingnewmodels.core.utils.common.UserInterfaceUtils.FilledButton
+import com.example.pillcountingnewmodels.core.utils.common.UserInterfaceUtils.HollowButton
 import com.example.pillcountingnewmodels.feature.pillCountScan.domain.model.TxnDetail
 import com.example.pillcountingnewmodels.ui.theme.AppTheme
 import java.io.File

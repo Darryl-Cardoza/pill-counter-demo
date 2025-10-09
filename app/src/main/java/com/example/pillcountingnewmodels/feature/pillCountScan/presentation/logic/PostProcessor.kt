@@ -1,7 +1,7 @@
 package com.example.pillcountingnewmodels.feature.pillCountScan.presentation.logic
 
 import android.graphics.RectF
-import com.example.pillcountingnewmodels.core.utils.AppLogger
+import com.example.pillcountingnewmodels.core.utils.logger.AppLogger
 import com.example.pillcountingnewmodels.feature.pillCountScan.domain.model.DetectedPill
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext

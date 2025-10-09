@@ -1,59 +1,75 @@
 package com.example.pillcountingnewmodels.core.room.dao
 
-import androidx.room.*
-import com.example.pillcountingnewmodels.core.room.models.enums.CountStatus
-import com.example.pillcountingnewmodels.core.room.models.enums.CountType
+import androidx.room.Dao
+import androidx.room.Insert
+import androidx.room.OnConflictStrategy
+import androidx.room.Query
+import androidx.room.Transaction
+import androidx.room.Update
 import com.example.pillcountingnewmodels.core.room.models.PillCountTxnEntity
 import com.example.pillcountingnewmodels.core.room.models.dtos.PillCountWithDrugAndTotal
 import com.example.pillcountingnewmodels.core.room.models.dtos.StatusTypeCount
 import com.example.pillcountingnewmodels.core.room.models.dtos.TxnWithDetails
-import com.example.pillcountingnewmodels.core.room.relation.PillCountTxnWithDetails
+import com.example.pillcountingnewmodels.core.room.models.enums.CountStatus
+import com.example.pillcountingnewmodels.core.room.models.enums.CountType
 import com.example.pillcountingnewmodels.feature.history.domain.model.TxnWithDrugDto
 import kotlinx.coroutines.flow.Flow
 
 /**
- * Data Access Object (DAO) for managing [PillCountTxnEntity] records (transaction headers).
+ * **Pill Count Transaction Data Access Object**
  *
- * ### Design Goals
- * - Ensure **txnId stability**: transaction PKs must not reset or break foreign keys in details.
- * - Avoid `OnConflictStrategy.REPLACE` which deletes and reinserts rows.
- * - Provide safe upsert methods for single and bulk inserts.
- * - Offer reactive [Flow] queries for live dashboards.
+ * Provides database operations for managing [PillCountTxnEntity] entries — the transactional
+ * headers representing each pill counting event.
+ *
+ * ---
+ * ### Key Design Principles
+ * - **Txn ID Stability:** Transaction primary keys (`txnId`) must remain persistent
+ *   to preserve foreign key relationships in related tables (e.g., `pill_count_txn_details`).
+ * - **Safe Upserts:** Avoid destructive operations such as `REPLACE` which delete and recreate rows.
+ * - **Reactive Observability:** Queries returning [Flow] provide live updates for dashboards or lists.
+ * - **Soft Delete Policy:** Records are not physically deleted unless explicitly required.
+ *
+ * ---
+ * ### Associated Tables
+ * - `pill_count_txn` — Main transaction header table.
+ * - `pill_count_txn_details` — Line-level pill count details.
+ * - `drug_master` — Reference table for drug metadata.
  */
 @Dao
 interface PillCountTxnDao {
 
-    /* ────────────────────────── Create / Update ────────────────────────── */
+    // ────────────────────────────── Create / Update ──────────────────────────────
 
     /**
-     * Insert a new transaction.
+     * Inserts a new [PillCountTxnEntity] into the database.
      *
-     * - Uses [OnConflictStrategy.IGNORE] to avoid accidental PK resets.
-     * - Returns the new rowId (txnId) if inserted, or `-1` if a conflict occurred.
+     * - Uses [OnConflictStrategy.IGNORE] to prevent overwriting existing transactions.
+     * - If a transaction with the same [PillCountTxnEntity.txnId] already exists,
+     *   the operation will be ignored and return `-1`.
      *
-     * @param txn The [PillCountTxnEntity] to insert.
-     * @return RowId (txnId) if inserted, or -1 if ignored.
+     * @param txn The transaction entity to insert.
+     * @return The new row ID (txnId) if inserted successfully, or `-1` if a conflict occurred.
      */
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertIgnore(txn: PillCountTxnEntity): Long
 
     /**
-     * Update an existing transaction, matched by primary key ([txnId]).
+     * Updates an existing transaction entry matched by its [PillCountTxnEntity.txnId].
      *
-     * @param txn The updated transaction entity.
+     * @param txn The modified transaction entity.
      */
     @Update
     suspend fun update(txn: PillCountTxnEntity)
 
     /**
-     * Safely upsert a transaction while preserving [txnId].
+     * Performs a **safe upsert** (insert or update) while preserving the [txnId].
      *
-     * - If the transaction already exists (same txnId), update in place.
-     * - If not, insert a new record.
-     * - Never resets [txnId], ensuring foreign key stability in child tables.
+     * This ensures transactional integrity — if the record exists, it is updated in place.
+     * Otherwise, a new transaction row is inserted.
      *
-     * @param txn The transaction to upsert.
-     * @return The stable [txnId].
+     * @param txn The transaction to insert or update.
+     * @return The stable [PillCountTxnEntity.txnId] of the inserted or updated record.
+     * @throws IllegalStateException if the insert fails unexpectedly.
      */
     @Transaction
     suspend fun upsertPreservingId(txn: PillCountTxnEntity): Long {
@@ -76,42 +92,28 @@ interface PillCountTxnDao {
         }
     }
 
-    /**
-     * Bulk upsert for multiple transactions, preserving PKs.
-     *
-     * - Runs [upsertPreservingId] for each entity.
-     * - Ensures all txnIds remain stable.
-     *
-     * @param txns List of [PillCountTxnEntity].
-     * @return List of stable [txnId]s.
-     */
-    @Transaction
-    suspend fun upsertAllPreservingId(txns: List<PillCountTxnEntity>): List<Long> {
-        return txns.map { upsertPreservingId(it) }
-    }
-
-    /* ─────────────────────────────── Reads ─────────────────────────────── */
+    // ──────────────────────────────── Reads ────────────────────────────────
 
     /**
-     * Retrieve a transaction by its primary key.
+     * Fetches a transaction entity by its primary key.
      *
-     * @param id The txnId.
-     * @return Matching [PillCountTxnEntity] or null if not found.
+     * @param id The unique transaction ID.
+     * @return The matching [PillCountTxnEntity] if found, or `null` otherwise.
      */
     @Query("SELECT * FROM pill_count_txn WHERE txnId = :id LIMIT 1")
     suspend fun getById(id: Long): PillCountTxnEntity?
 
     /**
-     * Observe a transaction by its primary key.
+     * Observes all **partial transactions** for a specific [CountType],
+     * along with their associated drug names and total pill counts.
      *
-     * Emits updates whenever the entity changes.
+     * - Useful for showing "in-progress" transactions on a dashboard.
+     * - Excludes deleted records.
      *
-     * @param id The txnId.
-     * @return A [Flow] emitting [PillCountTxnEntity] or null.
+     * @param countType The count type (e.g., CYCLE_COUNT, SPOT_COUNT).
+     * @param partialStatus Optional filter, defaults to [CountStatus.PARTIAL].
+     * @return A [Flow] emitting a live list of [PillCountWithDrugAndTotal].
      */
-    @Query("SELECT * FROM pill_count_txn WHERE txnId = :id LIMIT 1")
-    fun observeById(id: Long): Flow<PillCountTxnEntity?>
-
     @Query(
         """
     SELECT txn.txnId,
@@ -138,65 +140,14 @@ interface PillCountTxnDao {
         partialStatus: CountStatus = CountStatus.PARTIAL
     ): Flow<List<PillCountWithDrugAndTotal>>
 
-    /**
-     * Retrieve all active (non-deleted) transactions ordered by newest first.
-     */
-    @Query(
-        """
-        SELECT * FROM pill_count_txn
-        WHERE isDeleted = 0
-        ORDER BY createdAt DESC
-        """
-    )
-    suspend fun getAllActive(): List<PillCountTxnEntity>
+    // ───────────────────────────── Field Updates ─────────────────────────────
 
     /**
-     * Paged query for transactions with optional user and drug filters.
+     * Updates the **target count** value for a given transaction.
      *
-     * @param localId Optional FK to user.
-     * @param drugId Optional FK to drug.
-     * @param limit Maximum rows to return.
-     * @param offset Rows to skip (pagination).
-     */
-    @Query(
-        """
-        SELECT * FROM pill_count_txn
-        WHERE isDeleted = 0
-          AND (:localId IS NULL OR localId = :localId)
-          AND (:drugId IS NULL OR drugId = :drugId)
-        ORDER BY createdAt DESC
-        LIMIT :limit OFFSET :offset
-        """
-    )
-    suspend fun queryPaged(
-        localId: Long? = null,
-        drugId: Long? = null,
-        limit: Int = 50,
-        offset: Int = 0
-    ): List<PillCountTxnEntity>
-
-    /* ───────────────────────── Field Updates ───────────────────────────── */
-
-    /**
-     * Update the status of a transaction.
-     *
-     * @param txnId The transaction PK.
-     * @param status New [CountStatus].
-     * @param now Update timestamp (epoch millis).
-     */
-    @Query("UPDATE pill_count_txn SET status = :status, updatedAt = :now WHERE txnId = :txnId")
-    suspend fun updateStatus(
-        txnId: Long,
-        status: CountStatus,
-        now: Long = System.currentTimeMillis()
-    )
-
-    /**
-     * Update the target count of a transaction.
-     *
-     * @param txnId Transaction PK.
-     * @param target New target count (nullable).
-     * @param now Update timestamp.
+     * @param txnId The transaction ID.
+     * @param target The new target count, or `null` to clear.
+     * @param now Optional timestamp; defaults to [System.currentTimeMillis].
      */
     @Query("UPDATE pill_count_txn SET targetCount = :target, updatedAt = :now WHERE txnId = :txnId")
     suspend fun updateTargetCount(
@@ -206,11 +157,11 @@ interface PillCountTxnDao {
     )
 
     /**
-     * Update the note of a transaction.
+     * Updates the note associated with a transaction.
      *
-     * @param txnId Transaction PK.
-     * @param note Optional note string.
-     * @param now Update timestamp.
+     * @param txnId The transaction ID.
+     * @param note The note text (nullable).
+     * @param now Optional timestamp; defaults to [System.currentTimeMillis].
      */
     @Query("UPDATE pill_count_txn SET note = :note, updatedAt = :now WHERE txnId = :txnId")
     suspend fun updateNote(
@@ -220,10 +171,11 @@ interface PillCountTxnDao {
     )
 
     /**
-     * Soft-delete a transaction (sets `isDeleted = 1`).
+     * Performs a soft delete by setting `isDeleted = 1`.
+     * This preserves record history and maintains referential integrity.
      *
-     * @param txnId Transaction PK.
-     * @param now Update timestamp.
+     * @param txnId The transaction ID.
+     * @param now Optional timestamp; defaults to [System.currentTimeMillis].
      */
     @Query("UPDATE pill_count_txn SET isDeleted = 1, updatedAt = :now WHERE txnId = :txnId")
     suspend fun softDelete(
@@ -231,56 +183,15 @@ interface PillCountTxnDao {
         now: Long = System.currentTimeMillis()
     )
 
-    /* ──────────────────────────── Relations ────────────────────────────── */
+    // ─────────────────────────────── Relations ───────────────────────────────
 
     /**
-     * Fetch a transaction and its details in a single call.
+     * Observes a summary count of transactions grouped by [CountStatus] and [CountType].
      *
-     * @param id The transaction PK.
-     * @return [PillCountTxnWithDetails] or null if not found.
-     */
-    @Transaction
-    @Query("SELECT * FROM pill_count_txn WHERE txnId = :id LIMIT 1")
-    suspend fun getWithDetails(id: Long): PillCountTxnWithDetails?
-
-    /**
-     * Retrieve all transactions for a given user, with details included.
+     * Used for real-time dashboard tiles showing how many transactions are
+     * "Pending", "Partial", "Completed", etc., for each counting type.
      *
-     * @param localId Optional user FK. Null → returns all users.
-     * @return List of [PillCountTxnWithDetails].
-     */
-    @Transaction
-    @Query(
-        """
-        SELECT * FROM pill_count_txn
-        WHERE isDeleted = 0
-          AND (:localId IS NULL OR localId = :localId)
-        ORDER BY createdAt DESC
-        """
-    )
-    suspend fun getAllByUserWithDetails(localId: Long?): List<PillCountTxnWithDetails>
-
-    /**
-     * Aggregate dashboard counts, grouped by [CountStatus] and count type.
-     *
-     * @return One row per (status, countType).
-     */
-    @Query(
-        """
-        SELECT status AS status,
-               countType AS countType,
-               COUNT(*) AS cnt
-        FROM pill_count_txn
-        WHERE isDeleted = 0
-        GROUP BY status, countType
-        """
-    )
-    suspend fun getDashboardCountsGrouped(): List<StatusTypeCount>
-
-    /**
-     * Live dashboard counts, grouped by [CountStatus] and count type.
-     *
-     * @return Flow emitting aggregate counts on updates.
+     * @return A [Flow] emitting lists of [StatusTypeCount] aggregates.
      */
     @Query(
         """
@@ -294,7 +205,16 @@ interface PillCountTxnDao {
     )
     fun observeDashboardCountsGrouped(): Flow<List<StatusTypeCount>>
 
-
+    /**
+     * Retrieves a detailed transaction with its associated drug and total pill count.
+     *
+     * Joins data from:
+     * - `drug_master` for drug name and NDC.
+     * - `pill_count_txn_details` for individual pill counts.
+     *
+     * @param transactionId The ID of the transaction to fetch.
+     * @return A [TxnWithDetails] DTO containing enriched transaction data, or `null` if not found.
+     */
     @Transaction
     @Query(
         """
@@ -320,7 +240,13 @@ interface PillCountTxnDao {
     )
     suspend fun getTxnWithDetails(transactionId: Long): TxnWithDetails?
 
-
+    /**
+     * Updates the [CountStatus] of a specific transaction.
+     *
+     * @param txnId The transaction ID.
+     * @param newStatus The new status value.
+     * @param updatedAt Optional timestamp; defaults to [System.currentTimeMillis].
+     */
     @Query("UPDATE pill_count_txn SET status = :newStatus, updatedAt = :updatedAt WHERE txnId = :txnId")
     suspend fun updateTxnStatus(
         txnId: Long,
@@ -328,6 +254,15 @@ interface PillCountTxnDao {
         updatedAt: Long = System.currentTimeMillis()
     )
 
+    /**
+     * Returns all transactions within a given date range, joined with drug details and totals.
+     *
+     * Useful for generating daily reports or summaries.
+     *
+     * @param startOfDay Start timestamp (inclusive).
+     * @param endOfDay End timestamp (exclusive).
+     * @return A [Flow] emitting a list of [TxnWithDrugDto] for the date window.
+     */
     @Query(
         """
     SELECT 
@@ -357,22 +292,47 @@ interface PillCountTxnDao {
         endOfDay: Long
     ): Flow<List<TxnWithDrugDto>>
 
+    // ─────────────────────────────── Deletes ───────────────────────────────
 
-    // Delete transactions in a date range
+    /**
+     * Permanently deletes all transactions created within a date range.
+     *
+     * @param start Start timestamp (inclusive).
+     * @param end End timestamp (inclusive).
+     */
     @Query("DELETE FROM pill_count_txn WHERE createdAt BETWEEN :start AND :end")
     suspend fun deleteTransactionsByDate(
         start: Long,
         end: Long
     )
 
+    /**
+     * Retrieves all transactions created before a specific cutoff date.
+     *
+     * Useful for archival or cleanup operations.
+     *
+     * @param cutoff Timestamp before which records will be selected.
+     * @return A list of [PillCountTxnEntity].
+     */
     @Query("SELECT * FROM pill_count_txn WHERE createdAt < :cutoff")
     suspend fun getTransactionsBefore(cutoff: Long): List<PillCountTxnEntity>
 
+    /**
+     * Retrieves the file paths of images linked to all transaction details under a given transaction.
+     *
+     * @param txnId The transaction ID.
+     * @return A list of image file paths.
+     */
     @Query("SELECT imagePath FROM pill_count_txn_details WHERE txnId = :txnId")
     suspend fun getTransactionDetailsImages(txnId: Long): List<String>
 
+    /**
+     * Permanently deletes a single transaction by its ID.
+     *
+     * ⚠️ **Note:** This action cannot be undone.
+     *
+     * @param txnId The transaction ID to delete.
+     */
     @Query("DELETE FROM pill_count_txn WHERE txnId = :txnId")
     suspend fun deleteTransaction(txnId: Long)
-
-
 }

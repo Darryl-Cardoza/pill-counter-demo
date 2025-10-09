@@ -1,10 +1,10 @@
 package com.example.pillcountingnewmodels.feature.profile.data
 
-import com.example.pillcountingnewmodels.core.models.RefreshTokenRequest
-import com.example.pillcountingnewmodels.core.api.interfaceDetail.IApplicationSettingInterface
+import com.example.pillcountingnewmodels.core.refreshToken.domain.model.RefreshTokenRequest
+import com.example.pillcountingnewmodels.core.settings.data.remote.IApplicationSettingInterface
 import com.example.pillcountingnewmodels.core.room.dao.UserDao
-import com.example.pillcountingnewmodels.core.utils.AppLogger
-import com.example.pillcountingnewmodels.core.utils.PreferenceHelper
+import com.example.pillcountingnewmodels.core.utils.logger.AppLogger
+import com.example.pillcountingnewmodels.core.utils.preference.PreferenceHelper
 import com.example.pillcountingnewmodels.feature.profile.data.remote.IProfileApi
 import com.example.pillcountingnewmodels.feature.profile.domain.data.IProfileRepository
 import com.example.pillcountingnewmodels.feature.profile.domain.model.ProfileDeleteResponse

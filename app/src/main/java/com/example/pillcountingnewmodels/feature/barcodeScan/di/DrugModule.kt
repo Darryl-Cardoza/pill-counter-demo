@@ -1,6 +1,6 @@
 package com.example.pillcountingnewmodels.feature.barcodeScan.di
 
-import com.example.pillcountingnewmodels.core.utils.PreferenceHelper
+import com.example.pillcountingnewmodels.core.utils.preference.PreferenceHelper
 import com.example.pillcountingnewmodels.feature.barcodeScan.data.DrugRepository
 import com.example.pillcountingnewmodels.feature.barcodeScan.data.remote.IDrugAPI
 import com.example.pillcountingnewmodels.feature.barcodeScan.domain.data.IDrugRepository

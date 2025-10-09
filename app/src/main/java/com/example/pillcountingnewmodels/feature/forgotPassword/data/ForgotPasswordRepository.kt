@@ -1,6 +1,6 @@
 package com.example.pillcountingnewmodels.feature.forgotPassword.data
 
-import com.example.pillcountingnewmodels.core.utils.AppLogger
+import com.example.pillcountingnewmodels.core.utils.logger.AppLogger
 import com.example.pillcountingnewmodels.feature.forgotPassword.data.remote.IForgotPasswordAPI
 import com.example.pillcountingnewmodels.feature.forgotPassword.domain.data.IForgotPasswordRepository
 import com.example.pillcountingnewmodels.feature.forgotPassword.domain.model.ForgotPasswordRequest

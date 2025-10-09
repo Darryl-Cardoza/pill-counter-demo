@@ -20,9 +20,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.pillcountingnewmodels.R
-import com.example.pillcountingnewmodels.core.utils.PreferenceHelper
-import com.example.pillcountingnewmodels.core.utils.compose.CommonDialog
-import com.example.pillcountingnewmodels.core.utils.compose.MenuButton
+import com.example.pillcountingnewmodels.core.utils.preference.PreferenceHelper
+import com.example.pillcountingnewmodels.core.utils.common.UserInterfaceUtils.CommonDialog
+import com.example.pillcountingnewmodels.core.utils.common.UserInterfaceUtils.MenuButton
 import com.example.pillcountingnewmodels.core.utils.compose.SplitResponsive
 import com.example.pillcountingnewmodels.feature.dashboard.presentation.compose.FixedCountSection
 import com.example.pillcountingnewmodels.feature.dashboard.presentation.compose.RegularCountSection

@@ -5,16 +5,17 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.pillcountingnewmodels.core.room.dao.DrugMasterDao
 import com.example.pillcountingnewmodels.core.room.dao.PillCountTxnDao
-import com.example.pillcountingnewmodels.core.room.models.enums.CountStatus
-import com.example.pillcountingnewmodels.core.room.models.enums.CountType
 import com.example.pillcountingnewmodels.core.room.models.DrugMasterEntity
 import com.example.pillcountingnewmodels.core.room.models.PillCountTxnEntity
-import com.example.pillcountingnewmodels.core.utils.AppLogger
-import com.example.pillcountingnewmodels.core.utils.PreferenceHelper
+import com.example.pillcountingnewmodels.core.room.models.enums.CountStatus
+import com.example.pillcountingnewmodels.core.room.models.enums.CountType
+import com.example.pillcountingnewmodels.core.utils.logger.AppLogger
+import com.example.pillcountingnewmodels.core.utils.preference.PreferenceHelper
 import com.example.pillcountingnewmodels.feature.barcodeScan.domain.data.IDrugRepository
 import com.example.pillcountingnewmodels.feature.barcodeScan.domain.data.NavigationEvent
 import com.example.pillcountingnewmodels.feature.barcodeScan.domain.data.ScanBarcodeEvent
 import com.example.pillcountingnewmodels.feature.barcodeScan.domain.model.ScanBarcodeUiState
+import com.example.pillcountingnewmodels.feature.barcodeScan.presentation.analyzer.BarcodeAnalyzer
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -48,7 +49,8 @@ class ScanBarcodeViewModel @Inject constructor(
     private val drugRepository: IDrugRepository,
     private val drugMasterDao: DrugMasterDao,
     private val preferenceHelper: PreferenceHelper,
-    private val pillCountTxnDao: PillCountTxnDao
+    private val pillCountTxnDao: PillCountTxnDao,
+    val analyzer: BarcodeAnalyzer
 ) : ViewModel() {
 
     /** Logger instance scoped to this ViewModel for debugging and error tracking. */
@@ -151,6 +153,7 @@ class ScanBarcodeViewModel @Inject constructor(
      */
     private fun handleRedoScan() {
         logger.d("Redo scan triggered → resuming scanner.")
+        analyzer.resume()
         _uiState.update {
             it.copy(
                 drugName = "",
@@ -254,7 +257,8 @@ class ScanBarcodeViewModel @Inject constructor(
 
     /** Hide the manual entry dialog. */
     fun hideManualEntryDialog() {
-        _uiState.update { it.copy(showManualEntry = false, error = null) }
+        analyzer.resume()
+        _uiState.update { it.copy(showManualEntry = false, error = null, isScannerActive = true ) }
     }
 
     companion object {

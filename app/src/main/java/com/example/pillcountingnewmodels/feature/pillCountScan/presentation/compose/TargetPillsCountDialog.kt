@@ -29,12 +29,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.example.pillcountingnewmodels.R
-import com.example.pillcountingnewmodels.core.utils.Dimens.huge
-import com.example.pillcountingnewmodels.core.utils.Dimens.medium
-import com.example.pillcountingnewmodels.core.utils.Dimens.small
-import com.example.pillcountingnewmodels.core.utils.Dimens.xxLarge
-import com.example.pillcountingnewmodels.core.utils.compose.FilledButton
-import com.example.pillcountingnewmodels.core.utils.compose.HollowButton
+import com.example.pillcountingnewmodels.core.utils.constants.Dimens.huge
+import com.example.pillcountingnewmodels.core.utils.constants.Dimens.medium
+import com.example.pillcountingnewmodels.core.utils.constants.Dimens.small
+import com.example.pillcountingnewmodels.core.utils.constants.Dimens.xxLarge
+import com.example.pillcountingnewmodels.core.utils.common.UserInterfaceUtils.FilledButton
+import com.example.pillcountingnewmodels.core.utils.common.UserInterfaceUtils.HollowButton
 import com.example.pillcountingnewmodels.ui.theme.AppTheme
 
 @Composable

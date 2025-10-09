@@ -25,7 +25,6 @@ import androidx.compose.material.icons.outlined.ArrowDropDown
 import androidx.compose.material.icons.outlined.ArrowDropUp
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -53,10 +52,11 @@ import androidx.compose.ui.unit.toSize
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.pillcountingnewmodels.R
-import com.example.pillcountingnewmodels.core.utils.PreferenceHelper
-import com.example.pillcountingnewmodels.core.utils.compose.ActionButtonPrimary
-import com.example.pillcountingnewmodels.core.utils.compose.AppInfo
-import com.example.pillcountingnewmodels.core.utils.compose.DrawableIconTextField
+import com.example.pillcountingnewmodels.core.utils.preference.PreferenceHelper
+import com.example.pillcountingnewmodels.core.utils.common.UserInterfaceUtils.AppInfo
+import com.example.pillcountingnewmodels.core.utils.common.UserInterfaceUtils.DrawableIconTextField
+import com.example.pillcountingnewmodels.core.utils.common.UserInterfaceUtils.ActionButtonPrimary
+import com.example.pillcountingnewmodels.core.utils.common.UserInterfaceUtils.LoadingIndicator
 import com.example.pillcountingnewmodels.core.utils.compose.SplitResponsive
 import com.example.pillcountingnewmodels.feature.login.domain.model.LoginUiState
 import com.example.pillcountingnewmodels.feature.login.viewmodel.LoginViewModel
@@ -93,7 +93,7 @@ fun LoginScreen(
             .background(AppTheme.extendedColors.secondaryBackground)
     ) {
         SplitResponsive(
-            topOrLeft = { AppInfo(context) },
+            topOrLeft = { AppInfo() },
             bottomOrRight = {
                 Column(
                     modifier = Modifier
@@ -148,8 +148,15 @@ fun LoginScreen(
                                         onDismissRequest = { showDropdown = false },
                                         modifier = Modifier
                                             .width(with(LocalDensity.current) { textFieldSize.width.toDp() })
-                                            .background(AppTheme.extendedColors.inputBackground, RoundedCornerShape(12.dp))
-                                            .border(0.0.dp, AppTheme.extendedColors.inputBackground, RoundedCornerShape(12.dp))
+                                            .background(
+                                                AppTheme.extendedColors.inputBackground,
+                                                RoundedCornerShape(12.dp)
+                                            )
+                                            .border(
+                                                0.0.dp,
+                                                AppTheme.extendedColors.inputBackground,
+                                                RoundedCornerShape(12.dp)
+                                            )
                                             .padding(horizontal = 8.dp)
                                             .padding(top = 16.dp)
                                     ) {
@@ -188,10 +195,15 @@ fun LoginScreen(
 
                                                     IconButton(
                                                         onClick = {
-                                                            preferenceHelper.removeRecentLogin(emailEntry)
-                                                            recentEmails.value = preferenceHelper.getRecentLogins()
+                                                            preferenceHelper.removeRecentLogin(
+                                                                emailEntry
+                                                            )
+                                                            recentEmails.value =
+                                                                preferenceHelper.getRecentLogins()
                                                         },
-                                                        modifier = Modifier.size(24.dp).padding(end = 8.dp)
+                                                        modifier = Modifier
+                                                            .size(24.dp)
+                                                            .padding(end = 8.dp)
                                                     ) {
                                                         Icon(
                                                             imageVector = Icons.Default.Close,
@@ -206,7 +218,11 @@ fun LoginScreen(
                                                         modifier = Modifier
                                                             .fillMaxWidth()
                                                             .height(0.5.dp)
-                                                            .background(AppTheme.extendedColors.textColor.copy(alpha = 0.2f))
+                                                            .background(
+                                                                AppTheme.extendedColors.textColor.copy(
+                                                                    alpha = 0.2f
+                                                                )
+                                                            )
                                                     )
                                                 }
                                             }
@@ -285,9 +301,9 @@ fun LoginScreen(
                                 modifier = Modifier.padding(bottom = 16.dp)
                             )
 
-                            is LoginUiState.Loading -> CircularProgressIndicator(
-                                modifier = Modifier.padding(bottom = 16.dp)
-                            )
+                            is LoginUiState.Loading -> {
+                                LoadingIndicator()
+                            }
 
                             is LoginUiState.Success -> {
                                 LaunchedEffect(Unit) {

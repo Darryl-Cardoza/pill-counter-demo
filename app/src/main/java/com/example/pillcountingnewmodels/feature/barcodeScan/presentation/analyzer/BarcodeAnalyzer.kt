@@ -11,7 +11,7 @@ import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleOwner
-import com.example.pillcountingnewmodels.core.utils.saveBitmapToFile
+import com.example.pillcountingnewmodels.core.utils.common.HelperFunctions.saveBitmapToFile
 import com.google.mlkit.vision.barcode.BarcodeScanner
 import com.google.mlkit.vision.barcode.BarcodeScannerOptions
 import com.google.mlkit.vision.barcode.BarcodeScanning
@@ -127,16 +127,24 @@ class BarcodeAnalyzer @Inject constructor(
             return
         }
 
-        val image = InputImage.fromMediaImage(mediaImage, imageProxy.imageInfo.rotationDegrees)
+        val rotation = imageProxy.imageInfo.rotationDegrees
+        // ✅ Make a safe copy immediately before MLKit processing
+        val safeBitmapCopy = try {
+            imageProxy.toBitmap() // small cost, but safe
+        } catch (e: Exception) {
+            null
+        }
+
+        val image = InputImage.fromMediaImage(mediaImage, rotation)
 
         scanner?.process(image)
             ?.addOnSuccessListener { barcodes ->
                 val barcode = barcodes.firstOrNull()
                 if (barcode != null && (!singleScanMode || !hasScannedOnce.get())) {
                     hasScannedOnce.set(true)
+
                     ioScope.launch {
-                        val bitmap = imageProxy.toBitmap()
-                        val filePath = bitmap?.let {
+                        val filePath = safeBitmapCopy?.let {
                             saveBitmapToFile(
                                 appContext,
                                 it,
@@ -154,8 +162,12 @@ class BarcodeAnalyzer @Inject constructor(
                 Log.e(TAG, "Barcode detection failed: ${ex.message}")
                 onError(ex)
             }
-            ?.addOnCompleteListener { imageProxy.close() }
+            ?.addOnCompleteListener {
+                // ✅ Always close after all listeners complete
+                imageProxy.close()
+            }
     }
+
 
     /**
      * Pause scanning but keep camera feed active.
@@ -173,6 +185,7 @@ class BarcodeAnalyzer @Inject constructor(
     fun resume() {
         if (isActive.get()) {
             isPaused.set(false)
+            hasScannedOnce.set(false)
             Log.d(TAG, "Analyzer resumed.")
         }
     }

@@ -4,10 +4,10 @@ import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.pillcountingnewmodels.R
-import com.example.pillcountingnewmodels.core.utils.AppLogger
+import com.example.pillcountingnewmodels.core.utils.logger.AppLogger
 import com.example.pillcountingnewmodels.feature.forgotPassword.data.ForgotPasswordRepository
 import com.example.pillcountingnewmodels.feature.forgotPassword.domain.model.ForgotPasswordUiState
-import com.example.pillcountingnewmodels.feature.login.domain.CredentialsValidator
+import com.example.pillcountingnewmodels.core.utils.validator.CredentialsValidator
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow

@@ -1,8 +1,12 @@
 package com.example.pillcountingnewmodels.core.room.dao
 
-import androidx.room.*
+import androidx.room.Dao
+import androidx.room.Insert
+import androidx.room.OnConflictStrategy
+import androidx.room.Query
+import androidx.room.Transaction
+import androidx.room.Update
 import com.example.pillcountingnewmodels.core.room.models.DrugMasterEntity
-import kotlinx.coroutines.flow.Flow
 
 /**
  * Data Access Object (DAO) for managing [DrugMasterEntity] persistence.
@@ -73,40 +77,7 @@ interface DrugMasterDao {
         }
     }
 
-    /**
-     * Bulk version of [upsertPreservingId].
-     *
-     * - Iterates through each drug and applies safe upsert logic.
-     * - Ensures all PKs remain stable across syncs.
-     *
-     * @param drugs List of drug entities to insert or update.
-     * @return List of stable PKs ([drugId]) corresponding to each entity.
-     */
-    @Transaction
-    suspend fun upsertAllPreservingId(drugs: List<DrugMasterEntity>): List<Long> {
-        return drugs.map { upsertPreservingId(it) }
-    }
-
-    /**
-     * Updates only the `drugName` field of a record identified by its NDC.
-     *
-     * @param ndc National Drug Code of the target drug.
-     * @param drugName New name to assign.
-     * @return Number of rows updated (0 if none).
-     */
-    @Query("UPDATE drug_master SET drugName = :drugName WHERE ndc = :ndc")
-    suspend fun updateDrugNameByNdc(ndc: String, drugName: String): Int
-
     /* ───────────────────────────── Queries ────────────────────────────── */
-
-    /**
-     * Retrieves a drug by its primary key.
-     *
-     * @param id Primary key ([drugId]).
-     * @return The matching [DrugMasterEntity], or `null` if not found.
-     */
-    @Query("SELECT * FROM drug_master WHERE drugId = :id LIMIT 1")
-    suspend fun getById(id: Long): DrugMasterEntity?
 
     /**
      * Retrieves a drug by its National Drug Code (NDC).
@@ -125,48 +96,4 @@ interface DrugMasterDao {
      */
     @Query("SELECT drugId FROM drug_master WHERE ndc = :ndc LIMIT 1")
     suspend fun getDrugIdByNdc(ndc: String): Long?
-
-    /**
-     * Performs a case-insensitive search by drug name or NDC.
-     *
-     * @param q Search query (nullable).
-     * @return List of matching [DrugMasterEntity]s ordered by creation date (newest first).
-     */
-    @Query(
-        """
-        SELECT * FROM drug_master
-        WHERE (:q IS NULL OR drugName LIKE '%' || :q || '%'
-               OR ndc LIKE '%' || :q || '%')
-        ORDER BY createdAt DESC
-        """
-    )
-    suspend fun search(q: String? = null): List<DrugMasterEntity>
-
-    /**
-     * Observes all drugs in the table as a reactive stream.
-     *
-     * @return A [Flow] emitting the full list of drugs whenever data changes.
-     */
-    @Query("SELECT * FROM drug_master ORDER BY createdAt DESC")
-    fun observeAll(): Flow<List<DrugMasterEntity>>
-
-    /* ───────────────────────────── Deletes ────────────────────────────── */
-
-    /**
-     * Deletes a drug by its primary key ([drugId]).
-     *
-     * @param id The PK of the row to delete.
-     */
-    @Query("DELETE FROM drug_master WHERE drugId = :id")
-    suspend fun deleteById(id: Long)
-
-    /**
-     * Clears the entire [drug_master] table.
-     *
-     * ⚠️ WARNING:
-     * - This will break any foreign key references in dependent tables.
-     * - Use with caution — prefer marking entries inactive instead.
-     */
-    @Query("DELETE FROM drug_master")
-    suspend fun clear()
 }

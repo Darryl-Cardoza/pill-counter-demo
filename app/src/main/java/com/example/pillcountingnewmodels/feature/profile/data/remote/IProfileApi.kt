@@ -1,6 +1,6 @@
 package com.example.pillcountingnewmodels.feature.profile.data.remote
 
-import com.example.pillcountingnewmodels.core.utils.URLConstant
+import com.example.pillcountingnewmodels.core.utils.constants.URLConstant
 import com.example.pillcountingnewmodels.feature.profile.domain.model.ProfileDeleteResponse
 import com.example.pillcountingnewmodels.feature.profile.domain.model.ProfileUpdateRequest
 import com.example.pillcountingnewmodels.feature.profile.domain.model.ProfileUpdateResponse

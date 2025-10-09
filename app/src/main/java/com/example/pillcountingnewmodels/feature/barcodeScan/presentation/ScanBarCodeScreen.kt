@@ -17,7 +17,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
-import com.example.pillcountingnewmodels.core.utils.ToastUtils
+import com.example.pillcountingnewmodels.core.utils.common.UserInterfaceUtils
 import com.example.pillcountingnewmodels.feature.barcodeScan.domain.data.NavigationEvent
 import com.example.pillcountingnewmodels.feature.barcodeScan.presentation.viewmodel.ScanBarcodeViewModel
 
@@ -85,7 +85,7 @@ fun ScanBarCodeScreen(
         )
     }
     uiState.error?.let { errorMsg ->
-        ToastUtils.show(context,errorMsg)
+        UserInterfaceUtils.showToast(context,errorMsg)
     }
 
     // Delegate the UI rendering to the stateless content composable.
@@ -96,7 +96,8 @@ fun ScanBarCodeScreen(
         onRequestPermission = {
             permissionLauncher.launch(Manifest.permission.CAMERA)
         },
-        onEvent = viewModel::onEvent
+        onEvent = viewModel::onEvent,
+        analyzer = viewModel.analyzer
     )
 }
 

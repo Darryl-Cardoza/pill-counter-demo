@@ -1,8 +1,8 @@
 package com.example.pillcountingnewmodels.feature.profile.di
 
-import com.example.pillcountingnewmodels.core.api.interfaceDetail.IApplicationSettingInterface
+import com.example.pillcountingnewmodels.core.settings.data.remote.IApplicationSettingInterface
 import com.example.pillcountingnewmodels.core.room.dao.UserDao
-import com.example.pillcountingnewmodels.core.utils.PreferenceHelper
+import com.example.pillcountingnewmodels.core.utils.preference.PreferenceHelper
 import com.example.pillcountingnewmodels.feature.profile.data.ProfileRepository
 import com.example.pillcountingnewmodels.feature.profile.data.remote.IProfileApi
 import com.example.pillcountingnewmodels.feature.profile.domain.data.IProfileRepository

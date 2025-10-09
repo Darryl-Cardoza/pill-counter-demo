@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -34,11 +33,12 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.pillcountingnewmodels.R
-import com.example.pillcountingnewmodels.core.utils.ToastUtils
-import com.example.pillcountingnewmodels.core.utils.compose.ActionButtonPrimary
-import com.example.pillcountingnewmodels.core.utils.compose.AppInfo
-import com.example.pillcountingnewmodels.core.utils.compose.BackButton
-import com.example.pillcountingnewmodels.core.utils.compose.DrawableIconTextField
+import com.example.pillcountingnewmodels.core.utils.common.UserInterfaceUtils
+import com.example.pillcountingnewmodels.core.utils.common.UserInterfaceUtils.AppInfo
+import com.example.pillcountingnewmodels.core.utils.common.UserInterfaceUtils.BackButton
+import com.example.pillcountingnewmodels.core.utils.common.UserInterfaceUtils.DrawableIconTextField
+import com.example.pillcountingnewmodels.core.utils.common.UserInterfaceUtils.ActionButtonPrimary
+import com.example.pillcountingnewmodels.core.utils.common.UserInterfaceUtils.LoadingIndicator
 import com.example.pillcountingnewmodels.core.utils.compose.SplitResponsive
 import com.example.pillcountingnewmodels.feature.forgotPassword.domain.model.ForgotPasswordUiState
 import com.example.pillcountingnewmodels.feature.forgotPassword.presentation.viewmodel.ForgotPasswordViewModel
@@ -78,7 +78,7 @@ fun ForgotPasswordScreen(
 
         // Responsive split layout: app info vs form
         SplitResponsive(
-            topOrLeft = { AppInfo(context) },
+            topOrLeft = { AppInfo() },
             bottomOrRight = {
                 ForgotPasswordForm(
                     email = email,
@@ -143,8 +143,7 @@ private fun ForgotPasswordForm(
             iconRes = R.drawable.profile,
             iconColor = MaterialTheme.colorScheme.secondary,
             keyboardType = KeyboardType.Email,
-            imeAction = ImeAction.Done,
-            onImeAction = { onSendOtp() }
+            imeAction = ImeAction.Done
         )
 
         Spacer(Modifier.height(55.dp))
@@ -153,12 +152,12 @@ private fun ForgotPasswordForm(
         when (uiState) {
             is ForgotPasswordUiState.Idle -> Unit
             is ForgotPasswordUiState.Loading -> {
-                CircularProgressIndicator(modifier = Modifier.padding(bottom = 16.dp))
+                LoadingIndicator()
             }
 
             is ForgotPasswordUiState.Error -> {
                 LaunchedEffect(uiState.message) {
-                    ToastUtils.show(context, uiState.message)
+                    UserInterfaceUtils.showToast(context, uiState.message)
                 }
             }
 
@@ -192,7 +191,7 @@ private fun trySendOtp(
     context: Context
 ) {
     if (email.isBlank()) {
-        ToastUtils.show(context, context.getString(R.string.error_email_invalid))
+        UserInterfaceUtils.showToast(context, context.getString(R.string.error_email_invalid))
     } else {
         viewModel.sendOtp(email)
     }

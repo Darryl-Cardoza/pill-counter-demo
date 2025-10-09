@@ -1,5 +1,6 @@
 package com.example.pillcountingnewmodels.feature.otp.presentation.compose
 
+import Screen
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -13,7 +14,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -33,16 +33,17 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.pillcountingnewmodels.R
-import com.example.pillcountingnewmodels.core.utils.compose.ActionButtonPrimary
-import com.example.pillcountingnewmodels.core.utils.compose.AppInfo
-import com.example.pillcountingnewmodels.core.utils.compose.BackButton
-import com.example.pillcountingnewmodels.core.utils.compose.CommonDialog
-import com.example.pillcountingnewmodels.core.utils.HelperFunctions.maskEmail
-import com.example.pillcountingnewmodels.core.utils.compose.OTPTextField
+import com.example.pillcountingnewmodels.core.utils.common.HelperFunctions.maskEmail
+import com.example.pillcountingnewmodels.core.utils.common.UserInterfaceUtils.ActionButtonPrimary
+import com.example.pillcountingnewmodels.core.utils.common.UserInterfaceUtils.AppInfo
+import com.example.pillcountingnewmodels.core.utils.common.UserInterfaceUtils.BackButton
+import com.example.pillcountingnewmodels.core.utils.common.UserInterfaceUtils.CommonDialog
+import com.example.pillcountingnewmodels.core.utils.common.UserInterfaceUtils.LoadingIndicator
+import com.example.pillcountingnewmodels.core.utils.common.UserInterfaceUtils.OTPTextField
 import com.example.pillcountingnewmodels.core.utils.compose.SplitResponsive
 import com.example.pillcountingnewmodels.feature.login.viewmodel.LoginViewModel
-import com.example.pillcountingnewmodels.feature.register.presentation.viewmodel.VerifyPinViewModel
 import com.example.pillcountingnewmodels.feature.register.domain.model.VerifyPinUiState
+import com.example.pillcountingnewmodels.feature.register.presentation.viewmodel.VerifyPinViewModel
 import com.example.pillcountingnewmodels.ui.theme.AppTheme
 import kotlinx.coroutines.delay
 
@@ -117,7 +118,7 @@ fun OTPScreen(
         )
 
         SplitResponsive(
-            topOrLeft = { AppInfo(context) },
+            topOrLeft = { AppInfo() },
             bottomOrRight = {
                 Column(
                     modifier = Modifier
@@ -179,9 +180,9 @@ fun OTPScreen(
                             modifier = Modifier.padding(bottom = 16.dp)
                         )
 
-                        is VerifyPinUiState.Loading -> CircularProgressIndicator(
-                            modifier = Modifier.padding(bottom = 16.dp)
-                        )
+                        is VerifyPinUiState.Loading -> {
+                            LoadingIndicator()
+                        }
 
                         is VerifyPinUiState.Success -> {
                             LaunchedEffect(Unit) {

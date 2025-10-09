@@ -1,6 +1,6 @@
 package com.example.pillcountingnewmodels.feature.register.data.remote
 
-import com.example.pillcountingnewmodels.core.utils.URLConstant.VERIFY_OTP
+import com.example.pillcountingnewmodels.core.utils.constants.URLConstant.VERIFY_OTP
 import com.example.pillcountingnewmodels.feature.register.domain.model.VerifyPinRequest
 import com.example.pillcountingnewmodels.feature.register.domain.model.VerifyPinResponse
 import retrofit2.http.Body

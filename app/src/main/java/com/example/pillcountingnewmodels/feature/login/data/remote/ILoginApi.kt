@@ -1,6 +1,6 @@
 package com.example.pillcountingnewmodels.feature.login.data.remote
 
-import com.example.pillcountingnewmodels.core.utils.URLConstant
+import com.example.pillcountingnewmodels.core.utils.constants.URLConstant
 import com.example.pillcountingnewmodels.feature.login.domain.model.LoginRequest
 import com.example.pillcountingnewmodels.feature.login.domain.model.LoginResponse
 import com.example.pillcountingnewmodels.feature.login.domain.model.LogoutRequest
