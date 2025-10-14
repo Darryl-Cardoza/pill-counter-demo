@@ -2,6 +2,7 @@ package com.example.pillcountingnewmodels.feature.profile.presentation
 
 import Screen
 import android.content.res.Configuration
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
@@ -71,12 +72,12 @@ fun ProfileScreen(
     // Local state for delete confirmation
     var showDeleteDialog by remember { mutableStateOf(false) }
 
-    // ✅ Determine navigation type
+    // Determine navigation type
     val cameFromDashboard =
         fromRoute?.contains(Screen.Dashboard.route, ignoreCase = true) == true
 
-    // ✅ Back handling for system back press
-    androidx.activity.compose.BackHandler {
+    // Back handling for system back press
+    BackHandler {
         if (cameFromDashboard) {
             navController.navigate(Screen.Dashboard.route) {
                 popUpTo(Screen.Dashboard.route) { inclusive = true }
@@ -104,7 +105,7 @@ fun ProfileScreen(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 BackButton(navController) {
-                    // ✅ BackButton click behavior
+                    // BackButton click behavior
                     if (cameFromDashboard) {
                         navController.navigate(Screen.Dashboard.route) {
                             popUpTo(Screen.Dashboard.route) { inclusive = true }
