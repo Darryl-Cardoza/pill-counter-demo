@@ -40,11 +40,11 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.pillcountingnewmodels.R
+import com.example.pillcountingnewmodels.core.utils.common.UserInterfaceUtils.ActionButtonPrimary
 import com.example.pillcountingnewmodels.core.utils.common.UserInterfaceUtils.BackButton
 import com.example.pillcountingnewmodels.core.utils.common.UserInterfaceUtils.CommonDialog
 import com.example.pillcountingnewmodels.core.utils.common.UserInterfaceUtils.FloatingLabelTextField
 import com.example.pillcountingnewmodels.core.utils.common.UserInterfaceUtils.HollowButton
-import com.example.pillcountingnewmodels.core.utils.common.UserInterfaceUtils.ActionButtonPrimary
 import com.example.pillcountingnewmodels.core.utils.common.UserInterfaceUtils.LoadingIndicator
 import com.example.pillcountingnewmodels.feature.profile.domain.model.ProfileDeleteUiState
 import com.example.pillcountingnewmodels.feature.profile.domain.model.ProfileField
@@ -71,6 +71,22 @@ fun ProfileScreen(
     // Local state for delete confirmation
     var showDeleteDialog by remember { mutableStateOf(false) }
 
+    // ✅ Determine navigation type
+    val cameFromDashboard =
+        fromRoute?.contains(Screen.Dashboard.route, ignoreCase = true) == true
+
+    // ✅ Back handling for system back press
+    androidx.activity.compose.BackHandler {
+        if (cameFromDashboard) {
+            navController.navigate(Screen.Dashboard.route) {
+                popUpTo(Screen.Dashboard.route) { inclusive = true }
+                launchSingleTop = true
+            }
+        } else {
+            navController.popBackStack()
+        }
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -87,7 +103,17 @@ fun ProfileScreen(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                BackButton(navController)
+                BackButton(navController) {
+                    // ✅ BackButton click behavior
+                    if (cameFromDashboard) {
+                        navController.navigate(Screen.Dashboard.route) {
+                            popUpTo(Screen.Dashboard.route) { inclusive = true }
+                            launchSingleTop = true
+                        }
+                    } else {
+                        navController.popBackStack()
+                    }
+                }
                 Text(
                     text = stringResource(R.string.profile_title),
                     fontSize = 16.sp,
@@ -149,7 +175,9 @@ fun ProfileScreen(
                     Text(
                         text = (updateUiState as ProfileUpdateUiState.Error).message,
                         color = MaterialTheme.colorScheme.error,
-                        modifier = Modifier.align(Alignment.CenterHorizontally).padding(start = 16.dp)
+                        modifier = Modifier
+                            .align(Alignment.CenterHorizontally)
+                            .padding(start = 16.dp)
                     )
                 }
 
@@ -163,7 +191,7 @@ fun ProfileScreen(
                             .fillMaxSize()
                             .padding(bottom = 16.dp)
                     ) {
-                       LoadingIndicator()
+                        LoadingIndicator()
                     }
                 }
 
@@ -179,7 +207,9 @@ fun ProfileScreen(
                     Text(
                         text = (deleteUiState as ProfileDeleteUiState.Error).message,
                         color = MaterialTheme.colorScheme.error,
-                        modifier = Modifier.align(Alignment.CenterHorizontally).padding(start = 16.dp)
+                        modifier = Modifier
+                            .align(Alignment.CenterHorizontally)
+                            .padding(start = 16.dp)
                     )
                 }
 

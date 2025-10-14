@@ -36,8 +36,6 @@ class PillAnalyzer(
         private const val CONFIDENCE_THRESHOLD = 0.5f
         private const val IDX_CX = 0
         private const val IDX_CY = 1
-        private const val IDX_W = 2
-        private const val IDX_H = 3
         private const val CLASS_START = 4
         private const val NUM_CLASSES = 2
     }
