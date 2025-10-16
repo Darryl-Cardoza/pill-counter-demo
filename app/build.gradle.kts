@@ -1,17 +1,18 @@
 plugins {
     id("com.android.application")
-    id("org.jetbrains.kotlin.android") version "1.9.10"
-    id("com.google.dagger.hilt.android") version "2.51"
+    id("org.jetbrains.kotlin.android")
+    id("com.google.dagger.hilt.android")
     id("kotlin-kapt")
     id("org.jetbrains.kotlin.plugin.serialization")
+    id("com.google.gms.google-services") // ✅ must be here for Firebase
 }
 
 android {
-    namespace = "com.example.pillcountingnewmodels"
+    namespace = "com.rite.pillcounting"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.example.pillcountingnewmodels"
+        applicationId = "com.rite.pillcounting"
         minSdk = 26
         targetSdk = 34
         versionCode = 1
@@ -19,8 +20,14 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
-        resValue("string", "app_version_name", versionName?:"")
-        buildConfigField("String", "SERVER_KEY", "\"d1ff4797acb7147205bb249cce918f23a4f8e54a8d56488d79e83abcdf1b24f6f1ccc9af5dea3c1a1b5e2b6aa247ff55ac8e12f165974f8cfce41328f7ea447e\"")
+
+        // Inject version & server key as build fields
+        resValue("string", "app_version_name", versionName ?: "")
+        buildConfigField(
+            "String",
+            "SERVER_KEY",
+            "\"d1ff4797acb7147205bb249cce918f23a4f8e54a8d56488d79e83abcdf1b24f6f1ccc9af5dea3c1a1b5e2b6aa247ff55ac8e12f165974f8cfce41328f7ea447e\""
+        )
     }
 
     buildTypes {
@@ -32,7 +39,6 @@ android {
             )
         }
         debug {
-            // Enables code coverage for the debug build
             enableUnitTestCoverage = true
         }
     }
@@ -41,6 +47,7 @@ android {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
+
     kotlinOptions {
         jvmTarget = "11"
     }
@@ -49,32 +56,31 @@ android {
         compose = true
         buildConfig = true
     }
+
     composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.3" // compatible with Kotlin 1.9
+        kotlinCompilerExtensionVersion = "1.5.3"
     }
 
     packaging {
-        resources {
-            excludes += "/META-INF/{AL2.0,LGPL2.1}"
-        }
+        resources.excludes += "/META-INF/{AL2.0,LGPL2.1}"
     }
 }
 
 kapt {
     correctErrorTypes = true
     javacOptions {
-        // This avoids module access errors on JDK 17
+        // Avoids module access errors on JDK 17+
         option("-Xadd-exports", "jdk.compiler/com.sun.tools.javac.main=ALL-UNNAMED")
         option("-Xadd-exports", "jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED")
     }
 }
 
 dependencies {
-    // Compose BOM
+    // --- Compose BOM ---
     implementation(platform("androidx.compose:compose-bom:2024.06.00"))
     androidTestImplementation(platform("androidx.compose:compose-bom:2024.06.00"))
 
-    // Core and Compose
+    // --- Core & Compose UI ---
     implementation("androidx.core:core-ktx:1.12.0")
     implementation("androidx.activity:activity-compose:1.10.1")
     implementation("androidx.compose.ui:ui")
@@ -82,118 +88,83 @@ dependencies {
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material3:material3:1.3.2")
     implementation("androidx.compose.material:material-icons-extended:1.7.8")
+    implementation("androidx.compose.material:material:1.7.0")
+    debugImplementation("androidx.compose.ui:ui-tooling")
+    debugImplementation("androidx.compose.ui:ui-test-manifest")
 
-
-    // Lifecycle & ViewModel
+    // --- Lifecycle & ViewModel ---
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.7.2")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.7.2")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.7.2")
 
-    // Kotlin
+    // --- Kotlin & Coroutines ---
     implementation("org.jetbrains.kotlin:kotlin-stdlib:1.9.10")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-guava:1.8.0")
 
-    // CameraX
-    implementation("androidx.camera:camera-core:1.3.0")
-    implementation("androidx.camera:camera-camera2:1.3.0")
-    implementation("androidx.camera:camera-lifecycle:1.3.0")
-    implementation("androidx.camera:camera-view:1.3.0")
-    implementation("androidx.camera:camera-extensions:1.3.0")
-
-    // TensorFlow Lite
-    implementation("org.tensorflow:tensorflow-lite:2.12.0")
-    implementation("org.tensorflow:tensorflow-lite-support:0.4.3")
-    implementation("org.tensorflow:tensorflow-lite-gpu:2.12.0")
-
-    // Room
-    implementation("androidx.room:room-runtime:2.6.1")
-    kapt("androidx.room:room-compiler:2.6.1")
-    implementation("androidx.room:room-ktx:2.6.1")
-
-    // Hilt
+    // --- Hilt DI ---
     implementation("com.google.dagger:hilt-android:2.51")
     kapt("com.google.dagger:hilt-compiler:2.51")
     implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
 
-    // Testing
-    // JVM Unit Tests
+    // --- Room Database ---
+    implementation("androidx.room:room-runtime:2.6.1")
+    kapt("androidx.room:room-compiler:2.6.1")
+    implementation("androidx.room:room-ktx:2.6.1")
+
+    // --- Retrofit & Networking ---
+    implementation("com.squareup.retrofit2:retrofit:2.9.0")
+    implementation("com.squareup.retrofit2:converter-moshi:2.9.0")
+    implementation("com.squareup.moshi:moshi-kotlin:1.15.0")
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
+    implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
+    debugImplementation("com.github.chuckerteam.chucker:library:4.0.0")
+    releaseImplementation("com.github.chuckerteam.chucker:library-no-op:4.0.0")
+
+    // --- Firebase ---
+    implementation(platform("com.google.firebase:firebase-bom:33.2.0"))
+    implementation("com.google.firebase:firebase-messaging")
+    implementation("com.google.firebase:firebase-analytics")
+
+    // --- ML Kit & CameraX ---
+    val cameraXVersion = "1.4.0"
+    implementation("androidx.camera:camera-core:$cameraXVersion")
+    implementation("androidx.camera:camera-camera2:$cameraXVersion")
+    implementation("androidx.camera:camera-lifecycle:$cameraXVersion")
+    implementation("androidx.camera:camera-view:$cameraXVersion")
+    implementation("com.google.mlkit:barcode-scanning:17.2.0")
+
+    // --- Utilities ---
+    implementation("com.google.code.gson:gson:2.10.1")
+    implementation("io.coil-kt:coil-compose:2.7.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
+    implementation("com.jakewharton.retrofit:retrofit2-kotlinx-serialization-converter:1.0.0")
+    implementation("io.nerdythings:okhttp-profiler:1.1.1")
+    implementation("androidx.security:security-crypto:1.1.0-alpha06")
+    implementation("com.kizitonwose.calendar:compose:2.5.0")
+    implementation("com.google.accompanist:accompanist-permissions:0.28.0")
+
+    // --- TensorFlow Lite ---
+    implementation("org.tensorflow:tensorflow-lite:2.12.0")
+    implementation("org.tensorflow:tensorflow-lite-support:0.4.3")
+    implementation("org.tensorflow:tensorflow-lite-gpu:2.12.0")
+
+    // --- PDF / iText7 ---
+    implementation("com.itextpdf:itext7-core:7.2.5")
+
+    // --- Testing ---
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.0")
     testImplementation("org.mockito:mockito-core:5.17.0")
     testImplementation("org.mockito.kotlin:mockito-kotlin:5.2.1")
     testImplementation("app.cash.turbine:turbine:1.1.0")
-    testImplementation ("io.mockk:mockk:1.13.8")
+    testImplementation("io.mockk:mockk:1.13.8")
 
-    // Android Instrumentation Tests
     androidTestImplementation("androidx.test.ext:junit:1.1.5")
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
     androidTestImplementation("androidx.navigation:navigation-testing:2.9.4")
     androidTestImplementation("org.mockito:mockito-android:5.4.0")
     androidTestImplementation("org.mockito.kotlin:mockito-kotlin:5.2.1")
-
-    // Debug tools
-    debugImplementation("androidx.compose.ui:ui-tooling")
-    debugImplementation("androidx.compose.ui:ui-test-manifest")
-
-
-    // Retrofit for networking
-    implementation("com.squareup.retrofit2:retrofit:2.9.0")
-
-    // Moshi for JSON parsing (works well with Retrofit)
-    implementation("com.squareup.retrofit2:converter-moshi:2.9.0")
-    implementation("com.squareup.moshi:moshi-kotlin:1.15.0")
-
-    // OkHttp as the HTTP client for Retrofit
-    implementation("com.squareup.okhttp3:okhttp:4.12.0")
-
-    // OkHttp Logging Interceptor for debugging network requests
-    implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
-
-    // Chucker for in-app HTTP inspection (Debug builds)
-    debugImplementation("com.github.chuckerteam.chucker:library:4.0.0")
-
-    // No-op version of Chucker for Release builds to remove it from the final app
-    releaseImplementation("com.github.chuckerteam.chucker:library-no-op:4.0.0")
-
-    implementation("com.kizitonwose.calendar:compose:2.5.0")
-
-    implementation("androidx.compose.foundation:foundation")
-
-    implementation("com.google.code.gson:gson:2.10.1")
-
-    implementation("com.squareup.moshi:moshi-kotlin:1.15.0")
-
-    // CameraX dependencies for camera preview and lifecycle management
-    val cameraXVersion = "1.4.0"
-    implementation("androidx.camera:camera-core:${cameraXVersion}")
-    implementation("androidx.camera:camera-camera2:${cameraXVersion}")
-    implementation("androidx.camera:camera-lifecycle:${cameraXVersion}")
-    implementation("androidx.camera:camera-view:${cameraXVersion}")
-
-    // Google ML Kit for Barcode Scanning
-    implementation("com.google.mlkit:barcode-scanning:17.2.0")
-
-    implementation("androidx.compose.material:material:1.7.0") // for SwipeToDismiss
-    implementation("androidx.compose.material3:material3:1.3.0") // for Material3
-
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
-
-    implementation("com.jakewharton.retrofit:retrofit2-kotlinx-serialization-converter:1.0.0")
-
-    //    OkhttpProfiler
-    implementation("io.nerdythings:okhttp-profiler:1.1.1")
-
-
-    implementation("androidx.security:security-crypto:1.1.0-alpha06")
-
-    //Coil
-    implementation("io.coil-kt:coil-compose:2.7.0")
-
-    //pdfExporter
-    implementation ("com.itextpdf:itext7-core:7.2.5")
-    implementation("com.google.accompanist:accompanist-permissions:0.28.0")
-
 }

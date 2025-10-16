@@ -1,0 +1,104 @@
+package com.rite.pillcounting.feature.menu.presentation.compose
+
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
+import com.rite.pillcounting.ui.theme.AppTheme.extendedColors
+
+/**
+ * A simple reusable row for displaying a menu option in the navigation drawer or menu screen.
+ *
+ * Layout:
+ * ```
+ * [Icon] Title [Optional trailing text]
+ * ```
+ *
+ * Features:
+ * - **Clickable Row** → invokes [onClick] when tapped.
+ * - **Leading Icon** → represents the menu item visually.
+ * - **Trailing Text** (optional) → typically used for contextual info like
+ *   "3 months" in History or a version label.
+ * - If [onClick] is null, the row is **not clickable**.
+ *
+ * Example:
+ * ```
+ * SimpleMenuRow(
+ *     navController = navController,
+ *     icon = R.drawable.settings,
+ *     iconTint = MaterialTheme.colorScheme.secondary,
+ *     title = stringResource(R.string.settings),
+ *     onClick = { navController.navigate(Screen.Settings.route) }
+ * )
+ * ```
+ *
+ * @param navController The navigation controller to handle navigation actions.
+ * @param icon Drawable resource ID for the leading icon.
+ * @param iconTint Color applied to the leading icon.
+ * @param title Main text label for the menu item.
+ * @param trailingText Optional trailing text (e.g., `"3 months"`).
+ * @param onClick Optional action invoked when the row is tapped.
+ */
+@Composable
+fun SimpleMenuRow(
+    navController: NavController,
+    icon: Int,
+    iconTint: Color,
+    title: String,
+    trailingText: String? = null,
+    onClick: (() -> Unit)? = null
+) {
+    Spacer(modifier = Modifier.height(8.dp))
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(enabled = onClick != null) { onClick?.invoke() }
+            .padding(start = 12.dp, top = 12.dp, bottom = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        // Left section: Icon + Title
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(
+                painter = painterResource(id = icon),
+                contentDescription = title,
+                tint = iconTint,
+                modifier = Modifier.size(28.dp)
+            )
+            Spacer(modifier = Modifier.width(12.dp))
+            Text(
+                text = title,
+                fontSize = 16.sp,
+                color = extendedColors.textColor
+            )
+        }
+
+        // Right section: optional trailing text
+        trailingText?.let {
+            Text(
+                text = it,
+                fontSize = 14.sp,
+                color = extendedColors.textColor,
+                modifier = Modifier.padding(end = 12.dp)
+            )
+        }
+    }
+
+    Spacer(modifier = Modifier.height(8.dp))
+}

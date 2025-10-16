@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "592736967663",
+    "project_id": "pill-counting-android",
+    "storage_bucket": "pill-counting-android.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:592736967663:android:884a0d633814c71aa9f41a",
+        "android_client_info": {
+          "package_name": "com.rite.pillcounting"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBCDHZns9R19kFwPMWwAa1aJhYOQ1-nZsg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
