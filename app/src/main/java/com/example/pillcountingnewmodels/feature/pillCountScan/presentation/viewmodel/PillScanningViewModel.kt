@@ -11,9 +11,9 @@ import com.example.pillcountingnewmodels.core.room.dao.PillCountTxnDetailsDao
 import com.example.pillcountingnewmodels.core.room.models.PillCountTxnDetailsEntity
 import com.example.pillcountingnewmodels.core.room.models.enums.CountStatus
 import com.example.pillcountingnewmodels.core.room.models.enums.CountType
-import com.example.pillcountingnewmodels.core.utils.logger.AppLogger
 import com.example.pillcountingnewmodels.core.utils.common.HelperFunctions.saveBitmapToFile
 import com.example.pillcountingnewmodels.core.utils.common.OverlayUtils
+import com.example.pillcountingnewmodels.core.utils.logger.AppLogger
 import com.example.pillcountingnewmodels.core.utils.preference.PreferenceHelper
 import com.example.pillcountingnewmodels.feature.pillCountScan.domain.data.NavigationEvent
 import com.example.pillcountingnewmodels.feature.pillCountScan.domain.data.PillScanningEvent
@@ -21,6 +21,7 @@ import com.example.pillcountingnewmodels.feature.pillCountScan.domain.model.Dete
 import com.example.pillcountingnewmodels.feature.pillCountScan.domain.model.PillScanningUiState
 import com.example.pillcountingnewmodels.feature.pillCountScan.domain.model.TxnDetail
 import com.example.pillcountingnewmodels.feature.pillCountScan.presentation.logic.PillAnalyzer
+import com.example.pillcountingnewmodels.feature.pillCountScan.presentation.logic.Postprocessor
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
@@ -167,7 +168,7 @@ class PillScanningViewModel @Inject constructor(
      */
     private fun processDetections(
         count: Int,
-        detections: List<PillAnalyzer.Detection>,
+        detections: List<Postprocessor.Detection>,
         bitmap: Bitmap,
         matrix: Matrix,
         viewWidth: Int,
