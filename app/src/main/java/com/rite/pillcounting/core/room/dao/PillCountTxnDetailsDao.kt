@@ -43,18 +43,6 @@ interface PillCountTxnDetailsDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(detail: PillCountTxnDetailsEntity): Long
 
-    /**
-     * Inserts or replaces a list of transaction detail records.
-     *
-     * - Efficient for bulk upserts during sync or offline batch operations.
-     * - Existing records are replaced based on their primary key.
-     *
-     * @param details List of detail entities to insert or replace.
-     * @return List of inserted row IDs corresponding to the input entities.
-     */
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun upsertAll(details: List<PillCountTxnDetailsEntity>): List<Long>
-
     // ──────────────────────────────── Reads ────────────────────────────────
 
     /**

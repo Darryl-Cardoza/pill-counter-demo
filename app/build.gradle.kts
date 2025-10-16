@@ -31,6 +31,7 @@ android {
     }
 
     buildTypes {
+
         release {
             isMinifyEnabled = false
             proguardFiles(
@@ -38,6 +39,7 @@ android {
                 "proguard-rules.pro"
             )
         }
+
         debug {
             enableUnitTestCoverage = true
         }
@@ -49,7 +51,13 @@ android {
     }
 
     kotlinOptions {
-        jvmTarget = "11"
+        allWarningsAsErrors = false
+        freeCompilerArgs += listOf(
+            "-Xjsr305=strict",
+            "-Xlint:unchecked",
+            "-Xreport-perf",
+            "-Xopt-in=kotlin.RequiresOptIn"
+        )
     }
 
     buildFeatures {
