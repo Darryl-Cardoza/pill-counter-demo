@@ -38,10 +38,10 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.rite.pillcounting.R
-import com.rite.pillcounting.core.utils.constants.Dimens.extraSmall
-import com.rite.pillcounting.core.utils.constants.Dimens.small
 import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.CommonDialog
 import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.CommonSingleSelectDialog
+import com.rite.pillcounting.core.utils.constants.Dimens.extraSmall
+import com.rite.pillcounting.core.utils.constants.Dimens.small
 import com.rite.pillcounting.feature.countResume.domain.data.ResumeEvent
 import com.rite.pillcounting.feature.countResume.domain.data.ResumeEventFactory
 import com.rite.pillcounting.feature.countResume.domain.model.CountItem
@@ -255,7 +255,7 @@ fun <E : ResumeEvent> PartialListPanel(
         CommonSingleSelectDialog(
             title = stringResource(R.string.select_option).uppercase(),
             options = options,
-            selectedIndex = null,
+            selectedIndex = 0,
             onCancel = { showMoreDialog = false; pendingItem = null },
             onOk = { selectedIndex ->
                 pendingItem?.let { item ->
