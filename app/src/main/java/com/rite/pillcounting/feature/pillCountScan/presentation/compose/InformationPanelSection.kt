@@ -1,6 +1,5 @@
 package com.rite.pillcounting.feature.pillCountScan.presentation.compose
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -13,11 +12,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.rite.pillcounting.R
@@ -30,13 +26,11 @@ import com.rite.pillcounting.ui.theme.AppTheme
  * The right-hand panel of the scanning screen, containing all drug information,
  * batch counts, and user action buttons.
  *
- * @param navController The navigation controller.
  * @param uiState The current state of the UI to display.
  * @param onEvent The callback to send events to the ViewModel.
  */
 @Composable
 fun InformationPanelSection(
-    navController: NavController,
     uiState: PillScanningUiState,
     onEvent: (PillScanningEvent) -> Unit,
     filteredPillCount: Int

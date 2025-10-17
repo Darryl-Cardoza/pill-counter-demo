@@ -32,11 +32,8 @@ import com.rite.pillcounting.feature.pillCountScan.domain.model.TxnDetail
  * - Displays a circular badge above the chip with the batch number.
  *
  * @param count The main count text to display.
- * @param batchNumber The batch number displayed in the circular badge.
  * @param modifier Optional [Modifier] to apply to the parent container.
- * @param chipColor Background color of the chip (default: MaterialTheme color).
- * @param badgeColor Background color of the batch badge (default: pink).
- * @param textColor Color of the text inside the chip (default: MaterialTheme onSurface).
+.
  */
 @Composable
 fun Chip(

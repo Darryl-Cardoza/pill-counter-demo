@@ -10,10 +10,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.rite.pillcounting.R
-import com.rite.pillcounting.core.utils.constants.Dimens.medium
-import com.rite.pillcounting.core.utils.constants.Dimens.small
 import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.FilledButton
 import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.HollowButton
+import com.rite.pillcounting.core.utils.constants.Dimens.medium
 import com.rite.pillcounting.feature.pillCountScan.domain.data.PillScanningEvent
 
 /**

@@ -194,7 +194,6 @@ fun PillScanningScreen(
             },
             bottomOrRight = {
                 InformationPanelSection(
-                    navController = navController,
                     uiState = uiState,
                     onEvent = viewModel::onEvent,
                     filteredPillCount = filteredPillCount

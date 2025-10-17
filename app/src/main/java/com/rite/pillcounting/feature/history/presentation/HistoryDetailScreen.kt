@@ -37,10 +37,10 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.rite.pillcounting.R
 import com.rite.pillcounting.core.utils.common.PDFHelperExporter
-import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.toDateString
-import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.toTimeString
 import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.BackButton
 import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.CommonDialog
+import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.toDateString
+import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.toTimeString
 import com.rite.pillcounting.feature.history.presentation.compose.DrugInfoSection
 import com.rite.pillcounting.feature.history.presentation.viewmodel.HistoryDetailsViewModel
 import com.rite.pillcounting.ui.theme.AppTheme
@@ -231,7 +231,7 @@ private suspend fun exportToPdf(
                 date = date,
                 time = time
             )
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             null
         }
     }

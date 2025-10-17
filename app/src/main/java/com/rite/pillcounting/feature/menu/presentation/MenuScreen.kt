@@ -1,7 +1,6 @@
 package com.rite.pillcounting.feature.menu.presentation
 
 import Screen
-import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -28,11 +27,11 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.rite.pillcounting.R
 import com.rite.pillcounting.core.room.models.enums.CountType
-import com.rite.pillcounting.core.utils.constants.Dimens.medium
 import com.rite.pillcounting.core.utils.common.HistoryRetention
 import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.BackButton
 import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.CommonDialog
 import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.LoadingIndicator
+import com.rite.pillcounting.core.utils.constants.Dimens.medium
 import com.rite.pillcounting.feature.login.domain.model.LogoutUiState
 import com.rite.pillcounting.feature.login.viewmodel.LoginViewModel
 import com.rite.pillcounting.feature.menu.presentation.compose.MenuItemRow
@@ -40,7 +39,6 @@ import com.rite.pillcounting.feature.menu.presentation.compose.SimpleMenuRow
 import com.rite.pillcounting.feature.menu.presentation.viewmodel.MenuViewModel
 import com.rite.pillcounting.navigation.AUTH_GRAPH_ROUTE
 import com.rite.pillcounting.ui.theme.AppTheme.extendedColors
-import kotlin.coroutines.coroutineContext
 
 /**
  * Renders the **Menu Screen**, which serves as the main navigation hub for the application's
@@ -170,7 +168,6 @@ fun MenuScreen(
 
             HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
 
-            val context = LocalContext.current
             // Logout
             SimpleMenuRow(
                 navController = navController,

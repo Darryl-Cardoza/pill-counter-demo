@@ -57,7 +57,6 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -155,7 +154,6 @@ object UserInterfaceUtils {
      */
     @Composable
     fun SecurityErrorDialog(violations: List<String>) {
-        val context = LocalContext.current
         val title = stringResource(R.string.security_alert_title)
         val confirmText = stringResource(R.string.exit_app)
         val cancelText = stringResource(R.string.close_app)
