@@ -6,19 +6,21 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.gson.Gson
 import com.rite.pillcounting.R
 import com.rite.pillcounting.core.models.ErrorResponse
 import com.rite.pillcounting.core.room.dao.UserDao
 import com.rite.pillcounting.core.room.models.UserEntity
-import com.rite.pillcounting.core.utils.logger.AppLogger
+import com.rite.pillcounting.core.utils.common.HelperFunctions.plain
+import com.rite.pillcounting.core.utils.common.HelperFunctions.secure
 import com.rite.pillcounting.core.utils.common.NetworkUtils
+import com.rite.pillcounting.core.utils.logger.AppLogger
 import com.rite.pillcounting.core.utils.preference.PreferenceHelper
 import com.rite.pillcounting.core.utils.validator.CredentialsValidator
 import com.rite.pillcounting.feature.profile.data.ProfileRepository
 import com.rite.pillcounting.feature.profile.domain.model.ProfileDeleteUiState
 import com.rite.pillcounting.feature.profile.domain.model.ProfileUpdateRequest
 import com.rite.pillcounting.feature.profile.domain.model.ProfileUpdateUiState
-import com.google.gson.Gson
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -102,8 +104,8 @@ class ProfileViewModel @Inject constructor(
                     firstName = parts.firstOrNull() ?: ""
                     lastName = if (parts.size > 1) parts.drop(1).joinToString(" ") else ""
                     pharmacyName = it.pharmacyName.orEmpty()
-                    phoneNumber = it.phoneNumber.orEmpty()
-                    email = it.email.orEmpty()
+                    phoneNumber = it.phoneNumber.plain().orEmpty()
+                    email = it.email.plain().orEmpty()
                     npi = it.npiId.orEmpty()
                     doNotAskAgain = preferenceHelper.isDoNotAskAgain()
                 }
@@ -163,9 +165,9 @@ class ProfileViewModel @Inject constructor(
                         val entity = UserEntity(
                             localId = localId,
                             userId = preferenceHelper.getUserId().orEmpty(),
-                            email = email,
+                            email = email.secure(),
                             name = "$firstName $lastName".trim(),
-                            phoneNumber = phoneNumber,
+                            phoneNumber = phoneNumber.secure(),
                             pharmacyName = pharmacyName,
                             npiId = npi,
                             notifications = !doNotAskAgain,
@@ -234,6 +236,7 @@ class ProfileViewModel @Inject constructor(
                     else -> parsedMessage ?: context.getString(R.string.error_generic)
                 }
             }
+
             is UnknownHostException -> context.getString(R.string.error_no_internet)
             is SocketTimeoutException -> context.getString(R.string.error_timeout)
             else -> exception.message?.takeIf { it.isNotBlank() }

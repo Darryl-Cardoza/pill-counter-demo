@@ -7,8 +7,9 @@ import com.rite.pillcounting.core.room.dao.UserDao
 import com.rite.pillcounting.core.room.models.UserEntity
 import com.rite.pillcounting.core.room.models.enums.CountStatus
 import com.rite.pillcounting.core.room.models.enums.CountType
-import com.rite.pillcounting.core.utils.logger.AppLogger
 import com.rite.pillcounting.core.utils.common.HelperFunctions.mapCounts
+import com.rite.pillcounting.core.utils.common.HelperFunctions.secure
+import com.rite.pillcounting.core.utils.logger.AppLogger
 import com.rite.pillcounting.core.utils.preference.PreferenceHelper
 import com.rite.pillcounting.feature.dashboard.domain.data.IUserDetailRepository
 import com.rite.pillcounting.feature.dashboard.domain.model.DashboardUiState
@@ -173,9 +174,9 @@ private fun UserDetail.toUserEntity(jwtUserId: String?): UserEntity {
     val pk = jwtUserId ?: this.profile?.email.orEmpty()
     return UserEntity(
         userId = pk,
-        email = this.profile?.email,
+        email = this.profile?.email?.secure(),
         name = this.profile?.fullName,
-        phoneNumber = this.profile?.phoneNumber,
+        phoneNumber = this.profile?.phoneNumber?.secure(),
         avatarUrl = this.profile?.avatarUrl,
         role = this.profile?.role?.name,
         isVerified = this.profile?.isVerified ?: false,

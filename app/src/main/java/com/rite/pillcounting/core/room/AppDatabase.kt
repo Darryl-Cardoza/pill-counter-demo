@@ -2,6 +2,7 @@ package com.rite.pillcounting.core.room
 
 import androidx.room.Database
 import androidx.room.RoomDatabase
+import androidx.room.TypeConverters
 import com.rite.pillcounting.core.room.dao.DrugMasterDao
 import com.rite.pillcounting.core.room.dao.PillCountTxnDao
 import com.rite.pillcounting.core.room.dao.PillCountTxnDetailsDao
@@ -10,6 +11,7 @@ import com.rite.pillcounting.core.room.models.DrugMasterEntity
 import com.rite.pillcounting.core.room.models.PillCountTxnDetailsEntity
 import com.rite.pillcounting.core.room.models.PillCountTxnEntity
 import com.rite.pillcounting.core.room.models.UserEntity
+import com.rite.pillcounting.core.security.SecureStringConverter
 
 /**
  * Main Room database for the application.
@@ -28,7 +30,7 @@ import com.rite.pillcounting.core.room.models.UserEntity
  * the exposed DAO getters to interact with persistent data.
  *
  * ### Notes:
- * - Increase the [version] number and provide a migration strategy when making
+ * - Increase the [android.R.attr.version] number and provide a migration strategy when making
  *   schema changes.
  * - `exportSchema = true` ensures schema history is exported for versioning.
  */
@@ -41,6 +43,9 @@ import com.rite.pillcounting.core.room.models.UserEntity
     ],
     version = 1,
     exportSchema = true
+)
+@TypeConverters(
+    SecureStringConverter::class
 )
 abstract class AppDatabase : RoomDatabase() {
 

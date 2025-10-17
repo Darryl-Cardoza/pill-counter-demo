@@ -3,6 +3,9 @@
     import androidx.room.ColumnInfo
     import androidx.room.Entity
     import androidx.room.PrimaryKey
+    import androidx.room.TypeConverters
+    import com.rite.pillcounting.core.security.SecureString
+    import com.rite.pillcounting.core.security.SecureStringConverter
 
     /**
      * Room entity representing a user account, persisted locally for offline access.
@@ -26,13 +29,15 @@
         // ───── Profile fields ─────
 
         /** Email address of the user. */
-        val email: String? = null,
+        @field:TypeConverters(SecureStringConverter::class)
+        val email: SecureString? = null,
 
         /** Full name of the user. */
         val name: String? = null,
 
         /** Contact phone number. */
-        val phoneNumber: String? = null,
+        @field:TypeConverters(SecureStringConverter::class)
+        val phoneNumber: SecureString? = null,
 
         /** Avatar/profile image URL. */
         val avatarUrl: String? = null,
