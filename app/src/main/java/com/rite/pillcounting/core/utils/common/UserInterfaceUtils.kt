@@ -185,30 +185,47 @@ object UserInterfaceUtils {
             modifier = Modifier
                 .fillMaxSize()
                 .padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Image(
-                painter = painterResource(id = R.drawable.logo),
-                contentDescription = "App Logo",
-                modifier = Modifier.size(100.dp).padding(30.dp)
-            )
+            Spacer(modifier = Modifier.weight(1f))
 
-            Text(
-                text = stringResource(R.string.rite_title),
-                style = MaterialTheme.typography.bodySmall,
-                color = AppTheme.extendedColors.textColor
-            )
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Image(
+                    painter = painterResource(id = R.drawable.logo),
+                    contentDescription = "App Logo",
+                    modifier = Modifier.size(100.dp)
+                )
 
-            Spacer(modifier = Modifier.height(10.dp))
+                Spacer(modifier = Modifier.height(10.dp))
 
-            Text(
-                text = "${stringResource(R.string.version)} ${stringResource(R.string.app_version_name)}",
-                style = MaterialTheme.typography.bodySmall,
-                color = AppTheme.extendedColors.textColor
-            )
+                Text(
+                    text = stringResource(R.string.pill_count_app_title),
+                    style = MaterialTheme.typography.displayMedium,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
+
+            Spacer(modifier = Modifier.weight(1f))
+
+
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(
+                    text = stringResource(R.string.rite_title),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = AppTheme.extendedColors.textColor
+                )
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                Text(
+                    text = "${stringResource(R.string.version)} ${stringResource(R.string.app_version_name)}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = AppTheme.extendedColors.textColor
+                )
+            }
         }
     }
+
 
     // ───────────────────────────── Text Fields ─────────────────────────────
 
@@ -505,6 +522,7 @@ object UserInterfaceUtils {
                 text = text,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
+                fontSize = 13.sp
             )
         }
     }
@@ -660,6 +678,7 @@ object UserInterfaceUtils {
                 text = text,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
+                fontSize = 13.sp
             )
         }
     }

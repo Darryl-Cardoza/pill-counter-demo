@@ -8,6 +8,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import com.rite.pillcounting.R
 import com.rite.pillcounting.core.utils.constants.Dimens.medium
 import com.rite.pillcounting.core.utils.constants.Dimens.small
@@ -33,25 +34,25 @@ fun ActionButtons(
         modifier = Modifier
             .fillMaxWidth()
             .padding(top = medium),
-        horizontalArrangement = Arrangement.spacedBy(small) // automatic spacing
+        horizontalArrangement = Arrangement.Center // automatic spacing
     ) {
         HollowButton(
             text = stringResource(R.string.rescane).uppercase(),
             onClick = { onEvent(PillScanningEvent.RescanClicked) },
             color = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.weight(1f) // takes equal width
+            modifier = Modifier.padding(end = 10.dp)
         )
-        HollowButton(
+        /*HollowButton(
             text = stringResource(R.string.pause).uppercase(),
             onClick = { onEvent(PillScanningEvent.PauseClicked) },
             color = MaterialTheme.colorScheme.primary,
             modifier = Modifier.weight(1f)
-        )
+        )*/
         FilledButton(
             text = stringResource(R.string.done).uppercase(),
             onClick = { onEvent(PillScanningEvent.DoneClicked) },
             color = MaterialTheme.colorScheme.secondary,
-            modifier = Modifier.weight(1f)
+            modifier = Modifier.padding(start = 10.dp)
         )
     }
 }

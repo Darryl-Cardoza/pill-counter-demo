@@ -27,6 +27,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.receiveAsFlow
@@ -69,7 +70,9 @@ class PillScanningViewModel @Inject constructor(
     private var currentFrameBitmap: Bitmap? = null
 
     // Detection tracking
-    private val lastTenDetections: ArrayDeque<Int> = ArrayDeque()
+
+    private val _lastTenDetections = MutableStateFlow(ArrayDeque<Int>())
+    val lastTenDetections: StateFlow<ArrayDeque<Int>> = _lastTenDetections
     private var lastDetectedSnapshot: List<Int> = emptyList()
     private var lastChangeTimestamp: Long = System.currentTimeMillis()
     private var lastTransformationMatrix: Matrix? = null
@@ -103,6 +106,7 @@ class PillScanningViewModel @Inject constructor(
         private const val ZERO_DETECTIONS_THRESHOLD = 25
         private const val IDLE_TIMEOUT_MS = 15_000L
     }
+
     fun observeTxnDetailsForTxn() {
         viewModelScope.launch {
             pillCountTxnDetailsDao.observeAllForTxn(preferenceHelper.getTxnId())
@@ -158,7 +162,14 @@ class PillScanningViewModel @Inject constructor(
                             viewWidth = viewWidth,
                             viewHeight = viewHeight
                         ) { count, detections, bitmap, matrix ->
-                            processDetections(count, detections, bitmap, matrix, viewWidth, viewHeight)
+                            processDetections(
+                                count,
+                                detections,
+                                bitmap,
+                                matrix,
+                                viewWidth,
+                                viewHeight
+                            )
                         }
                         val duration = System.currentTimeMillis() - start
                         logger.i("Interpreter ready in ${duration}ms")
@@ -208,15 +219,15 @@ class PillScanningViewModel @Inject constructor(
         lastTransformationMatrix = Matrix(matrix)
 
         // Update rolling buffer
-        if (lastTenDetections.size >= ZERO_DETECTIONS_THRESHOLD) {
-            lastTenDetections.removeFirst()
+        if (_lastTenDetections.value.size >= ZERO_DETECTIONS_THRESHOLD) {
+            _lastTenDetections.value.removeFirst()
         }
-        lastTenDetections.addLast(count)
+        _lastTenDetections.value.addLast(count)
         logger.d("Rolling buffer = $lastTenDetections")
 
         // Check for last-10 zeros
-        val allZero = lastTenDetections.size == ZERO_DETECTIONS_THRESHOLD &&
-                lastTenDetections.all { it == 0 }
+        val allZero = _lastTenDetections.value.size == ZERO_DETECTIONS_THRESHOLD &&
+                _lastTenDetections.value.all { it == 0 }
 
         // Idle timer check (no changes for 15s)
         val sameAsLast = detections.map { it.hashCode() } == lastDetectedSnapshot
@@ -256,13 +267,13 @@ class PillScanningViewModel @Inject constructor(
     fun resetIdleOverlay() {
         logger.i("Overlay reset → buffer cleared, idle timer restarted, analyzer resumed")
         _uiState.update { it.copy(showIdleOverlay = false) }
-        lastTenDetections.clear()
+        _lastTenDetections.value.clear()
         lastChangeTimestamp = System.currentTimeMillis()
         isPaused = false
         _cameraPaused.value = false
     }
 
-    fun observeTxnDetailsForTxn(countType: String) {
+    /*fun observeTxnDetailsForTxn(countType: String) {
         viewModelScope.launch {
             pillCountTxnDetailsDao.observeAllForTxn(preferenceHelper.getTxnId())
                 .collectLatest { entities ->
@@ -286,7 +297,7 @@ class PillScanningViewModel @Inject constructor(
                     }
                 }
         }
-    }
+    }*/
 
     fun onFrameCaptured(image: ImageProxy) {
         if (isPaused) {
@@ -377,7 +388,11 @@ class PillScanningViewModel @Inject constructor(
 
                 val overlayBitmap = currentFrameBitmap?.let { base ->
                     lastTransformationMatrix?.let { matrix ->
-                        OverlayUtils.drawDetectionsOnBitmap(base, _uiState.value.detectedPills, matrix)
+                        OverlayUtils.drawDetectionsOnBitmap(
+                            base,
+                            _uiState.value.detectedPills,
+                            matrix
+                        )
                     } ?: base
                 }
 

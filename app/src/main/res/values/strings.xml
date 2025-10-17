@@ -31,7 +31,7 @@
     <string name="regular_count_desc">For day to day regular counts</string>
     <string name="completed">completed</string>
     <string name="partial">partial</string>
-    <string name="barcode_scan">Barcode Scan</string>
+    <string name="barcode_scan">Scan Code</string>
 
     <!-- ================== SETTINGS ================== -->
     <string name="settings_title" translatable="false">SETTINGS</string>
@@ -107,6 +107,7 @@
 
     <!-- ================== PILL COUNT ================== -->
     <string name="pill_count_title">Pill Count</string>
+    <string name="pill_count_app_title">Pill Counter</string>
     <string name="pill_info_add_manually">Enter Pill Info Manually</string>
     <string name="drugname">Drug Name</string>
     <string name="ndc">Ndc</string>
@@ -213,6 +214,9 @@
     <string name="add_note">Add Note</string>
     <string name="add_note_error">Please enter a note or tap Skip</string>
     <string name="save_history_confirmation">Are you sure you want to keep history for</string>>
-    <string name="save_history_note">\n\nNote: Data older than this period will be permanently deleted.</string>>
+    <string name="save_history_note">\n\nNote: Data older than this period will be permanently deleted.</string>
+    <string name="profile_updated">Profile updated successfully!</string>
+    <string name="confirm_logout_title">Confirm Logout</string>
+    <string name="confirm_logout_text">Are you sure you want to logout?</string>>
 
 </resources>

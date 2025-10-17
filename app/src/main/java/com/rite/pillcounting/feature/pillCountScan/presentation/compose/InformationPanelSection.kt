@@ -1,18 +1,30 @@
 package com.rite.pillcounting.feature.pillCountScan.presentation.compose
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.rite.pillcounting.R
 import com.rite.pillcounting.core.utils.constants.Dimens.medium
 import com.rite.pillcounting.feature.pillCountScan.domain.data.PillScanningEvent
 import com.rite.pillcounting.feature.pillCountScan.domain.model.PillScanningUiState
+import com.rite.pillcounting.ui.theme.AppTheme
 
 /**
  * The right-hand panel of the scanning screen, containing all drug information,
@@ -34,8 +46,15 @@ fun InformationPanelSection(
             .fillMaxSize()
             .padding(medium)
     ) {
-        // Top Bar: Back Arrow, Title, Menu
-        TopAppBar(navController)
+        Text(
+            text = stringResource(R.string.pill_count_title).uppercase(),
+            fontSize = 16.sp,
+            fontFamily = MaterialTheme.typography.bodyMedium.fontFamily,
+            color = AppTheme.extendedColors.textColor,
+            textAlign = TextAlign.Center,
+            modifier = Modifier
+                .fillMaxWidth()
+        )
 
         // Drug Info: Name, Batch, Total
         DrugInformation(uiState)
@@ -47,13 +66,17 @@ fun InformationPanelSection(
         ) {
             // Main Count Display and Add Button
             CurrentCountDisplay(uiState= uiState,filteredCount = filteredPillCount) { onEvent(PillScanningEvent.AddTransactionDetailClicked(filteredPillCount)) }
-            // Horizontal list of previous batch counts
+            // Horizontal list of previous Transaction Detail counts
             LazyRow(
                 horizontalArrangement = Arrangement.spacedBy(medium),
+                reverseLayout = true
             ) {
                 itemsIndexed(uiState.txnDetailHistory) { index, txnDetail ->
-                    // Pass the entire batch object to the Chip
+                    //Highlight first element of list
+                    val highlight = index == 0
+                    // Pass the entire Transaction Detail object to the Chip
                     Chip(
+                        shouldHighlight = highlight,
                         txnDetail = txnDetail,
                         index = uiState.txnDetailHistory.size - index,
                         onDelete = { txnDetailId ->

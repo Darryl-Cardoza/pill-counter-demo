@@ -22,6 +22,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.rite.pillcounting.R
+import com.rite.pillcounting.core.utils.constants.Dimens.medium
+import com.rite.pillcounting.core.utils.constants.Dimens.small
 import com.rite.pillcounting.feature.barcodeScan.domain.data.ScanBarcodeEvent
 import com.rite.pillcounting.ui.theme.AppTheme
 
@@ -47,37 +49,16 @@ fun InformationPanel(
         verticalArrangement = Arrangement.SpaceBetween,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(30.dp)
-                    .padding(horizontal = 16.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-
-                Spacer(modifier = Modifier.weight(1f))
-
-                // Title text in the center
-                Text(
-                    text = stringResource(R.string.barcode_scan).uppercase(),
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Normal,
-                    fontFamily = MaterialTheme.typography.bodyMedium.fontFamily,
-                    color = AppTheme.extendedColors.textColor,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(
-                        top = 8.dp
-                    )
-                )
-
-                Spacer(modifier = Modifier.weight(1f))
-
-            }
-        }
+        Text(
+            text = stringResource(R.string.barcode_scan).uppercase(),
+            fontSize = 16.sp,
+            fontFamily = MaterialTheme.typography.bodyMedium.fontFamily,
+            color = AppTheme.extendedColors.textColor,
+            textAlign = TextAlign.Center,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = medium)
+        )
 
         DrugDetails(
             drugName = drugName,

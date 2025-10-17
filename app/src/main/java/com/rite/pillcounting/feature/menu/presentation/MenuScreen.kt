@@ -1,6 +1,7 @@
 package com.rite.pillcounting.feature.menu.presentation
 
 import Screen
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -19,6 +20,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringArrayResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -29,6 +31,7 @@ import com.rite.pillcounting.core.room.models.enums.CountType
 import com.rite.pillcounting.core.utils.constants.Dimens.medium
 import com.rite.pillcounting.core.utils.common.HistoryRetention
 import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.BackButton
+import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.CommonDialog
 import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.LoadingIndicator
 import com.rite.pillcounting.feature.login.domain.model.LogoutUiState
 import com.rite.pillcounting.feature.login.viewmodel.LoginViewModel
@@ -37,6 +40,7 @@ import com.rite.pillcounting.feature.menu.presentation.compose.SimpleMenuRow
 import com.rite.pillcounting.feature.menu.presentation.viewmodel.MenuViewModel
 import com.rite.pillcounting.navigation.AUTH_GRAPH_ROUTE
 import com.rite.pillcounting.ui.theme.AppTheme.extendedColors
+import kotlin.coroutines.coroutineContext
 
 /**
  * Renders the **Menu Screen**, which serves as the main navigation hub for the application's
@@ -58,6 +62,7 @@ fun MenuScreen(
     val uiState by viewModel.uiState.collectAsState()
     val logoutState by loginViewModel.logoutUiState.collectAsState()
     var showLogoutLoading by remember { mutableStateOf(false) }
+    var showLogoutConfirmDialog by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
@@ -86,11 +91,12 @@ fun MenuScreen(
                 partialIcon = R.drawable.partial,
                 mainClick = { navController.navigate(Screen.ScanBarcode.createRoute(CountType.FIXED.toString())) },
                 onPartialClick = {
-                    navController.navigate(
-                        Screen.ResumeFixedCounts.createRoute(
-                            CountType.FIXED.toString()
+                    if (uiState.fixedPartial > 0)
+                        navController.navigate(
+                            Screen.ResumeFixedCounts.createRoute(
+                                CountType.FIXED.toString()
+                            )
                         )
-                    )
                 },
             )
 
@@ -109,11 +115,12 @@ fun MenuScreen(
                 partialIcon = R.drawable.partial,
                 mainClick = { navController.navigate(Screen.ScanBarcode.createRoute(CountType.REGULAR.toString())) },
                 onPartialClick = {
-                    navController.navigate(
-                        Screen.ResumeRegularCounts.createRoute(
-                            CountType.REGULAR.toString()
+                    if (uiState.regularPartial > 0)
+                        navController.navigate(
+                            Screen.ResumeRegularCounts.createRoute(
+                                CountType.REGULAR.toString()
+                            )
                         )
-                    )
                 },
             )
 
@@ -163,6 +170,7 @@ fun MenuScreen(
 
             HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
 
+            val context = LocalContext.current
             // Logout
             SimpleMenuRow(
                 navController = navController,
@@ -170,21 +178,35 @@ fun MenuScreen(
                 iconTint = MaterialTheme.colorScheme.primary,
                 title = stringResource(R.string.menu_logout),
                 onClick = {
-                    showLogoutLoading = true
-                    val refreshToken = loginViewModel.preferenceHelper.getRefreshToken()
-                    if (!refreshToken.isNullOrBlank()) {
-                        loginViewModel.logout(refreshToken)
-                    } else {
-                        // Fallback: clear session locally if token missing
-                        loginViewModel.preferenceHelper.clearTokens()
-                        loginViewModel.preferenceHelper.setUserLoggedIn(false)
-                        showLogoutLoading = false
-                        navController.navigate(AUTH_GRAPH_ROUTE) {
-                            popUpTo(0) { inclusive = true }
-                        }
-                    }
+                    showLogoutConfirmDialog = true
                 }
             )
+
+            if (showLogoutConfirmDialog) {
+                CommonDialog(
+                    message = stringResource(R.string.confirm_logout_text),
+                    title = stringResource(R.string.confirm_logout_title),
+                    confirmText = stringResource(R.string.menu_logout),
+                    cancelText = stringResource(R.string.cancel),
+                    onConfirm = {
+                        showLogoutLoading = true
+                        val refreshToken = loginViewModel.preferenceHelper.getRefreshToken()
+                        if (!refreshToken.isNullOrBlank()) {
+                            loginViewModel.logout(refreshToken)
+                        } else {
+                            // Fallback: clear session locally if token missing
+                            loginViewModel.preferenceHelper.clearTokens()
+                            loginViewModel.preferenceHelper.setUserLoggedIn(false)
+                            showLogoutLoading = false
+                            navController.navigate(AUTH_GRAPH_ROUTE) {
+                                popUpTo(0) { inclusive = true }
+                            }
+                        }
+                        showLogoutConfirmDialog = false
+                    },
+                    onCancel = { showLogoutConfirmDialog = false }
+                )
+            }
 
             // Logout UI Feedback
             when (val state = logoutState) {

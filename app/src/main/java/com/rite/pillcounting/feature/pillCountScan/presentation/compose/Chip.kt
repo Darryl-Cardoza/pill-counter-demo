@@ -19,6 +19,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.rite.pillcounting.feature.pillCountScan.domain.model.TxnDetail
@@ -39,6 +40,7 @@ import com.rite.pillcounting.feature.pillCountScan.domain.model.TxnDetail
  */
 @Composable
 fun Chip(
+    shouldHighlight: Boolean,
     txnDetail: TxnDetail,
     modifier: Modifier = Modifier,
     index: Int,
@@ -55,9 +57,12 @@ fun Chip(
         // Main chip container
         Box(
             modifier = Modifier
-                .size(width = 50.dp, height = 50.dp)
+                .size(
+                    width = 50.dp,
+                    height = 50.dp
+                )
                 .border(
-                    width = 1.dp,
+                    width = if (shouldHighlight)3.dp else 1.dp,
                     color = MaterialTheme.colorScheme.secondary,
                     shape = RoundedCornerShape(7.dp)
                 ),
@@ -65,22 +70,24 @@ fun Chip(
         ) {
             Text(
                 text = txnDetail.count.toString(),
-                color = MaterialTheme.colorScheme.secondary
+                color = MaterialTheme.colorScheme.secondary,
+                fontWeight = if (shouldHighlight) FontWeight.Bold else FontWeight.Normal
             )
         }
 
-        // Batch number badge
+        // Transaction Detail number badge
         Box(
             modifier = Modifier
-                .offset(y = (-12).dp)
-                .size(25.dp)
+                .offset(y = (if (shouldHighlight) -20 else -12).dp)
+                .size(if (shouldHighlight) 33.dp else 25.dp)
                 .background(MaterialTheme.colorScheme.primary, CircleShape),
             contentAlignment = Alignment.Center
         ) {
             Text(
                 text = index.toString(),
                 color = Color.White,
-                fontSize = 12.sp
+                fontSize = if (shouldHighlight) 15.sp else 12.sp,
+                fontWeight = if (shouldHighlight) FontWeight.Bold else FontWeight.Normal
             )
         }
     }

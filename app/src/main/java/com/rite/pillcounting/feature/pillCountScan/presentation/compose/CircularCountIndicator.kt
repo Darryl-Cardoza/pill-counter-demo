@@ -1,52 +1,71 @@
 package com.rite.pillcounting.feature.pillCountScan.presentation.compose
 
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.Canvas
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.rite.pillcounting.feature.pillCountScan.presentation.viewmodel.PillScanningViewModel
 
-/**
- * A circular indicator showing a pill count in the center, surrounded by a decorative ring.
- *
- * The design mimics a progress-style circular indicator but is static.
- *
- * @param count The numeric value to display in the center.
- * @param modifier Modifier applied to the root Box.
- */
 @Composable
 fun CircularCountIndicator(
     count: Int,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    viewModel: PillScanningViewModel = hiltViewModel()
 ) {
-    // Colors for outer ring and inner circle
-    val indicatorColor = MaterialTheme.colorScheme.secondary
     val centerColor = MaterialTheme.colorScheme.primary
+    val indicatorColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.8f)
+    val lastDetections by viewModel.lastTenDetections.collectAsState()
+
+    // Check if last 4 are identical
+    val lastFourSame = remember(lastDetections) {
+        lastDetections.toList().takeLast(4).let { lastFour ->
+            lastFour.size == 4 && lastFour.distinct().size == 1
+        }
+    }
+
+    // Infinite animation for outer circle
+    val infiniteTransition = rememberInfiniteTransition()
+    val sweepProgress by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 1500, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        )
+    )
 
     Box(
-        modifier = modifier.size(100.dp),
+        modifier = modifier.size(115.dp),
         contentAlignment = Alignment.Center
     ) {
-        // Outer decorative ring
-        Spacer(
-            modifier = Modifier
-                .fillMaxSize()
-                .border(
-                    width = 1.5.dp, // Thinner border
-                    color = indicatorColor.copy(alpha = 0.8f),
-                    shape = CircleShape
-                )
-        )
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            val strokeWidth = 4.dp.toPx()
 
-        // Inner circle containing the count
+            // If last 4 are same, show full circle (360°), else animate
+            val sweepAngle = if (lastFourSame) 360f else 360 * sweepProgress
+
+            drawArc(
+                color = indicatorColor,
+                startAngle = -90f,
+                sweepAngle = sweepAngle,
+                useCenter = false,
+                style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
+            )
+        }
+
+        // Inner circle with count
         Box(
             modifier = Modifier
                 .fillMaxSize(0.75f)
@@ -62,3 +81,4 @@ fun CircularCountIndicator(
         }
     }
 }
+

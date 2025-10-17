@@ -28,6 +28,8 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.rite.pillcounting.R
 import com.rite.pillcounting.core.room.models.enums.CountType
+import com.rite.pillcounting.core.utils.constants.Dimens.extraLarge
+import com.rite.pillcounting.core.utils.constants.Dimens.small
 import com.rite.pillcounting.ui.theme.AppTheme
 
 /**
@@ -53,8 +55,8 @@ fun RegularCountSection(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
-        Spacer(modifier = Modifier.height(40.dp))
-        
+        Spacer(modifier = Modifier.weight(1f))
+
         // Regular count icon (click → ScanBarcode)
         Image(
             painter = painterResource(id = R.drawable.regular_count),
@@ -106,7 +108,7 @@ fun RegularCountSection(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 10.dp),
+                .padding(start = extraLarge, end = extraLarge, bottom = small),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -125,7 +127,8 @@ fun RegularCountSection(
                     indication = null,
                     interactionSource = remember { MutableInteractionSource() }
                 ) {
-                    navController.navigate(Screen.ResumeRegularCounts.createRoute(CountType.REGULAR.toString()))
+                    if (partialRegularCount.toInt() > 0)
+                        navController.navigate(Screen.ResumeRegularCounts.createRoute(CountType.REGULAR.toString()))
                 }
             ) {
                 StatusChip(
