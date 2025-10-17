@@ -20,6 +20,7 @@ import com.rite.pillcounting.feature.pillCountScan.domain.data.PillScanningEvent
 import com.rite.pillcounting.feature.pillCountScan.domain.model.DetectedPill
 import com.rite.pillcounting.feature.pillCountScan.domain.model.PillScanningUiState
 import com.rite.pillcounting.feature.pillCountScan.domain.model.TxnDetail
+import com.rite.pillcounting.feature.pillCountScan.presentation.logic.CameraHelper
 import com.rite.pillcounting.feature.pillCountScan.presentation.logic.PillAnalyzer
 import com.rite.pillcounting.feature.pillCountScan.presentation.logic.Postprocessor
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -75,13 +76,31 @@ class PillScanningViewModel @Inject constructor(
 
     // Pause state
     private var isPaused: Boolean = false
+    private var isAnalyzingFrame = false
+    private var cameraHelper: CameraHelper? = null
+
+    private val _cameraPaused = MutableStateFlow(false)
+    val cameraPaused = _cameraPaused.asStateFlow()
+
 
     // Keep track of last saved detection snapshot
     private var lastSavedDetectionSignature: Int? = null
 
+    fun attachCameraHelper(helper: CameraHelper) {
+        cameraHelper = helper
+    }
+
+    fun pauseCamera() {
+        _cameraPaused.value = true
+    }
+
+    fun resumeCamera() {
+        _cameraPaused.value = false
+    }
+
     companion object {
         private const val MODEL_FILENAME = "best_float32_new.tflite"
-        private const val ZERO_DETECTIONS_THRESHOLD = 10
+        private const val ZERO_DETECTIONS_THRESHOLD = 25
         private const val IDLE_TIMEOUT_MS = 15_000L
     }
     fun observeTxnDetailsForTxn() {
@@ -216,6 +235,7 @@ class PillScanningViewModel @Inject constructor(
             logger.w("Overlay triggered: last 10 frames had zero detections")
             _uiState.update { it.copy(showIdleOverlay = true) }
             isPaused = true
+            _cameraPaused.value = true
         }
 
         // Update pills to UI
@@ -239,6 +259,7 @@ class PillScanningViewModel @Inject constructor(
         lastTenDetections.clear()
         lastChangeTimestamp = System.currentTimeMillis()
         isPaused = false
+        _cameraPaused.value = false
     }
 
     fun observeTxnDetailsForTxn(countType: String) {
@@ -275,18 +296,34 @@ class PillScanningViewModel @Inject constructor(
         }
 
         val currentState = _modelState.value
-        if (currentState is ModelState.Ready) {
-            viewModelScope.launch(Dispatchers.Default) {
-                try {
-                    currentState.analyzer.analyze(image)
-                } catch (e: Exception) {
-                    logger.e("Frame processing failed", e)
-                    image.close()
-                }
-            }
-        } else {
+        if (currentState !is ModelState.Ready) {
             logger.w("Frame ignored → model not ready")
             image.close()
+            return
+        }
+
+        // 🧠 Skip new frame if previous frame is still being analyzed
+        if (isAnalyzingFrame) {
+            logger.d("⏳ Frame skipped — previous frame still in progress")
+            image.close()
+            return
+        }
+
+        isAnalyzingFrame = true // lock
+
+        viewModelScope.launch(Dispatchers.Default) {
+            try {
+                val start = System.currentTimeMillis()
+                currentState.analyzer.analyze(image)
+                val duration = System.currentTimeMillis() - start
+                logger.i("✅ Frame processed in ${duration}ms")
+            } catch (e: Exception) {
+                logger.e("❌ Frame processing failed", e)
+                image.close()
+            } finally {
+                // Unlock once analysis fully completes
+                isAnalyzingFrame = false
+            }
         }
     }
 

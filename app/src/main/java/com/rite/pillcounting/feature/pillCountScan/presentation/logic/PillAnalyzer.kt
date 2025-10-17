@@ -33,10 +33,14 @@ class PillAnalyzer(
         try {
             Log.d(TAG, "--- Start Analysis ---")
 
+            // 🧩 Step 1: Preprocessing
+            val preprocessStart = System.currentTimeMillis()
             val (inputBuffer, bmp) = Preprocessor.preprocess(imageProxy)
             bitmap = bmp
+            val preprocessEnd = System.currentTimeMillis()
+            Log.d(TAG, "🧠 Preprocessing time: ${preprocessEnd - preprocessStart} ms")
 
-            // Prepare outputs
+            // 🧩 Step 2: Model inference
             val detShape = interpreter.getOutputTensor(0).shape()
             val out0 = Array(1) { Array(detShape[1]) { FloatArray(detShape[2]) } }
 
@@ -48,8 +52,15 @@ class PillAnalyzer(
                 1 to out1
             )
 
+            val inferenceStart = System.currentTimeMillis()
             interpreter.runForMultipleInputsOutputs(arrayOf(inputBuffer), outputs)
+            val inferenceEnd = System.currentTimeMillis()
 
+            val inferenceTime = inferenceEnd - inferenceStart
+            Log.d(TAG, "⚡ Model inference time: $inferenceTime ms")
+
+            // 🧩 Step 3: Postprocessing
+            val postStart = System.currentTimeMillis()
             val (detections, matrix) = Postprocessor.parseDetections(
                 det = out0[0],
                 imageWidth = imageProxy.width,
@@ -58,16 +69,21 @@ class PillAnalyzer(
                 viewWidth = viewWidth,
                 viewHeight = viewHeight
             )
+            val postEnd = System.currentTimeMillis()
+            Log.d(TAG, "📊 Postprocessing time: ${postEnd - postStart} ms")
+
+            // 🧩 Total frame time
+            val totalTime = postEnd - preprocessStart
+            Log.d(TAG, "⏱️ Total frame analysis time: $totalTime ms")
 
             lastTransformationMatrix = matrix
             onPillCountUpdated(detections.size, detections, bitmap, matrix)
 
         } catch (e: Exception) {
-            Log.e(TAG, "Exception in analyze: ${e.message}", e)
+            Log.e(TAG, "❌ Exception in analyze: ${e.message}", e)
             bitmap?.recycle()
         } finally {
             imageProxy.close()
         }
     }
-
 }

@@ -182,7 +182,9 @@ fun PillScanningScreen(
         SplitResponsive(
             topOrLeft = {
                 CameraPreviewSection(
+                    viewModel = viewModel,
                     pills = uiState.detectedPills,
+                    isCameraPaused = viewModel.cameraPaused.collectAsState().value,
                     onFrame = { imageProxy ->
                         viewModel.onFrameCaptured(imageProxy)
                     },
