@@ -259,13 +259,12 @@ fun CameraPreviewSection(
             }
 
             // Pills inside the box only
-            val mapped = mappedPills.map {
-                it to mapToViewCoordinates(
-                    it.x,
-                    it.y,
-                    canvasWidth = containerWidth,
-                    canvasHeight = containerHeight
-                )
+            val transform = viewModel.transformationMatrix
+
+            val mapped = mappedPills.map { pill ->
+                val pts = floatArrayOf(pill.x * containerWidth, pill.y * containerHeight)
+                transform?.mapPoints(pts)
+                pill to Offset(pts[0], pts[1])
             }
 
             val inside = mapped
@@ -295,32 +294,18 @@ fun CameraPreviewSection(
                         textAlign = Paint.Align.CENTER
                         textSize = 28f
                         isAntiAlias = true
-                        typeface = Typeface.create(
-                            Typeface.DEFAULT_BOLD,
-                            Typeface.BOLD
-                        )
+                        typeface = Typeface.create(Typeface.DEFAULT_BOLD, Typeface.BOLD)
                         setShadowLayer(6f, 0f, 0f, android.graphics.Color.BLACK)
                     }
-                    drawText("${index + 1}", pos.x, pos.y + 10f, paint)
+
+                    // Calculate true vertical centering based on font metrics
+                    val fontMetrics = paint.fontMetrics
+                    val textHeight = fontMetrics.descent - fontMetrics.ascent
+                    val textOffset = (textHeight / 2) - fontMetrics.descent
+
+                    drawText("${index + 1}", pos.x, pos.y + textOffset, paint)
                 }
             }
         }
     }
-}
-
-/** Maps normalized coordinates to preview coordinates. */
-private fun mapToViewCoordinates(
-    x: Float,
-    y: Float,
-    imageWidth: Int = 640,
-    imageHeight: Int = 640,
-    canvasWidth: Float,
-    canvasHeight: Float
-): Offset {
-    val scale = max(canvasWidth / imageWidth, canvasHeight / imageHeight)
-    val scaledW = imageWidth * scale
-    val scaledH = imageHeight * scale
-    val dx = (canvasWidth - scaledW) / 2
-    val dy = (canvasHeight - scaledH) / 2
-    return Offset(x * scaledW + dx, y * scaledH + dy)
 }

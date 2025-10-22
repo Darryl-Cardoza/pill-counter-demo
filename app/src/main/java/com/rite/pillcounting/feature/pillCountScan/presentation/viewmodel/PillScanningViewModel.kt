@@ -80,6 +80,8 @@ class PillScanningViewModel @Inject constructor(
     private var lastDetectedSnapshot: List<Int> = emptyList()
     private var lastChangeTimestamp: Long = System.currentTimeMillis()
     private var lastTransformationMatrix: Matrix? = null
+    val transformationMatrix: Matrix?
+        get() = lastTransformationMatrix
 
     // Pause state
     private var isPaused: Boolean = false
@@ -98,6 +100,7 @@ class PillScanningViewModel @Inject constructor(
     companion object {
         private const val MODEL_FILENAME = "best_float32_new.tflite"
         private const val ZERO_DETECTIONS_THRESHOLD = 25
+        private const val REPEAT_THRESHOLD = 25
         private const val IDLE_TIMEOUT_MS = 15_000L
     }
 
@@ -221,13 +224,19 @@ class PillScanningViewModel @Inject constructor(
         logger.d("Rolling buffer updated → size=${newBuffer.size}, contents=${newBuffer.joinToString()}")
         logger.d("Latest detection count added = $count")
 
-        // Detect idle and zero states as before
+
         val allZero = newBuffer.size == ZERO_DETECTIONS_THRESHOLD && newBuffer.all { it == 0 }
+
+        val repeatedCount = if (newBuffer.size >= REPEAT_THRESHOLD) {
+            val tail = newBuffer.toList().takeLast(REPEAT_THRESHOLD)
+            tail.all { it == tail.first() }
+        } else false
 
         val sameAsLast = detections.map { it.hashCode() } == lastDetectedSnapshot
         val elapsed = System.currentTimeMillis() - lastChangeTimestamp
+
         if (sameAsLast && elapsed >= IDLE_TIMEOUT_MS) {
-            logger.w("Idle overlay triggered after ${elapsed}ms unchanged")
+            logger.w("🕒 Idle overlay triggered — scene unchanged for ${elapsed}ms")
             _uiState.update { it.copy(showIdleOverlay = true) }
         } else if (!sameAsLast) {
             lastDetectedSnapshot = detections.map { it.hashCode() }
@@ -235,8 +244,15 @@ class PillScanningViewModel @Inject constructor(
             _uiState.update { it.copy(showIdleOverlay = false) }
         }
 
+        // --- Pause camera if consistent/stuck ---
         if (allZero) {
-            logger.w("Overlay triggered: last 10 frames had zero detections")
+            logger.w("⚠️ Overlay triggered: last 10 frames had zero detections (camera paused)")
+            _uiState.update { it.copy(showIdleOverlay = true) }
+            isPaused = true
+            _cameraPaused.value = true
+        } else if (repeatedCount) {
+            val stuckValue = newBuffer.lastOrNull() ?: -1
+            logger.w("⚠️ Overlay triggered: detection count '$stuckValue' repeated $REPEAT_THRESHOLD times consecutively")
             _uiState.update { it.copy(showIdleOverlay = true) }
             isPaused = true
             _cameraPaused.value = true
