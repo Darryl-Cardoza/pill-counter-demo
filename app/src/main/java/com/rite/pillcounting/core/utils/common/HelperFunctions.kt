@@ -17,7 +17,7 @@ import androidx.core.net.toUri
 import com.rite.pillcounting.core.room.models.dtos.StatusTypeCount
 import com.rite.pillcounting.core.room.models.enums.CountStatus
 import com.rite.pillcounting.core.room.models.enums.CountType
-import com.rite.pillcounting.core.security.SecureString
+import com.rite.pillcounting.core.security.models.SecureString
 import com.rite.pillcounting.core.utils.preference.PreferenceHelper
 import com.rite.pillcounting.feature.menu.domain.model.CountBuckets
 import com.rite.pillcounting.navigation.AUTH_GRAPH_ROUTE

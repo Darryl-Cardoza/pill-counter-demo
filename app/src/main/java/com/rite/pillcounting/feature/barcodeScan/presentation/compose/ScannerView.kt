@@ -32,7 +32,8 @@ fun ScannerView(
     }
 
     // Initialize camera and analyzer when the view enters composition
-    LaunchedEffect(Unit) {
+    LaunchedEffect(lifecycleOwner) {
+        analyzer.stop()
         analyzer.start(
             previewView = previewView,
             lifecycleOwner = lifecycleOwner,
@@ -55,6 +56,5 @@ fun ScannerView(
     AndroidView(
         modifier = Modifier.fillMaxSize(),
         factory = { previewView },
-        update = { /* No-op: handled by analyzer */ }
     )
 }
