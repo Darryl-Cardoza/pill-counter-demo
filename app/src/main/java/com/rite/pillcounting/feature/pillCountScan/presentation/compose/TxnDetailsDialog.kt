@@ -3,6 +3,7 @@ package com.rite.pillcounting.feature.pillCountScan.presentation.compose
 import android.content.res.Configuration
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -48,14 +49,14 @@ import androidx.compose.ui.window.DialogProperties
 import coil.compose.rememberAsyncImagePainter
 import coil.request.ImageRequest
 import com.rite.pillcounting.R
-import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.toFormattedDate
+import com.rite.pillcounting.core.utils.common.FullScreenImageDialog
 import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.CommonDialog
 import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.FilledButton
 import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.HollowButton
+import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.toFormattedDate
 import com.rite.pillcounting.feature.pillCountScan.domain.model.TxnDetail
 import com.rite.pillcounting.ui.theme.AppTheme
 import java.io.File
-
 
 @Composable
 fun TxnDetailDialog(
@@ -65,16 +66,17 @@ fun TxnDetailDialog(
     details: TxnDetail
 ) {
     var showConfirmDeleteDialog by remember { mutableStateOf(false) }
+    var showFullScreen by remember { mutableStateOf(false) }
+
+    val configuration = LocalConfiguration.current
+    val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+    val cardWidthFraction = if (isLandscape) 0.5f else 0.9f
+    val cardHeightFraction = if (isLandscape) 0.9f else 0.4f
+
     Dialog(
         onDismissRequest = { onDismiss() },
-        properties = DialogProperties(
-            usePlatformDefaultWidth = false,
-        )
+        properties = DialogProperties(usePlatformDefaultWidth = false)
     ) {
-        val configuration = LocalConfiguration.current
-        val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
-        val cardWidthFraction = if (isLandscape) 0.5f else 0.9f
-        val cardHeightFraction = if (isLandscape) 0.9f else 0.4f
         Card(
             shape = RoundedCornerShape(8.dp),
             modifier = Modifier
@@ -85,7 +87,6 @@ fun TxnDetailDialog(
                 containerColor = AppTheme.extendedColors.secondaryBackground
             )
         ) {
-
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -93,8 +94,7 @@ fun TxnDetailDialog(
                 verticalArrangement = Arrangement.SpaceEvenly,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-
-                // Header row
+                // Header
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
@@ -105,7 +105,6 @@ fun TxnDetailDialog(
                         style = MaterialTheme.typography.bodyMedium,
                         color = AppTheme.extendedColors.textColor
                     )
-
                     IconButton(onClick = { onDismiss() }) {
                         Icon(
                             imageVector = Icons.Default.Close,
@@ -117,14 +116,12 @@ fun TxnDetailDialog(
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                // Content row (Image + Count + Date)
+                // Content row
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.Start
                 ) {
-
-                    // Medicine Image
                     val painter = if (!details.image.isNullOrEmpty()) {
                         val file = File(details.image)
                         rememberAsyncImagePainter(
@@ -138,21 +135,22 @@ fun TxnDetailDialog(
                         painterResource(R.drawable.bottle)
                     }
 
+                    // Tap image to open fullscreen
                     Image(
                         painter = painter,
-                        contentDescription = "",
+                        contentDescription = "Captured Image",
                         modifier = Modifier
                             .width(160.dp)
                             .height(120.dp)
-                            .clip(RoundedCornerShape(8.dp)),
+                            .clip(RoundedCornerShape(8.dp))
+                            .clickable { showFullScreen = true },
                         contentScale = ContentScale.Crop
                     )
 
                     Spacer(modifier = Modifier.width(16.dp))
 
-                    // Count and Date
                     Column(
-                        modifier = Modifier.weight(0.6f), // remaining width
+                        modifier = Modifier.weight(0.6f),
                         verticalArrangement = Arrangement.Center,
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
@@ -164,10 +162,7 @@ fun TxnDetailDialog(
                                 fontWeight = FontWeight.Medium
                             )
                         )
-
                         Spacer(modifier = Modifier.height(4.dp))
-
-                        // Circle count badge
                         Box(
                             contentAlignment = Alignment.Center,
                             modifier = Modifier
@@ -177,15 +172,10 @@ fun TxnDetailDialog(
                         ) {
                             Text(
                                 text = "${details.count}",
-                                style = MaterialTheme.typography.titleMedium.copy(
-                                    color = Color.White
-                                )
+                                style = MaterialTheme.typography.titleMedium.copy(color = Color.White)
                             )
                         }
-
                         Spacer(modifier = Modifier.height(8.dp))
-
-                        // Created date
                         Text(
                             text = details.createdAt.toFormattedDate(),
                             style = MaterialTheme.typography.bodySmall.copy(
@@ -200,7 +190,7 @@ fun TxnDetailDialog(
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                // Action Buttons Row
+                // Buttons
                 val buttonSpacing = 25.dp
                 Row(
                     modifier = Modifier
@@ -209,7 +199,6 @@ fun TxnDetailDialog(
                     horizontalArrangement = Arrangement.SpaceAround,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-
                     HollowButton(
                         text = stringResource(R.string.cd_delete).uppercase(),
                         onClick = { showConfirmDeleteDialog = true },
@@ -227,10 +216,20 @@ fun TxnDetailDialog(
             }
         }
     }
+
+    // Fullscreen image preview
+    if (showFullScreen && !details.image.isNullOrEmpty()) {
+        FullScreenImageDialog(
+            imagePath = details.image,
+            onDismiss = { showFullScreen = false }
+        )
+    }
+
+    // Confirm delete
     if (showConfirmDeleteDialog) {
         CommonDialog(
             message = stringResource(R.string.delete_item_text),
-            title = "",//empty title
+            title = "",
             confirmText = stringResource(R.string.delete),
             cancelText = stringResource(R.string.cancel),
             onConfirm = {
@@ -241,3 +240,4 @@ fun TxnDetailDialog(
         )
     }
 }
+

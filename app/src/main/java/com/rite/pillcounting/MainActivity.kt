@@ -1,5 +1,7 @@
 package com.rite.pillcounting
 
+import android.Manifest
+import android.content.pm.PackageManager
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -7,6 +9,8 @@ import androidx.activity.viewModels
 import androidx.compose.animation.Crossfade
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.rememberNavController
 import com.rite.pillcounting.core.settings.presentation.viewmodel.MainActivityViewModel
@@ -130,5 +134,15 @@ class MainActivity : ComponentActivity() {
         }
 
         enableImmersiveFullscreen(this)
+        requestLocationPermission()
+    }
+
+    private fun requestLocationPermission() {
+        val permission = Manifest.permission.ACCESS_FINE_LOCATION
+        if (ContextCompat.checkSelfPermission(this, permission) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, arrayOf(permission), 1001)
+        }
     }
 }
+
+

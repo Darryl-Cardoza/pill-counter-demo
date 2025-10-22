@@ -1,6 +1,9 @@
 package com.rite.pillcounting.feature.pillCountScan.presentation.compose
 
 import android.annotation.SuppressLint
+import android.graphics.Paint
+import android.graphics.Typeface
+import androidx.camera.core.ImageProxy
 import androidx.camera.view.PreviewView
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.detectTransformGestures
@@ -19,7 +22,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
@@ -32,6 +37,7 @@ import com.rite.pillcounting.feature.pillCountScan.domain.model.DetectedPill
 import com.rite.pillcounting.feature.pillCountScan.presentation.logic.CameraHelper
 import com.rite.pillcounting.feature.pillCountScan.presentation.viewmodel.PillScanningViewModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.max
 import kotlin.math.min
@@ -42,8 +48,9 @@ fun CameraPreviewSection(
     viewModel: PillScanningViewModel,
     pills: List<DetectedPill>,
     isCameraPaused: Boolean,
-    onFrame: (androidx.camera.core.ImageProxy) -> Unit,
+    onFrame: (ImageProxy) -> Unit,
     onFilteredCountChanged: (Int) -> Unit,
+    onPreviewReady: (PreviewView) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -51,8 +58,9 @@ fun CameraPreviewSection(
     val coroutineScope = rememberCoroutineScope()
     val density = LocalDensity.current
     val previewView = remember { PreviewView(context) }
-    var lastDelay = 120L
+    var lastDelay: Long
 
+    // 🔹 Setup CameraHelper
     val cameraHelper = remember {
         CameraHelper(
             context = context,
@@ -61,7 +69,12 @@ fun CameraPreviewSection(
         )
     }
 
-    // Start camera off main thread
+    // 🔹 Notify ViewModel
+    LaunchedEffect(Unit) {
+        viewModel.attachCameraHelper(cameraHelper)
+    }
+
+    // 🔹 Start camera and collect frames
     LaunchedEffect(Unit) {
         cameraHelper.startCamera(previewView)
 
@@ -71,12 +84,12 @@ fun CameraPreviewSection(
                 onFrame(image)
                 val elapsed = System.currentTimeMillis() - start
                 lastDelay = (elapsed * 0.5).coerceIn(80.0, 200.0).toLong()
-                kotlinx.coroutines.delay(lastDelay)
+                delay(lastDelay)
             }
         }
     }
 
-
+    // 🔹 Pause / Resume handling
     LaunchedEffect(isCameraPaused) {
         if (isCameraPaused) {
             cameraHelper.pauseCamera()
@@ -85,42 +98,40 @@ fun CameraPreviewSection(
         }
     }
 
-    LaunchedEffect(Unit) {
-        viewModel.attachCameraHelper(cameraHelper)
+    // 🔹 Keep pills synced with CameraHelper (for snapshot overlay)
+    LaunchedEffect(pills) {
+        cameraHelper.updateDetectionsForOverlay(pills)
     }
 
-    // ───────────────────────────────────────
-    // BoxWithConstraints gives us the container size
-    // ───────────────────────────────────────
+    // 🔹 Expose preview view to parent
+    LaunchedEffect(previewView) {
+        onPreviewReady(previewView)
+    }
+
+    // ───────────────────────────────────────────────
+    //  UI Layout and Overlay Drawing
+    // ───────────────────────────────────────────────
     BoxWithConstraints(modifier = modifier.fillMaxSize()) {
         val containerWidth = constraints.maxWidth.toFloat() - with(density) { 40.dp.toPx() }
         val containerHeight = constraints.maxHeight.toFloat() - with(density) { 40.dp.toPx() }
 
-        // ───────────────────────────────────────
-        // ✅ Ratio-based sizing (responsive)
-        // ───────────────────────────────────────
         val baseSide = min(containerWidth, containerHeight)
-        val minSizePx = baseSide * 0.50f                   // 15% of smaller side
-        val initialBoxSide = baseSide * 0.75f              // 35% of smaller side
+        val minSizePx = baseSide * 0.50f
+        val initialBoxSide = baseSide * 0.75f
         val initialBoxSize = Size(initialBoxSide, initialBoxSide)
 
         var boxSize by remember { mutableStateOf(initialBoxSize) }
         var boxOffset by remember { mutableStateOf(Offset.Zero) }
 
-        // Filtered pill count
         var filteredCount by remember { mutableStateOf(0) }
         LaunchedEffect(filteredCount) { onFilteredCountChanged(filteredCount) }
 
-        // Derived pills
         val mappedPills by remember(pills) { derivedStateOf { pills.sortedBy { it.x } } }
 
-        // ───────────────────────────────────────
-        // Center + ratio-based offset
-        // ───────────────────────────────────────
+        // Position the scanning window
         LaunchedEffect(containerWidth, containerHeight) {
-            val horizontalShiftRatio = 0.05f   // 5% to right
-            val verticalShiftRatio = 0.05f    // 3% upward
-
+            val horizontalShiftRatio = 0.05f
+            val verticalShiftRatio = 0.05f
             val centeredX =
                 (containerWidth - boxSize.width) / 2 + (containerWidth * horizontalShiftRatio)
             val centeredY =
@@ -128,14 +139,19 @@ fun CameraPreviewSection(
             boxOffset = Offset(centeredX, centeredY)
         }
 
-        // ───────────────────────────────────────
-        // Camera preview layer
-        // ───────────────────────────────────────
+        LaunchedEffect(boxOffset, boxSize, containerWidth, containerHeight) {
+            // Normalize box coordinates (0–1)
+            val left = boxOffset.x / containerWidth
+            val top = boxOffset.y / containerHeight
+            val right = (boxOffset.x + boxSize.width) / containerWidth
+            val bottom = (boxOffset.y + boxSize.height) / containerHeight
+            viewModel.updateScanBox(left, top, right, bottom)
+        }
+
+        // Camera Preview
         AndroidView(factory = { previewView }, modifier = Modifier.fillMaxSize())
 
-        // ───────────────────────────────────────
-        // Gesture Control (move + pinch)
-        // ───────────────────────────────────────
+        // Gesture (move + pinch)
         Box(
             Modifier
                 .fillMaxSize()
@@ -161,7 +177,7 @@ fun CameraPreviewSection(
                         val maxX = (containerWidth - boxSize.width).coerceAtLeast(0f)
                         val maxY = (containerHeight - boxSize.height).coerceAtLeast(0f)
 
-                        // Move only if dragging handle
+                        // Move box
                         if (isNearHandle) {
                             boxOffset = Offset(
                                 (boxOffset.x + pan.x).coerceIn(0f, maxX),
@@ -169,7 +185,7 @@ fun CameraPreviewSection(
                             )
                         }
 
-                        // Resize when pinching inside the box OR near handle
+                        // Resize box
                         if (isInsideBox || isNearHandle) {
                             val safeZoom = zoom.coerceIn(0.8f, 1.2f)
                             val newWidth = (boxSize.width * safeZoom)
@@ -179,14 +195,12 @@ fun CameraPreviewSection(
                                 .coerceAtLeast(minSizePx)
                                 .coerceAtMost(containerHeight)
 
-                            // Keep box centered during resize
                             val deltaW = (newWidth - boxSize.width) / 2
                             val deltaH = (newHeight - boxSize.height) / 2
                             val newOffset = Offset(
                                 (boxOffset.x - deltaW).coerceIn(0f, containerWidth - newWidth),
                                 (boxOffset.y - deltaH).coerceIn(0f, containerHeight - newHeight)
                             )
-
                             boxOffset = newOffset
                             boxSize = Size(newWidth, newHeight)
                         }
@@ -194,9 +208,7 @@ fun CameraPreviewSection(
                 }
         )
 
-        // ───────────────────────────────────────
-        // Overlay Canvas (black 80% with clear center)
-        // ───────────────────────────────────────
+        // Overlay Canvas
         Canvas(modifier = Modifier.fillMaxSize()) {
             val corner = with(density) { 16.dp.toPx() }
             val edge = with(density) { 26.dp.toPx() }
@@ -212,16 +224,16 @@ fun CameraPreviewSection(
             val right = left + boxSize.width
             val bottom = top + boxSize.height
 
-            // Dimmed background (80% black)
+            // Dim background
             drawRect(color = Color.Black.copy(alpha = 0.8f))
 
-            // Transparent "hole" window
+            // Clear central window
             drawRoundRect(
                 color = Color.Transparent,
                 topLeft = boxOffset,
                 size = boxSize,
                 cornerRadius = CornerRadius(corner),
-                blendMode = androidx.compose.ui.graphics.BlendMode.Clear
+                blendMode = BlendMode.Clear
             )
 
             // Corner brackets
@@ -234,7 +246,7 @@ fun CameraPreviewSection(
             drawCorner(left, bottom, edge, -edge)
             drawCorner(right, bottom, -edge, -edge)
 
-            // Handle (6 dots)
+            // Handle dots
             val handleX = right + handleOffsetX
             val handleY = bottom - handleOffsetY
             val startY = handleY - (dotSpacingY * 2)
@@ -248,7 +260,12 @@ fun CameraPreviewSection(
 
             // Pills inside the box only
             val mapped = mappedPills.map {
-                it to mapToViewCoordinates(it.x, it.y, 640, 640, containerWidth, containerHeight)
+                it to mapToViewCoordinates(
+                    it.x,
+                    it.y,
+                    canvasWidth = containerWidth,
+                    canvasHeight = containerHeight
+                )
             }
 
             val inside = mapped
@@ -258,31 +275,29 @@ fun CameraPreviewSection(
             if (inside.size != filteredCount) filteredCount = inside.size
 
             inside.forEachIndexed { index, (_, pos) ->
-                // Draw outer circle (slightly larger with highlight)
+                // Outer dark circle
                 drawCircle(
                     color = Color.Black.copy(alpha = 0.9f),
                     radius = with(density) { 10.dp.toPx() },
                     center = pos
                 )
-
-                // Add a white border stroke
+                // White border
                 drawCircle(
                     color = Color.White.copy(alpha = 0.7f),
                     radius = with(density) { 13.dp.toPx() },
                     center = pos,
-                    style = androidx.compose.ui.graphics.drawscope.Stroke(width = 2.dp.toPx())
+                    style = Stroke(width = 2.dp.toPx())
                 )
-
-                // Draw the bold number with subtle shadow
+                // Text number
                 drawContext.canvas.nativeCanvas.apply {
-                    val paint = android.graphics.Paint().apply {
+                    val paint = Paint().apply {
                         color = android.graphics.Color.WHITE
-                        textAlign = android.graphics.Paint.Align.CENTER
+                        textAlign = Paint.Align.CENTER
                         textSize = 28f
                         isAntiAlias = true
-                        typeface = android.graphics.Typeface.create(
-                            android.graphics.Typeface.DEFAULT_BOLD,
-                            android.graphics.Typeface.BOLD
+                        typeface = Typeface.create(
+                            Typeface.DEFAULT_BOLD,
+                            Typeface.BOLD
                         )
                         setShadowLayer(6f, 0f, 0f, android.graphics.Color.BLACK)
                     }
@@ -293,7 +308,7 @@ fun CameraPreviewSection(
     }
 }
 
-/** Map normalized (0–1) coordinates to preview space. */
+/** Maps normalized coordinates to preview coordinates. */
 private fun mapToViewCoordinates(
     x: Float,
     y: Float,
@@ -307,6 +322,5 @@ private fun mapToViewCoordinates(
     val scaledH = imageHeight * scale
     val dx = (canvasWidth - scaledW) / 2
     val dy = (canvasHeight - scaledH) / 2
-
     return Offset(x * scaledW + dx, y * scaledH + dy)
 }

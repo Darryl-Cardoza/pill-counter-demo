@@ -153,6 +153,9 @@ dependencies {
     // --- PDF / iText7 ---
     implementation("com.itextpdf:itext7-core:7.2.5")
 
+    //Location
+    implementation("com.google.android.gms:play-services-location:21.3.0")
+
     // --- Testing ---
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.0")
@@ -167,4 +170,6 @@ dependencies {
     androidTestImplementation("androidx.navigation:navigation-testing:2.9.4")
     androidTestImplementation("org.mockito:mockito-android:5.4.0")
     androidTestImplementation("org.mockito.kotlin:mockito-kotlin:5.2.1")
+
+
 }

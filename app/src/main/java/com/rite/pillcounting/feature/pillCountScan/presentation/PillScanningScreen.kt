@@ -31,12 +31,12 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.rite.pillcounting.R
 import com.rite.pillcounting.core.room.models.enums.CountType
-import com.rite.pillcounting.core.utils.logger.AppLogger
 import com.rite.pillcounting.core.utils.common.UserInterfaceUtils
 import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.ActionButtonPrimary
 import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.BackButton
 import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.CommonDialog
 import com.rite.pillcounting.core.utils.compose.SplitResponsive
+import com.rite.pillcounting.core.utils.logger.AppLogger
 import com.rite.pillcounting.feature.pillCountScan.domain.data.NavigationEvent
 import com.rite.pillcounting.feature.pillCountScan.domain.data.PillScanningEvent
 import com.rite.pillcounting.feature.pillCountScan.presentation.compose.AddNoteDialog
@@ -195,6 +195,7 @@ fun PillScanningScreen(
             bottomOrRight = {
                 InformationPanelSection(
                     uiState = uiState,
+                    viewModel = viewModel,
                     onEvent = viewModel::onEvent,
                     filteredPillCount = filteredPillCount
                 )

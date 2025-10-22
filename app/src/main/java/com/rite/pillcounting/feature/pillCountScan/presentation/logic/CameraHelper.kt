@@ -2,26 +2,37 @@ package com.rite.pillcounting.feature.pillCountScan.presentation.logic
 
 import android.content.Context
 import android.util.Size
-import androidx.camera.core.Camera
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageProxy
 import androidx.camera.core.Preview
 import androidx.camera.core.TorchState
+import androidx.camera.core.resolutionselector.ResolutionSelector
+import androidx.camera.core.resolutionselector.ResolutionStrategy
+import androidx.camera.core.resolutionselector.ResolutionStrategy.FALLBACK_RULE_CLOSEST_LOWER
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleOwner
 import com.google.common.util.concurrent.ListenableFuture
 import com.rite.pillcounting.core.utils.logger.AppLogger
+import com.rite.pillcounting.feature.pillCountScan.domain.model.DetectedPill
+import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import java.util.concurrent.Executor
 import java.util.concurrent.atomic.AtomicBoolean
 
+/**
+ * CameraHelper — manages CameraX preview, analysis frames, and snapshot capture with overlays.
+ *
+ * Features:
+ * - Start / stop / pause / resume CameraX pipeline
+ * - Emit frames via Flow for ML analysis
+ * - Capture current preview bitmap with optional detection overlays (used in "ADD" button)
+ */
 class CameraHelper(
     private val context: Context,
     private val lifecycleOwner: LifecycleOwner,
@@ -34,18 +45,17 @@ class CameraHelper(
 
     private var imageAnalysis: ImageAnalysis? = null
     private var preview: Preview? = null
-    private var boundCamera: Camera? = null
+    private var boundCamera: androidx.camera.core.Camera? = null
 
     private val isBound = AtomicBoolean(false)
+    private val isStreaming = AtomicBoolean(true)
 
     private val _frameChannel = Channel<ImageProxy>(Channel.CONFLATED)
     val frameFlow = _frameChannel.receiveAsFlow()
 
     private val _cameraState = MutableStateFlow(CameraState())
-    val cameraState = _cameraState.asStateFlow()
 
-    // 🟢 NEW: flag to control frame streaming
-    private val isStreaming = AtomicBoolean(true)
+    private var lastDetections: List<DetectedPill> = emptyList()
 
     data class CameraState(
         val isTorchOn: Boolean = false,
@@ -54,6 +64,9 @@ class CameraHelper(
         val maxZoomRatio: Float = 1.0f
     )
 
+    // ───────────────────────────────────────────────
+    // CAMERA START
+    // ───────────────────────────────────────────────
     fun startCamera(
         previewView: PreviewView,
         targetResolution: Size = Size(1280, 720)
@@ -74,15 +87,25 @@ class CameraHelper(
             }
 
             try {
+                // Modern way: ResolutionSelector replaces deprecated setTargetResolution()
+                val resolutionSelector = ResolutionSelector.Builder()
+                    .setResolutionStrategy(
+                        ResolutionStrategy(
+                            targetResolution,
+                            FALLBACK_RULE_CLOSEST_LOWER
+                        )
+                    )
+                    .build()
+
                 preview = Preview.Builder()
-                    .setTargetResolution(targetResolution)
+                    .setResolutionSelector(resolutionSelector)
                     .build()
                     .also { it.surfaceProvider = previewView.surfaceProvider }
 
                 val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
 
                 imageAnalysis = ImageAnalysis.Builder()
-                    .setTargetResolution(targetResolution)
+                    .setResolutionSelector(resolutionSelector)
                     .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
                     .setOutputImageFormat(ImageAnalysis.OUTPUT_IMAGE_FORMAT_YUV_420_888)
                     .setOutputImageRotationEnabled(true)
@@ -103,7 +126,7 @@ class CameraHelper(
                 observeCameraState()
 
                 isBound.set(true)
-                isStreaming.set(true) // ✅ ensure streaming starts
+                isStreaming.set(true)
                 logger.i("Camera successfully bound to lifecycle")
 
             } catch (e: Exception) {
@@ -113,9 +136,12 @@ class CameraHelper(
         }, ContextCompat.getMainExecutor(context))
     }
 
+    // ───────────────────────────────────────────────
+    // FRAME PROCESSING
+    // ───────────────────────────────────────────────
+    @OptIn(DelicateCoroutinesApi::class)
     private fun processImageProxy(image: ImageProxy) {
         try {
-            // 🟢 Modified: respect pause/resume state
             if (!isStreaming.get()) {
                 image.close()
                 return
@@ -136,6 +162,9 @@ class CameraHelper(
         }
     }
 
+    // ───────────────────────────────────────────────
+    // CAMERA STATE OBSERVATION
+    // ───────────────────────────────────────────────
     private fun observeCameraState() {
         val cameraInfo = boundCamera?.cameraInfo ?: return
         val zoomState = cameraInfo.zoomState.value
@@ -164,46 +193,6 @@ class CameraHelper(
         }
     }
 
-    fun stopCamera() {
-        try {
-            cameraProviderFuture.get().unbindAll()
-            logger.i("Camera unbound successfully")
-        } catch (e: Exception) {
-            logger.e("Error while unbinding camera", e)
-        } finally {
-            preview = null
-            imageAnalysis = null
-            boundCamera = null
-            isBound.set(false)
-            isStreaming.set(false)
-        }
-    }
-
-    fun enableTorch(enable: Boolean) {
-        boundCamera?.cameraControl?.enableTorch(enable)?.addListener({
-            logger.i("Torch state set to: $enable")
-        }, executor)
-    }
-
-    fun setZoomRatio(ratio: Float) {
-        boundCamera?.cameraControl?.setZoomRatio(ratio)?.addListener({
-            logger.i("Zoom ratio set to: $ratio")
-        }, executor)
-    }
-
-    fun isCameraRunning(): Boolean = isBound.get()
-
-    // 🟢 NEW PUBLIC CONTROLS
-    fun pauseStreaming() {
-        logger.i("Camera frame streaming paused")
-        isStreaming.set(false)
-    }
-
-    fun resumeStreaming() {
-        logger.i("Camera frame streaming resumed")
-        isStreaming.set(true)
-    }
-
     fun pauseCamera() {
         logger.i("Pausing camera (unbinding use cases)")
         try {
@@ -223,4 +212,15 @@ class CameraHelper(
         startCamera(previewView, targetResolution)
     }
 
+    // ───────────────────────────────────────────────
+    // SNAPSHOT WITH OVERLAY SUPPORT
+    // ───────────────────────────────────────────────
+
+    /**
+     * Updates the helper’s internal cache of last detections
+     * so snapshot overlays stay consistent with live view.
+     */
+    fun updateDetectionsForOverlay(detections: List<DetectedPill>) {
+        lastDetections = detections
+    }
 }

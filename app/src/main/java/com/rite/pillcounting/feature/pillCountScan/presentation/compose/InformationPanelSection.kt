@@ -15,11 +15,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.sp
-import androidx.navigation.NavController
 import com.rite.pillcounting.R
 import com.rite.pillcounting.core.utils.constants.Dimens.medium
 import com.rite.pillcounting.feature.pillCountScan.domain.data.PillScanningEvent
 import com.rite.pillcounting.feature.pillCountScan.domain.model.PillScanningUiState
+import com.rite.pillcounting.feature.pillCountScan.presentation.viewmodel.PillScanningViewModel
 import com.rite.pillcounting.ui.theme.AppTheme
 
 /**
@@ -32,6 +32,7 @@ import com.rite.pillcounting.ui.theme.AppTheme
 @Composable
 fun InformationPanelSection(
     uiState: PillScanningUiState,
+    viewModel: PillScanningViewModel,
     onEvent: (PillScanningEvent) -> Unit,
     filteredPillCount: Int
 ) {
@@ -59,7 +60,7 @@ fun InformationPanelSection(
             verticalArrangement = Arrangement.SpaceEvenly
         ) {
             // Main Count Display and Add Button
-            CurrentCountDisplay(uiState= uiState,filteredCount = filteredPillCount) { onEvent(PillScanningEvent.AddTransactionDetailClicked(filteredPillCount)) }
+            CurrentCountDisplay( viewModel = viewModel, uiState= uiState,filteredCount = filteredPillCount) { onEvent(PillScanningEvent.AddTransactionDetailClicked(filteredPillCount)) }
             // Horizontal list of previous Transaction Detail counts
             LazyRow(
                 horizontalArrangement = Arrangement.spacedBy(medium),

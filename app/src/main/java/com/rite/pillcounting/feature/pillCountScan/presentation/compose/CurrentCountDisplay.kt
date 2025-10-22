@@ -1,7 +1,9 @@
 package com.rite.pillcounting.feature.pillCountScan.presentation.compose
 
-import androidx.compose.foundation.layout.*
-import androidx.compose.material3.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -9,6 +11,7 @@ import androidx.compose.ui.res.stringResource
 import com.rite.pillcounting.R
 import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.FilledButton
 import com.rite.pillcounting.feature.pillCountScan.domain.model.PillScanningUiState
+import com.rite.pillcounting.feature.pillCountScan.presentation.viewmodel.PillScanningViewModel
 
 /**
  * Displays the current scanned pill count along with an "ADD" button.
@@ -24,6 +27,7 @@ import com.rite.pillcounting.feature.pillCountScan.domain.model.PillScanningUiSt
 fun CurrentCountDisplay(
     uiState: PillScanningUiState,
     filteredCount: Int,
+    viewModel: PillScanningViewModel,
     onAddClicked: () -> Unit
 ) {
     Row(
@@ -33,7 +37,7 @@ fun CurrentCountDisplay(
         horizontalArrangement = Arrangement.SpaceAround
     ) {
         // Circular count indicator reflects the live detected pill count.
-        CircularCountIndicator(count = /*uiState.detectedPills.size*/filteredCount)
+        CircularCountIndicator(count = /*uiState.detectedPills.size*/filteredCount, viewModel = viewModel)
 
         FilledButton(
             text = stringResource(R.string.add).uppercase(),

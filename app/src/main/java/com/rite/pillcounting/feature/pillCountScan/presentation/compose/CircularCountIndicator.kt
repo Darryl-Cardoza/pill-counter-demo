@@ -1,11 +1,24 @@
 package com.rite.pillcounting.feature.pillCountScan.presentation.compose
 
-import androidx.compose.animation.core.*
+import android.util.Log
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -14,36 +27,40 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.foundation.Canvas
-import androidx.hilt.navigation.compose.hiltViewModel
 import com.rite.pillcounting.feature.pillCountScan.presentation.viewmodel.PillScanningViewModel
 
 @Composable
 fun CircularCountIndicator(
     count: Int,
     modifier: Modifier = Modifier,
-    viewModel: PillScanningViewModel = hiltViewModel()
+    viewModel: PillScanningViewModel
 ) {
     val centerColor = MaterialTheme.colorScheme.primary
     val indicatorColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.8f)
     val lastDetections by viewModel.lastTenDetections.collectAsState()
 
-    // Check if last 4 are identical
-    val lastFourSame = remember(lastDetections) {
-        lastDetections.toList().takeLast(4).let { lastFour ->
-            lastFour.size == 4 && lastFour.distinct().size == 1
-        }
+    // Derive last 4 values and whether they're same
+    val (_, lastFourSame) = remember(lastDetections) {
+        val values = lastDetections.toList().takeLast(4)
+        val same = values.size == 4 && values.distinct().size == 1
+
+        // Debug log
+        Log.d("CircularCountIndicator", "Last 10 detections = $lastDetections")
+        Log.d("CircularCountIndicator", "Last 4 detections = $values, all same = $same")
+
+        values to same
     }
 
-    // Infinite animation for outer circle
-    val infiniteTransition = rememberInfiniteTransition()
+    // Infinite animation for the rotating arc
+    val infiniteTransition = rememberInfiniteTransition(label = "arcTransition")
     val sweepProgress by infiniteTransition.animateFloat(
         initialValue = 0f,
         targetValue = 1f,
         animationSpec = infiniteRepeatable(
             animation = tween(durationMillis = 1500, easing = LinearEasing),
             repeatMode = RepeatMode.Restart
-        )
+        ),
+        label = "sweepProgress"
     )
 
     Box(
@@ -53,7 +70,7 @@ fun CircularCountIndicator(
         Canvas(modifier = Modifier.fillMaxSize()) {
             val strokeWidth = 4.dp.toPx()
 
-            // If last 4 are same, show full circle (360°), else animate
+            // If last 4 are same, show full circle (steady), else animate
             val sweepAngle = if (lastFourSame) 360f else 360 * sweepProgress
 
             drawArc(
@@ -65,7 +82,7 @@ fun CircularCountIndicator(
             )
         }
 
-        // Inner circle with count
+        // Inner circle with pill count
         Box(
             modifier = Modifier
                 .fillMaxSize(0.75f)
@@ -81,4 +98,3 @@ fun CircularCountIndicator(
         }
     }
 }
-

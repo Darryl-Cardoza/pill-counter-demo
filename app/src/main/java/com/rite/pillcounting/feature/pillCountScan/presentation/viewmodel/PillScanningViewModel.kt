@@ -3,15 +3,18 @@ package com.rite.pillcounting.feature.pillCountScan.presentation.viewmodel
 import android.app.Application
 import android.graphics.Bitmap
 import android.graphics.Matrix
+import android.graphics.RectF
 import androidx.camera.core.ImageProxy
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.rite.pillcounting.core.room.dao.PillCountTxnDao
 import com.rite.pillcounting.core.room.dao.PillCountTxnDetailsDao
+import com.rite.pillcounting.core.room.dao.UserDao
 import com.rite.pillcounting.core.room.models.PillCountTxnDetailsEntity
 import com.rite.pillcounting.core.room.models.enums.CountStatus
 import com.rite.pillcounting.core.room.models.enums.CountType
 import com.rite.pillcounting.core.utils.common.HelperFunctions.saveBitmapToFile
+import com.rite.pillcounting.core.utils.common.LocationProvider
 import com.rite.pillcounting.core.utils.common.OverlayUtils
 import com.rite.pillcounting.core.utils.logger.AppLogger
 import com.rite.pillcounting.core.utils.preference.PreferenceHelper
@@ -45,7 +48,9 @@ class PillScanningViewModel @Inject constructor(
     app: Application,
     private val preferenceHelper: PreferenceHelper,
     private val pillCountTxnDao: PillCountTxnDao,
-    private val pillCountTxnDetailsDao: PillCountTxnDetailsDao
+    private val userDao: UserDao,
+    private val pillCountTxnDetailsDao: PillCountTxnDetailsDao,
+    private val locationProvider: LocationProvider
 ) : AndroidViewModel(app) {
 
     private val logger = AppLogger("PillScanningVM")
@@ -58,7 +63,6 @@ class PillScanningViewModel @Inject constructor(
     }
 
     private val _modelState = MutableStateFlow<ModelState>(ModelState.Idle)
-    val modelState = _modelState.asStateFlow()
 
     private val _uiState = MutableStateFlow(PillScanningUiState())
     val uiState = _uiState.asStateFlow()
@@ -85,20 +89,10 @@ class PillScanningViewModel @Inject constructor(
     private val _cameraPaused = MutableStateFlow(false)
     val cameraPaused = _cameraPaused.asStateFlow()
 
-
-    // Keep track of last saved detection snapshot
-    private var lastSavedDetectionSignature: Int? = null
+    private val _scanBoxRect = MutableStateFlow<RectF?>(null)
 
     fun attachCameraHelper(helper: CameraHelper) {
         cameraHelper = helper
-    }
-
-    fun pauseCamera() {
-        _cameraPaused.value = true
-    }
-
-    fun resumeCamera() {
-        _cameraPaused.value = false
     }
 
     companion object {
@@ -204,7 +198,6 @@ class PillScanningViewModel @Inject constructor(
         viewWidth: Int,
         viewHeight: Int
     ) {
-
         if (isPaused) {
             logger.d("Skipping detection → paused state active")
             bitmap.recycle()
@@ -213,23 +206,24 @@ class PillScanningViewModel @Inject constructor(
 
         logger.d("Frame analyzed → Detected count = $count")
 
-        // Replace current bitmap
         currentFrameBitmap?.recycle()
         currentFrameBitmap = bitmap
         lastTransformationMatrix = Matrix(matrix)
 
-        // Update rolling buffer
-        if (_lastTenDetections.value.size >= ZERO_DETECTIONS_THRESHOLD) {
-            _lastTenDetections.value.removeFirst()
+        // Update rolling buffer properly
+        val newBuffer = ArrayDeque(_lastTenDetections.value)
+        if (newBuffer.size >= ZERO_DETECTIONS_THRESHOLD) {
+            newBuffer.removeFirst()
         }
-        _lastTenDetections.value.addLast(count)
-        logger.d("Rolling buffer = $lastTenDetections")
+        newBuffer.addLast(count)
+        _lastTenDetections.value = newBuffer
 
-        // Check for last-10 zeros
-        val allZero = _lastTenDetections.value.size == ZERO_DETECTIONS_THRESHOLD &&
-                _lastTenDetections.value.all { it == 0 }
+        logger.d("Rolling buffer updated → size=${newBuffer.size}, contents=${newBuffer.joinToString()}")
+        logger.d("Latest detection count added = $count")
 
-        // Idle timer check (no changes for 15s)
+        // Detect idle and zero states as before
+        val allZero = newBuffer.size == ZERO_DETECTIONS_THRESHOLD && newBuffer.all { it == 0 }
+
         val sameAsLast = detections.map { it.hashCode() } == lastDetectedSnapshot
         val elapsed = System.currentTimeMillis() - lastChangeTimestamp
         if (sameAsLast && elapsed >= IDLE_TIMEOUT_MS) {
@@ -241,7 +235,6 @@ class PillScanningViewModel @Inject constructor(
             _uiState.update { it.copy(showIdleOverlay = false) }
         }
 
-        // Show overlay if 10 consecutive zeros
         if (allZero) {
             logger.w("Overlay triggered: last 10 frames had zero detections")
             _uiState.update { it.copy(showIdleOverlay = true) }
@@ -249,7 +242,6 @@ class PillScanningViewModel @Inject constructor(
             _cameraPaused.value = true
         }
 
-        // Update pills to UI
         updateDetectedPills(
             detections.map {
                 DetectedPill(
@@ -260,6 +252,7 @@ class PillScanningViewModel @Inject constructor(
             }
         )
     }
+
 
     /**
      * Reset overlay state, buffer and resume analyzer
@@ -298,6 +291,12 @@ class PillScanningViewModel @Inject constructor(
                 }
         }
     }*/
+
+    // Update method
+    fun updateScanBox(left: Float, top: Float, right: Float, bottom: Float) {
+        _scanBoxRect.value = RectF(left, top, right, bottom)
+        logger.d("ScanBox updated: left=$left, top=$top, right=$right, bottom=$bottom")
+    }
 
     fun onFrameCaptured(image: ImageProxy) {
         if (isPaused) {
@@ -385,41 +384,50 @@ class PillScanningViewModel @Inject constructor(
                 }
 
                 logger.i("Adding transaction detail with count=$currentCount")
-
-                val overlayBitmap = currentFrameBitmap?.let { base ->
-                    lastTransformationMatrix?.let { matrix ->
-                        OverlayUtils.drawDetectionsOnBitmap(
-                            base,
-                            _uiState.value.detectedPills,
-                            matrix
-                        )
-                    } ?: base
-                }
-
-
-                val filePath = overlayBitmap?.let {
-                    saveBitmapToFile(
-                        getApplication(),
-                        it,
-                        "txn_detail_${System.currentTimeMillis()}.jpg",
-                        "transaction_details"
-                    )
-                }
-
                 viewModelScope.launch {
-                    val detail = PillCountTxnDetailsEntity(
-                        txnId = preferenceHelper.getTxnId(),
-                        pillCount = currentCount,
-                        imagePath = filePath,
-                        createdAt = System.currentTimeMillis(),
-                        updatedAt = System.currentTimeMillis()
-                    )
-                    pillCountTxnDetailsDao.insert(detail)
-                    logger.i("Transaction detail saved → count=$currentCount, file=$filePath")
-                }
+                    val userId = preferenceHelper.getUserId() ?: ""
+                    val user = userDao.getByUserId(userId)
 
-                overlayBitmap?.recycle()
-                currentFrameBitmap = null
+                    val location = locationProvider.getCurrentLocationAsString()
+
+                    val overlayBitmap = currentFrameBitmap?.let { base ->
+                        lastTransformationMatrix?.let { matrix ->
+                            OverlayUtils.drawDetectionsOnBitmap(
+                                bitmap = base,
+                                detectedPills = _uiState.value.detectedPills,
+                                transform = matrix,
+                                boxRect = _scanBoxRect.value,
+                                userName = user?.name,
+                                userId = user?.userId,
+                                location = location,
+                                timestamp = System.currentTimeMillis()
+                            )
+                        } ?: base
+                    }
+
+                    val filePath = overlayBitmap?.let {
+                        saveBitmapToFile(
+                            getApplication(),
+                            it,
+                            "txn_detail_${System.currentTimeMillis()}.jpg",
+                            "transaction_details"
+                        )
+                    }
+
+                    pillCountTxnDetailsDao.insert(
+                        PillCountTxnDetailsEntity(
+                            txnId = preferenceHelper.getTxnId(),
+                            pillCount = currentCount,
+                            imagePath = filePath,
+                            createdAt = System.currentTimeMillis(),
+                            updatedAt = System.currentTimeMillis()
+                        )
+                    )
+                    logger.i("Transaction detail saved → count=$currentCount, file=$filePath")
+
+                    overlayBitmap?.recycle()
+                    currentFrameBitmap = null
+                }
             }
 
 
