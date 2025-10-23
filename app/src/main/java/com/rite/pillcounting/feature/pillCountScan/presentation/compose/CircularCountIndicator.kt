@@ -1,6 +1,5 @@
 package com.rite.pillcounting.feature.pillCountScan.presentation.compose
 
-import android.util.Log
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -43,11 +42,6 @@ fun CircularCountIndicator(
     val (_, lastFourSame) = remember(lastDetections) {
         val values = lastDetections.toList().takeLast(4)
         val same = values.size == 4 && values.distinct().size == 1
-
-        // Debug log
-        Log.d("CircularCountIndicator", "Last 10 detections = $lastDetections")
-        Log.d("CircularCountIndicator", "Last 4 detections = $values, all same = $same")
-
         values to same
     }
 

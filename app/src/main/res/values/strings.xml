@@ -219,4 +219,10 @@
     <string name="confirm_logout_title">Confirm Logout</string>
     <string name="confirm_logout_text">Are you sure you want to logout?</string>>
 
+    <string name="add_button_wait">Please wait 2 seconds before adding again.</string>
+    <string name="add_exceeds_target">Cannot add — total exceeds target count.</string>
+    <string name="add_zero_detected">Cannot add — no pills detected.</string>
+    <string name="duplicate_scan_ignored">Duplicate scan ignored — no new pills detected.</string>
+    <string name="add_success">Batch added successfully.</string>
+
 </resources>
