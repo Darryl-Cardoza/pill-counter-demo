@@ -3,28 +3,25 @@ package com.rite.pillcounting.feature.countResume.presentation
 import Screen
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.rite.pillcounting.R
 import com.rite.pillcounting.core.room.models.enums.CountType
-import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.BackButton
 import com.rite.pillcounting.feature.countResume.domain.data.NavigationEvent
 import com.rite.pillcounting.feature.countResume.domain.data.RegularCountsEvent
 import com.rite.pillcounting.feature.countResume.domain.data.ResumeEventFactory
 import com.rite.pillcounting.feature.countResume.domain.model.CountItem
+import com.rite.pillcounting.feature.countResume.presentation.compose.HeadlineBar
 import com.rite.pillcounting.feature.countResume.presentation.compose.PartialListPanel
 import com.rite.pillcounting.feature.countResume.presentation.viewmodel.CountsViewModel
 import com.rite.pillcounting.ui.theme.AppTheme
@@ -35,22 +32,19 @@ fun RegularCountResumeScreen(
     viewModel: CountsViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.regularUiState.collectAsState()
+    var showSearch by remember { mutableStateOf(false) }
+    var searchQuery by remember { mutableStateOf("") }
 
     LaunchedEffect(Unit) {
         viewModel.navigationEvent.collect { event ->
             when (event) {
-                is NavigationEvent.NavigateToPillCount -> {
-                    navController.navigate(Screen.PillCount.createRoute(event.countType.toString())){}
-                }
-
-                NavigationEvent.NavigateBack -> {
-                    navController.popBackStack()
-                }
+                is NavigationEvent.NavigateToPillCount ->
+                    navController.navigate(Screen.PillCount.createRoute(event.countType.toString())) {}
+                NavigationEvent.NavigateBack -> navController.popBackStack()
             }
         }
     }
 
-    // Factory mapping RegularCountsEvent
     val regularEventFactory = object : ResumeEventFactory<RegularCountsEvent> {
         override fun toggleMultiSelectMode() = RegularCountsEvent.ToggleMultiSelectMode
         override fun closeMultiSelectMode() = RegularCountsEvent.CloseMultiSelectMode
@@ -66,23 +60,24 @@ fun RegularCountResumeScreen(
             .fillMaxSize()
             .background(AppTheme.extendedColors.primaryBackground)
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            BackButton(navController)
+        HeadlineBar(
+            navController = navController,
+            title = stringResource(R.string.regular_partial_count_title),
+            searchQuery = searchQuery,
+            showSearch = showSearch,
+            onSearchClick = {
+                showSearch = !showSearch
+                if (!showSearch) searchQuery = "" // reset when closing
+            },
+            onSearchChange = { searchQuery = it },
+            onDeleteClick = { viewModel.onRegularEvent(RegularCountsEvent.ToggleMultiSelectMode) }
+        )
 
-            Text(
-                text = stringResource(R.string.regular_partial_count_title).uppercase(),
-                fontSize = 16.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = AppTheme.extendedColors.textColor
-            )
-        }
         PartialListPanel(
             items = uiState.regularCounts,
             selectedItems = uiState.selectedItems,
             isMultiSelectMode = uiState.isMultiSelectMode,
+            searchQuery = searchQuery,
             onEvent = viewModel::onRegularEvent,
             eventFactory = regularEventFactory,
             countType = CountType.REGULAR.toString()

@@ -225,4 +225,14 @@
     <string name="duplicate_scan_ignored">Duplicate scan ignored — no new pills detected.</string>
     <string name="add_success">Batch added successfully.</string>
 
+    <!-- For multi-select mode text in PartialListPanel -->
+    <string name="selected_items_count">%1$d items selected</string>
+    <string name="tap_to_delete">Tap delete to remove</string>
+
+    <!-- Optional: if you want a singular/plural version -->
+    <plurals name="selected_items_count_plural">
+        <item quantity="one">%1$d item selected</item>
+        <item quantity="other">%1$d items selected</item>
+    </plurals>
+
 </resources>
