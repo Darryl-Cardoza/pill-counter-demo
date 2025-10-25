@@ -23,11 +23,22 @@ import com.rite.pillcounting.feature.pillCountScan.presentation.viewmodel.PillSc
 import com.rite.pillcounting.ui.theme.AppTheme
 
 /**
- * The right-hand panel of the scanning screen, containing all drug information,
- * batch counts, and user action buttons.
+ * Displays the right-hand information panel in the pill counting screen.
  *
- * @param uiState The current state of the UI to display.
- * @param onEvent The callback to send events to the ViewModel.
+ * This section includes:
+ * - The current pill count title
+ * - Drug details (name, batch, total, etc.)
+ * - The current count display with an option to add transaction details
+ * - A horizontally scrolling list of recent transaction history chips
+ * - Action buttons for rescan, pause, and completion
+ *
+ * It is a key UI component within the pill scanning workflow,
+ * designed for tablet/kiosk layouts with responsive scaling.
+ *
+ * @param uiState The current state of the pill scanning UI.
+ * @param viewModel The ViewModel managing scan state and user interactions.
+ * @param onEvent Callback to send user interaction events to the ViewModel.
+ * @param filteredPillCount The filtered pill count detected in the latest scan.
  */
 @Composable
 fun InformationPanelSection(
@@ -47,11 +58,9 @@ fun InformationPanelSection(
             fontFamily = MaterialTheme.typography.bodyMedium.fontFamily,
             color = AppTheme.extendedColors.textColor,
             textAlign = TextAlign.Center,
-            modifier = Modifier
-                .fillMaxWidth()
+            modifier = Modifier.fillMaxWidth()
         )
 
-        // Drug Info: Name, Batch, Total
         DrugInformation(uiState)
 
         Column(
@@ -59,32 +68,32 @@ fun InformationPanelSection(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.SpaceEvenly
         ) {
-            // Main Count Display and Add Button
-            CurrentCountDisplay( viewModel = viewModel, uiState= uiState,filteredCount = filteredPillCount) { onEvent(PillScanningEvent.AddTransactionDetailClicked(filteredPillCount)) }
-            // Horizontal list of previous Transaction Detail counts
+            CurrentCountDisplay(
+                viewModel = viewModel,
+                uiState = uiState,
+                filteredCount = filteredPillCount
+            ) {
+                onEvent(PillScanningEvent.AddTransactionDetailClicked(filteredPillCount))
+            }
+
             LazyRow(
                 horizontalArrangement = Arrangement.spacedBy(medium),
                 reverseLayout = true
             ) {
                 itemsIndexed(uiState.txnDetailHistory) { index, txnDetail ->
-                    //Highlight first element of list
                     val highlight = index == 0
-                    // Pass the entire Transaction Detail object to the Chip
                     Chip(
                         shouldHighlight = highlight,
                         txnDetail = txnDetail,
                         index = uiState.txnDetailHistory.size - index,
                         onDelete = { txnDetailId ->
                             onEvent(PillScanningEvent.TransactionDetailDeleted(txnDetailId))
-                        })
+                        }
+                    )
                 }
             }
         }
 
-        // Action Buttons: Rescan, Pause, Done
         ActionButtons(onEvent)
-
     }
 }
-
-
