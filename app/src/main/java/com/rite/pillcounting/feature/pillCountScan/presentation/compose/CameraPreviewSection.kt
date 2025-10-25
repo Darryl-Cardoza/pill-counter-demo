@@ -142,6 +142,12 @@ fun CameraPreviewSection(
                             )
                         }
 
+                        if (zoom != 1f) {
+                            val currentZoom = cameraHelper.getCurrentZoomRatio() ?: 1f
+                            val targetZoom = (currentZoom * zoom).coerceIn(1f, 1f)
+                            cameraHelper.setZoom(targetZoom)
+                        }
+
                         // Resize smoothly (pinch)
                         val minBox = baseSide * 0.3f
                         val newWidth = (boxSize.width * zoom)
