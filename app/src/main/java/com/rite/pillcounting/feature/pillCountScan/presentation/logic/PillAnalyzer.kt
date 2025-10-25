@@ -2,88 +2,155 @@ package com.rite.pillcounting.feature.pillCountScan.presentation.logic
 
 import android.graphics.Bitmap
 import android.graphics.Matrix
-import android.util.Log
 import androidx.camera.core.ImageProxy
+import com.rite.pillcounting.core.utils.logger.AppLogger
 import org.tensorflow.lite.Interpreter
 
 /**
- * Main class that ties together preprocessing, inference, and postprocessing.
+ * Handles the complete pill detection pipeline for each camera frame.
+ *
+ * Workflow:
+ * 1. Preprocessing - Converts [ImageProxy] to a normalized [java.nio.ByteBuffer].
+ * 2. Model Inference - Runs TensorFlow Lite model for detection.
+ * 3. Postprocessing - Maps detections to screen coordinates and prepares output.
+ *
+ * This class ensures proper error handling, frame cleanup, and detailed logging
+ * for profiling performance and diagnosing runtime issues.
+ *
+ * @property interpreter TensorFlow Lite interpreter instance for inference.
+ * @property viewWidth Width of the preview surface.
+ * @property viewHeight Height of the preview surface.
+ * @property onPillCountUpdated Callback triggered when detections are available.
  */
 class PillAnalyzer(
     private val interpreter: Interpreter,
     private val viewWidth: Int,
     private val viewHeight: Int,
     private val onPillCountUpdated: (
-        Int,
-        List<Postprocessor.Detection>,
-        Bitmap,
-        Matrix
+        pillCount: Int,
+        detections: List<Postprocessor.Detection>,
+        debugBitmap: Bitmap,
+        transformMatrix: Matrix
     ) -> Unit
 ) {
-    companion object {
-        private const val TAG = "PillAnalyzer"
-    }
-
+    private val logger = AppLogger.create<PillAnalyzer>()
     private var lastTransformationMatrix: Matrix? = null
 
-    fun getLastTransformationMatrix(): Matrix? = lastTransformationMatrix?.let { Matrix(it) }
-
+    /**
+     * Analyzes a single camera frame and executes the full detection pipeline.
+     *
+     * The function performs:
+     * - Frame preprocessing
+     * - Model inference
+     * - Postprocessing and transformation mapping
+     * - Callback invocation
+     *
+     * All steps are individually timed and logged for performance insights.
+     */
     fun analyze(imageProxy: ImageProxy) {
         var bitmap: Bitmap? = null
+        val overallStart = System.currentTimeMillis()
+
         try {
-            Log.d(TAG, "--- Start Analysis ---")
+            logger.d("Starting frame analysis | Image=${imageProxy.width}x${imageProxy.height}, Rotation=${imageProxy.imageInfo.rotationDegrees}°")
 
-            // 🧩 Step 1: Preprocessing
+            // -----------------------------------------------------
+            // STEP 1: PREPROCESSING
+            // -----------------------------------------------------
             val preprocessStart = System.currentTimeMillis()
-            val (inputBuffer, bmp) = Preprocessor.preprocess(imageProxy)
+            val (inputBuffer, bmp) = try {
+                Preprocessor.preprocess(imageProxy)
+            } catch (e: Exception) {
+                logger.e("Preprocessing failed: ${e.message}", e)
+                imageProxy.close()
+                return
+            }
             bitmap = bmp
-            val preprocessEnd = System.currentTimeMillis()
-            Log.d(TAG, "🧠 Preprocessing time: ${preprocessEnd - preprocessStart} ms")
+            val preprocessTime = System.currentTimeMillis() - preprocessStart
+            logger.i("Preprocessing completed in $preprocessTime ms | Bitmap=${bmp.width}x${bmp.height}")
 
-            // 🧩 Step 2: Model inference
+            // -----------------------------------------------------
+            // STEP 2: MODEL INFERENCE
+            // -----------------------------------------------------
+            val inferenceStart = System.currentTimeMillis()
             val detShape = interpreter.getOutputTensor(0).shape()
-            val out0 = Array(1) { Array(detShape[1]) { FloatArray(detShape[2]) } }
-
             val maskShape = interpreter.getOutputTensor(1).shape()
+
+            val out0 = Array(1) { Array(detShape[1]) { FloatArray(detShape[2]) } }
             val out1 = Array(1) { Array(maskShape[1]) { Array(maskShape[2]) { FloatArray(maskShape[3]) } } }
 
-            val outputs = mutableMapOf<Int, Any>(
-                0 to out0,
-                1 to out1
-            )
+            val outputs = mapOf(0 to out0, 1 to out1)
 
-            val inferenceStart = System.currentTimeMillis()
-            interpreter.runForMultipleInputsOutputs(arrayOf(inputBuffer), outputs)
-            val inferenceEnd = System.currentTimeMillis()
+            try {
+                interpreter.runForMultipleInputsOutputs(arrayOf(inputBuffer), outputs)
+            } catch (e: Exception) {
+                logger.e("Model inference failed: ${e.message}", e)
+                bitmap.recycle()
+                imageProxy.close()
+                return
+            }
 
-            val inferenceTime = inferenceEnd - inferenceStart
-            Log.d(TAG, "⚡ Model inference time: $inferenceTime ms")
+            val inferenceTime = System.currentTimeMillis() - inferenceStart
+            logger.i("Model inference completed in $inferenceTime ms | Output tensors: det=${detShape.contentToString()}, mask=${maskShape.contentToString()}")
 
-            // 🧩 Step 3: Postprocessing
+            // -----------------------------------------------------
+            // STEP 3: POSTPROCESSING
+            // -----------------------------------------------------
             val postStart = System.currentTimeMillis()
-            val (detections, matrix) = Postprocessor.parseDetections(
-                det = out0[0],
-                imageWidth = imageProxy.width,
-                imageHeight = imageProxy.height,
-                rotationDegrees = imageProxy.imageInfo.rotationDegrees,
-                viewWidth = viewWidth,
-                viewHeight = viewHeight
-            )
-            val postEnd = System.currentTimeMillis()
-            Log.d(TAG, "📊 Postprocessing time: ${postEnd - postStart} ms")
+            val camRotation = imageProxy.imageInfo.rotationDegrees
+            val rawIsPortrait = imageProxy.width < imageProxy.height
+            val bmpIsPortrait = bitmap.height > bitmap.width
 
-            // 🧩 Total frame time
-            val totalTime = postEnd - preprocessStart
-            Log.d(TAG, "⏱️ Total frame analysis time: $totalTime ms")
+            // Determine the correct rotation adjustment
+            val effectiveRotation = when {
+                rawIsPortrait && !bmpIsPortrait -> 90
+                !rawIsPortrait && bmpIsPortrait -> 90
+                else -> camRotation
+            }
+
+            logger.d(
+                "Postprocessing: raw=${imageProxy.width}x${imageProxy.height}, " +
+                        "bitmap=${bitmap.width}x${bitmap.height}, " +
+                        "cameraRotation=$camRotation°, effectiveRotation=$effectiveRotation°"
+            )
+
+            val (detections, matrix) = try {
+                Postprocessor.parseDetections(
+                    det = out0[0],
+                    imageWidth = bitmap.width,
+                    imageHeight = bitmap.height,
+                    rotationDegrees = effectiveRotation,
+                    viewWidth = viewWidth,
+                    viewHeight = viewHeight
+                )
+            } catch (e: Exception) {
+                logger.e("Postprocessing failed: ${e.message}", e)
+                bitmap.recycle()
+                imageProxy.close()
+                return
+            }
+
+            val postTime = System.currentTimeMillis() - postStart
+            logger.i("Postprocessing completed in $postTime ms | Detections=${detections.size}")
+
+            // -----------------------------------------------------
+            // STEP 4: FINAL RESULT CALLBACK
+            // -----------------------------------------------------
+            val totalTime = System.currentTimeMillis() - overallStart
+            logger.i("Frame analysis successful in $totalTime ms | Pills detected=${detections.size}")
 
             lastTransformationMatrix = matrix
             onPillCountUpdated(detections.size, detections, bitmap, matrix)
 
         } catch (e: Exception) {
-            Log.e(TAG, "❌ Exception in analyze: ${e.message}", e)
+            logger.e("Exception during frame analysis: ${e.message}", e)
             bitmap?.recycle()
         } finally {
-            imageProxy.close()
+            try {
+                imageProxy.close()
+            } catch (closeEx: Exception) {
+                logger.w("Failed to close ImageProxy: ${closeEx.message}", closeEx)
+            }
         }
     }
 }

@@ -30,6 +30,7 @@ import com.rite.pillcounting.feature.pillCountScan.presentation.logic.CameraHelp
 import com.rite.pillcounting.feature.pillCountScan.presentation.logic.PillAnalyzer
 import com.rite.pillcounting.feature.pillCountScan.presentation.logic.Postprocessor
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -60,7 +61,8 @@ class PillScanningViewModel @Inject constructor(
     private val pillCountTxnDao: PillCountTxnDao,
     private val userDao: UserDao,
     private val pillCountTxnDetailsDao: PillCountTxnDetailsDao,
-    private val locationProvider: LocationProvider
+    private val locationProvider: LocationProvider,
+    @ApplicationContext private val context: Context,
 ) : AndroidViewModel(app) {
 
     private val logger = AppLogger("PillScanningVM")
@@ -169,7 +171,11 @@ class PillScanningViewModel @Inject constructor(
                     val tflite = Interpreter(buffer, options)
                     interpreter = tflite
 
-                    val analyzer = PillAnalyzer(tflite, viewWidth, viewHeight) { count, detections, bitmap, matrix ->
+                    val analyzer = PillAnalyzer(
+                        interpreter = tflite,
+                        viewWidth = viewWidth,
+                        viewHeight = viewHeight
+                    ) { count, detections, bitmap, matrix ->
                         processDetections(count, detections, bitmap, matrix, viewWidth, viewHeight)
                     }
                     _modelState.value = ModelState.Ready(analyzer)
@@ -310,7 +316,11 @@ class PillScanningViewModel @Inject constructor(
     private fun loadModelFile(fileName: String): MappedByteBuffer {
         val afd = getApplication<Application>().assets.openFd(fileName)
         FileInputStream(afd.fileDescriptor).use {
-            return it.channel.map(FileChannel.MapMode.READ_ONLY, afd.startOffset, afd.declaredLength)
+            return it.channel.map(
+                FileChannel.MapMode.READ_ONLY,
+                afd.startOffset,
+                afd.declaredLength
+            )
         }
     }
 
@@ -470,8 +480,9 @@ class PillScanningViewModel @Inject constructor(
                 _uiState.update { it.copy(showConfirmDialog = false) }
                 return@launch
             }
-            val status = if (txn.countType == CountType.FIXED && txn.targetCount != null && total < txn.targetCount)
-                CountStatus.PARTIAL else CountStatus.COMPLETED
+            val status =
+                if (txn.countType == CountType.FIXED && txn.targetCount != null && total < txn.targetCount)
+                    CountStatus.PARTIAL else CountStatus.COMPLETED
 
             pillCountTxnDao.updateTxnStatus(txnId, status)
             _navigationEvent.send(NavigationEvent.NavigateToDashboard)
