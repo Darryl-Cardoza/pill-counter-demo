@@ -3,6 +3,7 @@ package com.rite.pillcounting.feature.pillCountScan.presentation.logic
 import android.content.Context
 import android.util.Size
 import androidx.camera.core.Camera
+import androidx.camera.core.CameraInfo
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.FocusMeteringAction
 import androidx.camera.core.ImageAnalysis
@@ -17,7 +18,6 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleOwner
 import com.google.common.util.concurrent.ListenableFuture
 import com.rite.pillcounting.core.utils.logger.AppLogger
-import com.rite.pillcounting.feature.pillCountScan.domain.model.DetectedPill
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -28,13 +28,13 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 
 /**
- * CameraHelper — manages CameraX preview, zoom, and frame analysis.
+ * ## CameraHelper
  *
- * Features:
- * - Starts and binds the camera lifecycle with preview and analyzer.
- * - Streams frames via [frameFlow] for ML analysis.
- * - Supports pause/resume functionality.
- * - Provides zoom and autofocus utilities.
+ * A unified utility class that manages CameraX setup, lifecycle binding, and frame streaming
+ * for the **Pill Counting** module.
+ *
+ * This class abstracts away all CameraX boilerplate while maintaining predictable
+ * lifecycle behavior and safe frame delivery.
  */
 class CameraHelper(
     private val context: Context,
@@ -42,26 +42,25 @@ class CameraHelper(
     private val executor: Executor
 ) {
     private val logger = AppLogger.create<CameraHelper>()
-
     private val cameraProviderFuture: ListenableFuture<ProcessCameraProvider> =
         ProcessCameraProvider.getInstance(context)
 
     private var imageAnalysis: ImageAnalysis? = null
     private var preview: Preview? = null
     private var boundCamera: Camera? = null
+    private var previewView: PreviewView? = null
 
     private val isBound = AtomicBoolean(false)
     private val isStreaming = AtomicBoolean(true)
 
     private val _frameChannel = Channel<ImageProxy>(Channel.CONFLATED)
+    /** Public flow of camera frames emitted for ML analysis. */
     val frameFlow = _frameChannel.receiveAsFlow()
 
     private val _cameraState = MutableStateFlow(CameraState())
 
-    private var lastDetections: List<DetectedPill> = emptyList()
-
     /**
-     * Represents real-time camera parameters.
+     * Represents the current camera state (zoom, torch, etc.)
      */
     data class CameraState(
         val isTorchOn: Boolean = false,
@@ -75,22 +74,23 @@ class CameraHelper(
     // ------------------------------------------------------------------------
 
     /**
-     * Starts the camera and binds Preview + ImageAnalysis.
+     * Initializes and starts the CameraX pipeline.
      *
-     * @param previewView The CameraX PreviewView surface.
-     * @param targetResolution Desired target resolution.
+     * @param previewView The [PreviewView] into which the camera feed will be rendered.
+     * @param targetResolution The preferred preview resolution (default 1280×720).
      */
     fun startCamera(
         previewView: PreviewView,
         targetResolution: Size = Size(1280, 720)
     ) {
-        logger.i("Starting camera | target=${targetResolution.width}x${targetResolution.height}")
+        logger.i("Starting camera | Target=${targetResolution.width}×${targetResolution.height}")
+        this.previewView = previewView
 
         cameraProviderFuture.addListener({
             val cameraProvider = try {
                 cameraProviderFuture.get()
             } catch (e: Exception) {
-                logger.e("Failed to get CameraProvider", e)
+                logger.e("Failed to obtain CameraProvider", e)
                 return@addListener
             }
 
@@ -100,6 +100,7 @@ class CameraHelper(
             }
 
             try {
+                // --- Resolution configuration ---
                 val resolutionSelector = ResolutionSelector.Builder()
                     .setResolutionStrategy(
                         ResolutionStrategy(
@@ -109,13 +110,13 @@ class CameraHelper(
                     )
                     .build()
 
+                // --- Preview pipeline ---
                 preview = Preview.Builder()
                     .setResolutionSelector(resolutionSelector)
                     .build()
                     .also { it.surfaceProvider = previewView.surfaceProvider }
 
-                val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
-
+                // --- Image analysis pipeline ---
                 imageAnalysis = ImageAnalysis.Builder()
                     .setResolutionSelector(resolutionSelector)
                     .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
@@ -124,8 +125,10 @@ class CameraHelper(
                     .build()
                     .also { analysis -> analysis.setAnalyzer(executor, this::processImageProxy) }
 
-                cameraProvider.unbindAll()
+                val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
 
+                // --- Bind to lifecycle ---
+                cameraProvider.unbindAll()
                 boundCamera = cameraProvider.bindToLifecycle(
                     lifecycleOwner,
                     cameraSelector,
@@ -136,16 +139,17 @@ class CameraHelper(
                 observeCameraState()
                 isBound.set(true)
                 isStreaming.set(true)
+
                 logger.i("Camera successfully bound to lifecycle")
 
-                // Apply default zoom & focus
+                // --- Initial adjustments ---
                 boundCamera?.let { cam ->
-                    cam.cameraControl.setZoomRatio(1.6f) // Default zoom ratio
+                    cam.cameraControl.setZoomRatio(1.5f)
                     setCenterFocus(previewView)
                 }
 
             } catch (e: Exception) {
-                logger.e("Failed to bind camera to lifecycle", e)
+                logger.e("Failed to bind camera use cases", e)
                 isBound.set(false)
             }
         }, ContextCompat.getMainExecutor(context))
@@ -155,6 +159,10 @@ class CameraHelper(
     // FRAME PROCESSING
     // ------------------------------------------------------------------------
 
+    /**
+     * Handles incoming frames from CameraX and emits them via [frameFlow].
+     * Drops frames if analysis is still in progress.
+     */
     @OptIn(DelicateCoroutinesApi::class)
     private fun processImageProxy(image: ImageProxy) {
         try {
@@ -165,11 +173,10 @@ class CameraHelper(
 
             if (!_frameChannel.isClosedForSend) {
                 if (!_frameChannel.trySend(image).isSuccess) {
-                    logger.d("Dropped frame — channel busy")
+                    logger.d("Frame dropped — downstream analyzer busy")
                     image.close()
                 }
             } else {
-                logger.w("Frame channel closed — discarding frame")
                 image.close()
             }
         } catch (t: Throwable) {
@@ -182,6 +189,9 @@ class CameraHelper(
     // CAMERA STATE OBSERVATION
     // ------------------------------------------------------------------------
 
+    /**
+     * Observes torch and zoom state changes from [CameraInfo] and exposes them via [_cameraState].
+     */
     private fun observeCameraState() {
         val cameraInfo = boundCamera?.cameraInfo ?: return
         val zoomState = cameraInfo.zoomState.value
@@ -195,8 +205,8 @@ class CameraHelper(
             )
         }
 
-        cameraInfo.torchState.observe(lifecycleOwner) { torchState ->
-            _cameraState.update { it.copy(isTorchOn = torchState == TorchState.ON) }
+        cameraInfo.torchState.observe(lifecycleOwner) { torch ->
+            _cameraState.update { it.copy(isTorchOn = torch == TorchState.ON) }
         }
 
         cameraInfo.zoomState.observe(lifecycleOwner) { state ->
@@ -215,9 +225,9 @@ class CameraHelper(
     // ------------------------------------------------------------------------
 
     /**
-     * Adjusts the zoom ratio of the current camera.
+     * Sets the current camera zoom ratio.
      *
-     * @param zoomRatio Desired zoom level (e.g. 1.5f for 1.5× zoom)
+     * @param zoomRatio Desired zoom multiplier within min–max bounds.
      */
     fun setZoom(zoomRatio: Float) {
         try {
@@ -228,52 +238,37 @@ class CameraHelper(
 
             val newZoom = zoomRatio.coerceIn(state.minZoomRatio, state.maxZoomRatio)
             control.setZoomRatio(newZoom)
-            logger.i("Zoom set to $newZoom× (range ${state.minZoomRatio}–${state.maxZoomRatio})")
+            logger.i("Zoom set to %.2fx (Range %.2f–%.2f)"
+                .format(newZoom, state.minZoomRatio, state.maxZoomRatio))
         } catch (e: Exception) {
             logger.e("Failed to set camera zoom", e)
         }
     }
 
     /**
-     * Smoothly transitions the zoom level over time.
-     *
-     * @param targetZoom Desired target zoom level.
+     * Returns the current zoom ratio, or `null` if unavailable.
      */
-    fun smoothZoomTo(targetZoom: Float) {
-        try {
-            val camera = boundCamera ?: return
-            val state = camera.cameraInfo.zoomState.value ?: return
-            val clampedZoom = targetZoom.coerceIn(state.minZoomRatio, state.maxZoomRatio)
-            camera.cameraControl.setLinearZoom(
-                (clampedZoom - state.minZoomRatio) /
-                        (state.maxZoomRatio - state.minZoomRatio)
-            )
-            logger.i("Smooth zoom transition to $clampedZoom×")
-        } catch (e: Exception) {
-            logger.e("Smooth zoom failed", e)
-        }
-    }
-
-    fun getCurrentZoomRatio(): Float? {
-        return boundCamera?.cameraInfo?.zoomState?.value?.zoomRatio
-    }
+    fun getCurrentZoomRatio(): Float? =
+        boundCamera?.cameraInfo?.zoomState?.value?.zoomRatio
 
     /**
-     * Triggers a focus and metering action centered on the PreviewView.
+     * Triggers an autofocus action at the center of the [PreviewView].
      */
     fun setCenterFocus(previewView: PreviewView) {
         try {
             val camera = boundCamera ?: return
             val factory = previewView.meteringPointFactory
             val center = factory.createPoint(previewView.width / 2f, previewView.height / 2f)
+
             val action = FocusMeteringAction.Builder(center)
                 .addPoint(center, FocusMeteringAction.FLAG_AF)
                 .setAutoCancelDuration(3, TimeUnit.SECONDS)
                 .build()
+
             camera.cameraControl.startFocusAndMetering(action)
             logger.i("Center autofocus triggered")
         } catch (e: Exception) {
-            logger.e("Failed to set autofocus", e)
+            logger.e("Failed to perform autofocus", e)
         }
     }
 
@@ -281,10 +276,15 @@ class CameraHelper(
     // CAMERA LIFECYCLE CONTROL
     // ------------------------------------------------------------------------
 
+    /**
+     * Pauses the camera by unbinding all active use cases.
+     * The preview and analyzer pipelines are released.
+     */
     fun pauseCamera() {
-        logger.i("Pausing camera (unbinding use cases)")
+        logger.i("Pausing camera — unbinding all use cases")
         try {
-            cameraProviderFuture.get().unbindAll()
+            val provider = cameraProviderFuture.get()
+            provider.unbindAll()
         } catch (e: Exception) {
             logger.e("Error while pausing camera", e)
         } finally {
@@ -292,12 +292,28 @@ class CameraHelper(
             imageAnalysis = null
             boundCamera = null
             isBound.set(false)
+            isStreaming.set(false)
         }
     }
 
+    /**
+     * Resumes the camera by reinitializing the pipeline.
+     *
+     * @param previewView The [PreviewView] instance to rebind.
+     * @param targetResolution Preferred output resolution (default 1280×720).
+     */
     fun resumeCamera(previewView: PreviewView, targetResolution: Size = Size(1280, 720)) {
-        logger.i("Resuming camera (re-binding use cases)")
+        logger.i("Resuming camera preview")
         startCamera(previewView, targetResolution)
     }
 
+    // ------------------------------------------------------------------------
+    // HELPER FUNCTIONS
+    // ------------------------------------------------------------------------
+
+    /** Returns the current [PreviewView] width in pixels, or 640 if unavailable. */
+    fun getPreviewWidth(): Int = previewView?.width ?: 640
+
+    /** Returns the current [PreviewView] height in pixels, or 640 if unavailable. */
+    fun getPreviewHeight(): Int = previewView?.height ?: 640
 }

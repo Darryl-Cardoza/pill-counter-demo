@@ -1,152 +1,172 @@
 package com.rite.pillcounting.core.utils.common
 
 import android.graphics.Bitmap
-import android.graphics.BlurMaskFilter
 import android.graphics.Canvas
 import android.graphics.Color
-import android.graphics.LinearGradient
 import android.graphics.Matrix
 import android.graphics.Paint
-import android.graphics.RectF
-import android.graphics.Shader
 import android.graphics.Typeface
 import com.rite.pillcounting.feature.pillCountScan.domain.model.DetectedPill
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import kotlin.math.max
+import kotlin.math.min
 
+/**
+ * ## OverlayUtils
+ *
+ * A rendering utility responsible for overlaying **pill detections**, **numbering**, and
+ * **operator metadata** on captured camera frames.
+ * The overlay reverse-maps preview coordinates into original bitmap space by
+ * reconstructing the same **CENTER_CROP** transformation logic used by
+ * [com.rite.pillcounting.feature.pillCountScan.presentation.logic.Postprocessor], ensuring perfect alignment between preview detections and saved image output.
+ *
+ * ---
+ */
 object OverlayUtils {
 
     /**
-     * Draws pills + focus box + metadata footer.
+     * Draws pill detection overlays and footer metadata onto a copy of the given [bitmap].
+     *
+     * @param bitmap          The base camera frame to draw on (copied internally, original remains unchanged).
+     * @param detectedPills   List of pills with normalized positions (`x`, `y` in range `0..1`).
+     * @param previewWidth    Width of the preview surface in pixels.
+     * @param previewHeight   Height of the preview surface in pixels.
+     * @param userName        Optional operator name displayed in the footer.
+     * @param userId          Optional operator ID displayed in the footer.
+     * @param location        Optional human-readable location text.
+     * @param timestamp       Capture timestamp in milliseconds (defaults to current system time).
+     *
+     * @return A new [Bitmap] containing the rendered overlay (safe to save or display).
      */
     fun drawDetectionsOnBitmap(
         bitmap: Bitmap,
         detectedPills: List<DetectedPill>,
-        transform: Matrix,
-        boxRect: RectF? = null,
+        previewWidth: Int,
+        previewHeight: Int,
         userName: String? = null,
         userId: String? = null,
         location: String? = null,
         timestamp: Long = System.currentTimeMillis()
     ): Bitmap {
-        val mutableBitmap = bitmap.copy(Bitmap.Config.ARGB_8888, true)
-        val canvas = Canvas(mutableBitmap)
-        val width = mutableBitmap.width
-        val height = mutableBitmap.height
+        // Create a mutable copy to avoid altering the original frame
+        val result = bitmap.copy(Bitmap.Config.ARGB_8888, true)
+        val canvas = Canvas(result)
 
-        // 🟦 1️⃣ — Setup paints
-        val outlinePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.WHITE
-            style = Paint.Style.STROKE
-            strokeWidth = 4f
-        }
-        val innerFillPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.argb(180, 20, 20, 20)
+        val w = result.width.toFloat()
+        val h = result.height.toFloat()
+        val scale = min(w, h) / 1080f
+
+        // ---------------------------------------------------------------------
+        // Paint Configuration
+        // ---------------------------------------------------------------------
+
+        val fillPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             style = Paint.Style.FILL
+            color = Color.argb(180, 0, 0, 0)
         }
+
+        val strokePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            style = Paint.Style.STROKE
+            color = Color.WHITE
+            strokeWidth = 3f * scale
+        }
+
         val textPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = Color.WHITE
             textAlign = Paint.Align.CENTER
-            textSize = 44f
-            typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
-            setShadowLayer(8f, 0f, 0f, Color.BLACK)
+            textSize = 28f * scale
+            typeface = Typeface.create(Typeface.DEFAULT_BOLD, Typeface.BOLD)
+            setShadowLayer(6f, 0f, 0f, Color.BLACK)
         }
 
-        // 🟩 2️⃣ — Draw pills & focus box (same as before)
-        drawFocusBox(canvas, boxRect, width, height)
-        drawPills(canvas, detectedPills, transform, boxRect, outlinePaint, innerFillPaint, textPaint)
+        // ---------------------------------------------------------------------
+        // Reverse Mapping (Preview → Bitmap)
+        // ---------------------------------------------------------------------
 
-        // 🟨 3️⃣ — Add metadata footer
-        drawMetadataFooter(canvas, width, height, userName, userId, location, timestamp)
+        val srcW = w
+        val srcH = h
+        val scaleToView = max(previewWidth / srcW, previewHeight / srcH)
+        val scaledW = srcW * scaleToView
+        val scaledH = srcH * scaleToView
+        val dx = (previewWidth - scaledW) / 2f
+        val dy = (previewHeight - scaledH) / 2f
 
-        return mutableBitmap
-    }
+        // Build inverse transform for mapping from preview coordinates to bitmap coordinates
+        val inverseTransform = Matrix().apply {
+            postTranslate(-dx, -dy)
+            postScale(1f / scaleToView, 1f / scaleToView)
+        }
 
-    private fun drawFocusBox(canvas: Canvas, boxRect: RectF?, width: Int, height: Int) {
-        if (boxRect == null) return
-        val rect = RectF(
-            boxRect.left * width,
-            boxRect.top * height,
-            boxRect.right * width,
-            boxRect.bottom * height
-        )
-        val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        // Prepare coordinate array for mapping
+        val pts = FloatArray(detectedPills.size * 2)
+        detectedPills.forEachIndexed { i, pill ->
+            pts[i * 2] = pill.x * previewWidth
+            pts[i * 2 + 1] = pill.y * previewHeight
+        }
+
+        // Apply transformation
+        inverseTransform.mapPoints(pts)
+
+        // Clamp mapped coordinates to ensure on-canvas safety
+        for (i in pts.indices step 2) {
+            pts[i] = pts[i].coerceIn(0f, w)
+            pts[i + 1] = pts[i + 1].coerceIn(0f, h)
+        }
+
+        // ---------------------------------------------------------------------
+        // Draw Numbered Circles (Detections)
+        // ---------------------------------------------------------------------
+
+        for (i in pts.indices step 2) {
+            val cx = pts[i]
+            val cy = pts[i + 1]
+            val isLast = i / 2 == detectedPills.lastIndex
+
+            val innerR = (if (isLast) 15f else 11f) * scale
+            val outerR = (if (isLast) 19f else 14f) * scale
+            val stroke = (if (isLast) 3f else 2f) * scale
+
+            strokePaint.strokeWidth = stroke
+            fillPaint.color = if (isLast)
+                Color.argb(230, 255, 255, 0)   // Yellow highlight for latest pill
+            else
+                Color.argb(160, 0, 0, 0)       // Semi-transparent black background
+
+            // Draw pill marker
+            canvas.drawCircle(cx, cy, innerR, fillPaint)
+            canvas.drawCircle(cx, cy, outerR, strokePaint)
+
+            // Draw index label (centered vertically)
+            val fm = textPaint.fontMetrics
+            val offsetY = (fm.descent - fm.ascent) / 2 - fm.descent
+            canvas.drawText("${i / 2 + 1}", cx, cy + offsetY, textPaint)
+        }
+
+        // ---------------------------------------------------------------------
+        // Footer Metadata
+        // ---------------------------------------------------------------------
+
+        val footer = buildString {
+            if (!userName.isNullOrBlank()) append("$userName ")
+            if (!userId.isNullOrBlank()) append("($userId)  ")
+            if (!location.isNullOrBlank()) append("[$location]  ")
+            append(SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(Date(timestamp)))
+        }
+
+        val footerPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = Color.WHITE
-            style = Paint.Style.STROKE
-            strokeWidth = 6f
-            alpha = 150
-            maskFilter = BlurMaskFilter(20f, BlurMaskFilter.Blur.NORMAL)
-        }
-        canvas.drawRoundRect(rect, 40f, 40f, paint)
-    }
-
-    private fun drawPills(
-        canvas: Canvas,
-        pills: List<DetectedPill>,
-        transform: Matrix,
-        boxRect: RectF?,
-        outlinePaint: Paint,
-        innerFillPaint: Paint,
-        textPaint: Paint
-    ) {
-        val temp = FloatArray(2)
-        var idx = 1
-        for (p in pills) {
-            val inside = boxRect?.let { p.x in it.left..it.right && p.y in it.top..it.bottom } ?: true
-            if (!inside) continue
-
-            temp[0] = p.x * canvas.width
-            temp[1] = p.y * canvas.height
-            transform.mapPoints(temp)
-            val cx = temp[0]
-            val cy = temp[1]
-
-            canvas.drawCircle(cx, cy, 18f, innerFillPaint)
-            canvas.drawCircle(cx, cy, 26f, outlinePaint)
-            canvas.drawText("${idx++}", cx, cy + 14f, textPaint)
-        }
-    }
-
-    private fun drawMetadataFooter(
-        canvas: Canvas,
-        width: Int,
-        height: Int,
-        userName: String?,
-        userId: String?,
-        location: String?,
-        timestamp: Long
-    ) {
-        val barHeight = 120f
-        val rect = RectF(0f, height - barHeight, width.toFloat(), height.toFloat())
-        val bgPaint = Paint().apply {
-            shader = LinearGradient(
-                0f, rect.top, 0f, rect.bottom,
-                Color.argb(220, 0, 0, 0), Color.argb(180, 0, 0, 0),
-                Shader.TileMode.CLAMP
-            )
-        }
-        canvas.drawRect(rect, bgPaint)
-
-        val textPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.WHITE
-            textSize = 32f
-            textAlign = Paint.Align.LEFT
-            typeface = Typeface.create(Typeface.MONOSPACE, Typeface.BOLD)
+            textSize = 22f * scale
+            typeface = Typeface.MONOSPACE
+            setShadowLayer(4f, 0f, 0f, Color.BLACK)
         }
 
-        val fmt = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
-        val timeStr = fmt.format(Date(timestamp))
+        canvas.drawText(footer, w / 2, h - 40f * scale, footerPaint)
 
-        val line1 = "Captured by: ${userName ?: "Unknown"} (${userId ?: "-"})"
-        val line2 = "Location: ${location ?: "N/A"}"
-        val line3 = "Time: $timeStr"
-
-        val startX = 40f
-        val startY = height - barHeight / 2 - 10f
-        val lineSpacing = 32f
-        canvas.drawText(line1, startX, startY - lineSpacing, textPaint)
-        canvas.drawText(line2, startX, startY, textPaint)
-        canvas.drawText(line3, startX, startY + lineSpacing, textPaint)
+        // ---------------------------------------------------------------------
+        // Return final annotated bitmap
+        // ---------------------------------------------------------------------
+        return result
     }
 }

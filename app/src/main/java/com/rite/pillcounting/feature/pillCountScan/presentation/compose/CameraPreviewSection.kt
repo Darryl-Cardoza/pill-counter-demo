@@ -216,6 +216,8 @@ fun CameraPreviewSection(
 
             if (mapped.size != filteredCount) {
                 filteredCount = mapped.size
+                val filteredList = mapped.map { it.first }
+                viewModel.updateFilteredPills(filteredList)
                 onFilteredCountChanged(filteredCount)
             }
 

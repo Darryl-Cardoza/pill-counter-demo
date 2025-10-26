@@ -27,6 +27,7 @@ data class PillScanningUiState(
     val currentScanCount: Int = 0,
     val txnDetailHistory: List<TxnDetail> = emptyList(),
     val detectedPills: List<DetectedPill> = emptyList(),
+    val filteredPills: List<DetectedPill> = emptyList(),
     val isPaused: Boolean = false,
     val isLoading: Boolean = false,
     val restrictAdd: Boolean = false,

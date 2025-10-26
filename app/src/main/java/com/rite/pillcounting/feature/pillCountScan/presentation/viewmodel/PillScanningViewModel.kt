@@ -4,7 +4,6 @@ import android.app.Application
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Matrix
-import android.graphics.RectF
 import androidx.camera.core.ImageProxy
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -30,7 +29,6 @@ import com.rite.pillcounting.feature.pillCountScan.presentation.logic.CameraHelp
 import com.rite.pillcounting.feature.pillCountScan.presentation.logic.PillAnalyzer
 import com.rite.pillcounting.feature.pillCountScan.presentation.logic.Postprocessor
 import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -62,7 +60,6 @@ class PillScanningViewModel @Inject constructor(
     private val userDao: UserDao,
     private val pillCountTxnDetailsDao: PillCountTxnDetailsDao,
     private val locationProvider: LocationProvider,
-    @ApplicationContext private val context: Context,
 ) : AndroidViewModel(app) {
 
     private val logger = AppLogger("PillScanningVM")
@@ -86,8 +83,6 @@ class PillScanningViewModel @Inject constructor(
     private val _cameraPaused = MutableStateFlow(false)
     val cameraPaused = _cameraPaused.asStateFlow()
 
-    private val _scanBoxRect = MutableStateFlow<RectF?>(null)
-
     private var cameraHelper: CameraHelper? = null
 
     // --- Duplicate prevention ---
@@ -96,10 +91,6 @@ class PillScanningViewModel @Inject constructor(
     // --- Detection snapshot ---
     private var lastDetectedSnapshot: List<Int> = emptyList()
     private var lastChangeTimestamp: Long = System.currentTimeMillis()
-
-    /** Exposes transformation matrix used in latest analyzed frame for overlays. */
-    val transformationMatrix: Matrix?
-        get() = lastTransformationMatrix
 
     /** Public read-only flow for observing recent detection counts. */
     val lastTenDetections: StateFlow<ArrayDeque<Int>> = _lastTenDetections
@@ -163,7 +154,7 @@ class PillScanningViewModel @Inject constructor(
             var attempt = 0
             while (attempt <= retryCount) {
                 try {
-                    val buffer = loadModelFile(MODEL_FILENAME)
+                    val buffer = loadModelFile()
                     val options = Interpreter.Options().apply {
                         setUseXNNPACK(true)
                         numThreads = Runtime.getRuntime().availableProcessors().coerceAtMost(4)
@@ -312,8 +303,12 @@ class PillScanningViewModel @Inject constructor(
         _uiState.update { it.copy(detectedPills = pills) }
     }
 
+    fun updateFilteredPills(filtered: List<DetectedPill>) {
+        _uiState.update { it.copy(filteredPills = filtered) }
+    }
+
     /** Load TensorFlow Lite model from assets. */
-    private fun loadModelFile(fileName: String): MappedByteBuffer {
+    private fun loadModelFile(fileName: String = MODEL_FILENAME): MappedByteBuffer {
         val afd = getApplication<Application>().assets.openFd(fileName)
         FileInputStream(afd.fileDescriptor).use {
             return it.channel.map(
@@ -402,13 +397,24 @@ class PillScanningViewModel @Inject constructor(
             val location = locationProvider.getCurrentLocationAsString()
 
             val overlayBitmap = currentFrameBitmap?.let { base ->
-                lastTransformationMatrix?.let { matrix ->
-                    OverlayUtils.drawDetectionsOnBitmap(
-                        base, _uiState.value.detectedPills, matrix,
-                        _scanBoxRect.value, user?.name, user?.userId, location,
-                        System.currentTimeMillis()
-                    )
-                } ?: base
+                val filteredPills = _uiState.value.filteredPills
+                if (filteredPills.isNotEmpty()) {
+                    try {
+                        OverlayUtils.drawDetectionsOnBitmap(
+                            bitmap = base,
+                            detectedPills = filteredPills,
+                            previewWidth = cameraHelper?.getPreviewWidth() ?: base.width,
+                            previewHeight = cameraHelper?.getPreviewHeight() ?: base.height,
+                            userName = user?.name,
+                            userId = user?.userId,
+                            location = location,
+                            timestamp = System.currentTimeMillis()
+                        )
+                    } catch (e: Exception) {
+                        logger.e("Overlay drawing failed, returning base bitmap", e)
+                        base
+                    }
+                } else base
             }
 
             val filePath = overlayBitmap?.let {
@@ -545,11 +551,6 @@ class PillScanningViewModel @Inject constructor(
             }
             logger.d("Txn info loaded. Drug=${txnInfo?.drugName}, Target=${txnInfo?.targetCount}")
         }
-    }
-
-    fun updateScanBox(left: Float, top: Float, right: Float, bottom: Float) {
-        _scanBoxRect.value = RectF(left, top, right, bottom)
-        logger.d("ScanBox updated: left=$left, top=$top, right=$right, bottom=$bottom")
     }
 
     private fun showConfirmDialogAfterDone() {
