@@ -165,11 +165,14 @@ fun ProfileScreen(
                 }
 
                 is ProfileUpdateUiState.Success -> {
-                    Text(
-                        text = stringResource(R.string.profile_updated),
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.align(Alignment.CenterHorizontally)
-                    )
+                    if (cameFromDashboard) {
+                        navController.navigate(Screen.Dashboard.route) {
+                            popUpTo(Screen.Dashboard.route) { inclusive = true }
+                            launchSingleTop = true
+                        }
+                    } else {
+                        navController.popBackStack()
+                    }
                 }
 
                 is ProfileUpdateUiState.Error -> {
