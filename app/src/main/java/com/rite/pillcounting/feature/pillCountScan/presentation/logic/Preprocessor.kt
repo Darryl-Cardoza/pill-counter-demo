@@ -242,8 +242,6 @@ object Preprocessor {
         val jpegBytes = out.toByteArray()
         val bitmap = BitmapFactory.decodeByteArray(jpegBytes, 0, jpegBytes.size)
 
-        image.close()
-
         val duration = System.currentTimeMillis() - start
         logger.d("YUV → Bitmap conversion completed in $duration ms | Frame=${width}x${height}")
 

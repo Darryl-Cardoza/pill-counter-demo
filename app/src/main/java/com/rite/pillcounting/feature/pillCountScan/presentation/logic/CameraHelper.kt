@@ -24,6 +24,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import java.util.concurrent.Executor
+import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 
@@ -54,6 +55,7 @@ class CameraHelper(
     private val isStreaming = AtomicBoolean(true)
 
     private val _frameChannel = Channel<ImageProxy>(Channel.CONFLATED)
+
     /** Public flow of camera frames emitted for ML analysis. */
     val frameFlow = _frameChannel.receiveAsFlow()
 
@@ -123,7 +125,13 @@ class CameraHelper(
                     .setOutputImageFormat(ImageAnalysis.OUTPUT_IMAGE_FORMAT_YUV_420_888)
                     .setOutputImageRotationEnabled(true)
                     .build()
-                    .also { analysis -> analysis.setAnalyzer(executor, this::processImageProxy) }
+                    .also { analysis ->
+                        analysis.setAnalyzer(Executors.newSingleThreadExecutor()) { image ->
+                            processImageProxy(
+                                image
+                            )
+                        }
+                    }
 
                 val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
 
@@ -238,8 +246,10 @@ class CameraHelper(
 
             val newZoom = zoomRatio.coerceIn(state.minZoomRatio, state.maxZoomRatio)
             control.setZoomRatio(newZoom)
-            logger.i("Zoom set to %.2fx (Range %.2f–%.2f)"
-                .format(newZoom, state.minZoomRatio, state.maxZoomRatio))
+            logger.i(
+                "Zoom set to %.2fx (Range %.2f–%.2f)"
+                    .format(newZoom, state.minZoomRatio, state.maxZoomRatio)
+            )
         } catch (e: Exception) {
             logger.e("Failed to set camera zoom", e)
         }
