@@ -40,8 +40,8 @@ fun CircularCountIndicator(
 
     // Derive last 4 values and whether they're same
     val (_, lastFourSame) = remember(lastDetections) {
-        val values = lastDetections.toList().takeLast(4)
-        val same = values.size == 4 && values.distinct().size == 1
+        val values = lastDetections.toList().takeLast(2)
+        val same = values.size == 2 && values.distinct().size == 1
         values to same
     }
 

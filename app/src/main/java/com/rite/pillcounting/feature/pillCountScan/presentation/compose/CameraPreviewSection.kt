@@ -37,7 +37,6 @@ import com.rite.pillcounting.feature.pillCountScan.domain.model.DetectedPill
 import com.rite.pillcounting.feature.pillCountScan.presentation.logic.CameraHelper
 import com.rite.pillcounting.feature.pillCountScan.presentation.viewmodel.PillScanningViewModel
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.min
 
@@ -69,10 +68,7 @@ fun CameraPreviewSection(
         cameraHelper.startCamera(previewView)
         coroutineScope.launch(Dispatchers.Default) {
             cameraHelper.frameFlow.collect { image ->
-                val start = System.currentTimeMillis()
                 onFrame(image)
-                val elapsed = System.currentTimeMillis() - start
-                delay((elapsed * 0.5).coerceIn(60.0, 150.0).toLong())
             }
         }
     }
