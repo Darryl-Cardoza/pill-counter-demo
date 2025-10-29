@@ -1,5 +1,6 @@
 package com.rite.pillcounting.feature.pillCountScan.presentation.compose
 
+import android.media.MediaActionSound
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -15,6 +16,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -38,6 +40,12 @@ fun CircularCountIndicator(
     val indicatorColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.8f)
     val lastDetections by viewModel.lastTenDetections.collectAsState()
 
+    val shutterSound = remember {
+        MediaActionSound().apply { load(MediaActionSound.SHUTTER_CLICK) }
+    }
+
+    val uiState by viewModel.uiState.collectAsState()
+
     // Derive last 4 values and whether they're same
     val (_, lastFourSame) = remember(lastDetections) {
         val values = lastDetections.toList().takeLast(2)
@@ -51,11 +59,16 @@ fun CircularCountIndicator(
         initialValue = 0f,
         targetValue = 1f,
         animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 1500, easing = LinearEasing),
+            animation = tween(durationMillis = 800, easing = LinearEasing),
             repeatMode = RepeatMode.Restart
         ),
         label = "sweepProgress"
     )
+    LaunchedEffect(lastFourSame) {
+        if (lastFourSame) {
+            shutterSound.play(MediaActionSound.SHUTTER_CLICK)
+        }
+    }
 
     Box(
         modifier = modifier.size(115.dp),
@@ -64,8 +77,8 @@ fun CircularCountIndicator(
         Canvas(modifier = Modifier.fillMaxSize()) {
             val strokeWidth = 4.dp.toPx()
 
-            // If last 4 are same, show full circle (steady), else animate
-            val sweepAngle = if (lastFourSame) 360f else 360 * sweepProgress
+            // If last 4 are same or uiState.showIdleOverlay is true, show full circle (steady), else animate
+            val sweepAngle = if (lastFourSame || uiState.showIdleOverlay) 360f else 360 * sweepProgress
 
             drawArc(
                 color = indicatorColor,
