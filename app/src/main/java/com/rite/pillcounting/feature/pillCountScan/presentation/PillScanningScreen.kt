@@ -130,28 +130,6 @@ fun PillScanningScreen(
         )
     }
 
-    // --- Overlay Logic ---
-    val shouldShowOverlay =
-        uiState.showIdleOverlay || (countType == "15" && isLastTenAllZero)
-
-    if (shouldShowOverlay) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(AppTheme.extendedColors.primaryBackground.copy(alpha = 0.85f)),
-            contentAlignment = Alignment.Center
-        ) {
-            ActionButtonPrimary(
-                text = stringResource(R.string.resume),
-                onClick = {
-                    viewModel.resetIdleOverlay()
-                    lastTenDetections = emptyList() // reset buffer after resume
-                },
-                modifier = Modifier.padding(16.dp)
-            )
-        }
-    }
-
     // === Init & Navigation ===
     LaunchedEffect(Unit) {
         viewModel.initializeInterpreter(retryCount = 2)
