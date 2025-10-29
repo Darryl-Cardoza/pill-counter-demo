@@ -6,6 +6,7 @@ import android.graphics.Typeface
 import androidx.camera.core.ImageProxy
 import androidx.camera.view.PreviewView
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -13,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -84,7 +86,7 @@ fun CameraPreviewSection(
         val containerWidth = constraints.maxWidth.toFloat()
         val containerHeight = constraints.maxHeight.toFloat()
         val baseSide = min(containerWidth, containerHeight)
-        val initialBox = Size(baseSide * 0.7f, baseSide * 0.7f)
+        val initialBox = Size(baseSide * 0.8f, baseSide * 0.8f)
 
         var boxOffset by remember {
             mutableStateOf(
@@ -95,7 +97,7 @@ fun CameraPreviewSection(
             )
         }
         var boxSize by remember { mutableStateOf(initialBox) }
-        var filteredCount by remember { mutableStateOf(0) }
+        var filteredCount by remember { mutableIntStateOf(0) }
 
         // Cache Paint objects to avoid GC churn
         val textPaint = remember {
@@ -128,30 +130,32 @@ fun CameraPreviewSection(
 
                         val isOnHandle = (centroid - handleCenter).getDistance() <= handleRadius
 
-                        // Move if on handle
-                        if (isOnHandle) {
+                        // Move box if handle is touched
+                        /*if (isOnHandle) {
                             val maxX = (containerWidth - boxSize.width).coerceAtLeast(0f)
                             val maxY = (containerHeight - boxSize.height).coerceAtLeast(0f)
                             boxOffset = Offset(
                                 (boxOffset.x + pan.x).coerceIn(0f, maxX),
                                 (boxOffset.y + pan.y).coerceIn(0f, maxY)
                             )
-                        }
+                        }*/
 
-                        if (zoom != 1f) {
-                            val currentZoom = cameraHelper.getCurrentZoomRatio() ?: 1f
-                            val targetZoom = (currentZoom * zoom).coerceIn(1f, 1f)
-                            cameraHelper.setZoom(targetZoom)
-                        }
+                        // --- CAMERA ZOOM (always allowed) ---
+                        val currentZoom = cameraHelper.getCurrentZoomRatio() ?: 1f
+                        val targetZoom = (currentZoom * zoom).coerceIn(1f, 8f)
+                        cameraHelper.setZoom(targetZoom)
 
-                        // Resize smoothly (pinch)
-                        val minBox = baseSide * 0.3f
+                        // --- BOX RESIZE (expand + shrink to original only) ---
+                        val minBoxWidth = initialBox.width
+                        val minBoxHeight = initialBox.height
+
                         val newWidth = (boxSize.width * zoom)
-                            .coerceIn(minBox, containerWidth)
+                            .coerceIn(minBoxWidth, containerWidth)
                         val newHeight = (boxSize.height * zoom)
-                            .coerceIn(minBox, containerHeight)
+                            .coerceIn(minBoxHeight, containerHeight)
 
-                        if (zoom != 1f) {
+                        // Only apply if there’s an actual change
+                        if (newWidth != boxSize.width || newHeight != boxSize.height) {
                             val deltaW = (newWidth - boxSize.width) / 2
                             val deltaH = (newHeight - boxSize.height) / 2
                             boxOffset = Offset(
@@ -189,21 +193,21 @@ fun CameraPreviewSection(
             )
 
             // Corner markers
-            fun corner(x: Float, y: Float, dx: Float, dy: Float) {
+            /*fun corner(x: Float, y: Float, dx: Float, dy: Float) {
                 drawLine(Color.White, Offset(x, y), Offset(x + dx, y), strokeWidth = stroke)
                 drawLine(Color.White, Offset(x, y), Offset(x, y + dy), strokeWidth = stroke)
             }
             corner(left, top, edge, edge)
             corner(right, top, -edge, edge)
             corner(left, bottom, edge, -edge)
-            corner(right, bottom, -edge, -edge)
+            corner(right, bottom, -edge, -edge)*/
 
             // Handle dots
-            val hx = right + 12.dp.toPx()
+            /*val hx = right + 12.dp.toPx()
             val hy = bottom - 5.dp.toPx()
             val sy = hy - (dotY * 2)
             for (c in 0..1) for (r in 0..2)
-                drawCircle(Color.White, dotR, Offset(hx + c * dotX, sy + r * dotY))
+                drawCircle(Color.White, dotR, Offset(hx + c * dotX, sy + r * dotY))*/
 
             // Draw pills
             val mapped = pills.map {
