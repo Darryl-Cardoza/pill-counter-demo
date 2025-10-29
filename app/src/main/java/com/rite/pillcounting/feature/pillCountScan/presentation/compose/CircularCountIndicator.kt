@@ -64,6 +64,7 @@ fun CircularCountIndicator(
         ),
         label = "sweepProgress"
     )
+
     LaunchedEffect(lastFourSame) {
         if (lastFourSame) {
             shutterSound.play(MediaActionSound.SHUTTER_CLICK)
