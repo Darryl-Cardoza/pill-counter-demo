@@ -146,9 +146,9 @@ dependencies {
     implementation("com.google.accompanist:accompanist-permissions:0.28.0")
 
     // --- TensorFlow Lite ---
-    implementation("org.tensorflow:tensorflow-lite:2.12.0")
+    implementation("org.tensorflow:tensorflow-lite:2.14.0")
     implementation("org.tensorflow:tensorflow-lite-support:0.4.3")
-    implementation("org.tensorflow:tensorflow-lite-gpu:2.12.0")
+    implementation("org.tensorflow:tensorflow-lite-gpu:2.14.0")
 
     // --- PDF / iText7 ---
     implementation("com.itextpdf:itext7-core:7.2.5")
