@@ -23,13 +23,13 @@ import kotlin.math.min
 object Postprocessor {
 
     private const val INPUT_SIZE = 640
-    private const val CONFIDENCE_THRESHOLD = 0.5f
+    private const val CONFIDENCE_THRESHOLD = 0.70f
     private const val IOU_THRESHOLD = 0.5f
 
-    private const val IDX_CX = 0
-    private const val IDX_CY = 1
-    private const val CLASS_START = 4
-    private const val NUM_CLASSES = 2
+//    private const val IDX_CX = 0
+//    private const val IDX_CY = 1
+//    private const val CLASS_START = 4
+//    private const val NUM_CLASSES = 2
 
     private val logger = AppLogger.create<Postprocessor>()
 
@@ -60,7 +60,7 @@ object Postprocessor {
      * @param isFrontCamera  Whether the input source is the front camera.
      * @return Pair of (filtered detections, transformation matrix used).
      */
-    fun parseDetections(
+    /*fun parseDetections(
         det: Array<FloatArray>,
         imageWidth: Int,
         imageHeight: Int,
@@ -149,7 +149,82 @@ object Postprocessor {
         )
 
         return filtered to transform
+    }*/
+
+    fun parseDetections(
+        det: Array<FloatArray>,  // shape [5][8400]
+        imageWidth: Int,
+        imageHeight: Int,
+        rotationDegrees: Int,
+        viewWidth: Int,
+        viewHeight: Int,
+        isFrontCamera: Boolean = false
+    ): Pair<List<Detection>, Matrix> {
+
+        val startTime = System.currentTimeMillis()
+
+        val srcW = imageWidth.toFloat()
+        val srcH = imageHeight.toFloat()
+
+        val scaleModel = max(INPUT_SIZE / srcW, INPUT_SIZE / srcH)
+        val scaledW = srcW * scaleModel
+        val scaledH = srcH * scaleModel
+        val xOffset = (scaledW - INPUT_SIZE) / 2f
+        val yOffset = (scaledH - INPUT_SIZE) / 2f
+
+        val transform = Matrix().apply {
+            postTranslate(xOffset, yOffset)
+            postScale(1f / scaleModel, 1f / scaleModel)
+        }
+
+        val scaleToView = max(viewWidth / srcW, viewHeight / srcH)
+        val scaledViewW = srcW * scaleToView
+        val scaledViewH = srcH * scaleToView
+        val dx = (viewWidth - scaledViewW) / 2f
+        val dy = (viewHeight - scaledViewH) / 2f
+
+        transform.postScale(scaleToView, scaleToView)
+        transform.postTranslate(dx, dy)
+
+        if (isFrontCamera) {
+            transform.postScale(-1f, 1f, viewWidth / 2f, viewHeight / 2f)
+        }
+
+        // Model gives only [x, y, w, h, conf]
+        val cxArr = det[0]
+        val cyArr = det[1]
+        val wArr = det[2]
+        val hArr = det[3]
+        val confArr = det[4]
+
+        val mappedDetections = mutableListOf<Detection>()
+        val temp = FloatArray(2)
+
+        for (i in cxArr.indices) {
+            val conf = confArr[i]
+            if (conf < CONFIDENCE_THRESHOLD) continue
+
+            temp[0] = cxArr[i] * INPUT_SIZE
+            temp[1] = cyArr[i] * INPUT_SIZE
+            transform.mapPoints(temp)
+
+            val px = temp[0].coerceIn(0f, viewWidth.toFloat())
+            val py = temp[1].coerceIn(0f, viewHeight.toFloat())
+
+            val r = (wArr[i].coerceAtLeast(hArr[i]) * INPUT_SIZE / 2f)
+            val box = RectF(px - r, py - r, px + r, py + r)
+
+            mappedDetections += Detection(box, conf, px, py)
+        }
+
+        val filtered = nonMaxSuppression(mappedDetections)
+        val elapsed = System.currentTimeMillis() - startTime
+
+        logger.i("Postprocessing completed | DetectionsIn=${mappedDetections.size}, DetectionsOut=${filtered.size}, Elapsed=${elapsed}ms")
+
+        return filtered to transform
     }
+
 
     /**
      * Performs Non-Maximum Suppression (NMS) to eliminate redundant overlapping detections.

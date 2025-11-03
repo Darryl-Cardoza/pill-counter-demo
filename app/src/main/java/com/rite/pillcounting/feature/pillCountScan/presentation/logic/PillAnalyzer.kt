@@ -65,6 +65,12 @@ class PillAnalyzer(
                 imageProxy.close()
                 return
             }
+
+            // Save every few frames for debugging rotation/orientation
+            /*if ((System.currentTimeMillis() / 5000) % 2L == 0L) {
+                bmp.saveDebugCopy(tag = "preprocessed")
+            }*/
+
             bitmap = bmp
             val preprocessTime = System.currentTimeMillis() - preprocessStart
             logger.i("Preprocessing completed in $preprocessTime ms | Bitmap=${bmp.width}x${bmp.height}")
@@ -74,15 +80,16 @@ class PillAnalyzer(
             // -----------------------------------------------------
             val inferenceStart = System.currentTimeMillis()
             val detShape = interpreter.getOutputTensor(0).shape()
-            val maskShape = interpreter.getOutputTensor(1).shape()
+            //val maskShape = interpreter.getOutputTensor(1).shape()
 
             val out0 = Array(1) { Array(detShape[1]) { FloatArray(detShape[2]) } }
-            val out1 = Array(1) { Array(maskShape[1]) { Array(maskShape[2]) { FloatArray(maskShape[3]) } } }
+            //val out1 = Array(1) { Array(maskShape[1]) { Array(maskShape[2]) { FloatArray(maskShape[3]) } } }
 
-            val outputs = mapOf(0 to out0, 1 to out1)
+            //val outputs = mapOf(0 to out0, 1 to out1)
 
             try {
-                interpreter.runForMultipleInputsOutputs(arrayOf(inputBuffer), outputs)
+                //interpreter.runForMultipleInputsOutputs(arrayOf(inputBuffer), outputs)
+                interpreter.run(inputBuffer, out0)
             } catch (e: Exception) {
                 logger.e("Model inference failed: ${e.message}", e)
                 bitmap.recycle()
@@ -91,7 +98,8 @@ class PillAnalyzer(
             }
 
             val inferenceTime = System.currentTimeMillis() - inferenceStart
-            logger.i("Model inference completed in $inferenceTime ms | Output tensors: det=${detShape.contentToString()}, mask=${maskShape.contentToString()}")
+            //logger.i("Model inference completed in $inferenceTime ms | Output tensors: det=${detShape.contentToString()}, mask=${maskShape.contentToString()}")
+            logger.i("Measure time Model inference completed in $inferenceTime ms | Output tensors: det=${detShape.contentToString()}")
 
             // -----------------------------------------------------
             // STEP 3: POSTPROCESSING
@@ -137,7 +145,7 @@ class PillAnalyzer(
             // STEP 4: FINAL RESULT CALLBACK
             // -----------------------------------------------------
             val totalTime = System.currentTimeMillis() - overallStart
-            logger.i("Frame analysis successful in $totalTime ms | Pills detected=${detections.size}")
+            logger.i("Measure time Frame analysis successful in $totalTime ms | Pills detected=${detections.size}")
 
             lastTransformationMatrix = matrix
             onPillCountUpdated(detections.size, detections, bitmap, matrix)
@@ -154,3 +162,46 @@ class PillAnalyzer(
         }
     }
 }
+
+/**
+
+ * Saves a bitmap to external storage (Downloads/pill_debug/)
+
+ * for debugging orientation and preprocessing results.
+
+ */
+
+/*fun Bitmap.saveDebugCopy(tag: String = "frame"): File? {
+
+    return try {
+
+        val dir = File(
+
+            Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
+
+            "pill_debug"
+
+        ).apply { mkdirs() }
+
+        val name = "${tag}_${SimpleDateFormat("HHmmss", Locale.US).format(Date())}.jpg"
+
+        val file = File(dir, name)
+
+        FileOutputStream(file).use { out ->
+
+            compress(Bitmap.CompressFormat.JPEG, 90, out)
+
+        }
+
+        file
+
+    } catch (e: Exception) {
+
+        e.printStackTrace()
+
+        null
+
+    }
+
+}*/
+

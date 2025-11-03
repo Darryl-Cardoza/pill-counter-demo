@@ -132,7 +132,6 @@ fun PillScanningScreen(
 
     // === Init & Navigation ===
     LaunchedEffect(Unit) {
-        viewModel.initializeInterpreter(retryCount = 2)
         viewModel.showTxnInfo(countType)
         viewModel.observeTxnDetailsForTxn()
 
@@ -167,7 +166,11 @@ fun PillScanningScreen(
                         viewModel.onFrameCaptured(imageProxy)
                     },
                     onFilteredCountChanged = { count -> filteredPillCount = count },
-                    modifier = Modifier.fillMaxSize()
+                    modifier = Modifier.fillMaxSize(),
+                    onPreviewStarted = {
+                        // Safe place to initialize GPU-based model
+                        viewModel.initializeInterpreter(retryCount = 2)
+                    }
                 )
             },
             bottomOrRight = {

@@ -49,7 +49,8 @@ fun CameraPreviewSection(
     isCameraPaused: Boolean,
     onFrame: (ImageProxy) -> Unit,
     onFilteredCountChanged: (Int) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onPreviewStarted: (() -> Unit)? = null
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -67,6 +68,13 @@ fun CameraPreviewSection(
     // Camera feed collection
     LaunchedEffect(Unit) {
         cameraHelper.startCamera(previewView)
+
+        // Wait until the PreviewView has an active surface
+        previewView.surfaceProvider.let {
+            // Trigger callback once the surface is ready
+            onPreviewStarted?.invoke()
+        }
+
         coroutineScope.launch(Dispatchers.Default) {
             cameraHelper.frameFlow.collect { image ->
                 onFrame(image)
@@ -170,11 +178,11 @@ fun CameraPreviewSection(
         // Draw only the overlay
         Canvas(modifier = Modifier.fillMaxSize()) {
             val corner = with(density) { 16.dp.toPx() }
-            val edge = with(density) { 26.dp.toPx() }
+            /*val edge = with(density) { 26.dp.toPx() }
             val stroke = with(density) { 4.dp.toPx() }
             val dotR = with(density) { 3.dp.toPx() }
             val dotX = with(density) { 14.dp.toPx() }
-            val dotY = with(density) { 12.dp.toPx() }
+            val dotY = with(density) { 12.dp.toPx() }*/
 
             val left = boxOffset.x
             val top = boxOffset.y

@@ -2,11 +2,13 @@ package com.rite.pillcounting.feature.pillCountScan.presentation.logic
 
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Color
 import android.graphics.ImageFormat
 import android.graphics.Matrix
 import android.graphics.Rect
 import android.graphics.YuvImage
 import androidx.camera.core.ImageProxy
+import androidx.core.graphics.createBitmap
 import androidx.core.graphics.scale
 import com.rite.pillcounting.core.utils.logger.AppLogger
 import com.rite.pillcounting.feature.pillCountScan.presentation.logic.Preprocessor.INPUT_SIZE
@@ -197,7 +199,10 @@ object Preprocessor {
      * @param image The CameraX [ImageProxy] frame.
      * @return The converted [Bitmap].
      */
-    private fun imageProxyToBitmap(image: ImageProxy): Bitmap {
+    private fun imageProxyToBitmap(
+        image: ImageProxy,
+        isGrayscale: Boolean = true
+    ): Bitmap {
         val start = System.currentTimeMillis()
 
         val width = image.width
@@ -235,16 +240,47 @@ object Preprocessor {
             }
         }
 
-        // Convert NV21 → JPEG → Bitmap
-        val yuvImage = YuvImage(nv21, ImageFormat.NV21, width, height, null)
-        val out = ByteArrayOutputStream()
-        yuvImage.compressToJpeg(Rect(0, 0, width, height), 95, out)
-        val jpegBytes = out.toByteArray()
-        val bitmap = BitmapFactory.decodeByteArray(jpegBytes, 0, jpegBytes.size)
+        // Switch between grayscale and normal mode
+        val bitmap = if (isGrayscale) {
+            yuvToGrayscaleBitmap(nv21, width, height)
+        } else {
+            val yuvImage = YuvImage(nv21, ImageFormat.NV21, width, height, null)
+            val out = ByteArrayOutputStream()
+            yuvImage.compressToJpeg(Rect(0, 0, width, height), 95, out)
+            val jpegBytes = out.toByteArray()
+            BitmapFactory.decodeByteArray(jpegBytes, 0, jpegBytes.size)
+        }
 
         val duration = System.currentTimeMillis() - start
-        logger.d("YUV → Bitmap conversion completed in $duration ms | Frame=${width}x${height}")
+        logger.d(
+            "YUV → Bitmap conversion completed in $duration ms | Frame=${width}x${height}, Grayscale=$isGrayscale"
+        )
 
         return bitmap
     }
+
+    fun yuvToGrayscaleBitmap(
+        nv21: ByteArray,
+        width: Int,
+        height: Int,
+        contrastFactor: Float = 1.2f // >1.0 = more contrast
+    ): Bitmap {
+        val ySize = width * height
+        val yPlane = nv21.copyOfRange(0, ySize) // Only Y channel
+
+        val bmp = createBitmap(width, height)
+        val pixels = IntArray(ySize)
+
+        for (i in 0 until ySize) {
+            var y = yPlane[i].toInt() and 0xFF
+            // Apply contrast enhancement around midpoint (128)
+            y = (((y - 128) * contrastFactor) + 128).toInt().coerceIn(0, 255)
+            pixels[i] = Color.rgb(y, y, y)
+        }
+
+        bmp.setPixels(pixels, 0, width, 0, 0, width, height)
+        return bmp
+    }
+
+
 }

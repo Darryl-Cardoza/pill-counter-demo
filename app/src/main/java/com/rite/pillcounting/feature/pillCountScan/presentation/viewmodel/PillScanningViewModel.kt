@@ -38,7 +38,10 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.tensorflow.lite.Interpreter
+import org.tensorflow.lite.gpu.CompatibilityList
+import org.tensorflow.lite.gpu.GpuDelegate
 import java.io.FileInputStream
 import java.nio.MappedByteBuffer
 import java.nio.channels.FileChannel
@@ -98,10 +101,11 @@ class PillScanningViewModel @Inject constructor(
     // --- Duplicate prevention ---
     private var lastAddedScanSignature: String? = null
     private var lastAddClickTime: Long = 0L
+    private var gpuDelegate: GpuDelegate? = null
 
 
     companion object {
-        private const val MODEL_FILENAME = "best_float32_new.tflite"
+        private const val MODEL_FILENAME = "best_float32.tflite"
         private const val ZERO_DETECTIONS_THRESHOLD = 25
         private const val REPEAT_THRESHOLD = 25
         private const val IDLE_TIMEOUT_MS = 15_000L
@@ -143,7 +147,11 @@ class PillScanningViewModel @Inject constructor(
     }
 
     /** Initialize TensorFlow Lite interpreter for pill detection. */
-    fun initializeInterpreter(retryCount: Int = 1, viewWidth: Int = 640, viewHeight: Int = 640) {
+    fun initializeInterpreter(
+        retryCount: Int = 1,
+        viewWidth: Int = 640,
+        viewHeight: Int = 640
+    ) {
         if (_modelState.value is ModelState.Ready) {
             logger.w("Interpreter already initialized, skipping reinitialization.")
             return
@@ -152,15 +160,46 @@ class PillScanningViewModel @Inject constructor(
         viewModelScope.launch(Dispatchers.IO) {
             _modelState.value = ModelState.Loading
             var attempt = 0
+
             while (attempt <= retryCount) {
+                var createdDelegate: GpuDelegate? = null
                 try {
                     val buffer = loadModelFile()
-                    val options = Interpreter.Options().apply {
-                        setUseXNNPACK(true)
-                        numThreads = Runtime.getRuntime().availableProcessors().coerceAtMost(4)
+                    val options = Interpreter.Options()
+
+                    // Move GPU delegate creation to MAIN thread
+                    withContext(Dispatchers.Main) {
+                        val compatList = CompatibilityList()
+                        if (compatList.isDelegateSupportedOnThisDevice) {
+                            try {
+                                val delegateOptions = compatList.bestOptionsForThisDevice
+                                createdDelegate = GpuDelegate(delegateOptions)
+                                options.addDelegate(createdDelegate)
+                                logger.i("GPU delegate initialized on main thread.")
+                            } catch (gpuInitEx: Exception) {
+                                logger.w("GPU delegate creation failed: ${gpuInitEx.message}. Will use CPU fallback.")
+                                createdDelegate?.close()
+                                createdDelegate = null
+                            }
+                        } else {
+                            logger.w("GPU delegate not supported by CompatibilityList. Using CPU.")
+                        }
                     }
+
+                    // CPU fallback if GPU not available
+                    if (createdDelegate == null) {
+                        options.setUseXNNPACK(true)
+                        options.numThreads =
+                            Runtime.getRuntime().availableProcessors().coerceAtMost(4)
+                    }
+
+                    // Now safely create interpreter (IO thread)
                     val tflite = Interpreter(buffer, options)
                     interpreter = tflite
+
+                    // Keep delegate reference for cleanup
+                    gpuDelegate?.close()
+                    gpuDelegate = createdDelegate
 
                     val analyzer = PillAnalyzer(
                         interpreter = tflite,
@@ -169,10 +208,13 @@ class PillScanningViewModel @Inject constructor(
                     ) { count, detections, bitmap, matrix ->
                         processDetections(count, detections, bitmap, matrix, viewWidth, viewHeight)
                     }
+
                     _modelState.value = ModelState.Ready(analyzer)
                     logger.i("Interpreter initialized successfully.")
                     return@launch
+
                 } catch (e: Exception) {
+                    try { createdDelegate?.close() } catch (_: Exception) {}
                     attempt++
                     logger.e("Interpreter initialization failed (attempt $attempt)", e)
                     if (attempt > retryCount) {
@@ -182,6 +224,8 @@ class PillScanningViewModel @Inject constructor(
             }
         }
     }
+
+
 
     // ------------------------------------------------------------------------
     // Frame Processing and Detection Logic
@@ -321,14 +365,34 @@ class PillScanningViewModel @Inject constructor(
 
     override fun onCleared() {
         super.onCleared()
-        interpreter?.close()
-        interpreter = null
-        currentFrameBitmap?.recycle()
-        currentFrameBitmap = null
-        _modelState.value = ModelState.Idle
-        logger.i("ViewModel cleared and resources released.")
-    }
 
+        try {
+            interpreter?.close()
+        } catch (e: Exception) {
+            logger.w("Error closing interpreter: ${e.message}")
+        } finally {
+            interpreter = null
+        }
+
+        try {
+            gpuDelegate?.close()
+        } catch (e: Exception) {
+            logger.w("Error closing GPU delegate: ${e.message}")
+        } finally {
+            gpuDelegate = null
+        }
+
+        try {
+            currentFrameBitmap?.recycle()
+        } catch (e: Exception) {
+            logger.w("Error recycling bitmap: ${e.message}")
+        } finally {
+            currentFrameBitmap = null
+        }
+
+        _modelState.value = ModelState.Idle
+        logger.i("ViewModel cleared and all TensorFlow resources released.")
+    }
     // ------------------------------------------------------------------------
     // Event Handling
     // ------------------------------------------------------------------------
