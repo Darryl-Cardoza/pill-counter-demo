@@ -20,10 +20,10 @@ import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.rite.pillcounting.R
-import com.rite.pillcounting.core.utils.preference.PreferenceHelper
 import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.CommonDialog
 import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.MenuButton
 import com.rite.pillcounting.core.utils.compose.SplitResponsive
+import com.rite.pillcounting.core.utils.preference.PreferenceHelper
 import com.rite.pillcounting.feature.dashboard.presentation.compose.FixedCountSection
 import com.rite.pillcounting.feature.dashboard.presentation.compose.RegularCountSection
 import com.rite.pillcounting.feature.dashboard.presentation.viewmodel.DashboardViewModel
@@ -67,9 +67,7 @@ fun DashboardScreen(
     // Navigate to Profile screen if profile is incomplete and user hasn’t opted out
     LaunchedEffect(uiState.navigateToProfile) {
         if (uiState.navigateToProfile && !preferenceHelper.isDoNotAskAgain()) {
-            navController.navigate(Screen.Profile.route) {
-                popUpTo(Screen.Dashboard.route) { inclusive = false }
-            }
+            navController.navigate(Screen.Profile.route)
         }
     }
 

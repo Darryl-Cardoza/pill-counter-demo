@@ -165,14 +165,9 @@ fun ProfileScreen(
                 }
 
                 is ProfileUpdateUiState.Success -> {
-                    if (cameFromDashboard) {
-                        navController.navigate(Screen.Dashboard.route) {
-                            popUpTo(Screen.Dashboard.route) { inclusive = true }
-                            launchSingleTop = true
-                        }
-                    } else {
-                        navController.popBackStack()
-                    }
+
+                    navController.popBackStack()
+
                 }
 
                 is ProfileUpdateUiState.Error -> {
