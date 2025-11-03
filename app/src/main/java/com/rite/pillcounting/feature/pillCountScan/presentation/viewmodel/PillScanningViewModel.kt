@@ -503,8 +503,6 @@ class PillScanningViewModel @Inject constructor(
             overlayBitmap?.recycle()
             currentFrameBitmap = null
             logger.i("Transaction detail saved. Count=$currentCount, File=$filePath")
-
-            showToast(context, context.getString(R.string.add_success))
         }
     }
 

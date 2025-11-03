@@ -1,5 +1,10 @@
 package com.rite.pillcounting.feature.pillCountScan.presentation.compose
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -7,9 +12,15 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -40,6 +51,7 @@ import com.rite.pillcounting.ui.theme.AppTheme
  * @param onEvent Callback to send user interaction events to the ViewModel.
  * @param filteredPillCount The filtered pill count detected in the latest scan.
  */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun InformationPanelSection(
     uiState: PillScanningUiState,
@@ -76,22 +88,49 @@ fun InformationPanelSection(
                 onEvent(PillScanningEvent.AddTransactionDetailClicked(filteredPillCount))
             }
 
-            LazyRow(
-                horizontalArrangement = Arrangement.spacedBy(medium),
-                reverseLayout = true
-            ) {
-                itemsIndexed(uiState.txnDetailHistory) { index, txnDetail ->
-                    val highlight = index == 0
-                    Chip(
-                        shouldHighlight = highlight,
-                        txnDetail = txnDetail,
-                        index = uiState.txnDetailHistory.size - index,
-                        onDelete = { txnDetailId ->
-                            onEvent(PillScanningEvent.TransactionDetailDeleted(txnDetailId))
-                        }
-                    )
+            val listState = rememberLazyListState()
+
+            LaunchedEffect(uiState.txnDetailHistory.size) {
+                // Scroll to the newly added item (index 0, since reverseLayout = true)
+                if (uiState.txnDetailHistory.isNotEmpty()) {
+                    listState.animateScrollToItem(0)
                 }
             }
+
+            LazyRow(
+                state = listState,
+                reverseLayout = true,
+                horizontalArrangement = Arrangement.spacedBy(medium)
+            ) {
+                itemsIndexed(
+                    uiState.txnDetailHistory,
+                    key = { _, txnDetail -> txnDetail.txnDetailId }
+                ) { index, txnDetail ->
+                    val highlight = index == 0
+                    var isVisible by remember { mutableStateOf(false) }
+
+                    // Trigger fade+scale animation
+                    LaunchedEffect(Unit) {
+                        isVisible = true
+                    }
+
+                    AnimatedVisibility(
+                        visible = isVisible,
+                        enter = fadeIn() + scaleIn(),
+                        exit = fadeOut()
+                    ) {
+                        Chip(
+                            shouldHighlight = highlight,
+                            txnDetail = txnDetail,
+                            index = uiState.txnDetailHistory.size - index,
+                            onDelete = { txnDetailId ->
+                                onEvent(PillScanningEvent.TransactionDetailDeleted(txnDetailId))
+                            }
+                        )
+                    }
+                }
+            }
+
         }
 
         ActionButtons(onEvent)

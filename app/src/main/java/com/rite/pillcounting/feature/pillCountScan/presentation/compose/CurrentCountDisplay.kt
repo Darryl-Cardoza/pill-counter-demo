@@ -57,7 +57,10 @@ fun CurrentCountDisplay(
 
         // Apply dimming when disabled using alpha
         FilledButton(
-            text = stringResource(R.string.add).uppercase(),
+            text = if (isButtonEnabled)
+                stringResource(R.string.add).uppercase()
+            else
+                stringResource(R.string.wait).uppercase(),
             onClick = {
                 if (isButtonEnabled) {
                     isButtonEnabled = false

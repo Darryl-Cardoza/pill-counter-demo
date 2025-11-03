@@ -94,6 +94,7 @@
     <string name="pause">Pause</string>
     <string name="done">Done</string>
     <string name="add">Add</string>
+    <string name="wait">Wait</string>
     <string name="count">Count</string>
     <string name="ok">Ok</string>
     <string name="cancel">Cancel</string>
@@ -223,7 +224,6 @@
     <string name="add_exceeds_target">Cannot add — total exceeds target count.</string>
     <string name="add_zero_detected">Cannot add — no pills detected.</string>
     <string name="duplicate_scan_ignored">Duplicate scan ignored — no new pills detected.</string>
-    <string name="add_success">Batch added successfully.</string>
 
     <!-- For multi-select mode text in PartialListPanel -->
     <string name="selected_items_count">%1$d items selected</string>
