@@ -124,7 +124,7 @@ fun CameraPreviewSection(
                 .fillMaxSize()
                 .pointerInput(Unit) {
                     detectTransformGestures { centroid, pan, zoom, _ ->
-                        val left = boxOffset.x
+                        /*val left = boxOffset.x
                         val top = boxOffset.y
                         val right = left + boxSize.width
                         val bottom = top + boxSize.height
@@ -135,7 +135,7 @@ fun CameraPreviewSection(
                         )
                         val handleRadius = with(density) { 40.dp.toPx() }
 
-                        val isOnHandle = (centroid - handleCenter).getDistance() <= handleRadius
+                        val isOnHandle = (centroid - handleCenter).getDistance() <= handleRadius*/
 
                         // Move box if handle is touched
                         /*if (isOnHandle) {
