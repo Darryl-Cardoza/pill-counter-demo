@@ -17,7 +17,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
-import com.rite.pillcounting.core.utils.common.UserInterfaceUtils
+import com.rite.pillcounting.R
+import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.showToast
 import com.rite.pillcounting.feature.barcodeScan.domain.data.NavigationEvent
 import com.rite.pillcounting.feature.barcodeScan.presentation.viewmodel.ScanBarcodeViewModel
 
@@ -53,6 +54,7 @@ fun ScanBarCodeScreen(
 
     // Request camera permission when the composable is first launched if not already granted.
     LaunchedEffect(key1 = true) {
+        showToast(context, context.getString(R.string.scan_code))
         if (!hasCameraPermission) {
             permissionLauncher.launch(Manifest.permission.CAMERA)
         }
@@ -85,7 +87,7 @@ fun ScanBarCodeScreen(
         )
     }
     uiState.error?.let { errorMsg ->
-        UserInterfaceUtils.showToast(context,errorMsg)
+        showToast(context,errorMsg)
     }
 
     // Delegate the UI rendering to the stateless content composable.

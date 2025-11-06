@@ -12,15 +12,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.navigation.NavController
-import com.rite.pillcounting.core.utils.logger.AppLogger
 import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.BackButton
-import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.LoadingIndicator
-import com.rite.pillcounting.core.utils.compose.SplitResponsive
+import com.rite.pillcounting.core.utils.logger.AppLogger
 import com.rite.pillcounting.feature.barcodeScan.domain.data.ScanBarcodeEvent
 import com.rite.pillcounting.feature.barcodeScan.domain.model.ScanBarcodeUiState
 import com.rite.pillcounting.feature.barcodeScan.presentation.analyzer.BarcodeAnalyzer
-import com.rite.pillcounting.feature.barcodeScan.presentation.compose.InformationPanel
 import com.rite.pillcounting.feature.barcodeScan.presentation.compose.PermissionDeniedView
 import com.rite.pillcounting.feature.barcodeScan.presentation.compose.ScannerView
 
@@ -37,7 +35,7 @@ fun ScanBarCodeScreenContent(
     onEvent: (ScanBarcodeEvent) -> Unit,
     analyzer: BarcodeAnalyzer
 ) {
-    val lifecycleOwner = androidx.compose.ui.platform.LocalLifecycleOwner.current
+    val lifecycleOwner = LocalLifecycleOwner.current
 
     // Automatically pause/resume camera based on lifecycle
     DisposableEffect(lifecycleOwner) {
@@ -64,50 +62,29 @@ fun ScanBarCodeScreenContent(
                 .padding(paddingValues)
                 .background(Color.Black)
         ) {
-            SplitResponsive(
-                portraitRatio = 0.60f to 0.40f,
-                landscapeRatio = 0.60f to 0.40f,
-                topOrLeft = {
-                    if (hasCameraPermission) {
-                        ScannerView(
-                            analyzer = analyzer,
-                            isActive = uiState.isScannerActive,
-                            singleScanMode = true,
-                            onBarcodeScanned = { value, imagePath ->
-                                onEvent(
-                                    ScanBarcodeEvent.BarcodeScanned(
-                                        barcodeValue = value,
-                                        imagePath = imagePath ?: ""
-                                    )
-                                )
-                                AppLogger("ScanBarcode").i(
-                                    "Barcode=$value | Image=$imagePath"
-                                )
-                            },
-                            onError = { exception ->
-                                onEvent(ScanBarcodeEvent.ScannerError(exception))
-                            }
+            if (hasCameraPermission) {
+                ScannerView(
+                    analyzer = analyzer,
+                    isActive = uiState.isScannerActive,
+                    singleScanMode = true,
+                    onBarcodeScanned = { value, imagePath ->
+                        onEvent(
+                            ScanBarcodeEvent.BarcodeScanned(
+                                barcodeValue = value,
+                                imagePath = imagePath ?: ""
+                            )
                         )
-                    } else {
-                        PermissionDeniedView(onRequestPermission)
-                    }
-                },
-                bottomOrRight = {
-                    Box(modifier = Modifier.fillMaxSize()) {
-                        InformationPanel(
-                            navController = navController,
-                            drugName = uiState.drugName,
-                            ndc = uiState.ndc,
-                            onEvent = onEvent
+                        AppLogger("ScanBarcode").i(
+                            "Barcode=$value | Image=$imagePath"
                         )
-
-                        // Overlay loading indicator if needed
-                        if (uiState.isLoading) {
-                            LoadingIndicator()
-                        }
+                    },
+                    onError = { exception ->
+                        onEvent(ScanBarcodeEvent.ScannerError(exception))
                     }
-                }
-            )
+                )
+            } else {
+                PermissionDeniedView(onRequestPermission)
+            }
 
             // Global Back Button
             BackButton(navController)

@@ -115,6 +115,7 @@ class ScanBarcodeViewModel @Inject constructor(
                         isScannerActive = false
                     )
                 }
+                onEvent(ScanBarcodeEvent.StartCount)
             } else {
                 try {
                     val drugInfo = drugRepository.getDrugInfoByNdc(barcodeValue)
@@ -129,6 +130,7 @@ class ScanBarcodeViewModel @Inject constructor(
                                 isScannerActive = false
                             )
                         }
+                        onEvent(ScanBarcodeEvent.StartCount)
                     } else {
                         throw Exception("No drug information found for this NDC.")
                     }
@@ -248,6 +250,7 @@ class ScanBarcodeViewModel @Inject constructor(
                 error = null
             )
         }
+        onEvent(ScanBarcodeEvent.StartCount)
     }
 
     /** Show the manual entry dialog. */

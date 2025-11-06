@@ -1,55 +1,50 @@
 package com.rite.pillcounting.feature.barcodeScan.domain.model
 
-import com.squareup.moshi.Json
+import kotlinx.serialization.Serializable
 
-/**
- * Root response wrapper for the backend `/drugs/ndc/{ndc}` API.
- */
+@Serializable
 data class DrugDataResponse(
-    val status: Int,
-    @Json(name = "is_success") val isSuccess: Boolean,
-    val message: String?,
-    val token: String?,
-    val data: DrugDataWrapper?
+    val data: Data? = null,
+    val is_success: Boolean? = null,
+    val message: String? = null,
+    val status: Int? = null,
+    val token: String? = null
 )
 
-/**
- * Wrapper for "data" field that holds the actual drug details.
- */
-data class DrugDataWrapper(
-    val drug: DrugResult?
+@Serializable
+data class Data(
+    val _match_type: String? = null,
+    val active_ingredients: List<ActiveIngredient>? = null,
+    val brand_name: String? = null,
+    val `class`: DrugClass? = null,
+    val dosage_form: String? = null,
+    val generic_name: String? = null,
+    val package_ndc: String? = null,
+    val packaging: List<Packaging>? = null,
+    val product_ndc: String? = null,
+    val specific_product_id: String? = null,
+    val theraupetic_id: String? = null
 )
 
-/**
- * Models a single drug object inside "data.drug".
- */
-data class DrugResult(
-    @Json(name = "product_ndc")
-    val productNdc: String?,
+@Serializable
+data class ActiveIngredient(
+    val name: String? = null,
+    val strength: String? = null
+)
 
-    @Json(name = "package_ndc")
-    val packageNdc: String?,
+@Serializable
+data class DrugClass(
+    val pharm_class: List<String>? = null,
+    val pharm_class_cs: List<String>? = null,
+    val pharm_class_epc: List<String>? = null,
+    val pharm_class_moa: List<String>? = null,
+    val pharm_class_pe: List<String>? = null
+)
 
-    @Json(name = "generic_name")
-    val genericName: String?,
-
-    @Json(name = "brand_name")
-    val brandName: String?,
-
-    val strength: String?,
-    @Json(name = "dosage_form")
-    val dosageForm: String?,
-    val description: String?,
-    @Json(name = "manufacturer_name")
-    val manufacturerName: String?,
-    @Json(name = "product_type")
-    val productType: String?,
-    @Json(name = "class")
-    val drugClass: String?,
-
-    @Json(name = "theraupetic_id")
-    val therapeuticId: String?,
-
-    @Json(name = "specific_product_id")
-    val specificProductId: String?
+@Serializable
+data class Packaging(
+    val description: String? = null,
+    val marketing_start_date: String? = null,
+    val package_ndc: String? = null,
+    val sample: Boolean? = null
 )

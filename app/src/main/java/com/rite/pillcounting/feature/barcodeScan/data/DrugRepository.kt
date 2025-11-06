@@ -72,9 +72,12 @@ class DrugRepository @Inject constructor(
                 logger.w("No result found in API response for NDC: '$ndc'")
                 null
             } else {
+                logger.i("Returning mapped DrugInfo Result -> $response")
+
+                logger.i("Returning mapped DrugInfo data -> ${response.data}")
                 DrugInfo(
-                    brandName = result.drug?.brandName ?: "N/A",
-                    genericName = result.drug?.genericName ?: "N/A",
+                    brandName = result.brand_name ?: "N/A",
+                    genericName = result.generic_name ?: "N/A",
                     ndc = ndc
                 ).also {
                     logger.i("Returning mapped DrugInfo -> $it")

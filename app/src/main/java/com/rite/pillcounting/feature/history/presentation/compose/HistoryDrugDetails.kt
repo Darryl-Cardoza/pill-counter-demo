@@ -9,7 +9,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import com.rite.pillcounting.R
 import com.rite.pillcounting.core.utils.constants.Dimens.medium
-import com.rite.pillcounting.feature.barcodeScan.presentation.compose.DetailRow
 
 @Composable
 fun HistoryDrugDetails(

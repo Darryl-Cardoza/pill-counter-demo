@@ -1,4 +1,4 @@
-package com.rite.pillcounting.feature.barcodeScan.presentation.compose
+package com.rite.pillcounting.feature.history.presentation.compose
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
