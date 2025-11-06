@@ -14,6 +14,7 @@ import com.rite.pillcounting.core.room.dao.UserDao
 import com.rite.pillcounting.core.room.models.PillCountTxnDetailsEntity
 import com.rite.pillcounting.core.room.models.enums.CountStatus
 import com.rite.pillcounting.core.room.models.enums.CountType
+import com.rite.pillcounting.core.security.ModelDecryptor
 import com.rite.pillcounting.core.utils.common.HelperFunctions.saveBitmapToFile
 import com.rite.pillcounting.core.utils.common.LocationProvider
 import com.rite.pillcounting.core.utils.common.OverlayUtils
@@ -42,7 +43,9 @@ import kotlinx.coroutines.withContext
 import org.tensorflow.lite.Interpreter
 import org.tensorflow.lite.gpu.CompatibilityList
 import org.tensorflow.lite.gpu.GpuDelegate
+import java.io.File
 import java.io.FileInputStream
+import java.nio.ByteBuffer
 import java.nio.MappedByteBuffer
 import java.nio.channels.FileChannel
 import java.util.ArrayDeque
@@ -352,16 +355,23 @@ class PillScanningViewModel @Inject constructor(
     }
 
     /** Load TensorFlow Lite model from assets. */
-    private fun loadModelFile(fileName: String = MODEL_FILENAME): MappedByteBuffer {
-        val afd = getApplication<Application>().assets.openFd(fileName)
-        FileInputStream(afd.fileDescriptor).use {
-            return it.channel.map(
-                FileChannel.MapMode.READ_ONLY,
-                afd.startOffset,
-                afd.declaredLength
-            )
+    private fun loadModelFile(fileName: String = MODEL_FILENAME): ByteBuffer {
+        val context = getApplication<Application>()
+        val encFile = File(context.filesDir, "$fileName.enc")
+
+        if (!encFile.exists()) {
+            context.assets.open("$fileName.enc").use { input ->
+                encFile.outputStream().use { output -> input.copyTo(output) }
+            }
+        }
+
+        val decryptedBytes = ModelDecryptor.decryptToBytes(encFile)
+        return ByteBuffer.allocateDirect(decryptedBytes.size).apply {
+            put(decryptedBytes)
+            rewind()
         }
     }
+
 
     override fun onCleared() {
         super.onCleared()
