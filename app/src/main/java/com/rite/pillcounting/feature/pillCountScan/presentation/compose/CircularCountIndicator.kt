@@ -67,7 +67,7 @@ fun CircularCountIndicator(
 
     LaunchedEffect(lastFourSame) {
         if (lastFourSame) {
-            //shutterSound.play(MediaActionSound.START_VIDEO_RECORDING)
+            shutterSound.play(MediaActionSound.START_VIDEO_RECORDING)
         }
     }
 
