@@ -1,7 +1,6 @@
 package com.rite.pillcounting.feature.dashboard.presentation.compose
 
 import Screen
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -14,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -58,9 +58,10 @@ fun RegularCountSection(
         Spacer(modifier = Modifier.weight(1f))
 
         // Regular count icon (click → ScanBarcode)
-        Image(
+        Icon(
             painter = painterResource(id = R.drawable.regular_count),
             contentDescription = stringResource(R.string.regular_count),
+            tint = MaterialTheme.colorScheme.primary,
             modifier = Modifier
                 .size(120.dp)
                 .clickable(

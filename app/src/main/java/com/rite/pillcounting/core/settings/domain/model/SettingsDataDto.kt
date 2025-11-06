@@ -16,7 +16,8 @@ import com.squareup.moshi.JsonClass
  */
 @JsonClass(generateAdapter = true)
 data class SettingsDataDto(
-    @Json(name = "version") val version: String,
+    @Json(name = "android_version") val androidVersion: String?,
+    @Json(name = "version") val version: String? = androidVersion,
     @Json(name = "is_maintenance_mode") val isMaintenanceMode: Boolean,
     @Json(name = "settings") val settings: ApplicationSettingsResponse
 )

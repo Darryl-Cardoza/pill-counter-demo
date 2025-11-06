@@ -7,7 +7,6 @@ import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -188,9 +187,11 @@ object UserInterfaceUtils {
             Spacer(modifier = Modifier.weight(1f))
 
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Image(
+
+                Icon(
                     painter = painterResource(id = R.drawable.logo),
-                    contentDescription = "App Logo",
+                    contentDescription = stringResource(R.string.app_name),
+                    tint = MaterialTheme.colorScheme.secondary,
                     modifier = Modifier.size(100.dp)
                 )
 
@@ -243,7 +244,10 @@ object UserInterfaceUtils {
             modifier = modifier
                 .fillMaxWidth()
                 .height(height)
-                .background(AppTheme.extendedColors.inputBackground, RoundedCornerShape(cornerRadius))
+                .background(
+                    AppTheme.extendedColors.inputBackground,
+                    RoundedCornerShape(cornerRadius)
+                )
                 .padding(horizontal = 15.dp),
             contentAlignment = Alignment.CenterStart
         ) {
@@ -288,11 +292,17 @@ object UserInterfaceUtils {
             modifier = modifier
                 .fillMaxWidth()
                 .height(height)
-                .background(AppTheme.extendedColors.inputBackground, RoundedCornerShape(cornerRadius))
+                .background(
+                    AppTheme.extendedColors.inputBackground,
+                    RoundedCornerShape(cornerRadius)
+                )
                 .padding(horizontal = 15.dp),
             contentAlignment = Alignment.CenterStart
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth()
+            ) {
                 Icon(
                     painter = painterResource(id = iconRes),
                     contentDescription = null,
@@ -301,7 +311,10 @@ object UserInterfaceUtils {
                 )
 
                 Spacer(modifier = Modifier.width(15.dp))
-                Box(modifier = Modifier.width(0.5.dp).fillMaxHeight().background(Color.Gray))
+                Box(modifier = Modifier
+                    .width(0.5.dp)
+                    .fillMaxHeight()
+                    .background(Color.Gray))
                 Spacer(modifier = Modifier.width(15.dp))
 
                 BasicTextField(
@@ -312,10 +325,16 @@ object UserInterfaceUtils {
                     singleLine = true,
                     visualTransformation = if (isPassword && !passwordVisible)
                         PasswordVisualTransformation() else VisualTransformation.None,
-                    keyboardOptions = KeyboardOptions(keyboardType = keyboardType, imeAction = imeAction),
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = keyboardType,
+                        imeAction = imeAction
+                    ),
                     textStyle = LocalTextStyle.current.copy(color = AppTheme.extendedColors.textColor),
                     decorationBox = { inner ->
-                        Box(modifier = Modifier.fillMaxHeight(), contentAlignment = Alignment.CenterStart) {
+                        Box(
+                            modifier = Modifier.fillMaxHeight(),
+                            contentAlignment = Alignment.CenterStart
+                        ) {
                             if (value.isEmpty()) {
                                 Text(
                                     text = placeholder,
@@ -388,7 +407,9 @@ object UserInterfaceUtils {
                             fontWeight = FontWeight.Bold,
                             color = AppTheme.extendedColors.textColor,
                             textAlign = TextAlign.Center,
-                            modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = 12.dp)
                         )
                     }
                     Text(
@@ -705,7 +726,7 @@ object UserInterfaceUtils {
         modifier: Modifier = Modifier,
         color: Color = MaterialTheme.colorScheme.primary,
         enabled: Boolean = true,
-        width : Int = 100
+        width: Int = 100
     ) {
         Button(
             onClick = onClick,
@@ -803,10 +824,18 @@ object UserInterfaceUtils {
                     },
                     modifier = Modifier
                         .size(boxSize)
-                        .background(boxBackground, shape = androidx.compose.foundation.shape.RoundedCornerShape(cornerRadius))
+                        .background(
+                            boxBackground,
+                            shape = androidx.compose.foundation.shape.RoundedCornerShape(
+                                cornerRadius
+                            )
+                        )
                         .focusRequester(focusRequesters[i]),
                     singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = if (i == boxCount - 1) ImeAction.Done else ImeAction.Next),
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Number,
+                        imeAction = if (i == boxCount - 1) ImeAction.Done else ImeAction.Next
+                    ),
                     textStyle = TextStyle(
                         color = textColor,
                         fontSize = 24.sp,
