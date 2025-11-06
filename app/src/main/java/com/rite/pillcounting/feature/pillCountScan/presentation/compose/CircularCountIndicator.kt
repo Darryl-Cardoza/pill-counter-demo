@@ -67,16 +67,16 @@ fun CircularCountIndicator(
 
     LaunchedEffect(lastFourSame) {
         if (lastFourSame) {
-            shutterSound.play(MediaActionSound.START_VIDEO_RECORDING)
+            //shutterSound.play(MediaActionSound.START_VIDEO_RECORDING)
         }
     }
 
     Box(
-        modifier = modifier.size(115.dp),
+        modifier = modifier.size(95.dp),
         contentAlignment = Alignment.Center
     ) {
         Canvas(modifier = Modifier.fillMaxSize()) {
-            val strokeWidth = 4.dp.toPx()
+            val strokeWidth = 2.dp.toPx()
 
             // If last 4 are same or uiState.showIdleOverlay is true, show full circle (steady), else animate
             val sweepAngle = if (lastFourSame || uiState.showIdleOverlay) 360f else 360 * sweepProgress
@@ -93,7 +93,7 @@ fun CircularCountIndicator(
         // Inner circle with pill count
         Box(
             modifier = Modifier
-                .fillMaxSize(0.75f)
+                .fillMaxSize(0.90f)
                 .clip(CircleShape)
                 .background(centerColor),
             contentAlignment = Alignment.Center

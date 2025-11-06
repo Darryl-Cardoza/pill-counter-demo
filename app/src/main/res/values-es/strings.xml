@@ -95,7 +95,6 @@
     <string name="skip_alt">OMITIR</string>
 
     <!-- ================== PILL COUNT ================== -->
-    <string name="pill_count_title">Conteo de Pastillas</string>
     <string name="pill_info_add_manually">Ingresar información de la pastilla manualmente</string>
     <string name="drugname">Nombre del medicamento</string>
     <string name="ndc">Ndc</string>

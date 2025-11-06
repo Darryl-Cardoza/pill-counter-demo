@@ -1,19 +1,22 @@
 package com.rite.pillcounting.feature.pillCountScan.presentation.compose
 
-import androidx.compose.animation.AnimatedVisibility
+import android.content.res.Configuration
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -23,11 +26,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.rite.pillcounting.R
-import com.rite.pillcounting.core.utils.constants.Dimens.medium
 import com.rite.pillcounting.feature.pillCountScan.domain.data.PillScanningEvent
 import com.rite.pillcounting.feature.pillCountScan.domain.model.PillScanningUiState
 import com.rite.pillcounting.feature.pillCountScan.presentation.viewmodel.PillScanningViewModel
@@ -51,7 +54,6 @@ import com.rite.pillcounting.ui.theme.AppTheme
  * @param onEvent Callback to send user interaction events to the ViewModel.
  * @param filteredPillCount The filtered pill count detected in the latest scan.
  */
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun InformationPanelSection(
     uiState: PillScanningUiState,
@@ -59,72 +61,122 @@ fun InformationPanelSection(
     onEvent: (PillScanningEvent) -> Unit,
     filteredPillCount: Int
 ) {
+    val configuration = LocalConfiguration.current
+    val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+    val listState = rememberLazyListState()
+    val totalCount = uiState.txnDetailHistory.sumOf { it.count }
+    var showListOfTxnDetails by remember { mutableStateOf(true) }
+
+    val countDisplay = when (uiState.scanType) {
+        "FIXED" -> "Total $totalCount/${uiState.targetCount}"
+        else -> "Total $totalCount"
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(medium)
+            .padding(16.dp),
+        verticalArrangement = Arrangement.SpaceBetween
     ) {
-        Text(
-            text = stringResource(R.string.pill_count_title).uppercase(),
-            fontSize = 16.sp,
-            fontFamily = MaterialTheme.typography.bodyMedium.fontFamily,
-            color = AppTheme.extendedColors.textColor,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        DrugInformation(uiState)
-
-        Column(
-            modifier = Modifier.weight(1f),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.SpaceEvenly
-        ) {
-            CurrentCountDisplay(
-                viewModel = viewModel,
-                uiState = uiState,
-                filteredCount = filteredPillCount
+        if (isLandscape) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f),
+                verticalArrangement = Arrangement.SpaceAround,
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                onEvent(PillScanningEvent.AddTransactionDetailClicked(filteredPillCount))
+                Text(
+                    text = uiState.drugName,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Normal,
+                    color = AppTheme.extendedColors.textColor,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+
+                CircularCountIndicator(
+                    count = filteredPillCount,
+                    viewModel = viewModel,
+                )
+
+                Text(
+                    text = countDisplay,
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = AppTheme.extendedColors.textColor,
+                )
             }
+        } else {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 8.dp, top = 10.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                CircularCountIndicator(
+                    count = filteredPillCount,
+                    viewModel = viewModel,
+                    modifier = Modifier.padding(all = 10.dp)
+                )
 
-            val listState = rememberLazyListState()
-
-            LaunchedEffect(uiState.txnDetailHistory.size) {
-                // Scroll to the newly added item (index 0, since reverseLayout = true)
-                if (uiState.txnDetailHistory.isNotEmpty()) {
-                    listState.animateScrollToItem(0)
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = uiState.drugName,
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Normal,
+                        color = AppTheme.extendedColors.textColor,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Spacer(modifier = Modifier.height(10.dp))
+                    Text(
+                        text = countDisplay,
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = AppTheme.extendedColors.textColor,
+                    )
                 }
             }
+        }
 
-            LazyRow(
-                state = listState,
-                reverseLayout = true,
-                horizontalArrangement = Arrangement.spacedBy(medium)
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .then(
+                    if (!isLandscape) Modifier.weight(1f, fill = true) else Modifier.height(
+                        90.dp
+                    )
+                ),
+            contentAlignment = Alignment.Center,
+        ) {
+            androidx.compose.animation.AnimatedVisibility(
+                visible = showListOfTxnDetails,
+                enter = fadeIn() + scaleIn(initialScale = 0.95f),
+                exit = fadeOut()
             ) {
-                itemsIndexed(
-                    uiState.txnDetailHistory,
-                    key = { _, txnDetail -> txnDetail.txnDetailId }
-                ) { index, txnDetail ->
-                    val highlight = index == 0
-                    var isVisible by remember { mutableStateOf(false) }
-
-                    // Trigger fade+scale animation
-                    LaunchedEffect(Unit) {
-                        isVisible = true
-                    }
-
-                    AnimatedVisibility(
-                        visible = isVisible,
-                        enter = fadeIn() + scaleIn(),
-                        exit = fadeOut()
-                    ) {
+                LazyRow(
+                    state = listState,
+                    reverseLayout = true,
+                    horizontalArrangement = Arrangement.spacedBy(15.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .wrapContentWidth(),
+                ) {
+                    itemsIndexed(
+                        uiState.txnDetailHistory,
+                        key = { _, txn -> txn.txnDetailId }
+                    ) { index, txn ->
                         Chip(
-                            shouldHighlight = highlight,
-                            txnDetail = txnDetail,
+                            shouldHighlight = index == 0,
+                            txnDetail = txn,
                             index = uiState.txnDetailHistory.size - index,
-                            onDelete = { txnDetailId ->
-                                onEvent(PillScanningEvent.TransactionDetailDeleted(txnDetailId))
+                            onDelete = { id ->
+                                onEvent(PillScanningEvent.TransactionDetailDeleted(id))
                             }
                         )
                     }
@@ -133,6 +185,16 @@ fun InformationPanelSection(
 
         }
 
-        ActionButtons(onEvent)
+
+
+        ActionButtons(onEvent, filteredPillCount, onListClicked = {
+            showListOfTxnDetails = !showListOfTxnDetails
+        })
+    }
+
+    LaunchedEffect(uiState.txnDetailHistory.size) {
+        if (uiState.txnDetailHistory.isNotEmpty()) {
+            listState.animateScrollToItem(0)
+        }
     }
 }

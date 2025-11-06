@@ -107,7 +107,6 @@
     <string name="skip_alt">SKIP</string>
 
     <!-- ================== PILL COUNT ================== -->
-    <string name="pill_count_title">Pill Count</string>
     <string name="pill_count_app_title">Pill Counter</string>
     <string name="pill_info_add_manually">Enter Pill Info Manually</string>
     <string name="drugname">Drug Name</string>

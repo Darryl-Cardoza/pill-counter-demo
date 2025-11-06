@@ -1,6 +1,7 @@
 package com.rite.pillcounting.feature.pillCountScan.presentation.logic
 
 import android.content.Context
+import android.graphics.Bitmap
 import android.util.Size
 import androidx.camera.core.Camera
 import androidx.camera.core.CameraInfo
@@ -326,4 +327,27 @@ class CameraHelper(
 
     /** Returns the current [PreviewView] height in pixels, or 640 if unavailable. */
     fun getPreviewHeight(): Int = previewView?.height ?: 640
+
+    fun imageProxyToBitmap(image: ImageProxy): Bitmap {
+        val yBuffer = image.planes[0].buffer
+        val uBuffer = image.planes[1].buffer
+        val vBuffer = image.planes[2].buffer
+        val ySize = yBuffer.remaining()
+        val uSize = uBuffer.remaining()
+        val vSize = vBuffer.remaining()
+
+        val nv21 = ByteArray(ySize + uSize + vSize)
+        yBuffer.get(nv21, 0, ySize)
+        vBuffer.get(nv21, ySize, vSize)
+        uBuffer.get(nv21, ySize + vSize, uSize)
+
+        val yuvImage = android.graphics.YuvImage(
+            nv21, android.graphics.ImageFormat.NV21, image.width, image.height, null
+        )
+
+        val out = java.io.ByteArrayOutputStream()
+        yuvImage.compressToJpeg(android.graphics.Rect(0, 0, image.width, image.height), 60, out)
+        val jpegBytes = out.toByteArray()
+        return android.graphics.BitmapFactory.decodeByteArray(jpegBytes, 0, jpegBytes.size)
+    }
 }

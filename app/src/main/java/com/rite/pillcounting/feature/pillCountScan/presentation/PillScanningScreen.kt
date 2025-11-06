@@ -1,13 +1,17 @@
 package com.rite.pillcounting.feature.pillCountScan.presentation
 
 import Screen
+import android.content.res.Configuration
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBarsPadding
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -20,6 +24,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -33,9 +39,9 @@ import com.rite.pillcounting.R
 import com.rite.pillcounting.core.room.models.enums.CountType
 import com.rite.pillcounting.core.utils.common.UserInterfaceUtils
 import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.ActionButtonPrimary
-import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.BackButton
 import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.CommonDialog
 import com.rite.pillcounting.core.utils.compose.SplitResponsive
+import com.rite.pillcounting.core.utils.constants.Dimens.extraSmall
 import com.rite.pillcounting.core.utils.logger.AppLogger
 import com.rite.pillcounting.feature.pillCountScan.domain.data.NavigationEvent
 import com.rite.pillcounting.feature.pillCountScan.domain.data.PillScanningEvent
@@ -71,7 +77,7 @@ fun PillScanningScreen(
 
     // Check if last 10 counts are all zero
     val isLastTenAllZero = lastTenDetections.size == 10 && lastTenDetections.all { it == 0 }
-
+    val isLandscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
     // === Toasts ===
     if (uiState.restrictAdd) {
         UserInterfaceUtils.showToast(context, stringResource(id = R.string.max_count_reached))
@@ -181,15 +187,41 @@ fun PillScanningScreen(
                     filteredPillCount = filteredPillCount
                 )
             },
-            landscapeRatio = 0.5f to 0.5f,
-            portraitRatio = 0.5f to 0.5f
+            landscapeRatio = 0.65f to 0.35f,
+            portraitRatio =  0.70f to 0.35f
         )
 
         if (!uiState.showIdleOverlay) {
-            BackButton(navController) {
+            /*BackButton(navController) {
                 navController.navigate(Screen.Dashboard.route) {
                     popUpTo(0) { inclusive = true }
                 }
+            }*/
+            IconButton(
+                onClick = { navController.navigate(Screen.Dashboard.route) {
+                    popUpTo(0) { inclusive = true }
+                } },
+                modifier = Modifier.padding(2.dp)
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.back),
+                    contentDescription = "Back",
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(extraSmall)
+                )
+            }
+            if (!isLandscape) {
+                Text(
+                    text = stringResource(R.string.pills_count).uppercase(Locale.ROOT),
+                    fontSize = 14.sp,
+                    fontFamily = FontFamily.Default,
+                    fontWeight = FontWeight.Normal,
+                    color = AppTheme.extendedColors.textColor,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(top = 18.dp).fillMaxWidth()
+                )
             }
         }
         // === Overlay placed last → ensures it is on top ===

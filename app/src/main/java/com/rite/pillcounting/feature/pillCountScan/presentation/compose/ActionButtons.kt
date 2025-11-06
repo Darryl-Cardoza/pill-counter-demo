@@ -4,54 +4,85 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.painterResource
 import com.rite.pillcounting.R
-import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.FilledButton
-import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.HollowButton
-import com.rite.pillcounting.core.utils.constants.Dimens.medium
+import com.rite.pillcounting.core.utils.constants.Dimens.large
+import com.rite.pillcounting.core.utils.constants.Dimens.xxxLarge
 import com.rite.pillcounting.feature.pillCountScan.domain.data.PillScanningEvent
+import kotlinx.coroutines.delay
 
-/**
- * A row of action buttons for the Fixed Pill Count Scanning screen.
- *
- * Buttons:
- * - RESCAN: Triggers a rescan action.
- * - PAUSE: Pauses the scanning process.
- * - DONE: Completes the scanning session.
- *
- * @param onEvent Callback to propagate button click events.
- */
 @Composable
 fun ActionButtons(
-    onEvent: (PillScanningEvent) -> Unit
+    onEvent: (PillScanningEvent) -> Unit,
+    filteredPillCount: Int,
+    onListClicked: () -> Unit
 ) {
+    var isAddEnabled by remember { mutableStateOf(true) }
+
+    LaunchedEffect(isAddEnabled) {
+        if (!isAddEnabled) {
+            delay(5000)
+            isAddEnabled = true
+        }
+    }
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(top = medium),
-        horizontalArrangement = Arrangement.Center // automatic spacing
+            .padding(start = large, end = large),
+        horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        HollowButton(
-            text = stringResource(R.string.rescane).uppercase(),
-            onClick = { onEvent(PillScanningEvent.RescanClicked) },
-            color = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.padding(end = 10.dp)
-        )
-        /*HollowButton(
-            text = stringResource(R.string.pause).uppercase(),
-            onClick = { onEvent(PillScanningEvent.PauseClicked) },
-            color = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.weight(1f)
-        )*/
-        FilledButton(
-            text = stringResource(R.string.done).uppercase(),
-            onClick = { onEvent(PillScanningEvent.DoneClicked) },
-            color = MaterialTheme.colorScheme.secondary,
-            modifier = Modifier.padding(start = 10.dp)
-        )
+        IconButton(onClick = { onListClicked() }) {
+            Icon(
+                painter = painterResource(id = R.drawable.history),
+                contentDescription = "List",
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(xxxLarge)
+            )
+        }
+
+        // Add (disabled for 5 seconds after click)
+        IconButton(
+            onClick = {
+                if (isAddEnabled) {
+                    isAddEnabled = false
+                    onEvent(
+                        PillScanningEvent.AddTransactionDetailClicked(filteredPillCount)
+                    )
+                }
+            },
+            enabled = isAddEnabled
+        ) {
+            Icon(
+                painter = painterResource(id = R.drawable.add),
+                contentDescription = "Add",
+                tint = if (isAddEnabled)
+                    MaterialTheme.colorScheme.primary
+                else
+                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
+                modifier = Modifier.size(xxxLarge)
+            )
+        }
+
+        // Done/Complete
+        IconButton(onClick = { onEvent(PillScanningEvent.DoneClicked) }) {
+            Icon(
+                painter = painterResource(id = R.drawable.complete),
+                contentDescription = "Complete",
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(xxxLarge)
+            )
+        }
     }
 }

@@ -12,6 +12,7 @@ object Dimens {
     val xxLarge = 30.dp
     val xxxLarge = 40.dp
     val huge = 50.dp
+    val extraHuge = 60.dp
 
     val appBarIconsPadding = 15.dp
     val pagePadding = 16.dp

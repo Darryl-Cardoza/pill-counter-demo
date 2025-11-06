@@ -54,6 +54,7 @@ import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.CommonDialog
 import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.FilledButton
 import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.HollowButton
 import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.toFormattedDate
+import com.rite.pillcounting.core.utils.constants.Dimens.smallMedium
 import com.rite.pillcounting.feature.pillCountScan.domain.model.TxnDetail
 import com.rite.pillcounting.ui.theme.AppTheme
 import java.io.File
@@ -162,7 +163,7 @@ fun TxnDetailDialog(
                                 fontWeight = FontWeight.Medium
                             )
                         )
-                        Spacer(modifier = Modifier.height(4.dp))
+                        Spacer(modifier = Modifier.height(smallMedium))
                         Box(
                             contentAlignment = Alignment.Center,
                             modifier = Modifier
@@ -175,7 +176,7 @@ fun TxnDetailDialog(
                                 style = MaterialTheme.typography.titleMedium.copy(color = Color.White)
                             )
                         }
-                        Spacer(modifier = Modifier.height(8.dp))
+                        Spacer(modifier = Modifier.height(smallMedium))
                         Text(
                             text = details.createdAt.toFormattedDate(),
                             style = MaterialTheme.typography.bodySmall.copy(

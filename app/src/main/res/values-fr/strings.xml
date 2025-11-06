@@ -95,7 +95,6 @@
     <string name="skip_alt">IGNORER</string>
 
     <!-- ================== PILL COUNT ================== -->
-    <string name="pill_count_title">Comptage de Pilules</string>
     <string name="pill_info_add_manually">Entrer les informations de la pilule manuellement</string>
     <string name="drugname">Nom du médicament</string>
     <string name="ndc">Ndc</string>
