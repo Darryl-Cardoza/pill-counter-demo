@@ -1,5 +1,6 @@
 package com.rite.pillcounting.core.refreshToken.di
 
+import com.rite.pillcounting.BuildConfig
 import com.rite.pillcounting.core.refreshToken.data.remote.IRefreshTokenAPI
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
@@ -25,7 +26,7 @@ import javax.inject.Singleton
 object RefreshTokenModule {
 
     /** Base URL for token refresh API calls. */
-    private const val BASE_URL = "https://pill.ccrlindia.com:8000/"
+    //private const val BASE_URL = "https://pill.ccrlindia.com:8000/"
 
     // ─────────────────────────────── OkHttp Client ───────────────────────────────
 
@@ -89,7 +90,7 @@ object RefreshTokenModule {
         @Named("refresh_moshi") moshi: Moshi
     ): Retrofit =
         Retrofit.Builder()
-            .baseUrl(BASE_URL)
+            .baseUrl(BuildConfig.BASE_URL)
             .client(okHttpClient)
             .addConverterFactory(MoshiConverterFactory.create(moshi))
             .build()

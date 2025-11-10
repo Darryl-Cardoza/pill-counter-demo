@@ -45,35 +45,33 @@ import javax.inject.Singleton
  * @property context Application context (injected by Hilt).
  * @constructor Creates a secure instance of [PreferenceHelper] using encrypted preferences.
  */
+
+private const val PREF_NAME = "pillcounting_secure_prefs"
+// Auth Tokens
+private const val KEY_ACCESS_TOKEN = "access_token"
+private const val KEY_REFRESH_TOKEN = "refresh_token"
+
+// Session
+private const val KEY_USER_LOGGED_IN = "user_logged_in"
+private const val KEY_USER_ID = "user_id"
+private const val KEY_LOCAL_ID = "local_id"
+
+// Transactions
+private const val KEY_TXN_ID = "txn_id"
+
+// UI Theme
+private const val KEY_THEME_COLORS = "theme_colors"
+
+// Miscellaneous
+private const val KEY_DO_NOT_ASK_AGAIN = "do_not_ask_again"
+private const val KEY_SHOW_NOTES_DIALOG = "key_show_notes_dialog"
+private const val KEY_RECENT_LOGINS = "recent_logins"
+private const val KEY_HISTORY_RETENTION = "history_retention"
+
 @Singleton
 class PreferenceHelper @Inject constructor(
     @ApplicationContext private val context: Context
 ) {
-
-    companion object {
-        private const val PREF_NAME = "pillcounting_secure_prefs"
-
-        // Auth Tokens
-        private const val KEY_ACCESS_TOKEN = "access_token"
-        private const val KEY_REFRESH_TOKEN = "refresh_token"
-
-        // Session
-        private const val KEY_USER_LOGGED_IN = "user_logged_in"
-        private const val KEY_USER_ID = "user_id"
-        private const val KEY_LOCAL_ID = "local_id"
-
-        // Transactions
-        private const val KEY_TXN_ID = "txn_id"
-
-        // UI Theme
-        private const val KEY_THEME_COLORS = "theme_colors"
-
-        // Miscellaneous
-        private const val KEY_DO_NOT_ASK_AGAIN = "do_not_ask_again"
-        private const val KEY_SHOW_NOTES_DIALOG = "key_show_notes_dialog"
-        private const val KEY_RECENT_LOGINS = "recent_logins"
-        private const val KEY_HISTORY_RETENTION = "history_retention"
-    }
 
     /** Secure [SharedPreferences] instance backed by AES encryption. */
     private val prefs: SharedPreferences

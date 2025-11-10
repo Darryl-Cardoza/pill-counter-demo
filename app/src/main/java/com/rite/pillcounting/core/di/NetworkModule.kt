@@ -2,6 +2,7 @@ package com.rite.pillcounting.core.di
 
 import android.content.Context
 import com.chuckerteam.chucker.api.ChuckerInterceptor
+import com.rite.pillcounting.BuildConfig
 import com.rite.pillcounting.core.api.interfaceDetail.HeaderInterceptor
 import com.rite.pillcounting.core.refreshToken.data.TokenAuthenticator
 import com.squareup.moshi.Moshi
@@ -40,7 +41,8 @@ import javax.inject.Singleton
 object NetworkModule {
 
     /** Base URL for main backend API calls. */
-    private const val MAIN_API_BASE_URL = "https://pill.ccrlindia.com:8000/"
+    //private const val MAIN_API_BASE_URL = "https://pill.ccrlindia.com:8000/"
+    //private const val MAIN_API_BASE_URL = "http://192.168.0.78:8000/"
 
     /** Provides an HTTP logger for debugging API traffic. */
     @Provides
@@ -84,7 +86,7 @@ object NetworkModule {
     @Singleton
     fun provideMainRetrofit(okHttpClient: OkHttpClient, moshi: Moshi): Retrofit =
         Retrofit.Builder()
-            .baseUrl(MAIN_API_BASE_URL)
+            .baseUrl(BuildConfig.BASE_URL)
             .client(okHttpClient)
             .addConverterFactory(MoshiConverterFactory.create(moshi))
             .build()
