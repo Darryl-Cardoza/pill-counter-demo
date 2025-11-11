@@ -1,3 +1,4 @@
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -29,27 +30,23 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.rite.pillcounting.R
 import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.AppTextField
+import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.FilledButton
+import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.HollowButton
 import com.rite.pillcounting.core.utils.constants.Dimens.extraLarge
 import com.rite.pillcounting.core.utils.constants.Dimens.extraSmall
 import com.rite.pillcounting.core.utils.constants.Dimens.large
 import com.rite.pillcounting.core.utils.constants.Dimens.medium
 import com.rite.pillcounting.core.utils.constants.Dimens.small
-import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.FilledButton
-import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.HollowButton
 import com.rite.pillcounting.ui.theme.AppTheme
 
 @Composable
 fun ManualDrugEntryDialog(
     onConfirm: (drugName: String, ndc: String) -> Unit,
-    onDismiss: () -> Unit,
-    drugNameFetched: String,
-    ndcFetched: String
+    onDismiss: () -> Unit
 ) {
     var drugName by remember { mutableStateOf("") }
     var ndc by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
-    drugName = drugNameFetched
-    ndc = ndcFetched
     Dialog(onDismissRequest = onDismiss) {
         Surface(
             shape = RoundedCornerShape(medium),

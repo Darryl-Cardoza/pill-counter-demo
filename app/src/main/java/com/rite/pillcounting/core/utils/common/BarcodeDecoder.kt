@@ -91,4 +91,22 @@ class BarcodeDecoder @Inject constructor() {
         val divisor = 10.0.pow(decimals.toDouble())
         return value / divisor
     }
+
+    fun isGs1Barcode(rawBarcode: String): Boolean {
+        val cleaned = rawBarcode.replace(Regex("\\](?i)(c1|j1|q3|e0|d2)"), "")
+        return regexPatterns.values.any { it.containsMatchIn(cleaned) }
+    }
+
+    fun toGtin14(gtin: String?): String? {
+        if (gtin.isNullOrBlank()) return null
+        val digitsOnly = gtin.filter { it.isDigit() }
+
+        return when (digitsOnly.length) {
+            8 -> digitsOnly.padStart(14, '0')
+            12 -> digitsOnly.padStart(14, '0')
+            13 -> digitsOnly.padStart(14, '0')
+            14 -> digitsOnly
+            else -> null // Invalid length
+        }
+    }
 }

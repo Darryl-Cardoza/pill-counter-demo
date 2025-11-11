@@ -255,7 +255,8 @@ class ScanBarcodeViewModel @Inject constructor(
 
     /** Show the manual entry dialog. */
     fun showManualEntryDialog() {
-        _uiState.update { it.copy(showManualEntry = true, error = null) }
+        analyzer.pause()
+        _uiState.update { it.copy(showManualEntry = true, error = null,  isScannerActive = false) }
     }
 
     /** Hide the manual entry dialog. */
