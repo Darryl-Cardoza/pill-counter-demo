@@ -55,7 +55,7 @@ fun FixedCountSection(
         modifier = Modifier
             .fillMaxSize()
             .bounceClick {
-                navigateToBarcodeScanRegularCount(navController)
+                navigateToBarcodeScanFixedCount(navController)
             },
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
