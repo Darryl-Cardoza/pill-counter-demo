@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - develop
+      - ci-cd-pipeline
   pull_request:
     branches:
       - main
