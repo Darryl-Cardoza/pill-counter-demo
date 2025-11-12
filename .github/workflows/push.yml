@@ -1,0 +1,23 @@
+name: Android Kotlin (Jetpack Compose) CI
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  android-ci:
+    uses: Darryl-Cardoza/reusable-repo-android/.github/workflows/push.yml@main
+
+    with:
+      java_version: "17"
+      build_variant: "Debug"
+      coverage_threshold: "70"
+
+    secrets:
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      CODACY_PROJECT_TOKEN: ${{ secrets.CODACY_PROJECT_TOKEN }}
