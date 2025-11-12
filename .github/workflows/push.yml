@@ -3,8 +3,6 @@ name: Android Kotlin (Jetpack Compose) CI
 on:
   push:
     branches:
-      - main
-      - develop
       - ci-cd-pipeline
   pull_request:
     branches:
