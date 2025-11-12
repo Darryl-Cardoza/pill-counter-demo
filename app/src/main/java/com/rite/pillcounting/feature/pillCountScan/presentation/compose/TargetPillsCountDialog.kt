@@ -31,6 +31,7 @@ import androidx.compose.ui.window.DialogProperties
 import com.rite.pillcounting.R
 import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.FilledButton
 import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.HollowButton
+import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.responsiveDp
 import com.rite.pillcounting.core.utils.constants.Dimens.huge
 import com.rite.pillcounting.core.utils.constants.Dimens.medium
 import com.rite.pillcounting.core.utils.constants.Dimens.small
@@ -101,13 +102,13 @@ fun TargetPillsCountDialog(onDismiss: () -> Unit, onOkay: (Int) -> Unit) {
 
 
 
-                Spacer(modifier = Modifier.height(medium))
+                Spacer(modifier = Modifier.height(responsiveDp(medium)))
 
                 Row(
-                    horizontalArrangement = Arrangement.spacedBy(medium),
+                    horizontalArrangement = Arrangement.spacedBy(responsiveDp(medium)),
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.padding(
-                        bottom = xxLarge,
+                        bottom = responsiveDp(xxLarge),
                         top = small,
                         start = xxLarge,
                         end = xxLarge

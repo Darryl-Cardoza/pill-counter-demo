@@ -19,7 +19,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringArrayResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -79,7 +78,7 @@ fun MenuScreen(
             // Fixed Count
             MenuItemRow(
                 icon = R.drawable.fixed_count,
-                title = stringResource(R.string.menu_fixed_count),
+                title = stringResource(R.string.fixed_count),
                 completed = stringResource(R.string.menu_completed, uiState.fixedCompleted),
                 partial = stringResource(R.string.menu_partial, uiState.fixedPartial),
                 iconTint = MaterialTheme.colorScheme.secondary,
@@ -103,7 +102,7 @@ fun MenuScreen(
             // Regular Count
             MenuItemRow(
                 icon = R.drawable.regular_count,
-                title = stringResource(R.string.menu_regular_count),
+                title = stringResource(R.string.regular_count),
                 completed = stringResource(R.string.menu_completed, uiState.regularCompleted),
                 partial = stringResource(R.string.menu_partial, uiState.regularPartial),
                 iconTint = MaterialTheme.colorScheme.primary,

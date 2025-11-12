@@ -56,6 +56,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -69,6 +70,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.graphics.toColorInt
@@ -192,10 +194,10 @@ object UserInterfaceUtils {
                     painter = painterResource(id = R.drawable.logo),
                     contentDescription = stringResource(R.string.app_name),
                     tint = MaterialTheme.colorScheme.secondary,
-                    modifier = Modifier.size(100.dp)
+                    modifier = Modifier.size(responsiveDp(100.dp))
                 )
 
-                Spacer(modifier = Modifier.height(10.dp))
+                Spacer(modifier = Modifier.height(responsiveDp(20.dp)))
 
                 Text(
                     text = stringResource(R.string.pill_count_app_title),
@@ -291,12 +293,12 @@ object UserInterfaceUtils {
         Box(
             modifier = modifier
                 .fillMaxWidth()
-                .height(height)
+                .height(responsiveDp(height))
                 .background(
                     AppTheme.extendedColors.inputBackground,
                     RoundedCornerShape(cornerRadius)
                 )
-                .padding(horizontal = 15.dp),
+                .padding(horizontal = responsiveDp(15.dp)),
             contentAlignment = Alignment.CenterStart
         ) {
             Row(
@@ -307,7 +309,7 @@ object UserInterfaceUtils {
                     painter = painterResource(id = iconRes),
                     contentDescription = null,
                     tint = iconColor,
-                    modifier = Modifier.size(30.dp)
+                    modifier = Modifier.size(responsiveDp(30.dp))
                 )
 
                 Spacer(modifier = Modifier.width(15.dp))
@@ -374,7 +376,7 @@ object UserInterfaceUtils {
     ) {
         IconButton(
             onClick = { onClick?.invoke() ?: navController.popBackStack() },
-            modifier = modifier.padding(small)
+            modifier = modifier.padding(small).size(responsiveDp(40.dp))
         ) {
             Icon(
                 painter = painterResource(id = backIcon),
@@ -757,7 +759,7 @@ object UserInterfaceUtils {
             onClick = {
                 navController.navigate(Screen.Menu.route)
             },
-            modifier = modifier.padding(small)
+            modifier = modifier.padding(small).size(responsiveDp(40.dp))
         ) {
             Icon(
                 painter = painterResource(id = backIcon),
@@ -823,7 +825,7 @@ object UserInterfaceUtils {
                         }
                     },
                     modifier = Modifier
-                        .size(boxSize)
+                        .size(responsiveDp(boxSize))
                         .background(
                             boxBackground,
                             shape = androidx.compose.foundation.shape.RoundedCornerShape(
@@ -852,4 +854,29 @@ object UserInterfaceUtils {
             }
         }
     }
+
+    @Composable
+    fun responsiveDp(baseDp: Dp): Dp {
+        val configuration = LocalConfiguration.current
+        val smallestWidthDp = minOf(configuration.screenWidthDp, configuration.screenHeightDp)
+        val scale = when {
+            smallestWidthDp < 600 -> 1f    //phone
+            smallestWidthDp < 840 -> 1.5f  //small tablets
+            else -> 2f           //large tablets
+        }
+        return baseDp * scale
+    }
+
+    @Composable
+    fun responsiveSp(baseSp: TextUnit): TextUnit {
+        val configuration = LocalConfiguration.current
+        val smallestWidthDp = minOf(configuration.screenWidthDp, configuration.screenHeightDp)
+        val scale = when {
+            smallestWidthDp < 600 -> 1f   //phone
+            smallestWidthDp < 840 -> 1.5f //small tablets
+            else -> 2f          //large tablets
+        }
+        return (baseSp.value * scale).sp
+    }
+
 }

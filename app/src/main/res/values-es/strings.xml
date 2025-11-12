@@ -73,7 +73,6 @@
     <!-- ================== PARTIAL COUNTS ================== -->
     <string name="fixed_partial_count_title">Conteos Fijos Parciales</string>
     <string name="regular_partial_count_title">Conteos Regulares Parciales</string>
-    <string name="partial_icon_description">Íconos de llenado parcial</string>
 
     <!-- ================== COMMON BUTTONS ================== -->
     <string name="redo">Rehacer</string>
@@ -126,8 +125,6 @@
     <string name="confirm_delete_profile">¿Está seguro de que desea eliminar su perfil? Esta acción no se puede deshacer.</string>
 
     <!-- ================== MENUS ================== -->
-    <string name="menu_fixed_count">Conteo Fijo</string>
-    <string name="menu_regular_count">Conteo Regular</string>
     <string name="menu_profile">Perfil</string>
     <string name="menu_history">Historial</string>
     <string name="menu_settings">Configuración</string>

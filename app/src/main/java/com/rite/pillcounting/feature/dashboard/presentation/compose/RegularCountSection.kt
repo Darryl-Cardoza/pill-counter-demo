@@ -28,6 +28,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.rite.pillcounting.R
 import com.rite.pillcounting.core.room.models.enums.CountType
+import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.responsiveDp
 import com.rite.pillcounting.core.utils.compose.bounceClick
 import com.rite.pillcounting.core.utils.constants.Dimens.extraLarge
 import com.rite.pillcounting.core.utils.constants.Dimens.small
@@ -68,7 +69,7 @@ fun RegularCountSection(
             contentDescription = stringResource(R.string.regular_count),
             tint = MaterialTheme.colorScheme.primary,
             modifier = Modifier
-                .size(120.dp)
+                .size(responsiveDp(120.dp))
         )
 
         Spacer(modifier = Modifier.height(24.dp))

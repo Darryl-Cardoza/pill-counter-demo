@@ -28,6 +28,8 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.responsiveDp
+import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.responsiveSp
 import com.rite.pillcounting.feature.pillCountScan.presentation.viewmodel.PillScanningViewModel
 
 @Composable
@@ -36,6 +38,8 @@ fun CircularCountIndicator(
     modifier: Modifier = Modifier,
     viewModel: PillScanningViewModel
 ) {
+
+
     val centerColor = MaterialTheme.colorScheme.primary
     val indicatorColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.8f)
     val lastDetections by viewModel.lastTenDetections.collectAsState()
@@ -72,7 +76,7 @@ fun CircularCountIndicator(
     }
 
     Box(
-        modifier = modifier.size(95.dp),
+        modifier = modifier.size(responsiveDp(95.dp)),
         contentAlignment = Alignment.Center
     ) {
         Canvas(modifier = Modifier.fillMaxSize()) {
@@ -101,7 +105,7 @@ fun CircularCountIndicator(
             Text(
                 text = count.toString(),
                 color = Color.White,
-                fontSize = 32.sp
+                fontSize = responsiveSp(32.sp)
             )
         }
     }

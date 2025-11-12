@@ -73,7 +73,6 @@
     <!-- ================== PARTIAL COUNTS ================== -->
     <string name="fixed_partial_count_title">Comptages Fixes Partiels</string>
     <string name="regular_partial_count_title">Comptages Réguliers Partiels</string>
-    <string name="partial_icon_description">Icônes de remplissage partiel</string>
 
     <!-- ================== COMMON BUTTONS ================== -->
     <string name="redo">Refaire</string>
@@ -126,8 +125,6 @@
     <string name="confirm_delete_profile">Êtes-vous sûr de vouloir supprimer votre profil ? Cette action est irréversible.</string>
 
     <!-- ================== MENUS ================== -->
-    <string name="menu_fixed_count">Comptage Fixe</string>
-    <string name="menu_regular_count">Comptage Régulier</string>
     <string name="menu_profile">Profil</string>
     <string name="menu_history">Historique</string>
     <string name="menu_settings">Paramètres</string>

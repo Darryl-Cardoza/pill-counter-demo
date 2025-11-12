@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.sp
 import coil.compose.rememberAsyncImagePainter
 import coil.request.ImageRequest
 import com.rite.pillcounting.R
+import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.responsiveDp
 import com.rite.pillcounting.core.utils.constants.Dimens.medium
 import java.io.File
 
@@ -61,8 +62,8 @@ fun ImageWithCount(
             contentDescription = null,
             contentScale = if (hasImage) ContentScale.Crop else ContentScale.Fit,
             modifier = Modifier
-                .width(160.dp)
-                .height(100.dp)
+                .width(responsiveDp(160.dp))
+                .height(responsiveDp(100.dp))
                 .clip(RoundedCornerShape(12.dp)),
         )
 

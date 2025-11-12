@@ -97,7 +97,7 @@ fun InformationPanelSection(
 
                 CircularCountIndicator(
                     count = filteredPillCount,
-                    viewModel = viewModel,
+                    viewModel = viewModel
                 )
 
                 Text(
@@ -116,8 +116,8 @@ fun InformationPanelSection(
             ) {
                 CircularCountIndicator(
                     count = filteredPillCount,
-                    viewModel = viewModel,
-                    modifier = Modifier.padding(all = 10.dp)
+                    modifier = Modifier.padding(all = 10.dp),
+                    viewModel = viewModel
                 )
 
                 Column(
