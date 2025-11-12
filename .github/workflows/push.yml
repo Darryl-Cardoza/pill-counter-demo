@@ -17,6 +17,7 @@ jobs:
       build_variant: "Debug"
       coverage_threshold: "70"
 
+
 #    secrets:
 #      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 #      CODACY_PROJECT_TOKEN: ${{ secrets.CODACY_PROJECT_TOKEN }}
