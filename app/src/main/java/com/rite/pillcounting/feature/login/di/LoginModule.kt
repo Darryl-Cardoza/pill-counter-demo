@@ -69,7 +69,6 @@ object LoginModule {
         ioDispatcher: CoroutineDispatcher
     ): ILoginRepository =
         LoginRepository(
-            userDao = userDao,
             loginApi = loginApi,
             ioDispatcher = ioDispatcher
         )
