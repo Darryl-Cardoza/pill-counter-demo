@@ -2,7 +2,6 @@ package com.rite.pillcounting.feature.profile.data
 
 import com.rite.pillcounting.core.refreshToken.domain.model.RefreshTokenRequest
 import com.rite.pillcounting.core.refreshToken.domain.model.RefreshTokenResponse
-import com.rite.pillcounting.core.room.dao.UserDao
 import com.rite.pillcounting.core.settings.data.remote.IApplicationSettingInterface
 import com.rite.pillcounting.core.utils.logger.AppLogger
 import com.rite.pillcounting.core.utils.preference.PreferenceHelper
@@ -24,7 +23,6 @@ import javax.inject.Inject
  * - Token refresh when encountering HTTP 401 (Invalid or expired token).
  */
 class ProfileRepository @Inject constructor(
-    private val userDao: UserDao,
     private val profileApi: IProfileApi,
     private val ioDispatcher: CoroutineDispatcher,
     private val preferenceHelper: PreferenceHelper,

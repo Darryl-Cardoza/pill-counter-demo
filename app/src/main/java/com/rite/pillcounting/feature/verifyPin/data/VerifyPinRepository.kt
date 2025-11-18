@@ -1,6 +1,5 @@
 package com.rite.pillcounting.feature.otp.data
 
-import com.rite.pillcounting.core.utils.notification.FCMService
 import com.rite.pillcounting.feature.verifyPin.data.remote.IVerifyPinAPI
 import com.rite.pillcounting.feature.verifyPin.domain.data.IVerifyPinRepository
 import com.rite.pillcounting.feature.verifyPin.domain.model.VerifyPinRequest
@@ -20,8 +19,7 @@ import javax.inject.Inject
  */
 class VerifyPinRepository @Inject constructor(
     private val verifyPinApi: IVerifyPinAPI,
-    private val ioDispatcher: CoroutineDispatcher,
-    private val fcmService: FCMService
+    private val ioDispatcher: CoroutineDispatcher
 ) : IVerifyPinRepository {
 
     /**

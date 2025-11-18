@@ -7,7 +7,6 @@ import com.google.gson.annotations.SerializedName
  *
  * @property email The user's email address to associate the OTP with.
  * @property otp The one-time password entered by the user.
- * @property fcmToken The Firebase Cloud Messaging token used for push notifications.
  */
 data class VerifyPinRequest(
     @SerializedName("email")
