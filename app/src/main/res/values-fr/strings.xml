@@ -174,4 +174,5 @@
     <string name="suspecious_activity_text">Notre système a détecté une \'double dose\' suspecte depuis un autre appareil. Il est temps de \nvérifier avec une nouvelle connexion.</string>
     <string name="maintenance_text">Le compteur est au comptoir du pharmacien pour une vérification rapide. De retour bientôt\navec des comptages précis !</string>
     <string name="update_version_text">Votre version actuelle a expiré - il est temps d\'obtenir une nouvelle ordonnance. Mettez à jour maintenant pour \nla bonne dose de fonctionnalités !</string>
+    <string name="session_expired">Session Expired!</string>
 </resources>

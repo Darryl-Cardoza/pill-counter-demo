@@ -86,7 +86,7 @@ class ScanBarcodeViewModel @Inject constructor(
             is ScanBarcodeEvent.ScannerError -> handleScannerError(event.exception)
             ScanBarcodeEvent.StartCount -> handleStartCount()
             ScanBarcodeEvent.RedoScan -> handleRedoScan()
-            ScanBarcodeEvent.manualPillInfo -> showManualEntryDialog()
+            ScanBarcodeEvent.ManualPillInfo -> showManualEntryDialog()
         }
     }
 

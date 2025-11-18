@@ -123,7 +123,7 @@ class MainActivityViewModel @Inject constructor(
                 appLogoUrl = dto?.settings?.appLogo ?: it.appLogoUrl,
                 appSettings = dto,
                 isMaintenanceMode = dto?.isMaintenanceMode ?: false,
-                isUpdateRequired = isUpdateRequired(dto?.version)
+                isUpdateRequired = isUpdateRequired(dto?.minVersion)
             )
         }
 

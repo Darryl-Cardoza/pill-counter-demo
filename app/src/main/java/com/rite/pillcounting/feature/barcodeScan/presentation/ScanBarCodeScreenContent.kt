@@ -1,5 +1,6 @@
 package com.rite.pillcounting.feature.barcodeScan.presentation
 
+import android.content.res.Configuration
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -8,11 +9,16 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBarsPadding
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -24,6 +30,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -34,6 +42,9 @@ import androidx.navigation.NavController
 import com.rite.pillcounting.R
 import com.rite.pillcounting.core.utils.common.BarcodeDecoder
 import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.BackButton
+import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.responsiveDp
+import com.rite.pillcounting.core.utils.constants.Dimens.extraSmall
+import com.rite.pillcounting.core.utils.constants.Dimens.medium
 import com.rite.pillcounting.core.utils.logger.AppLogger
 import com.rite.pillcounting.feature.barcodeScan.domain.data.ScanBarcodeEvent
 import com.rite.pillcounting.feature.barcodeScan.domain.model.ScanBarcodeUiState
@@ -119,6 +130,26 @@ fun ScanBarCodeScreenContent(
 
             // Global Back Button
             BackButton(navController)
+
+            //Manual option
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End
+            ) {
+                IconButton(
+                    onClick = { onEvent(ScanBarcodeEvent.ManualPillInfo)},
+                    modifier = Modifier.padding(medium).size(responsiveDp(30.dp))
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.pencil),
+                        contentDescription = "Back",
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(extraSmall)
+                    )
+                }
+            }
+
+
         }
     }
 }
@@ -135,7 +166,8 @@ fun FocusAnimationOverlay() {
         ),
         label = "pulse"
     )
-
+    val configuration = LocalConfiguration.current
+    val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
     Box(
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
@@ -163,7 +195,7 @@ fun FocusAnimationOverlay() {
         Box(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .padding(bottom = 100.dp)
+                .padding(bottom = if (isLandscape) 20.dp else 100.dp)
                 .background(
                     brush = Brush.horizontalGradient(
                         colors = listOf(

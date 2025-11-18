@@ -19,7 +19,7 @@ object URLConstant {
     const val GET_ABOUT_ME = "/auth/me"
 
     /** API endpoint for updating the user's profile information. */
-    const val UPDATE_PROFILE = "/users/update/profile/"
+    const val UPDATE_PROFILE = "/users/update/profile"
 
     /** API endpoint for deleting or deactivating the user's profile. */
     const val DELETE_PROFILE = "/users/delete/profile"

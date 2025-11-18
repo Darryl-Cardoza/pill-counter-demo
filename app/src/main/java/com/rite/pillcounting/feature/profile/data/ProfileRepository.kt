@@ -1,8 +1,9 @@
 package com.rite.pillcounting.feature.profile.data
 
 import com.rite.pillcounting.core.refreshToken.domain.model.RefreshTokenRequest
-import com.rite.pillcounting.core.settings.data.remote.IApplicationSettingInterface
+import com.rite.pillcounting.core.refreshToken.domain.model.RefreshTokenResponse
 import com.rite.pillcounting.core.room.dao.UserDao
+import com.rite.pillcounting.core.settings.data.remote.IApplicationSettingInterface
 import com.rite.pillcounting.core.utils.logger.AppLogger
 import com.rite.pillcounting.core.utils.preference.PreferenceHelper
 import com.rite.pillcounting.feature.profile.data.remote.IProfileApi
@@ -105,12 +106,12 @@ class ProfileRepository @Inject constructor(
                 ?: return Result.failure(Exception("No refresh token available"))
 
             val refreshResponse = applicationSettingApi.refreshToken(RefreshTokenRequest(refreshToken))
-
-            if (!refreshResponse.accessToken.isNullOrBlank()) {
+            val refreshResponseBody: RefreshTokenResponse? = refreshResponse.body()
+            if (!refreshResponseBody?.accessToken.isNullOrBlank()) {
                 logger.i("Token refreshed successfully.")
                 preferenceHelper.saveTokens(
-                    accessToken = refreshResponse.accessToken,
-                    refreshToken = refreshResponse.refreshToken ?: refreshToken
+                    accessToken = refreshResponseBody?.accessToken!!,
+                    refreshToken = refreshResponseBody.refreshToken ?: refreshToken
                 )
 
                 // Retry API with new token
@@ -118,8 +119,8 @@ class ProfileRepository @Inject constructor(
                 logger.i("API retried successfully after token refresh.")
                 Result.success(retryResponse)
             } else {
-                logger.e("Token refresh failed: ${refreshResponse.message}")
-                Result.failure(Exception("Failed to refresh token: ${refreshResponse.message}"))
+                logger.e("Token refresh failed: ${refreshResponseBody?.message}")
+                Result.failure(Exception("Failed to refresh token: ${refreshResponseBody?.message}"))
             }
         } catch (ex: Exception) {
             logger.e("Token refresh or retry failed", ex)

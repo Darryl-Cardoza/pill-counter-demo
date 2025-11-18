@@ -22,11 +22,13 @@ import androidx.navigation.NavController
 import com.rite.pillcounting.R
 import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.CommonDialog
 import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.MenuButton
+import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.showToast
 import com.rite.pillcounting.core.utils.compose.SplitResponsive
 import com.rite.pillcounting.core.utils.preference.PreferenceHelper
 import com.rite.pillcounting.feature.dashboard.presentation.compose.FixedCountSection
 import com.rite.pillcounting.feature.dashboard.presentation.compose.RegularCountSection
 import com.rite.pillcounting.feature.dashboard.presentation.viewmodel.DashboardViewModel
+import com.rite.pillcounting.navigation.AUTH_GRAPH_ROUTE
 import com.rite.pillcounting.ui.theme.AppTheme
 
 /**
@@ -68,6 +70,14 @@ fun DashboardScreen(
     LaunchedEffect(uiState.navigateToProfile) {
         if (uiState.navigateToProfile && !preferenceHelper.isDoNotAskAgain()) {
             navController.navigate(Screen.Profile.route)
+        }
+    }
+    LaunchedEffect(uiState.logoutUser) {
+        if (uiState.logoutUser) {
+            showToast(context, R.string.session_expired)
+            navController.navigate(AUTH_GRAPH_ROUTE) {
+                popUpTo(0) { inclusive = true }
+            }
         }
     }
 

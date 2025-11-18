@@ -1,12 +1,14 @@
 package com.rite.pillcounting.feature.dashboard.data.remote
 
 import com.rite.pillcounting.core.models.ApiResponse
+import com.rite.pillcounting.core.refreshToken.domain.model.UserDetailRequest
 import com.rite.pillcounting.core.utils.constants.URLConstant
 import com.rite.pillcounting.feature.dashboard.domain.model.UserDetail
 import com.rite.pillcounting.feature.dashboard.domain.model.UserDetailResponse
 import retrofit2.Response
-import retrofit2.http.GET
+import retrofit2.http.Body
 import retrofit2.http.Header
+import retrofit2.http.POST
 
 /**
  * Interface defining authentication-related repository functions.
@@ -19,8 +21,10 @@ interface IUserDetailAPI {
      * @param authorization Bearer token header value.
      * @return Retrofit [Response] wrapping [UserDetailResponse].
      */
-    @GET(URLConstant.GET_ABOUT_ME)
+    @POST(URLConstant.GET_ABOUT_ME)
     suspend fun getUserDetail(
-        @Header("Authorization") authorization: String
+        @Header("Authorization") authorization: String,
+        @Body request: UserDetailRequest
     ): Response<ApiResponse<UserDetail>>
+
 }

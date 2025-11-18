@@ -225,6 +225,7 @@
     <!-- For multi-select mode text in PartialListPanel -->
     <string name="selected_items_count">%1$d items selected</string>
     <string name="tap_to_delete">Tap delete to remove</string>
+    <string name="session_expired">Session Expired!</string>
 
     <!-- Optional: if you want a singular/plural version -->
     <plurals name="selected_items_count_plural">

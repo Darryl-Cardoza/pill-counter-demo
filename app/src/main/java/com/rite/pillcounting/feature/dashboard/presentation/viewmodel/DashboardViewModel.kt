@@ -151,12 +151,21 @@ class DashboardViewModel @Inject constructor(
                 },
                 onFailure = { error ->
                     logger.e("Failed to fetch user details.", error)
-                    _uiState.update {
-                        it.copy(
-                            userDetail = null,
-                            isLoadingUserDetail = false,
-                            userDetailError = error.message ?: "An unknown error occurred"
-                        )
+                    if (error.message == "LOGOUT") {
+                        _uiState.update {
+                            it.copy(
+                                logoutUser = true,
+                                isLoadingUserDetail = false
+                            )
+                        }
+                    } else {
+                        _uiState.update {
+                            it.copy(
+                                userDetail = null,
+                                isLoadingUserDetail = false,
+                                userDetailError = error.message ?: "An unknown error occurred"
+                            )
+                        }
                     }
                 }
             )

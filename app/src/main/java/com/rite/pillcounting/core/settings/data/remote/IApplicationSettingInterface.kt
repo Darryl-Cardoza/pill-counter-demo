@@ -5,6 +5,7 @@ import com.rite.pillcounting.core.refreshToken.domain.model.RefreshTokenRequest
 import com.rite.pillcounting.core.refreshToken.domain.model.RefreshTokenResponse
 import com.rite.pillcounting.core.settings.domain.model.SettingsDataDto
 import com.rite.pillcounting.core.utils.constants.URLConstant
+import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.Headers
@@ -22,7 +23,7 @@ interface IApplicationSettingInterface {
      */
     @GET(URLConstant.MOBILE_SETTINGS)
     suspend fun getApplicationSettings(
-        @Query("android_version") androidVersion: String
+        @Query("platform") androidVersion: String
     ): ApiResponse<SettingsDataDto>
 
     /**
@@ -32,6 +33,6 @@ interface IApplicationSettingInterface {
     @Headers("Content-Type: ${URLConstant.CONTENT_TYPE}")
     suspend fun refreshToken(
         @Body request: RefreshTokenRequest
-    ): RefreshTokenResponse
+    ): Response<RefreshTokenResponse>
 
 }

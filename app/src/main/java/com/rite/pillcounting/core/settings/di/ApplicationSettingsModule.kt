@@ -1,6 +1,5 @@
 package com.rite.pillcounting.core.settings.di
 
-import android.content.Context
 import com.rite.pillcounting.core.settings.data.ApplicationSettingsRepository
 import com.rite.pillcounting.core.settings.data.remote.IApplicationSettingInterface
 import com.rite.pillcounting.core.settings.domain.data.IApplicationSettingsRepository
@@ -8,7 +7,6 @@ import com.rite.pillcounting.core.utils.preference.PreferenceHelper
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
-import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import retrofit2.Retrofit
 import javax.inject.Singleton
@@ -61,12 +59,10 @@ object ApplicationSettingsModule {
     @Singleton
     fun provideApplicationSettingsRepository(
         apiService: IApplicationSettingInterface,
-        preferenceHelper: PreferenceHelper,
-        @ApplicationContext context: Context
+        preferenceHelper: PreferenceHelper
     ): IApplicationSettingsRepository =
         ApplicationSettingsRepository(
             apiService = apiService,
             preferenceHelper = preferenceHelper,
-            context = context
         )
 }

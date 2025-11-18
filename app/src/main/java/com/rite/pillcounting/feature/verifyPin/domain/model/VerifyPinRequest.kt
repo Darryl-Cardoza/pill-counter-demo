@@ -15,7 +15,4 @@ data class VerifyPinRequest(
 
     @SerializedName("otp")
     val otp: String,
-
-    @SerializedName("fcm_token")
-    val fcmToken: String
 )
