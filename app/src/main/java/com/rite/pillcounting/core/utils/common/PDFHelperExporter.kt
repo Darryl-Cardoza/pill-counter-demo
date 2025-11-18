@@ -1,7 +1,6 @@
 package com.rite.pillcounting.core.utils.common
 
 import android.content.Context
-import com.rite.pillcounting.R
 import com.itextpdf.kernel.colors.ColorConstants
 import com.itextpdf.kernel.pdf.PdfDocument
 import com.itextpdf.kernel.pdf.PdfWriter
@@ -13,6 +12,7 @@ import com.itextpdf.layout.properties.HorizontalAlignment
 import com.itextpdf.layout.properties.TextAlignment
 import com.itextpdf.layout.properties.UnitValue
 import com.itextpdf.layout.properties.VerticalAlignment
+import com.rite.pillcounting.R
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -113,7 +113,7 @@ class PDFHelperExporter(private val context: Context) {
         drugInfo.addCell(createCell(context.getString(R.string.total_count), true))
         drugInfo.addCell(createCell("$totalCount Pills"))
 
-        drugInfo.addCell(createCell(context.getString(R.string.ndc).uppercase(), true))
+        drugInfo.addCell(createCell(context.getString(R.string.ndc_gtin14).uppercase(), true))
         drugInfo.addCell(createCell(ndc))
 
         drugInfo.addCell(createCell(context.getString(R.string.expiry), true))

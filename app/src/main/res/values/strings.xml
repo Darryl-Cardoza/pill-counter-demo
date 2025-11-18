@@ -110,6 +110,7 @@
     <string name="pill_info_add_manually">Enter Pill Info Manually</string>
     <string name="drugname">Drug Name</string>
     <string name="ndc">Ndc</string>
+    <string name="ndc_gtin14">Ndc/GTIN14</string>
     <string name="expiry">Expiry</string>
     <string name="lotNo">Lot No.</string>
     <string name="pills_count">Pills Count</string>
@@ -121,7 +122,7 @@
     <string name="transaction_detail">Transaction Detail</string>
     <string name="total">Total</string>
     <string name="total_count">Total Count</string>
-    <string name="max_count_reached">Total Transaction Details count exceeds target.</string>
+    <string name="max_count_reached">Total Transaction count exceeds target.</string>
     <string name="no_transaction_found">No Transaction Found, please start counting pills</string>
     <string name="confirm_done">Confirm Completion</string>
     <string name="confirm_done_desc_regular">Are you sure you want to mark this transaction as completed?</string>
@@ -171,9 +172,9 @@
 
     <!-- ================== TABLE HEADERS / LABELS ================== -->
     <string name="drug">Drug</string>
-    <string name="drugname_two_lines">Drug \\nName</string>
+    <string name="drugname_two_lines">Drug \nName</string>
     <string name="status">Status</string>
-    <string name="count_type_two_lines">Count \\nType</string>
+    <string name="count_type_two_lines">Count \nType</string>
     <string name="date">Date</string>
     <string name="time">Time</string>
     <string name="note">Note</string>
@@ -217,7 +218,6 @@
     <string name="confirm_logout_text">Are you sure you want to logout?</string>>
 
     <string name="add_button_wait">Please wait 2 seconds before adding again.</string>
-    <string name="add_exceeds_target">Cannot add — total exceeds target count.</string>
     <string name="scan_code">Scan Barcode/QR code</string>
     <string name="add_zero_detected">Cannot add — no pills detected.</string>
     <string name="duplicate_scan_ignored">Duplicate scan ignored — no new pills detected.</string>

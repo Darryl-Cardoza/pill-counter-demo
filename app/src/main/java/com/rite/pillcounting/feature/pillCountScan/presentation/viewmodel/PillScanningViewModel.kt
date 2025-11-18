@@ -44,10 +44,7 @@ import org.tensorflow.lite.Interpreter
 import org.tensorflow.lite.gpu.CompatibilityList
 import org.tensorflow.lite.gpu.GpuDelegate
 import java.io.File
-import java.io.FileInputStream
 import java.nio.ByteBuffer
-import java.nio.MappedByteBuffer
-import java.nio.channels.FileChannel
 import java.util.ArrayDeque
 import javax.inject.Inject
 
@@ -440,7 +437,7 @@ class PillScanningViewModel @Inject constructor(
 
         if (_uiState.value.scanType == CountType.FIXED.toString() && predictedTotal > targetCount) {
             _uiState.update { it.copy(restrictAdd = true) }
-            showToast(context, context.getString(R.string.add_exceeds_target))
+            //showToast(context, context.getString(R.string.add_exceeds_target))
             logger.w("Add blocked: predicted total exceeds target count.")
             return
         }

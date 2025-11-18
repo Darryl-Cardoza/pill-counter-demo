@@ -1,8 +1,6 @@
 package com.rite.pillcounting.feature.history.presentation.compose
 
 import android.content.Context
-import com.rite.pillcounting.R
-import com.rite.pillcounting.feature.history.domain.model.TxnWithDrugDto
 import com.itextpdf.kernel.colors.ColorConstants
 import com.itextpdf.kernel.pdf.PdfDocument
 import com.itextpdf.kernel.pdf.PdfWriter
@@ -14,6 +12,8 @@ import com.itextpdf.layout.properties.HorizontalAlignment
 import com.itextpdf.layout.properties.TextAlignment
 import com.itextpdf.layout.properties.UnitValue
 import com.itextpdf.layout.properties.VerticalAlignment
+import com.rite.pillcounting.R
+import com.rite.pillcounting.feature.history.domain.model.TxnWithDrugDto
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -85,7 +85,7 @@ class HistoryPdfExporter(private val context: Context) {
 
             // Add header row
             table.addHeaderCell(createHeaderCell(context.getString(R.string.drugname_two_lines)))
-            table.addHeaderCell(createHeaderCell(context.getString(R.string.ndc)))
+            table.addHeaderCell(createHeaderCell(context.getString(R.string.ndc_gtin14)))
             table.addHeaderCell(createHeaderCell(context.getString(R.string.pills_count)))
             table.addHeaderCell(createHeaderCell(context.getString(R.string.status)))
             table.addHeaderCell(createHeaderCell(context.getString(R.string.count_type_two_lines)))
