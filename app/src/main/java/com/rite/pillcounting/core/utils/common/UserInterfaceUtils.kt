@@ -25,6 +25,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
@@ -313,10 +314,12 @@ object UserInterfaceUtils {
                 )
 
                 Spacer(modifier = Modifier.width(15.dp))
-                Box(modifier = Modifier
-                    .width(0.5.dp)
-                    .fillMaxHeight()
-                    .background(Color.Gray))
+                Box(
+                    modifier = Modifier
+                        .width(0.5.dp)
+                        .fillMaxHeight()
+                        .background(Color.Gray)
+                )
                 Spacer(modifier = Modifier.width(15.dp))
 
                 BasicTextField(
@@ -372,20 +375,47 @@ object UserInterfaceUtils {
         navController: NavController,
         modifier: Modifier = Modifier,
         backIcon: Int = R.drawable.back,
+        showBox: Boolean = false,
         onClick: (() -> Unit)? = null
     ) {
-        IconButton(
-            onClick = { onClick?.invoke() ?: navController.popBackStack() },
-            modifier = modifier.padding(small).size(responsiveDp(40.dp))
-        ) {
-            Icon(
-                painter = painterResource(id = backIcon),
-                contentDescription = "Back",
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.padding(extraSmall)
-            )
+
+        val clickAction = { onClick?.invoke() ?: navController.popBackStack() }
+
+        if (showBox) {
+            // ---- Circle background version ----
+            Box(
+                modifier = modifier
+                    .padding(small)
+                    .size(responsiveDp(40.dp))
+                    .background(Color.White, CircleShape)
+                    .clickable { clickAction() },
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    painter = painterResource(id = backIcon),
+                    contentDescription = "Back",
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(responsiveDp(25.dp))
+                )
+            }
+        } else {
+            // ---- Normal version without background ----
+            IconButton(
+                onClick = { onClick?.invoke() ?: navController.popBackStack() },
+                modifier = modifier
+                    .padding(small)
+                    .size(responsiveDp(40.dp))
+            ) {
+                Icon(
+                    painter = painterResource(id = backIcon),
+                    contentDescription = "Back",
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(extraSmall)
+                )
+            }
         }
     }
+
 
     /** Displays a confirm/cancel dialog with customizable buttons and title. */
     @Composable
@@ -759,7 +789,9 @@ object UserInterfaceUtils {
             onClick = {
                 navController.navigate(Screen.Menu.route)
             },
-            modifier = modifier.padding(small).size(responsiveDp(40.dp))
+            modifier = modifier
+                .padding(small)
+                .size(responsiveDp(40.dp))
         ) {
             Icon(
                 painter = painterResource(id = backIcon),

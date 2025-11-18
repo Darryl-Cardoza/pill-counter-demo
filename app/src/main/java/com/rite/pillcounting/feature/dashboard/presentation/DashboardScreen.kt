@@ -66,10 +66,19 @@ fun DashboardScreen(
     // Collect dashboard UI state reactively
     val uiState by viewModel.uiState.collectAsState()
 
-    // Navigate to Profile screen if profile is incomplete and user hasn’t opted out
+    // Handle navigation to Profile screen if profile is incomplete
     LaunchedEffect(uiState.navigateToProfile) {
-        if (uiState.navigateToProfile && !preferenceHelper.isDoNotAskAgain()) {
-            navController.navigate(Screen.Profile.route)
+        val isProfileChecked = preferenceHelper.isProfileChecked()
+
+        if (!isProfileChecked) {
+            if (uiState.navigateToProfile && !preferenceHelper.isDoNotAskAgain()) {
+                println("Navigating to Profile screen")
+                navController.navigate(Screen.Profile.route)
+                viewModel.resetNavigateToProfile()
+                preferenceHelper.setProfileChecked(true)
+            }
+        } else {
+            println("Profile check already completed, not navigating.")
         }
     }
     LaunchedEffect(uiState.logoutUser) {
@@ -86,7 +95,8 @@ fun DashboardScreen(
             .systemBarsPadding()
             .background(AppTheme.extendedColors.secondaryBackground)
     ) {
-        // Split screen layout: fixed counts vs regular counts
+        // Show loading indicator if user details are being fetched
+
         SplitResponsive(
             topOrLeft = {
                 FixedCountSection(
@@ -101,8 +111,9 @@ fun DashboardScreen(
                     partialRegularCount = uiState.partialRegularCount,
                     navController = navController
                 )
-            },
+            }
         )
+
 
         // Global navigation menu button (top-right aligned)
         MenuButton(

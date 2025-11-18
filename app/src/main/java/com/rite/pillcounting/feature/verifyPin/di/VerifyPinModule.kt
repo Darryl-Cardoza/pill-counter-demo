@@ -1,6 +1,5 @@
 package com.rite.pillcounting.feature.verifyPin.di
 
-import com.rite.pillcounting.core.utils.notification.FCMService
 import com.rite.pillcounting.feature.otp.data.VerifyPinRepository
 import com.rite.pillcounting.feature.verifyPin.data.remote.IVerifyPinAPI
 import com.rite.pillcounting.feature.verifyPin.domain.data.IVerifyPinRepository
@@ -64,11 +63,9 @@ object VerifyPinModule {
     fun provideVerifyPinRepository(
         verifyPinApi: IVerifyPinAPI,
         ioDispatcher: CoroutineDispatcher,
-        fcmService: FCMService
     ): IVerifyPinRepository =
         VerifyPinRepository(
             verifyPinApi = verifyPinApi,
             ioDispatcher = ioDispatcher,
-            fcmService = fcmService
         )
 }

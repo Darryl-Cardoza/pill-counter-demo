@@ -72,8 +72,6 @@ fun PillScanningScreen(
         lastTenDetections = (lastTenDetections + currentCount).takeLast(10)
     }
 
-    // Check if last 10 counts are all zero
-    val isLastTenAllZero = lastTenDetections.size == 10 && lastTenDetections.all { it == 0 }
     val isLandscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
     // === Toasts ===
     if (uiState.restrictAdd) {
@@ -171,7 +169,6 @@ fun PillScanningScreen(
                     onFilteredCountChanged = { count -> filteredPillCount = count },
                     modifier = Modifier.fillMaxSize(),
                     onPreviewStarted = {
-                        // Safe place to initialize GPU-based model
                         viewModel.initializeInterpreter(retryCount = 2)
                     }
                 )

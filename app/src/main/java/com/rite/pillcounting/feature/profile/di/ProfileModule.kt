@@ -1,7 +1,7 @@
 package com.rite.pillcounting.feature.profile.di
 
-import com.rite.pillcounting.core.settings.data.remote.IApplicationSettingInterface
 import com.rite.pillcounting.core.room.dao.UserDao
+import com.rite.pillcounting.core.settings.data.remote.IApplicationSettingInterface
 import com.rite.pillcounting.core.utils.preference.PreferenceHelper
 import com.rite.pillcounting.feature.profile.data.ProfileRepository
 import com.rite.pillcounting.feature.profile.data.remote.IProfileApi
@@ -78,7 +78,6 @@ object ProfileModule {
     ): IProfileRepository =
         ProfileRepository(
             profileApi = api,
-            userDao = userDao,
             ioDispatcher = ioDispatcher,
             preferenceHelper = preferenceHelper,
             applicationSettingApi = applicationSettingApi

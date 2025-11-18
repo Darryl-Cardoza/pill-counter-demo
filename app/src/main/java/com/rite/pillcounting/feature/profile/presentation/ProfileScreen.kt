@@ -165,9 +165,10 @@ fun ProfileScreen(
                 }
 
                 is ProfileUpdateUiState.Success -> {
-
-                    navController.popBackStack()
-
+                    navController.navigate(Screen.Dashboard.route) {
+                        popUpTo(Screen.Dashboard.route) { inclusive = true }
+                        launchSingleTop = true
+                    }
                 }
 
                 is ProfileUpdateUiState.Error -> {

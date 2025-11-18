@@ -250,6 +250,16 @@ class PreferenceHelper @Inject constructor(
         return value
     }
 
+    // Save the flag that profile check has been completed
+    fun setProfileChecked(isChecked: Boolean) {
+        prefs.edit { putBoolean("isProfileChecked", isChecked) }
+    }
+
+    // Check if the profile check has been done before
+    fun isProfileChecked(): Boolean {
+        return prefs.getBoolean("isProfileChecked", false)
+    }
+
     /** Provides the application [Context] (used for PackageManager or resource access). */
     fun getContext(): Context = context
 

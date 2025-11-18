@@ -5,8 +5,6 @@ import androidx.lifecycle.viewModelScope
 import com.rite.pillcounting.core.room.dao.PillCountTxnDao
 import com.rite.pillcounting.core.room.dao.UserDao
 import com.rite.pillcounting.core.room.models.UserEntity
-import com.rite.pillcounting.core.room.models.enums.CountStatus
-import com.rite.pillcounting.core.room.models.enums.CountType
 import com.rite.pillcounting.core.utils.common.HelperFunctions.mapCounts
 import com.rite.pillcounting.core.utils.common.HelperFunctions.secure
 import com.rite.pillcounting.core.utils.logger.AppLogger
@@ -171,6 +169,11 @@ class DashboardViewModel @Inject constructor(
             )
         }
     }
+
+    /** Resets the navigateToProfile flag after navigation. */
+    fun resetNavigateToProfile() {
+        _uiState.update { it.copy(navigateToProfile = false) }
+    }
 }
 
 /* ───────────────────────────── Mappers ───────────────────────────── */
@@ -189,7 +192,6 @@ private fun UserDetail.toUserEntity(jwtUserId: String?): UserEntity {
         avatarUrl = this.profile?.avatarUrl,
         role = this.profile?.role?.name,
         isVerified = this.profile?.isVerified ?: false,
-
         isProfileCompleted = this.profile?.isProfileCompleted,
         pharmacyName = this.profile?.pharmacyName,
         npiId = this.profile?.npiId,

@@ -9,6 +9,7 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -17,8 +18,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBarsPadding
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -43,7 +44,6 @@ import com.rite.pillcounting.R
 import com.rite.pillcounting.core.utils.common.BarcodeDecoder
 import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.BackButton
 import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.responsiveDp
-import com.rite.pillcounting.core.utils.constants.Dimens.extraSmall
 import com.rite.pillcounting.core.utils.constants.Dimens.medium
 import com.rite.pillcounting.core.utils.logger.AppLogger
 import com.rite.pillcounting.feature.barcodeScan.domain.data.ScanBarcodeEvent
@@ -129,22 +129,29 @@ fun ScanBarCodeScreenContent(
             }
 
             // Global Back Button
-            BackButton(navController)
+            BackButton(navController, showBox = true)
 
             //Manual option
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.End
             ) {
-                IconButton(
-                    onClick = { onEvent(ScanBarcodeEvent.ManualPillInfo)},
-                    modifier = Modifier.padding(medium).size(responsiveDp(30.dp))
+                Box(
+                    modifier = Modifier
+                        .padding(medium)
+                        .size(responsiveDp(40.dp))
+                        .background(
+                            color = Color.White,
+                            shape = CircleShape
+                        )
+                        .clickable { onEvent(ScanBarcodeEvent.ManualPillInfo) },
+                    contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         painter = painterResource(id = R.drawable.pencil),
-                        contentDescription = "Back",
+                        contentDescription = "Manual",
                         tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.padding(extraSmall)
+                        modifier = Modifier.size(responsiveDp(15.dp))
                     )
                 }
             }

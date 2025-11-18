@@ -98,8 +98,8 @@ class PillAnalyzer(
             }
 
             val inferenceTime = System.currentTimeMillis() - inferenceStart
-            //logger.i("Model inference completed in $inferenceTime ms | Output tensors: det=${detShape.contentToString()}, mask=${maskShape.contentToString()}")
-            logger.i("Measure time Model inference completed in $inferenceTime ms | Output tensors: det=${detShape.contentToString()}")
+            logger.i("Model inference completed in $inferenceTime ms | Output tensors: det=${detShape.contentToString()}, mask=${detShape.contentToString()}")
+//            logger.i("Measure time Model inference completed in $inferenceTime ms | Output tensors: det=${detShape.contentToString()}")
 
             // -----------------------------------------------------
             // STEP 3: POSTPROCESSING
