@@ -131,7 +131,7 @@ class BarcodeAnalyzer @Inject constructor(
         // ✅ Make a safe copy immediately before MLKit processing
         val safeBitmapCopy = try {
             imageProxy.toBitmap() // small cost, but safe
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             null
         }
 

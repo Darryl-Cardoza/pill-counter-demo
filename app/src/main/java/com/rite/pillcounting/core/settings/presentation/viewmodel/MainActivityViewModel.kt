@@ -182,7 +182,7 @@ class MainActivityViewModel @Inject constructor(
         return try {
             val current = getCurrentAppVersion()
             compareVersions(remoteVersion, current) > 0
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             false
         }
     }
