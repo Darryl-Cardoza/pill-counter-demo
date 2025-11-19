@@ -54,41 +54,46 @@ fun FixedCountSection(
 ) {
     Column(
         modifier = Modifier
-            .fillMaxSize()
-            .bounceClick {
-                navigateToBarcodeScanFixedCount(navController)
-            },
+            .fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
         Spacer(modifier = Modifier.weight(1f))
 
-        // Fixed count icon leading to ScanBarcode screen
-        Icon(
-            painter = painterResource(id = R.drawable.fixed_count),
-            contentDescription = stringResource(R.string.fixed_count),
-            tint = MaterialTheme.colorScheme.secondary,
-            modifier = Modifier.size(responsiveDp(120.dp))
-        )
+        Column(
+            modifier = Modifier
+                .bounceClick {
+                    navigateToBarcodeScanFixedCount(navController)
+                },
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            // Fixed count icon leading to ScanBarcode screen
+            Icon(
+                painter = painterResource(id = R.drawable.fixed_count),
+                contentDescription = stringResource(R.string.fixed_count),
+                tint = MaterialTheme.colorScheme.secondary,
+                modifier = Modifier.size(responsiveDp(120.dp))
+            )
 
-        Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(24.dp))
 
-        // Fixed Count title (clickable -> ScanBarcode)
-        Text(
-            text = stringResource(R.string.fixed_count),
-            style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.Normal,
-            color = MaterialTheme.colorScheme.secondary,
-        )
+            // Fixed Count title (clickable -> ScanBarcode)
+            Text(
+                text = stringResource(R.string.fixed_count),
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Normal,
+                color = MaterialTheme.colorScheme.secondary,
+            )
 
-        Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(10.dp))
 
-        // Description text (clickable -> ScanBarcode)
-        Text(
-            text = stringResource(R.string.fixed_count_desc),
-            style = MaterialTheme.typography.bodyMedium,
-            color = AppTheme.extendedColors.textColor,
-        )
+            // Description text (clickable -> ScanBarcode)
+            Text(
+                text = stringResource(R.string.fixed_count_desc),
+                style = MaterialTheme.typography.bodyMedium,
+                color = AppTheme.extendedColors.textColor,
+            )
+        }
 
         Spacer(modifier = Modifier.weight(1f))
 

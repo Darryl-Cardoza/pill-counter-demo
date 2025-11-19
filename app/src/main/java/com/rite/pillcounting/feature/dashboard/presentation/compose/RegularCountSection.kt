@@ -54,42 +54,47 @@ fun RegularCountSection(
 ) {
     Column(
         modifier = Modifier
-            .fillMaxSize()
-            .bounceClick {
-                navigateToBarcodeScanRegularCount(navController)
-            },
+            .fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
         Spacer(modifier = Modifier.weight(1f))
 
-        // Regular count icon (click → ScanBarcode)
-        Icon(
-            painter = painterResource(id = R.drawable.regular_count),
-            contentDescription = stringResource(R.string.regular_count),
-            tint = MaterialTheme.colorScheme.primary,
+        Column(
             modifier = Modifier
-                .size(responsiveDp(120.dp))
-        )
+                .bounceClick {
+                    navigateToBarcodeScanRegularCount(navController)
+                },
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            // Regular count icon (click → ScanBarcode)
+            Icon(
+                painter = painterResource(id = R.drawable.regular_count),
+                contentDescription = stringResource(R.string.regular_count),
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier
+                    .size(responsiveDp(120.dp))
+            )
 
-        Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(24.dp))
 
-        // Regular Count title (click → ScanBarcode)
-        Text(
-            text = stringResource(R.string.regular_count),
-            style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.Normal,
-            color = MaterialTheme.colorScheme.primary,
-        )
+            // Regular Count title (click → ScanBarcode)
+            Text(
+                text = stringResource(R.string.regular_count),
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Normal,
+                color = MaterialTheme.colorScheme.primary,
+            )
 
-        Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(10.dp))
 
-        // Description label (click → ScanBarcode)
-        Text(
-            text = stringResource(R.string.regular_count_desc),
-            style = MaterialTheme.typography.bodyMedium,
-            color = AppTheme.extendedColors.textColor,
-        )
+            // Description label (click → ScanBarcode)
+            Text(
+                text = stringResource(R.string.regular_count_desc),
+                style = MaterialTheme.typography.bodyMedium,
+                color = AppTheme.extendedColors.textColor,
+            )
+        }
 
         Spacer(modifier = Modifier.weight(1f))
 

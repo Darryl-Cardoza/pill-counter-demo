@@ -181,7 +181,7 @@ fun FocusAnimationOverlay() {
     ) {
         Box(
             modifier = Modifier
-                .size(180.dp)
+                .size(responsiveDp(180.dp))
                 .graphicsLayer(scaleX = scale, scaleY = scale)
                 .background(
                     color = Color.Transparent,
