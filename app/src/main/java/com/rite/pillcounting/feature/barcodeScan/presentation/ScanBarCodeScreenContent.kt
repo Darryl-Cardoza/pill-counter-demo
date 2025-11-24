@@ -44,7 +44,7 @@ import com.rite.pillcounting.R
 import com.rite.pillcounting.core.utils.common.BarcodeDecoder
 import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.BackButton
 import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.responsiveDp
-import com.rite.pillcounting.core.utils.constants.Dimens.medium
+import com.rite.pillcounting.core.utils.constants.Dimens.small
 import com.rite.pillcounting.core.utils.logger.AppLogger
 import com.rite.pillcounting.feature.barcodeScan.domain.data.ScanBarcodeEvent
 import com.rite.pillcounting.feature.barcodeScan.domain.model.ScanBarcodeUiState
@@ -99,6 +99,7 @@ fun ScanBarCodeScreenContent(
                     isActive = uiState.isScannerActive,
                     singleScanMode = true,
                     onBarcodeScanned = { value, imagePath ->
+
                         val decoder = BarcodeDecoder() // ideally injected, not recreated each scan
                         val cleanedImagePath = imagePath ?: ""
 
@@ -110,12 +111,14 @@ fun ScanBarCodeScreenContent(
                             ?: decoder.toGtin14(value)
                             ?: value
 
-                        AppLogger("ScanBarcode").i("Barcode=$value | GTIN14=$gtin14 | Image=$cleanedImagePath")
+                        AppLogger("ScanBarcode").i("Barcode=$value | GTIN14=$gtin14 | Image=$cleanedImagePath | GS1=$isGs1 | lotNo=${decoded?.lotNumber} | serialNo=${decoded?.serialNumber} | expiry=${decoded?.expirationDate}")
 
                         onEvent(
                             ScanBarcodeEvent.BarcodeScanned(
-                                barcodeValue = gtin14,
-                                imagePath = cleanedImagePath
+                                gtin14 = gtin14,
+                                imagePath = cleanedImagePath,
+                                expiry = if (isGs1) decoded?.expirationDate.toString() else "",
+                                lotNo = if (isGs1) decoded?.lotNumber ?: "" else ""
                             )
                         )
                     },
@@ -138,7 +141,7 @@ fun ScanBarCodeScreenContent(
             ) {
                 Box(
                     modifier = Modifier
-                        .padding(medium)
+                        .padding(small)
                         .size(responsiveDp(40.dp))
                         .background(
                             color = Color.White,

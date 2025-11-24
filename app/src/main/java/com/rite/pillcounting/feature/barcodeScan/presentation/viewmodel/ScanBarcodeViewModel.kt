@@ -82,7 +82,7 @@ class ScanBarcodeViewModel @Inject constructor(
     fun onEvent(event: ScanBarcodeEvent) {
         logger.d("Received event: ${event::class.java.simpleName}")
         when (event) {
-            is ScanBarcodeEvent.BarcodeScanned -> processBarcode(barcodeValue = event.barcodeValue, imagePath = event.imagePath)
+            is ScanBarcodeEvent.BarcodeScanned -> processBarcode(gtin14 = event.gtin14, imagePath = event.imagePath, expiry = event.expiry, lotNo = event.lotNo)
             is ScanBarcodeEvent.ScannerError -> handleScannerError(event.exception)
             ScanBarcodeEvent.StartCount -> handleStartCount()
             ScanBarcodeEvent.RedoScan -> handleRedoScan()
@@ -97,14 +97,14 @@ class ScanBarcodeViewModel @Inject constructor(
      * - If not found, fetches from remote API via [IDrugRepository].
      * - Updates [uiState] with result (drug name, NDC, error, etc.).
      *
-     * @param barcodeValue Raw string value from the scanned barcode.
+     * @param gtin14 Raw string value from the scanned barcode.
      */
-    private fun processBarcode(barcodeValue: String, imagePath: String) {
+    private fun processBarcode(gtin14: String, imagePath: String, expiry: String, lotNo: String) {
         if (uiState.value.isLoading) return
         _uiState.update { it.copy(isLoading = true, error = null) }
 
         viewModelScope.launch {
-            val drug = drugMasterDao.getDrugByNdc(barcodeValue)
+            val drug = drugMasterDao.getDrugByNdc(gtin14)
             if (drug != null) {
                 _uiState.update {
                     it.copy(
@@ -112,13 +112,15 @@ class ScanBarcodeViewModel @Inject constructor(
                         drugName = drug.drugName.orEmpty(),
                         ndc = drug.ndc,
                         barcodeImagePath = imagePath,
-                        isScannerActive = false
+                        isScannerActive = false,
+                        expiry = expiry,
+                        lotNo = lotNo
                     )
                 }
                 onEvent(ScanBarcodeEvent.StartCount)
             } else {
                 try {
-                    val drugInfo = drugRepository.getDrugInfoByNdc(barcodeValue)
+                    val drugInfo = drugRepository.getDrugInfoByNdc(gtin14)
                     if (drugInfo != null) {
                         val displayName = drugInfo.genericName?.takeIf { it.isNotBlank() } ?: "Unknown Drug"
                         _uiState.update {
@@ -127,7 +129,9 @@ class ScanBarcodeViewModel @Inject constructor(
                                 drugName = displayName,
                                 ndc = drugInfo.ndc,
                                 barcodeImagePath = imagePath,
-                                isScannerActive = false
+                                isScannerActive = false,
+                                expiry = expiry,
+                                lotNo = lotNo
                             )
                         }
                         onEvent(ScanBarcodeEvent.StartCount)
