@@ -31,7 +31,9 @@ import com.rite.pillcounting.feature.pillCountScan.presentation.logic.PillAnalyz
 import com.rite.pillcounting.feature.pillCountScan.presentation.logic.Postprocessor
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -74,6 +76,8 @@ class PillScanningViewModel @Inject constructor(
     private var lastTransformationMatrix: Matrix? = null
     private var isAnalyzingFrame = false
     private var isPaused = false
+    private var idleJob: Job? = null
+    private val idleTimeout = 15_000L
 
     private val _uiState = MutableStateFlow(PillScanningUiState())
     val uiState: StateFlow<PillScanningUiState> = _uiState.asStateFlow()
@@ -118,6 +122,11 @@ class PillScanningViewModel @Inject constructor(
         data class Ready(val analyzer: PillAnalyzer) : ModelState()
         data class Error(val message: String, val cause: Throwable? = null) : ModelState()
     }
+
+    init {
+        resetIdleTimer()
+    }
+
 
     // ------------------------------------------------------------------------
     // Initialization and Observation
@@ -256,24 +265,6 @@ class PillScanningViewModel @Inject constructor(
         buffer.addLast(count)
         _lastTenDetections.value = buffer
 
-        val allZero = buffer.size == ZERO_DETECTIONS_THRESHOLD && buffer.all { it == 0 }
-        val repeatedCount = buffer.size >= REPEAT_THRESHOLD &&
-                buffer.toList().takeLast(REPEAT_THRESHOLD).distinct().size == 1
-
-        val sameAsLast = detections.map { it.hashCode() } == lastDetectedSnapshot
-        val elapsed = System.currentTimeMillis() - lastChangeTimestamp
-
-        if (sameAsLast && elapsed >= IDLE_TIMEOUT_MS) {
-            _uiState.update { it.copy(showIdleOverlay = true) }
-            logger.w("Idle overlay triggered. Scene unchanged for ${elapsed}ms.")
-        } else if (!sameAsLast) {
-            lastDetectedSnapshot = detections.map { it.hashCode() }
-            lastChangeTimestamp = System.currentTimeMillis()
-            _uiState.update { it.copy(showIdleOverlay = false) }
-        }
-
-        if (allZero || repeatedCount) pauseAndClearBuffers()
-
         updateDetectedPills(
             detections.map {
                 DetectedPill(
@@ -292,6 +283,14 @@ class PillScanningViewModel @Inject constructor(
         _lastTenDetections.value.clear()
         lastDetectedSnapshot = emptyList()
         logger.w("Camera paused due to stable detection pattern. Buffers cleared.")
+    }
+
+    fun resetIdleTimer() {
+        idleJob?.cancel()
+        idleJob = viewModelScope.launch {
+            delay(idleTimeout)
+            _uiState.update { it.copy(showIdleOverlay = true) }
+        }
     }
 
 
@@ -372,14 +371,6 @@ class PillScanningViewModel @Inject constructor(
 
     override fun onCleared() {
         super.onCleared()
-
-        try {
-            interpreter?.close()
-        } catch (e: Exception) {
-            logger.w("Error closing interpreter: ${e.message}")
-        } finally {
-            interpreter = null
-        }
 
         try {
             gpuDelegate?.close()

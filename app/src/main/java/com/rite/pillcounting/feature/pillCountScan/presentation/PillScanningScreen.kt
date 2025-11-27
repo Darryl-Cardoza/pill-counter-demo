@@ -155,6 +155,14 @@ fun PillScanningScreen(
             .fillMaxSize()
             .systemBarsPadding()
             .background(AppTheme.extendedColors.secondaryBackground)
+            .pointerInput(Unit) {
+                awaitPointerEventScope {
+                    while (true) {
+                        awaitPointerEvent()
+                        viewModel.resetIdleTimer()
+                    }
+                }
+            }
     ) {
         // Camera + Info
         SplitResponsive(
@@ -191,19 +199,6 @@ fun PillScanningScreen(
                     popUpTo(0) { inclusive = true }
                 }
             }
-            /*IconButton(
-                onClick = { navController.navigate(Screen.Dashboard.route) {
-                    popUpTo(0) { inclusive = true }
-                } },
-                modifier = Modifier.padding(2.dp).size(responsiveDp(50.dp))
-            ) {
-                Icon(
-                    painter = painterResource(id = R.drawable.back),
-                    contentDescription = "Back",
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.padding(extraSmall)
-                )
-            }*/
             if (!isLandscape) {
                 Text(
                     text = stringResource(R.string.pills_count).uppercase(Locale.ROOT),
