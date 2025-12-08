@@ -52,12 +52,12 @@ import androidx.compose.ui.unit.toSize
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.rite.pillcounting.R
-import com.rite.pillcounting.core.utils.preference.PreferenceHelper
+import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.ActionButtonPrimary
 import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.AppInfo
 import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.DrawableIconTextField
-import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.ActionButtonPrimary
 import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.LoadingIndicator
 import com.rite.pillcounting.core.utils.compose.SplitResponsive
+import com.rite.pillcounting.core.utils.preference.PreferenceHelper
 import com.rite.pillcounting.feature.login.domain.model.LoginUiState
 import com.rite.pillcounting.feature.login.viewmodel.LoginViewModel
 import com.rite.pillcounting.ui.theme.AppTheme

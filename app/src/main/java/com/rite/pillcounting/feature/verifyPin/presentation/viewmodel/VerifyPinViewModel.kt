@@ -3,14 +3,14 @@ package com.rite.pillcounting.feature.verifyPin.presentation.viewmodel
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.gson.Gson
 import com.rite.pillcounting.R
 import com.rite.pillcounting.core.models.ErrorResponse
-import com.rite.pillcounting.core.utils.logger.AppLogger
 import com.rite.pillcounting.core.utils.common.NetworkUtils
+import com.rite.pillcounting.core.utils.logger.AppLogger
 import com.rite.pillcounting.core.utils.preference.PreferenceHelper
 import com.rite.pillcounting.feature.otp.data.VerifyPinRepository
 import com.rite.pillcounting.feature.verifyPin.domain.model.VerifyPinUiState
-import com.google.gson.Gson
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -85,7 +85,6 @@ class VerifyPinViewModel @Inject constructor(
                     val refreshToken = data?.refreshToken
                     val user = data?.user
 
-                    // ✅ Persist tokens if available
                     if (!accessToken.isNullOrBlank() && !refreshToken.isNullOrBlank()) {
                         prefs.saveTokens(accessToken, refreshToken)
                         logger.i("Access and refresh tokens saved securely.")

@@ -10,6 +10,7 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -45,10 +46,13 @@ import androidx.compose.material3.RadioButton
 import androidx.compose.material3.RadioButtonDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusDirection
@@ -57,6 +61,10 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
@@ -811,60 +819,129 @@ object UserInterfaceUtils {
         boxSize: Dp = 56.dp,
         cornerRadius: Dp = 8.dp,
         boxBackground: Color = AppTheme.extendedColors.inputBackground,
-        textColor: Color = AppTheme.extendedColors.textColor,
-        isPassword: Boolean = false
+        textColor: Color = AppTheme.extendedColors.textColor
     ) {
+        // focus requesters for each box
         val focusRequesters = remember { List(boxCount) { FocusRequester() } }
 
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
+        // track per-box focus states to show only one cursor
+        val focusStates: SnapshotStateList<Boolean> = remember {
+            mutableStateListOf<Boolean>().apply { repeat(boxCount) { add(false) } }
+        }
+
+        // helper to compute the desired focus index:
+        // if empty -> 0, else next after last entered (or last index if full)
+        fun desiredFocusIndex(): Int {
+            return if (otp.isEmpty()) 0 else otp.length.coerceAtMost(boxCount - 1)
+        }
+
+        // on OTP change ensure we don't exceed boxCount
+        fun sanitizeAndEmit(list: MutableList<Char>) {
+            val sb = StringBuilder()
+            for (c in list.take(boxCount)) {
+                if (c != ' ') sb.append(c)
+            }
+            onOtpChange(sb.toString())
+        }
+
+        // convert otp to mutable list for edits
+        fun otpToList(): MutableList<Char> = otp.toMutableList()
+
+        // When otp changes, auto-focus desired index but only request if not already focused
+        LaunchedEffect(otp) {
+            val target = desiredFocusIndex()
+            if (!focusStates.getOrNull(target).orFalse()) {
+                focusRequesters[target].requestFocus()
+            }
+        }
+
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             for (i in 0 until boxCount) {
                 val char = otp.getOrNull(i)?.toString() ?: ""
+
                 BasicTextField(
                     value = char,
                     onValueChange = { value ->
-                        if (value.length <= 1 && value.all { it.isDigit() }) {
-                            val newOtp = otp.toCharArray().toMutableList()
-                            if (i < newOtp.size) {
-                                if (value.isEmpty()) {
-                                    // Clear current box
-                                    newOtp[i] = ' '
-                                    onOtpChange(newOtp.joinToString("").trim())
+                        if (value.isNotEmpty()) {
+                            val ch = value.first()
+                            if (!ch.isDigit()) return@BasicTextField
 
-                                    // Move focus backward if possible
-                                    if (i > 0) {
-                                        focusRequesters[i - 1].requestFocus()
-                                    }
-                                } else {
-                                    // Fill current box
-                                    newOtp[i] = value.first()
-                                    onOtpChange(newOtp.joinToString("").trim())
+                            val list = otpToList()
+                            // ensure list has capacity up to i
+                            while (list.size < i) list.add(' ')
+                            if (i < list.size) {
+                                list[i] = ch
+                            } else {
+                                list.add(ch)
+                            }
+                            sanitizeAndEmit(list)
 
-                                    // Move focus forward
-                                    if (i < boxCount - 1) {
-                                        focusRequesters[i + 1].requestFocus()
-                                    }
-                                }
-                            } else if (value.isNotEmpty()) {
-                                newOtp.add(value.first())
-                                onOtpChange(newOtp.joinToString("").trim())
-                                if (i < boxCount - 1) {
-                                    focusRequesters[i + 1].requestFocus()
-                                }
+                            // move focus to next logical spot
+                            val next = (otp.length + 1).coerceAtMost(boxCount - 1) // after insert
+                            if (!focusStates.getOrNull(next).orFalse()) {
+                                focusRequesters[next].requestFocus()
                             }
                         }
                     },
                     modifier = Modifier
-                        .size(responsiveDp(boxSize))
-                        .background(
-                            boxBackground,
-                            shape = androidx.compose.foundation.shape.RoundedCornerShape(
-                                cornerRadius
-                            )
-                        )
-                        .focusRequester(focusRequesters[i]),
+                        .size(boxSize)
+                        // when user taps anywhere, we want to redirect focus according to your rule:
+                        .pointerInput(Unit) {
+                            detectTapGestures(onTap = {
+                                val desired = desiredFocusIndex()
+                                // if tapped box is not the desired box, request focus to desired
+                                if (desired != i && !focusStates.getOrNull(desired).orFalse()) {
+                                    focusRequesters[desired].requestFocus()
+                                } else {
+                                    // else let this box gain focus normally
+                                    if (!focusStates.getOrNull(i).orFalse()) {
+                                        focusRequesters[i].requestFocus()
+                                    }
+                                }
+                            })
+                        }
+                        .focusRequester(focusRequesters[i])
+                        .onFocusChanged { state ->
+                            focusStates[i] = state.isFocused
+                            // If box gained focus due to user tap but we should redirect, do it:
+                            if (state.isFocused) {
+                                val desired = desiredFocusIndex()
+                                if (desired != i && !focusStates.getOrNull(desired).orFalse()) {
+                                    // programmatically move to desired index (will update focusStates accordingly)
+                                    focusRequesters[desired].requestFocus()
+                                }
+                            }
+                        }
+                        .onKeyEvent { event ->
+                            if (event.key == Key.Backspace) {
+                                val list = otpToList()
+                                if (char.isNotEmpty()) {
+                                    // delete the digit at this index
+                                    if (i < list.size) {
+                                        list.removeAt(i)
+                                        sanitizeAndEmit(list)
+                                        // focus: try to focus this index (which now points to next digit),
+                                        // or previous if we're past the end
+                                        val target = i.coerceAtMost(list.size.coerceAtLeast(0))
+                                        if (!focusStates.getOrNull(target).orFalse()) {
+                                            focusRequesters[target.coerceAtLeast(0)].requestFocus()
+                                        }
+                                    }
+                                } else {
+                                    // empty current box -> delete previous
+                                    if (i > 0 && list.isNotEmpty()) {
+                                        val removeIndex = (i - 1).coerceAtMost(list.size - 1)
+                                        list.removeAt(removeIndex)
+                                        sanitizeAndEmit(list)
+                                        if (!focusStates.getOrNull(removeIndex).orFalse()) {
+                                            focusRequesters[removeIndex.coerceAtLeast(0)].requestFocus()
+                                        }
+                                    }
+                                }
+                                true
+                            } else false
+                        }
+                        .background(boxBackground, RoundedCornerShape(cornerRadius)),
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(
                         keyboardType = KeyboardType.Number,
@@ -875,10 +952,17 @@ object UserInterfaceUtils {
                         fontSize = 24.sp,
                         textAlign = TextAlign.Center
                     ),
-                    cursorBrush = SolidColor(AppTheme.extendedColors.textColor),
-                    visualTransformation = if (isPassword) PasswordVisualTransformation() else VisualTransformation.None,
+                    // show cursor only for the truly-focused box
+                    cursorBrush = if (focusStates.getOrNull(i).orFalse()) {
+                        SolidColor(AppTheme.extendedColors.textColor)
+                    } else {
+                        SolidColor(Color.Transparent)
+                    },
                     decorationBox = { innerTextField ->
-                        Box(contentAlignment = Alignment.Center) {
+                        Box(
+                            contentAlignment = Alignment.Center,
+                            modifier = Modifier.fillMaxSize()
+                        ) {
                             innerTextField()
                         }
                     }
@@ -886,6 +970,16 @@ object UserInterfaceUtils {
             }
         }
     }
+
+    // helpers
+    private fun <T> SnapshotStateList<T>.getOrNull(index: Int): T? =
+        if (index in 0 until size) this[index] else null
+
+    private fun Boolean?.orFalse(): Boolean = this ?: false
+
+
+
+
 
     @Composable
     fun responsiveDp(baseDp: Dp): Dp {
