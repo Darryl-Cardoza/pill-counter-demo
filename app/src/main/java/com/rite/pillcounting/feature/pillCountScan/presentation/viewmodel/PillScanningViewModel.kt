@@ -77,7 +77,7 @@ class PillScanningViewModel @Inject constructor(
     private var isAnalyzingFrame = false
     private var isPaused = false
     private var idleJob: Job? = null
-    private val idleTimeout = 15_000L
+    private val idleTimeout = 30_000L
 
     private val _uiState = MutableStateFlow(PillScanningUiState())
     val uiState: StateFlow<PillScanningUiState> = _uiState.asStateFlow()
@@ -111,8 +111,6 @@ class PillScanningViewModel @Inject constructor(
     companion object {
         private const val MODEL_FILENAME = "best_float32.tflite"
         private const val ZERO_DETECTIONS_THRESHOLD = 25
-        private const val REPEAT_THRESHOLD = 25
-        private const val IDLE_TIMEOUT_MS = 15_000L
     }
 
     /** Model initialization states */
@@ -277,11 +275,11 @@ class PillScanningViewModel @Inject constructor(
     }
 
     private fun pauseAndClearBuffers() {
-        _uiState.update { it.copy(showIdleOverlay = true) }
-        isPaused = true
-        _cameraPaused.value = true
         _lastTenDetections.value.clear()
         lastDetectedSnapshot = emptyList()
+        _uiState.update { it.copy(showIdleOverlay = true, detectedPills = emptyList()) }
+        isPaused = true
+        _cameraPaused.value = true
         logger.w("Camera paused due to stable detection pattern. Buffers cleared.")
     }
 
@@ -289,7 +287,7 @@ class PillScanningViewModel @Inject constructor(
         idleJob?.cancel()
         idleJob = viewModelScope.launch {
             delay(idleTimeout)
-            _uiState.update { it.copy(showIdleOverlay = true) }
+            pauseAndClearBuffers()
         }
     }
 
