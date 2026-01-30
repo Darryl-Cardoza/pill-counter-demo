@@ -190,7 +190,7 @@ fun PillScanningScreen(
                 )
             },
             landscapeRatio = 0.65f to 0.35f,
-            portraitRatio =  0.70f to 0.35f
+            portraitRatio =  0.80f to 0.20f
         )
 
         if (!uiState.showIdleOverlay) {

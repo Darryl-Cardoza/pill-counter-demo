@@ -33,6 +33,7 @@ class PillAnalyzer(
         transformMatrix: Matrix
     ) -> Unit
 ) {
+
     private val logger = AppLogger.create<PillAnalyzer>()
     private var lastTransformationMatrix: Matrix? = null
 
@@ -48,17 +49,22 @@ class PillAnalyzer(
      * All steps are individually timed and logged for performance insights.
      */
     fun analyze(imageProxy: ImageProxy) {
-        var bitmap: Bitmap? = null
+
+        var debugBitmap: Bitmap? = null
         val overallStart = System.currentTimeMillis()
 
         try {
-            logger.d("Starting frame analysis | Image=${imageProxy.width}x${imageProxy.height}, Rotation=${imageProxy.imageInfo.rotationDegrees}°")
+            logger.d(
+                "Starting frame analysis | Image=${imageProxy.width}x${imageProxy.height}, " +
+                        "Rotation=${imageProxy.imageInfo.rotationDegrees}°"
+            )
 
             // -----------------------------------------------------
-            // STEP 1: PREPROCESSING
+            // STEP 1: PREPROCESSING (LETTERBOX – NO CROP)
             // -----------------------------------------------------
             val preprocessStart = System.currentTimeMillis()
-            val (inputBuffer, bmp) = try {
+
+            val (inputBuffer, bitmap, letterboxInfo) = try {
                 Preprocessor.preprocess(imageProxy)
             } catch (e: Exception) {
                 logger.e("Preprocessing failed: ${e.message}", e)
@@ -66,29 +72,24 @@ class PillAnalyzer(
                 return
             }
 
-            // Save every few frames for debugging rotation/orientation
-            /*if ((System.currentTimeMillis() / 5000) % 2L == 0L) {
-                bmp.saveDebugCopy(tag = "preprocessed")
-            }*/
+            debugBitmap = bitmap
 
-            bitmap = bmp
             val preprocessTime = System.currentTimeMillis() - preprocessStart
-            logger.i("Preprocessing completed in $preprocessTime ms | Bitmap=${bmp.width}x${bmp.height}")
+            logger.i(
+                "Preprocessing completed in $preprocessTime ms | " +
+                        "Bitmap=${bitmap.width}x${bitmap.height}, " +
+                        "scale=${letterboxInfo.scale}, pad=(${letterboxInfo.padX},${letterboxInfo.padY})"
+            )
 
             // -----------------------------------------------------
             // STEP 2: MODEL INFERENCE
             // -----------------------------------------------------
             val inferenceStart = System.currentTimeMillis()
+
             val detShape = interpreter.getOutputTensor(0).shape()
-            //val maskShape = interpreter.getOutputTensor(1).shape()
-
             val out0 = Array(1) { Array(detShape[1]) { FloatArray(detShape[2]) } }
-            //val out1 = Array(1) { Array(maskShape[1]) { Array(maskShape[2]) { FloatArray(maskShape[3]) } } }
-
-            //val outputs = mapOf(0 to out0, 1 to out1)
 
             try {
-                //interpreter.runForMultipleInputsOutputs(arrayOf(inputBuffer), outputs)
                 interpreter.run(inputBuffer, out0)
             } catch (e: Exception) {
                 logger.e("Model inference failed: ${e.message}", e)
@@ -98,36 +99,20 @@ class PillAnalyzer(
             }
 
             val inferenceTime = System.currentTimeMillis() - inferenceStart
-            logger.i("Model inference completed in $inferenceTime ms | Output tensors: det=${detShape.contentToString()}, mask=${detShape.contentToString()}")
-//            logger.i("Measure time Model inference completed in $inferenceTime ms | Output tensors: det=${detShape.contentToString()}")
-
-            // -----------------------------------------------------
-            // STEP 3: POSTPROCESSING
-            // -----------------------------------------------------
-            val postStart = System.currentTimeMillis()
-            val camRotation = imageProxy.imageInfo.rotationDegrees
-            val rawIsPortrait = imageProxy.width < imageProxy.height
-            val bmpIsPortrait = bitmap.height > bitmap.width
-
-            // Determine the correct rotation adjustment
-            val effectiveRotation = when {
-                rawIsPortrait && !bmpIsPortrait -> 90
-                !rawIsPortrait && bmpIsPortrait -> 90
-                else -> camRotation
-            }
-
-            logger.d(
-                "Postprocessing: raw=${imageProxy.width}x${imageProxy.height}, " +
-                        "bitmap=${bitmap.width}x${bitmap.height}, " +
-                        "cameraRotation=$camRotation°, effectiveRotation=$effectiveRotation°"
+            logger.i(
+                "Model inference completed in $inferenceTime ms | " +
+                        "Output shape=${detShape.contentToString()}"
             )
 
-            val (detections, matrix) = try {
+            // -----------------------------------------------------
+            // STEP 3: POSTPROCESSING (INVERSE LETTERBOX)
+            // -----------------------------------------------------
+            val postStart = System.currentTimeMillis()
+
+            val (detections, transformMatrix) = try {
                 Postprocessor.parseDetections(
                     det = out0[0],
-                    imageWidth = bitmap.width,
-                    imageHeight = bitmap.height,
-                    rotationDegrees = effectiveRotation,
+                    letterbox = letterboxInfo,
                     viewWidth = viewWidth,
                     viewHeight = viewHeight
                 )
@@ -139,20 +124,31 @@ class PillAnalyzer(
             }
 
             val postTime = System.currentTimeMillis() - postStart
-            logger.i("Postprocessing completed in $postTime ms | Detections=${detections.size}")
+            logger.i(
+                "Postprocessing completed in $postTime ms | " +
+                        "Detections=${detections.size}"
+            )
 
             // -----------------------------------------------------
             // STEP 4: FINAL RESULT CALLBACK
             // -----------------------------------------------------
             val totalTime = System.currentTimeMillis() - overallStart
-            logger.i("Measure time Frame analysis successful in $totalTime ms | Pills detected=${detections.size}")
+            logger.i(
+                "Frame analysis successful in $totalTime ms | " +
+                        "Pills detected=${detections.size}"
+            )
 
-            lastTransformationMatrix = matrix
-            onPillCountUpdated(detections.size, detections, bitmap, matrix)
+            lastTransformationMatrix = transformMatrix
+            onPillCountUpdated(
+                detections.size,
+                detections,
+                bitmap,
+                transformMatrix
+            )
 
         } catch (e: Exception) {
             logger.e("Exception during frame analysis: ${e.message}", e)
-            bitmap?.recycle()
+            debugBitmap?.recycle()
         } finally {
             try {
                 imageProxy.close()
@@ -164,44 +160,35 @@ class PillAnalyzer(
 }
 
 /**
-
+ *
  * Saves a bitmap to external storage (Downloads/pill_debug/)
-
+ *
  * for debugging orientation and preprocessing results.
-
+ *
  */
 
-/*fun Bitmap.saveDebugCopy(tag: String = "frame"): File? {
+/*
+fun Bitmap.saveDebugCopy(tag: String = "frame"): File? {
 
     return try {
 
         val dir = File(
-
             Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
-
             "pill_debug"
-
         ).apply { mkdirs() }
 
         val name = "${tag}_${SimpleDateFormat("HHmmss", Locale.US).format(Date())}.jpg"
-
         val file = File(dir, name)
 
         FileOutputStream(file).use { out ->
-
             compress(Bitmap.CompressFormat.JPEG, 90, out)
-
         }
 
         file
 
     } catch (e: Exception) {
-
         e.printStackTrace()
-
         null
-
     }
-
-}*/
-
+}
+*/
