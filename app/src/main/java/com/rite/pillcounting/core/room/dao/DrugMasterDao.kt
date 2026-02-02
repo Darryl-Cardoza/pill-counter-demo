@@ -96,4 +96,9 @@ interface DrugMasterDao {
      */
     @Query("SELECT drugId FROM drug_master WHERE ndc = :ndc LIMIT 1")
     suspend fun getDrugIdByNdc(ndc: String): Long?
+
+
+    @Query("SELECT * FROM drug_master WHERE drugId = :drugId LIMIT 1")
+    suspend fun getDrugById(drugId: Long?): DrugMasterEntity?
+
 }

@@ -35,5 +35,6 @@ data class PillScanningUiState(
     val showNoTransaction: Boolean = false,
     val showTargetCountDialog: Boolean = false,
     val showIdleOverlay: Boolean = false,
-    val showNotesDialog: Boolean = false
+    val showNotesDialog: Boolean = false,
+    val isAddCooldown: Boolean = false //CodeReview - can we reuse restrictAdd?
 )

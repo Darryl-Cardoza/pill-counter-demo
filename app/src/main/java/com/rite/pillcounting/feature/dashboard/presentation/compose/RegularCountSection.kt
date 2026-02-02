@@ -50,7 +50,8 @@ import com.rite.pillcounting.ui.theme.AppTheme
 fun RegularCountSection(
     completedRegularCount: String,
     partialRegularCount: String,
-    navController: NavController
+    navController: NavController,
+    onNavigate: () -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -64,6 +65,7 @@ fun RegularCountSection(
             modifier = Modifier
                 .bounceClick {
                     navigateToBarcodeScanRegularCount(navController)
+                    onNavigate()
                 },
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {

@@ -1,6 +1,5 @@
 package com.rite.pillcounting.feature.barcodeScan.presentation
 
-import ManualDrugEntryDialog
 import Screen
 import android.Manifest
 import android.content.pm.PackageManager
@@ -17,6 +16,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.CommonDialog
 import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.showToast
 import com.rite.pillcounting.feature.barcodeScan.domain.data.NavigationEvent
 import com.rite.pillcounting.feature.barcodeScan.presentation.viewmodel.ScanBarcodeViewModel
@@ -44,6 +44,7 @@ fun ScanBarCodeScreen(
         )
     }
 
+
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission(),
         onResult = { granted ->
@@ -62,28 +63,40 @@ fun ScanBarCodeScreen(
         viewModel.navigationEvent.collect { event ->
             when (event) {
                 is NavigationEvent.NavigateToPillCount -> {
-                    navController.navigate(Screen.PillCount.createRoute(scanType)){}
+                    navController.navigate(Screen.PillCount.createRoute(scanType)) {}
                 }
 
                 NavigationEvent.NavigateBack -> {
                     navController.popBackStack()
                 }
+
+                is NavigationEvent.NavigateToResumePillCount -> navController.navigate(
+                    Screen.ResumeRegularCounts.createRoute(
+                        scanType
+                    )
+                ) {}
+
             }
         }
     }
 
     // Collect the UI state from the ViewModel in a lifecycle-aware manner.
     val uiState by viewModel.uiState.collectAsState()
-    if (uiState.showManualEntry) {
-        ManualDrugEntryDialog(
-            onConfirm = { drugName, ndc ->
-                viewModel.addManualDrug(drugName, ndc)
+
+    if (uiState.showNdcNotMatchedDialog) {
+        CommonDialog(
+            title = "Medication Mismatch",
+            message = "The scanned NDC does not match the prescription received \nPlease verify the drug and scan again.",
+            confirmText = "Rescan",
+            cancelText = "Cancel",
+            onConfirm = {
+                viewModel.resumeScanning()
             },
-            onDismiss = { viewModel.hideManualEntryDialog() }
+            onCancel = {
+                viewModel.hideNdcNotMatchedDialog()
+            }
         )
-    }
-    uiState.error?.let { errorMsg ->
-        showToast(context,errorMsg)
+
     }
 
     // Delegate the UI rendering to the stateless content composable.

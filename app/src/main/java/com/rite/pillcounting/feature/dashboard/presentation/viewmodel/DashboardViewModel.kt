@@ -174,6 +174,10 @@ class DashboardViewModel @Inject constructor(
     fun resetNavigateToProfile() {
         _uiState.update { it.copy(navigateToProfile = false) }
     }
+
+    fun saveTxnId(){
+        preferenceHelper.saveTxnId(0)
+    }
 }
 
 /* ───────────────────────────── Mappers ───────────────────────────── */

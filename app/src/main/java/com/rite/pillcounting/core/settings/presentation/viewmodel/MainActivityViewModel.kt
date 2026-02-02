@@ -1,8 +1,10 @@
 package com.rite.pillcounting.core.settings.presentation.viewmodel
 
+import android.os.Build
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.rite.pillcounting.core.hl7.service.HL7Config
 import com.rite.pillcounting.core.models.ApiResponse
 import com.rite.pillcounting.core.room.dao.PillCountTxnDao
 import com.rite.pillcounting.core.settings.domain.data.IApplicationSettingsRepository
@@ -13,6 +15,8 @@ import com.rite.pillcounting.core.settings.domain.model.SettingsDataDto
 import com.rite.pillcounting.core.settings.domain.model.ThemeColors
 import com.rite.pillcounting.core.utils.logger.AppLogger
 import com.rite.pillcounting.core.utils.preference.PreferenceHelper
+import com.rite.pillcounting.feature.hl7.core.Hl7EventHandler
+import com.rite.pillcounting.feature.hl7.core.Hl7ServiceManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -41,7 +45,9 @@ import javax.inject.Inject
 class MainActivityViewModel @Inject constructor(
     private val repository: IApplicationSettingsRepository,
     private val preferenceHelper: PreferenceHelper,
-    private val txnDao: PillCountTxnDao
+    private val txnDao: PillCountTxnDao,
+    private val hl7ServiceManager: Hl7ServiceManager,
+    private val hl7EventHandler: Hl7EventHandler,
 ) : ViewModel(), IApplicationSettingsViewModel {
 
     private val logger = AppLogger.Companion.create<MainActivityViewModel>()
@@ -98,7 +104,10 @@ class MainActivityViewModel @Inject constructor(
             try {
                 logger.i("Fetching remote application settings...")
                 val response = repository.getApplicationSettings()
+                updateHl7Config(response)
                 applyAndStoreSettings(response)
+
+                evaluateHl7State()
             } catch (e: Exception) {
                 logger.e("Failed to fetch settings. Keeping cached/fallback values.", e)
                 _uiState.update { it.copy(errorMessage = e.message) }
@@ -272,5 +281,75 @@ class MainActivityViewModel @Inject constructor(
     }
 
 
+    /**
+     * Updates and caches the HL7 network service discovery (NSD) types from remote settings.
+     */
+    private fun updateHl7Config(setting: ApiResponse<SettingsDataDto>) {
+        val dto = setting.data?.hl7Config
+        val nsdDiscoverType = dto?.pmsHostName ?: ""
+        val nsdBroadCastType = dto?.pillCounterHostName ?: ""
+        _uiState.update {
+            it.copy(
+                nsdBroadcastType = nsdBroadCastType,
+                nsdDiscoveryType = nsdDiscoverType,
+                isHl7Enabled = preferenceHelper.isHl7Enabled()
+            )
+        }
+        logger.i("nsd service name $dto")
+    }
 
+
+    /**
+     * Configures and starts the HL7 service and its event consumer.
+     */
+    private fun startHl7Service(){
+
+        val broadCastServiceName = _uiState.value.nsdBroadcastType ?: return
+        val discoverServiceName  = _uiState.value.nsdDiscoveryType ?: return
+
+        val config = HL7Config(
+            serverPort = 2575,
+            autoResponseDelayMs = 10_000L,
+            nsdBroadcastServiceName = "PillCounter-${Build.MODEL}",
+            nsdBroadcastType = broadCastServiceName,
+            nsdDiscoveryType = discoverServiceName,
+            imageServicePort = 8080,
+            imageServiceSecurePort = 8443
+        )
+        hl7ServiceManager.initialize(config,hl7EventHandler)
+    }
+
+
+    /**
+     * Checks conditions (e.g., user login or logout, HL7 enabled) and starts or stops the HL7 service accordingly.
+     */
+    fun evaluateHl7State() {
+        val state = _uiState.value
+
+        logger.i("evaluateHl7State $state")
+        if (state.isHl7Enabled == true && preferenceHelper.isUserLoggedIn()) {
+            startHl7Service()
+            logger.i("HL7 Started")
+        } else {
+            stopHl7Service()
+        }
+    }
+
+
+
+    /**
+     * Shuts down the HL7 service.
+     */
+    private fun stopHl7Service() {
+        hl7ServiceManager.shutdown()
+        logger.i("HL7 STOPPED")
+    }
+
+
+    /**
+     * Re-evaluates the HL7 service state, typically called after a login or logout event.
+     */
+    fun onUserLoginOrLogOut() {
+        evaluateHl7State()
+    }
 }

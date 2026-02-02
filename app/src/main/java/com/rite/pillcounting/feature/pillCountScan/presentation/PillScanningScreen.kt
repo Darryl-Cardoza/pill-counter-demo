@@ -1,6 +1,8 @@
 package com.rite.pillcounting.feature.pillCountScan.presentation
 
 import Screen
+import android.R.attr.maxHeight
+import android.R.attr.maxWidth
 import android.content.res.Configuration
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -60,6 +62,10 @@ fun PillScanningScreen(
     val context = navController.context
     val uiState by viewModel.uiState.collectAsState()
     val logger = remember { AppLogger("PillScanningScreen") }
+    val topHeightPortrait = maxHeight * 0.75f
+    val bottomHeightPortrait = maxHeight * 0.25f
+    val startWidthLandScape = maxWidth * 0.7f
+    val endWidthLandscape = maxWidth * 0.3f
 
     // Buffer of last 10 detections
     var lastTenDetections by remember { mutableStateOf<List<Int>>(emptyList()) }
@@ -189,8 +195,8 @@ fun PillScanningScreen(
                     filteredPillCount = filteredPillCount
                 )
             },
-            landscapeRatio = 0.65f to 0.35f,
-            portraitRatio =  0.70f to 0.35f
+            landscapeRatio = startWidthLandScape to endWidthLandscape,
+            portraitRatio = topHeightPortrait to bottomHeightPortrait
         )
 
         if (!uiState.showIdleOverlay) {

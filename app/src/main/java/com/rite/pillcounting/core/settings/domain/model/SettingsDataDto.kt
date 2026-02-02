@@ -17,5 +17,6 @@ import com.squareup.moshi.JsonClass
 data class SettingsDataDto(
     @Json(name = "min_version") val minVersion: String?,
     @Json(name = "is_maintenance_mode") val isMaintenanceMode: Boolean,
-    @Json(name = "settings") val settings: ApplicationSettingsResponse
+    @Json(name = "settings") val settings: ApplicationSettingsResponse,
+    @Json(name = "hl7_config") val hl7Config: ApplicationSettingsHL7Config
 )

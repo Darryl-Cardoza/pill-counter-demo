@@ -8,22 +8,20 @@ import androidx.camera.core.ImageProxy
 import androidx.camera.view.PreviewView
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTransformGestures
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
-import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
@@ -37,7 +35,6 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
-import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
@@ -54,81 +51,96 @@ import kotlinx.coroutines.flow.conflate
 // =========================================================
 // ZOOM CONTROL COMPOSABLE
 // =========================================================
+@SuppressLint("UnusedBoxWithConstraintsScope")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ZoomControls(
     zoom: Float,
     min: Float = 1f,
     max: Float = 3f,
-    onMinus: () -> Unit,
-    onPlus: () -> Unit,
     onChange: (Float) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Row(
+    val secondary = Color.White
+    val zoomLabel = "${String.format("%.1f", zoom)}x"
+
+    // 0f..1f
+    val fraction = ((zoom - min) / (max - min)).coerceIn(0f, 1f)
+
+    BoxWithConstraints(
         modifier = modifier
-            .wrapContentWidth(),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.Center
+            .fillMaxWidth()
+            .padding(horizontal = 18.dp)
     ) {
 
-        // --- MINUS CIRCLE ---
-        Box(
-            modifier = Modifier
-                .size(34.dp)
-                .background(Color.White.copy(alpha = 0.85f), shape = CircleShape)
-                .clickable { onMinus() },
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = "-",
-                color = Color.Black,
-                fontSize = 30.sp
-            )
-        }
+        val trackWidth = maxWidth - 24.dp
 
-        // --- SLIM MODERN SLIDER ---
-        Slider(
-            value = zoom,
-            onValueChange = onChange,
-            valueRange = min..max,
-            modifier = Modifier
-                .padding(horizontal = 14.dp)
-                .width(150.dp),
-            colors = SliderDefaults.colors(
-                thumbColor = Color.White,
-                activeTrackColor = Color.White.copy(alpha = 0.95f),
-                inactiveTrackColor = Color.White.copy(alpha = 0.4f)
-            ),
-            track = { sliderState ->
-                Box(
+        Column {
+
+            // ZOOM VALUE ABOVE THUMB
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(22.dp)
+            ) {
+                Text(
+                    text = zoomLabel,
+                    color = MaterialTheme.colorScheme.secondary,
+                    fontSize = 14.sp,
                     modifier = Modifier
-                        .height(2.dp) // << ULTRA THIN TRACK
-                        .fillMaxWidth()
-                        .background(Color.White.copy(alpha = 0.4f), shape = RoundedCornerShape(1.dp))
-                )
-                Box(
-                    modifier = Modifier
-                        .height(2.dp)
-                        .fillMaxWidth(sliderState.value)
-                        .background(Color.White.copy(alpha = 0.9f), shape = RoundedCornerShape(1.dp))
+                        .align(Alignment.CenterStart)
+                        .offset(x = trackWidth * fraction)
                 )
             }
-        )
 
+            // 🔹 SLIDER
+            Slider(
+                value = zoom,
+                onValueChange = onChange,
+                valueRange = min..max,
+                modifier = Modifier.fillMaxWidth(),
 
-        // --- PLUS CIRCLE ---
-        Box(
-            modifier = Modifier
-                .size(34.dp)
-                .background(Color.White.copy(alpha = 0.85f), shape = CircleShape)
-                .clickable { onPlus() },
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = "+",
-                color = Color.Black,
-                fontSize = 25.sp
+                colors = SliderDefaults.colors(
+                    thumbColor = Color.Transparent,
+                    activeTrackColor = Color.Transparent,
+                    inactiveTrackColor = Color.Transparent
+                ),
+
+                // CIRCLE THUMB
+                thumb = {
+                    Box(
+                        modifier = Modifier
+                            .size(24.dp)
+                            .background(secondary, CircleShape)
+                    )
+                },
+
+                // 🧵 CUSTOM TRACK
+                track = { sliderState ->
+                    val trackFraction =
+                        (sliderState.value - sliderState.valueRange.start) /
+                                (sliderState.valueRange.endInclusive - sliderState.valueRange.start)
+
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(3.dp)
+                            .background(
+                                Color.Gray.copy(alpha = 0.35f),
+                                RoundedCornerShape(2.dp)
+                            )
+                    )
+
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth(trackFraction.coerceIn(0f, 1f))
+                            .height(4.dp)
+                            .background(
+                                MaterialTheme.colorScheme.secondary,
+                                RoundedCornerShape(2.dp)
+                            )
+                    )
+                }
             )
         }
     }
@@ -180,6 +192,10 @@ fun CameraPreviewSection(
             .collect { image -> onFrame(image) }
     }
 
+    LaunchedEffect(Unit) {
+        previewView.scaleType = PreviewView.ScaleType.FILL_CENTER
+    }
+
     // Pause/Resume
     LaunchedEffect(isCameraPaused) {
         if (isCameraPaused) cameraHelper.pauseCamera()
@@ -224,8 +240,6 @@ fun CameraPreviewSection(
 
             // PILL MARKER OVERLAY
             Canvas(modifier = Modifier.matchParentSize()) {
-                val previewWidth = size.width
-                val previewHeight = size.height
                 // Prepare text paint
                 val textPaint = Paint().apply {
                     color = android.graphics.Color.WHITE
@@ -237,9 +251,12 @@ fun CameraPreviewSection(
                 }
 
                 // Map normalized coordinates to preview pixels
+                val previewW = size.width
+                val previewH = size.height
+
                 val mapped = pills.map { pill ->
-                    val px = pill.x * previewWidth
-                    val py = pill.y * previewHeight
+                    val px = pill.x * previewW
+                    val py = pill.y * previewH
                     pill to Offset(px, py)
                 }
 
@@ -254,11 +271,11 @@ fun CameraPreviewSection(
                         val scale = 1f
 
                         val innerRadius =
-                            with(density) { (if (isLast) 15.dp else 11.dp).toPx() * scale }
+                            with(density) { (5.dp).toPx() * scale }
                         val outerRadius =
-                            with(density) { (if (isLast) 19.dp else 14.dp).toPx() * scale }
+                            with(density) { (8.dp).toPx() * scale }
                         val strokeWidth =
-                            with(density) { (if (isLast) 3.dp else 2.dp).toPx() * scale }
+                            with(density) { (1.dp).toPx() * scale }
                         val textSizePx = (if (isLast) 34 else 28) * scale
 
                         textPaint.textSize = textSizePx
@@ -270,14 +287,14 @@ fun CameraPreviewSection(
 
                         // background + border
                         drawCircle(
-                            color = if (isLast) Color.Black.copy(alpha = 0.9f) else Color.Black.copy(
-                                alpha = 0.5f
+                            color = Color.Black.copy(
+                                alpha = 0.8f
                             ),
                             radius = innerRadius,
                             center = pos
                         )
                         drawCircle(
-                            color = if (isLast) Color.White.copy(alpha = 0.7f) else Color.White.copy(
+                            color = Color.White.copy(
                                 alpha = 0.5f
                             ),
                             radius = outerRadius,
@@ -286,9 +303,9 @@ fun CameraPreviewSection(
                         )
 
                         // pill number
-                        val fm = textPaint.fontMetrics
-                        val off = (fm.descent - fm.ascent) / 2 - fm.descent
-                        canvas.nativeCanvas.drawText("${i + 1}", pos.x, pos.y + off, textPaint)
+//                        val fm = textPaint.fontMetrics
+//                        val off = (fm.descent - fm.ascent) / 2 - fm.descent
+//                        canvas.nativeCanvas.drawText("${i + 1}", pos.x, pos.y + off, textPaint)
                     }
                 }
             }
@@ -301,19 +318,10 @@ fun CameraPreviewSection(
             zoom = zoomRatio.value,
             min = minZoom,
             max = maxZoom,
-            onMinus = {
-                val z = (zoomRatio.value - 0.1f).coerceIn(minZoom, maxZoom)
-                zoomRatio.value = z
-                cameraHelper.setZoom(z)
-            },
-            onPlus = {
-                val z = (zoomRatio.value + 0.1f).coerceIn(minZoom, maxZoom)
-                zoomRatio.value = z
-                cameraHelper.setZoom(z)
-            },
-            onChange = {
-                zoomRatio.value = it
-                cameraHelper.setZoom(it)
+            onChange = { value ->
+                val stepped = (value * 10f).toInt() / 10f
+                zoomRatio.value = stepped
+                cameraHelper.setZoom(stepped)
             },
             modifier = Modifier
                 .align(Alignment.BottomCenter)

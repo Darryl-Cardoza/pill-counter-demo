@@ -127,5 +127,7 @@ sealed interface Screen {
         fun createRoute(type: String) = "$ROUTE_PREFIX/$type"
     }
 
+
+
 }
 

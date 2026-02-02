@@ -766,7 +766,8 @@ object UserInterfaceUtils {
         modifier: Modifier = Modifier,
         color: Color = MaterialTheme.colorScheme.primary,
         enabled: Boolean = true,
-        width: Int = 100
+        width: Int = 100,
+        fontSize: Int = 13,
     ) {
         Button(
             onClick = onClick,
@@ -776,13 +777,14 @@ object UserInterfaceUtils {
             colors = ButtonDefaults.buttonColors(
                 containerColor = color,
                 contentColor = Color.White,
-                disabledContainerColor = AppTheme.extendedColors.secondaryBackground, // or use a theme color
-                disabledContentColor = Color.LightGray // or use a theme color
+                disabledContainerColor = Color.Gray,
+                disabledContentColor = Color.White // or use a theme color
             ),
+            //CodeReview - Static Color
             shape = RoundedCornerShape(buttonCornerRadius),
             enabled = enabled
         ) {
-            Text(text = text, fontSize = 13.sp)
+            Text(text = text, fontSize = fontSize.sp)
         }
     }
 
@@ -983,21 +985,56 @@ object UserInterfaceUtils {
 
     @Composable
     fun responsiveDp(baseDp: Dp): Dp {
-        val configuration = LocalConfiguration.current
-        val smallestWidthDp = minOf(configuration.screenWidthDp, configuration.screenHeightDp)
+        val config = LocalConfiguration.current
+        val sw = minOf(config.screenWidthDp, config.screenHeightDp)
+
         val scale = when {
-            smallestWidthDp < 600 -> 1f    //phone
-            smallestWidthDp < 840 -> 1.5f  //small tablets
-            else -> 2f           //large tablets
+            sw < 360 -> 0.9f   // very small phones
+            sw < 600 -> 1f     // normal phones
+            sw < 840 -> 1.15f  // tablets
+            else -> 1.3f       // large tablets
         }
         return baseDp * scale
     }
+
+    @Composable
+    fun responsiveDpForCircularCountProgressPotrait(baseDp: Dp): Dp {
+        val config = LocalConfiguration.current
+        val sw = minOf(config.screenWidthDp, config.screenHeightDp)
+
+        val scale = when {
+            sw < 400 -> 0.7f   // very small phones
+            sw < 600 -> 1f     // normal phones
+            sw < 840 -> 1.15f  // tablets
+            else -> 1.3f       // large tablets
+        }
+        return baseDp * scale
+    }
+
+    @Composable
+    fun responsiveDpForCircularCountProgressPotrait(percent: Float): Dp {
+        val config = LocalConfiguration.current
+        val sw = minOf(config.screenWidthDp, config.screenHeightDp)
+
+        return (sw * percent).dp
+    }
+
+    @Composable
+    fun responsiveDpForCircularCountProgressLandscape(percent: Float): Dp {
+        val config = LocalConfiguration.current
+        val sw = minOf(config.screenWidthDp, config.screenHeightDp)
+
+        // percent = 0.12f means 12% of screen
+        return (sw * percent).dp
+    }
+
 
     @Composable
     fun responsiveSp(baseSp: TextUnit): TextUnit {
         val configuration = LocalConfiguration.current
         val smallestWidthDp = minOf(configuration.screenWidthDp, configuration.screenHeightDp)
         val scale = when {
+            smallestWidthDp < 400 -> 0.8f //small phone
             smallestWidthDp < 600 -> 1f   //phone
             smallestWidthDp < 840 -> 1.5f //small tablets
             else -> 2f          //large tablets

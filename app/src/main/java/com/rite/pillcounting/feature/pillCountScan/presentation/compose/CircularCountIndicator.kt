@@ -8,7 +8,6 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
@@ -23,14 +22,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.responsiveDp
+import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.responsiveDpForCircularCountProgressPotrait
 import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.responsiveSp
 import com.rite.pillcounting.feature.pillCountScan.presentation.viewmodel.PillScanningViewModel
+import com.rite.pillcounting.ui.theme.AppTheme
 
 @Composable
 fun CircularCountIndicator(
@@ -39,8 +38,6 @@ fun CircularCountIndicator(
     viewModel: PillScanningViewModel
 ) {
 
-
-    val centerColor = MaterialTheme.colorScheme.primary
     val indicatorColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.8f)
     val lastDetections by viewModel.lastTenDetections.collectAsState()
 
@@ -76,18 +73,19 @@ fun CircularCountIndicator(
     }
 
     Box(
-        modifier = modifier.size(responsiveDp(95.dp)),
+        modifier = modifier.size(responsiveDpForCircularCountProgressPotrait(0.27f)),
         contentAlignment = Alignment.Center
     ) {
         Canvas(modifier = Modifier.fillMaxSize()) {
-            val strokeWidth = 2.dp.toPx()
+            val strokeWidth = 4.dp.toPx()
 
             // If last 4 are same or uiState.showIdleOverlay is true, show full circle (steady), else animate
-            val sweepAngle = if (lastFourSame || uiState.showIdleOverlay) 360f else 360 * sweepProgress
+            val sweepAngle =
+                if (lastFourSame || uiState.showIdleOverlay) 360f else 360 * sweepProgress
 
             drawArc(
                 color = indicatorColor,
-                startAngle = -90f,
+                startAngle = 90f,
                 sweepAngle = sweepAngle,
                 useCenter = false,
                 style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
@@ -98,13 +96,12 @@ fun CircularCountIndicator(
         Box(
             modifier = Modifier
                 .fillMaxSize(0.90f)
-                .clip(CircleShape)
-                .background(centerColor),
+                .clip(CircleShape),
             contentAlignment = Alignment.Center
         ) {
             Text(
                 text = count.toString(),
-                color = Color.White,
+                color = AppTheme.extendedColors.textColor,
                 fontSize = responsiveSp(32.sp)
             )
         }

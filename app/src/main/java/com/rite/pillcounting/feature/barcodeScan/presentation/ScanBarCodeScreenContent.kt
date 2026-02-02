@@ -1,6 +1,5 @@
 package com.rite.pillcounting.feature.barcodeScan.presentation
 
-import android.content.res.Configuration
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -9,19 +8,12 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBarsPadding
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -31,11 +23,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -44,13 +35,13 @@ import com.rite.pillcounting.R
 import com.rite.pillcounting.core.utils.common.BarcodeDecoder
 import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.BackButton
 import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.responsiveDp
-import com.rite.pillcounting.core.utils.constants.Dimens.small
-import com.rite.pillcounting.core.utils.logger.AppLogger
+import com.rite.pillcounting.core.utils.compose.SplitResponsive
 import com.rite.pillcounting.feature.barcodeScan.domain.data.ScanBarcodeEvent
 import com.rite.pillcounting.feature.barcodeScan.domain.model.ScanBarcodeUiState
 import com.rite.pillcounting.feature.barcodeScan.presentation.analyzer.BarcodeAnalyzer
-import com.rite.pillcounting.feature.barcodeScan.presentation.compose.PermissionDeniedView
+import com.rite.pillcounting.feature.barcodeScan.presentation.compose.ManualDrugInfo
 import com.rite.pillcounting.feature.barcodeScan.presentation.compose.ScannerView
+import com.rite.pillcounting.feature.barcodeScan.presentation.viewmodel.ScanBarcodeViewModel
 import com.rite.pillcounting.ui.theme.AppTheme
 
 /**
@@ -64,7 +55,8 @@ fun ScanBarCodeScreenContent(
     hasCameraPermission: Boolean,
     onRequestPermission: () -> Unit,
     onEvent: (ScanBarcodeEvent) -> Unit,
-    analyzer: BarcodeAnalyzer
+    analyzer: BarcodeAnalyzer,
+    viewModel: ScanBarcodeViewModel = hiltViewModel(),
 ) {
     val lifecycleOwner = LocalLifecycleOwner.current
 
@@ -82,36 +74,28 @@ fun ScanBarCodeScreenContent(
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
-    Scaffold(
+    Box(
         modifier = Modifier
             .fillMaxSize()
-            .systemBarsPadding(),
-    ) { paddingValues ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .background(Color.Black)
-        ) {
-            if (hasCameraPermission) {
+            .systemBarsPadding()
+            .background(AppTheme.extendedColors.secondaryBackground)
+    ) {
+        SplitResponsive(
+            topOrLeft = {
                 ScannerView(
                     analyzer = analyzer,
                     isActive = uiState.isScannerActive,
                     singleScanMode = true,
                     onBarcodeScanned = { value, imagePath ->
-
-                        val decoder = BarcodeDecoder() // ideally injected, not recreated each scan
+                        val decoder = BarcodeDecoder()
                         val cleanedImagePath = imagePath ?: ""
 
                         val isGs1 = decoder.isGs1Barcode(value)
                         val decoded = if (isGs1) decoder.decode(value) else null
 
-                        // Normalize GTIN to GTIN-14 if possible
                         val gtin14 = decoded?.gtin?.let { decoder.toGtin14(it) }
                             ?: decoder.toGtin14(value)
                             ?: value
-
-                        AppLogger("ScanBarcode").i("Barcode=$value | GTIN14=$gtin14 | Image=$cleanedImagePath | GS1=$isGs1 | lotNo=${decoded?.lotNumber} | serialNo=${decoded?.serialNumber} | expiry=${decoded?.expirationDate}")
 
                         onEvent(
                             ScanBarcodeEvent.BarcodeScanned(
@@ -122,46 +106,21 @@ fun ScanBarCodeScreenContent(
                             )
                         )
                     },
-                    onError = { exception ->
-                        onEvent(ScanBarcodeEvent.ScannerError(exception))
-                    }
+                    onError = { exception -> onEvent(ScanBarcodeEvent.ScannerError(exception)) }
                 )
-                FocusAnimationOverlay()
-            } else {
-                PermissionDeniedView(onRequestPermission)
-            }
-
-            // Global Back Button
-            BackButton(navController, showBox = true)
-
-            //Manual option
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.End
-            ) {
-                Box(
-                    modifier = Modifier
-                        .padding(small)
-                        .size(responsiveDp(40.dp))
-                        .background(
-                            color = Color.White,
-                            shape = CircleShape
-                        )
-                        .clickable { onEvent(ScanBarcodeEvent.ManualPillInfo) },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.pencil),
-                        contentDescription = "Manual",
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(responsiveDp(15.dp))
-                    )
-                }
-            }
-
-
-        }
+            },
+            bottomOrRight = {
+                ManualDrugInfo(
+                    onConfirm = { drugName, ndc -> viewModel.addManualDrug(drugName, ndc) },
+                    onDismiss = { navController.popBackStack() },
+                )
+            },
+            landscapeRatio = 0.65f to 0.35f,
+            portraitRatio = 0.70f to 0.30f
+        )
+        BackButton(navController, showBox = false)
     }
+
 }
 
 @Composable
@@ -176,15 +135,14 @@ fun FocusAnimationOverlay() {
         ),
         label = "pulse"
     )
-    val configuration = LocalConfiguration.current
-    val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+
     Box(
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
     ) {
         Box(
             modifier = Modifier
-                .size(responsiveDp(180.dp))
+                .size(responsiveDp(140.dp))
                 .graphicsLayer(scaleX = scale, scaleY = scale)
                 .background(
                     color = Color.Transparent,
@@ -205,7 +163,7 @@ fun FocusAnimationOverlay() {
         Box(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .padding(bottom = if (isLandscape) 20.dp else 100.dp)
+                .padding(bottom = 20.dp)
                 .background(
                     brush = Brush.horizontalGradient(
                         colors = listOf(

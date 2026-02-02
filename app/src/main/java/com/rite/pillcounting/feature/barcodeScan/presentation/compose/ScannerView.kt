@@ -10,6 +10,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
+import com.rite.pillcounting.feature.barcodeScan.presentation.FocusAnimationOverlay
 import com.rite.pillcounting.feature.barcodeScan.presentation.analyzer.BarcodeAnalyzer
 
 @OptIn(ExperimentalGetImage::class)
@@ -57,4 +58,5 @@ fun ScannerView(
         modifier = Modifier.fillMaxSize(),
         factory = { previewView },
     )
+    FocusAnimationOverlay()
 }

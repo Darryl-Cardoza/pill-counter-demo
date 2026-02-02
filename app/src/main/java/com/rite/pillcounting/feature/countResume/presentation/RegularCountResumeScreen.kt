@@ -41,6 +41,9 @@ fun RegularCountResumeScreen(
                 is NavigationEvent.NavigateToPillCount ->
                     navController.navigate(Screen.PillCount.createRoute(event.countType.toString())) {}
                 NavigationEvent.NavigateBack -> navController.popBackStack()
+                is NavigationEvent.NavigateToScanBarcode -> navController.navigate(
+                    Screen.ScanBarcode.createRoute(CountType.REGULAR.toString(),)
+                )
             }
         }
     }

@@ -19,7 +19,10 @@ import com.rite.pillcounting.feature.otp.presentation.compose.OTPScreen
  *
  * @param navController The [NavHostController] used to navigate between authentication screens.
  */
-fun NavGraphBuilder.authGraph(navController: NavHostController) {
+fun NavGraphBuilder.authGraph(
+    navController: NavHostController,
+    onLogin: () -> Unit
+) {
     navigation(
         startDestination = Screen.Login.route,
         route = AUTH_GRAPH_ROUTE
@@ -39,7 +42,8 @@ fun NavGraphBuilder.authGraph(navController: NavHostController) {
             OTPScreen(
                 navController = navController,
                 userEmail = email,
-                rememberMe = rememberMe
+                rememberMe = rememberMe,
+                onLogin = { onLogin() }
             )
         }
     }

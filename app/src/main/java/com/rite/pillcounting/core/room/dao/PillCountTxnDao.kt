@@ -335,4 +335,83 @@ interface PillCountTxnDao {
      */
     @Query("DELETE FROM pill_count_txn WHERE txnId = :txnId")
     suspend fun deleteTransaction(txnId: Long)
+
+
+
+    /**
+     * Observe HL7 transactions that are completed but NOT synced with PMS.
+     *
+     * This Flow emits whenever:
+     * - a new HL7 txn is completed
+     * - isSynced changes
+     * - txn status changes
+     */
+    @Query(
+        """
+    SELECT *
+    FROM pill_count_txn
+    WHERE isDeleted = 0
+      AND isComingFromHL7 = 1
+      AND status = :completedStatus
+      AND (isSynced IS NULL OR isSynced = 0)
+    ORDER BY updatedAt ASC
+    """
+    )
+    fun observePendingHl7Txn(
+        completedStatus: CountStatus = CountStatus.COMPLETED
+    ): Flow<List<PillCountTxnEntity>>
+
+
+    /**
+     * One-shot fetch (non-reactive) for resend-on-connect logic.
+     */
+    @Query(
+        """
+        SELECT *
+        FROM pill_count_txn
+        WHERE isDeleted = 0
+          AND isComingFromHL7 = 1
+          AND status = :completedStatus
+          AND (isSynced IS NULL OR isSynced = 0)
+        ORDER BY updatedAt ASC
+        """
+    )
+    suspend fun getPendingHl7TxnOnce(
+        completedStatus: CountStatus = CountStatus.COMPLETED
+    ): List<PillCountTxnEntity>
+
+
+    /**
+     * Mark transaction as synced after ACK is received.
+     */
+    @Query(
+        """
+        UPDATE pill_count_txn
+        SET isSynced = 1,
+            updatedAt = :now
+        WHERE txnId = :txnId
+        """
+    )
+    suspend fun markTxnSynced(
+        txnId: Long,
+        now: Long = System.currentTimeMillis()
+    )
+
+
+    @Query(
+        """
+    UPDATE pill_count_txn
+    SET 
+        status = :status,
+        isSynced = 0,
+        updatedAt = :now
+    WHERE txnId = :txnId
+    """
+    )
+    suspend fun markCompletedAndUnsynced(
+        txnId: Long,
+        status: CountStatus,
+        now: Long = System.currentTimeMillis()
+    )
+
 }

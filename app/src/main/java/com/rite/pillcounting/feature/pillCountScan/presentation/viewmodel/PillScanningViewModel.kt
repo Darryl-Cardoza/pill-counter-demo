@@ -8,6 +8,7 @@ import androidx.camera.core.ImageProxy
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.rite.pillcounting.R
+import com.rite.pillcounting.core.room.dao.DrugMasterDao
 import com.rite.pillcounting.core.room.dao.PillCountTxnDao
 import com.rite.pillcounting.core.room.dao.PillCountTxnDetailsDao
 import com.rite.pillcounting.core.room.dao.UserDao
@@ -65,6 +66,7 @@ class PillScanningViewModel @Inject constructor(
     private val userDao: UserDao,
     private val pillCountTxnDetailsDao: PillCountTxnDetailsDao,
     private val locationProvider: LocationProvider,
+    private val drugMasterDao: DrugMasterDao
 ) : AndroidViewModel(app) {
 
     private val logger = AppLogger("PillScanningVM")
@@ -221,7 +223,10 @@ class PillScanningViewModel @Inject constructor(
                     return@launch
 
                 } catch (e: Exception) {
-                    try { createdDelegate?.close() } catch (_: Exception) {}
+                    try {
+                        createdDelegate?.close()
+                    } catch (_: Exception) {
+                    }
                     attempt++
                     logger.e("Interpreter initialization failed (attempt $attempt)", e)
                     if (attempt > retryCount) {
@@ -231,7 +236,6 @@ class PillScanningViewModel @Inject constructor(
             }
         }
     }
-
 
 
     // ------------------------------------------------------------------------
@@ -385,7 +389,6 @@ class PillScanningViewModel @Inject constructor(
         } finally {
             currentFrameBitmap = null
         }
-
         _modelState.value = ModelState.Idle
         logger.i("ViewModel cleared and all TensorFlow resources released.")
     }
@@ -404,20 +407,36 @@ class PillScanningViewModel @Inject constructor(
             is PillScanningEvent.ConfirmDone -> handleConfirmDone()
             is PillScanningEvent.CancelDone -> handleCancelDone()
             is PillScanningEvent.TransactionDetailDeleted -> handleDeleteTransaction(event)
+            is PillScanningEvent.AllTransactionDetailsDeleted -> handleDeleteAllTransactionDetails()
         }
     }
+
+
+    private var addCooldownJob: Job? = null
+
+    private fun startAddCooldown() {
+        // cancel previous if any
+        addCooldownJob?.cancel()
+
+        _uiState.update { it.copy(isAddCooldown = true) }
+
+        addCooldownJob = viewModelScope.launch {
+            delay(2000)
+            _uiState.update { it.copy(isAddCooldown = false) }
+            lastAddClickTime = 0L
+        }
+    }
+
 
     private fun handleAddTransaction(event: PillScanningEvent.AddTransactionDetailClicked) {
         val context: Context = getApplication<Application>().applicationContext
         val currentTime = System.currentTimeMillis()
 
-        // --- Debounce: prevent taps within 2 seconds ---
-        if (currentTime - lastAddClickTime < 2000) {
+        if (_uiState.value.isAddCooldown) {
             showToast(context, context.getString(R.string.add_button_wait))
-            logger.w("Add action ignored: tapped too quickly.")
+            logger.w("Add action ignored: cooldown active.")
             return
         }
-        lastAddClickTime = currentTime
 
         val totalBatchCount = _uiState.value.txnDetailHistory.sumOf { it.count }
         val targetCount = _uiState.value.targetCount
@@ -448,6 +467,9 @@ class PillScanningViewModel @Inject constructor(
             return
         }
 
+        startAddCooldown()
+
+        lastAddClickTime = currentTime
         lastAddedScanSignature = signature
         logger.i("Adding transaction detail with unique signature. Count=$currentCount")
 
@@ -458,6 +480,9 @@ class PillScanningViewModel @Inject constructor(
 
             val overlayBitmap = currentFrameBitmap?.let { base ->
                 val filteredPills = _uiState.value.filteredPills
+                val txnId = preferenceHelper.getTxnId()
+                val txn = pillCountTxnDao.getById(txnId)
+                val drug = drugMasterDao.getDrugById(txn?.drugId)
                 if (filteredPills.isNotEmpty()) {
                     try {
                         OverlayUtils.drawDetectionsOnBitmap(
@@ -468,7 +493,9 @@ class PillScanningViewModel @Inject constructor(
                             userName = user?.name,
                             userId = user?.userId,
                             location = location,
-                            timestamp = System.currentTimeMillis()
+                            timestamp = System.currentTimeMillis(),
+                            ndc = drug?.ndc,
+                            count = currentCount.toString(),
                         )
                     } catch (e: Exception) {
                         logger.e("Overlay drawing failed, returning base bitmap", e)
@@ -548,8 +575,18 @@ class PillScanningViewModel @Inject constructor(
                 if (txn.countType == CountType.FIXED && txn.targetCount != null && total < txn.targetCount)
                     CountStatus.PARTIAL else CountStatus.COMPLETED
 
-            pillCountTxnDao.updateTxnStatus(txnId, status)
+            if (txn.isComingFromHL7 == true){
+                pillCountTxnDao.markCompletedAndUnsynced(
+                    txnId = txnId,
+                    status = status
+                )
+            }else{
+                pillCountTxnDao.updateTxnStatus(txnId, status)
+            }
+
+
             _navigationEvent.send(NavigationEvent.NavigateToDashboard)
+
             logger.i("Transaction completed. Status=$status")
         }
     }
@@ -563,6 +600,13 @@ class PillScanningViewModel @Inject constructor(
         viewModelScope.launch {
             pillCountTxnDetailsDao.softDelete(event.txnDetailId)
             logger.i("Transaction detail deleted. Id=${event.txnDetailId}")
+        }
+    }
+
+    private fun handleDeleteAllTransactionDetails() {
+        viewModelScope.launch {
+            pillCountTxnDetailsDao.softDeleteAllTransaction(preferenceHelper.getTxnId())
+            logger.i("All Transaction details deleted. where transaction Id=${preferenceHelper.getTxnId()}")
         }
     }
 

@@ -35,6 +35,7 @@ import androidx.room.PrimaryKey
         Index(value = ["txnId"], name = "idx_txn_details_txnId")
     ]
 )
+
 data class PillCountTxnDetailsEntity(
     @PrimaryKey(autoGenerate = true)
     val txnDetailsId: Long = 0L,

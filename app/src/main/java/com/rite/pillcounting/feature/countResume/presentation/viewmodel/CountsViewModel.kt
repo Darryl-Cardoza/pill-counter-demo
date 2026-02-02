@@ -3,10 +3,11 @@ package com.rite.pillcounting.feature.countResume.presentation.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.rite.pillcounting.core.room.dao.PillCountTxnDao
+import com.rite.pillcounting.core.room.dao.PillCountTxnDetailsDao
 import com.rite.pillcounting.core.room.models.enums.CountStatus
 import com.rite.pillcounting.core.room.models.enums.CountType
-import com.rite.pillcounting.core.utils.preference.PreferenceHelper
 import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.toFormattedDate
+import com.rite.pillcounting.core.utils.preference.PreferenceHelper
 import com.rite.pillcounting.feature.countResume.domain.data.FixedCountsEvent
 import com.rite.pillcounting.feature.countResume.domain.data.NavigationEvent
 import com.rite.pillcounting.feature.countResume.domain.data.RegularCountsEvent
@@ -38,18 +39,22 @@ import javax.inject.Inject
 @HiltViewModel
 class CountsViewModel @Inject constructor(
     private val pillCountTxnDao: PillCountTxnDao,
-    private val preferenceHelper: PreferenceHelper
+    private val preferenceHelper: PreferenceHelper,
+//    private val hL7Repository: HL7TransactionRepository
+    private val pillCountTxnDetailsDao: PillCountTxnDetailsDao
 ) : ViewModel() {
 
     /* ------------------------- State Flows ------------------------- */
 
     /** Backing state for fixed count transactions. */
     private val _fixedUiState = MutableStateFlow(FixedCountsUiState())
+
     /** Public immutable state for UI to observe. */
     val fixedUiState: StateFlow<FixedCountsUiState> = _fixedUiState.asStateFlow()
 
     /** Backing state for regular count transactions. */
     private val _regularUiState = MutableStateFlow(RegularCountsUiState())
+
     /** Public immutable state for UI to observe. */
     val regularUiState: StateFlow<RegularCountsUiState> = _regularUiState.asStateFlow()
 
@@ -91,7 +96,11 @@ class CountsViewModel @Inject constructor(
             RegularCountsEvent.DeleteClicked -> handleRegularDeleteClick()
             RegularCountsEvent.ToggleMultiSelectMode -> toggleRegularMultiSelectMode()
             RegularCountsEvent.CloseMultiSelectMode -> closeRegularMultiSelectMode()
-            is RegularCountsEvent.resumeTransaction -> resumeTransaction(CountType.REGULAR, event.item)
+            is RegularCountsEvent.resumeTransaction -> resumeTransaction(
+                CountType.REGULAR,
+                event.item
+            )
+
             is RegularCountsEvent.ForceCompleteTransaction -> forceCompleteTransaction(event.item)
         }
     }
@@ -99,17 +108,40 @@ class CountsViewModel @Inject constructor(
     private fun forceCompleteTransaction(item: CountItem) {
         viewModelScope.launch {
             pillCountTxnDao.updateTxnStatus(item.id, CountStatus.FORCE_COMPLETED)
+
+            val total = pillCountTxnDetailsDao.getTotalPillCountForTxn(item.id)
+            val txn = pillCountTxnDao.getById(item.id) ?: return@launch
+            if (total == 0) {
+                return@launch
+            }
+            if (txn.isComingFromHL7 == true){
+                pillCountTxnDao.markCompletedAndUnsynced(
+                    txnId = txn.txnId,
+                    status = txn.status
+                )
+            }else{
+                pillCountTxnDao.updateTxnStatus( txn.txnId, txn.status)
+            }
         }
     }
 
+    /** Update Hl7 navigation here **/
     private fun resumeTransaction(countType: CountType, item: CountItem) {
         viewModelScope.launch {
             preferenceHelper.saveTxnId(item.id)
-            _navigationEvent.send(
-                NavigationEvent.NavigateToPillCount(
-                    countType = countType
+            if (item.barcodeImage == null) {
+                _navigationEvent.send(
+                    NavigationEvent.NavigateToScanBarcode(
+                        countType = countType
+                    )
                 )
-            )
+            } else {
+                _navigationEvent.send(
+                    NavigationEvent.NavigateToPillCount(
+                        countType = countType
+                    )
+                )
+            }
         }
     }
     /* ------------------------- Fixed Counts Logic ------------------------- */
@@ -122,15 +154,15 @@ class CountsViewModel @Inject constructor(
             pillCountTxnDao.observePartialByCountType(CountType.FIXED)
                 .map { txns ->
                     txns.map {
-                            CountItem(
-                                id = it.txnId,
-                                name = it.drugName ?: "",
-                                pillCount = it.totalPillCount,
-                                target = it.targetCount ?: 0,
-                                barcodeImage = it.barcodeImage,
-                                date = it.createdAt.toFormattedDate()
-                            )
-                        }
+                        CountItem(
+                            id = it.txnId,
+                            name = it.drugName ?: "",
+                            pillCount = it.totalPillCount,
+                            target = it.targetCount ?: 0,
+                            barcodeImage = it.barcodeImage,
+                            date = it.createdAt.toFormattedDate(),
+                        )
+                    }
                 }
                 .catch { e -> e.printStackTrace() } // log & continue
                 .collect { items ->
@@ -200,15 +232,15 @@ class CountsViewModel @Inject constructor(
             pillCountTxnDao.observePartialByCountType(countType = CountType.REGULAR)
                 .map { txns ->
                     txns.map {
-                            CountItem(
-                                id = it.txnId,
-                                name = it.drugName ?: "",
-                                pillCount = it.totalPillCount,
-                                target = it.targetCount ?: 0,
-                                barcodeImage = it.barcodeImage,
-                                date = it.createdAt.toFormattedDate()
-                            )
-                        }
+                        CountItem(
+                            id = it.txnId,
+                            name = it.drugName ?: "",
+                            pillCount = it.totalPillCount,
+                            target = it.targetCount ?: 0,
+                            barcodeImage = it.barcodeImage,
+                            date = it.createdAt.toFormattedDate()
+                        )
+                    }
                 }
                 .catch { e -> e.printStackTrace() }
                 .collect { items ->

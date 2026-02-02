@@ -6,6 +6,8 @@ import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.os.Build
 import com.rite.pillcounting.core.utils.logger.AppLogger
+import java.net.Inet4Address
+import java.net.NetworkInterface
 
 /**
  * Utility object for checking **network connectivity status** across Android versions.
@@ -55,4 +57,29 @@ object NetworkUtils {
             else -> false
         }
     }
+
+
+    fun getIpAddressForInterface(interfacePrefix: String): String? {
+        return try {
+            val interfaces = NetworkInterface.getNetworkInterfaces()
+
+            for (networkInterface in interfaces) {
+                if (!networkInterface.name.startsWith(interfacePrefix, ignoreCase = true)) continue
+                if (networkInterface.isLoopback || !networkInterface.isUp) continue
+
+                val addresses = networkInterface.inetAddresses
+                for (address in addresses) {
+                    if (!address.isLoopbackAddress && address is Inet4Address) {
+                        return address.hostAddress
+                    }
+                }
+            }
+
+            null
+        } catch (e: Exception) {
+            AppLogger.create<NetworkUtils>().e("Failed to get IP for interface: $interfacePrefix", e)
+            null
+        }
+    }
+
 }

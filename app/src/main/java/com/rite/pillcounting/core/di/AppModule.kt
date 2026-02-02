@@ -26,4 +26,5 @@ object AppModule {
     @Singleton
     fun provideLocationProvider(@ApplicationContext context: Context): LocationProvider =
         LocationProvider(context)
+
 }

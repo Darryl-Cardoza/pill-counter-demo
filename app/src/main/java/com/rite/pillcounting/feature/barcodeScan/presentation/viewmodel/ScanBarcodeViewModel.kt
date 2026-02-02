@@ -24,6 +24,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import org.rite.hl7.hl7.domain.model.CompleteHL7Message
 import javax.inject.Inject
 
 /**
@@ -72,6 +73,7 @@ class ScanBarcodeViewModel @Inject constructor(
         val scanType = savedStateHandle.get<String>(ARG_TYPE) ?: ""
         _uiState.update { it.copy(scanType = scanType) }
         logger.i("ViewModel initialized with scanType: '$scanType'")
+        loadExpectedNdcFromTxn()
     }
 
     /**
@@ -82,13 +84,42 @@ class ScanBarcodeViewModel @Inject constructor(
     fun onEvent(event: ScanBarcodeEvent) {
         logger.d("Received event: ${event::class.java.simpleName}")
         when (event) {
-            is ScanBarcodeEvent.BarcodeScanned -> processBarcode(gtin14 = event.gtin14, imagePath = event.imagePath, expiry = event.expiry, lotNo = event.lotNo)
+            is ScanBarcodeEvent.BarcodeScanned -> processBarcode(
+                gtin14 = event.gtin14,
+                imagePath = event.imagePath,
+                expiry = event.expiry,
+                lotNo = event.lotNo
+            )
+
             is ScanBarcodeEvent.ScannerError -> handleScannerError(event.exception)
-            ScanBarcodeEvent.StartCount -> handleStartCount()
+            is ScanBarcodeEvent.StartCount -> handleStartCount(event.receivedFromHL7)
             ScanBarcodeEvent.RedoScan -> handleRedoScan()
-            ScanBarcodeEvent.ManualPillInfo -> showManualEntryDialog()
         }
     }
+
+    private fun loadExpectedNdcFromTxn() {
+        viewModelScope.launch {
+            val txnId = preferenceHelper.getTxnId()
+            val txn = pillCountTxnDao.getById(txnId) ?: return@launch
+
+            if (txn.isComingFromHL7 == true) {
+                val drugId = txn.drugId ?: return@launch
+                val drug = drugMasterDao.getDrugById(drugId) ?: return@launch
+
+                logger.i("Loaded expected NDC from DrugMaster: ${drug.ndc}")
+
+                println("Loaded expected NDC from DrugMaster: ${drug.ndc}")
+
+                _uiState.update {
+                    it.copy(
+                        hl7ExpectedNdc = drug.ndc,
+                        drugName = drug.drugName ?: it.drugName
+                    )
+                }
+            }
+        }
+    }
+
 
     /**
      * Process a scanned barcode value.
@@ -104,6 +135,25 @@ class ScanBarcodeViewModel @Inject constructor(
         _uiState.update { it.copy(isLoading = true, error = null) }
 
         viewModelScope.launch {
+            /* ---------- HL7 NDC VALIDATION ---------- */
+
+            var result: Boolean = false
+
+            val expectedHl7Ndc = uiState.value.hl7ExpectedNdc
+            if (expectedHl7Ndc != null && expectedHl7Ndc != gtin14) {
+                logger.w("NDC mismatch: scanned=$gtin14 expected=$expectedHl7Ndc")
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        showNdcNotMatchedDialog = true
+                    )
+                }
+                return@launch
+            } else if (expectedHl7Ndc == gtin14) {
+                result = true
+            }
+
+
             val drug = drugMasterDao.getDrugByNdc(gtin14)
             if (drug != null) {
                 _uiState.update {
@@ -117,12 +167,13 @@ class ScanBarcodeViewModel @Inject constructor(
                         lotNo = lotNo
                     )
                 }
-                onEvent(ScanBarcodeEvent.StartCount)
+                onEvent(ScanBarcodeEvent.StartCount(result))
             } else {
                 try {
                     val drugInfo = drugRepository.getDrugInfoByNdc(gtin14)
                     if (drugInfo != null) {
-                        val displayName = drugInfo.genericName?.takeIf { it.isNotBlank() } ?: "Unknown Drug"
+                        val displayName =
+                            drugInfo.genericName?.takeIf { it.isNotBlank() } ?: "Unknown Drug"
                         _uiState.update {
                             it.copy(
                                 isLoading = false,
@@ -134,7 +185,7 @@ class ScanBarcodeViewModel @Inject constructor(
                                 lotNo = lotNo
                             )
                         }
-                        onEvent(ScanBarcodeEvent.StartCount)
+                        onEvent(ScanBarcodeEvent.StartCount(result))
                     } else {
                         throw Exception("No drug information found for this NDC.")
                     }
@@ -143,12 +194,24 @@ class ScanBarcodeViewModel @Inject constructor(
                         it.copy(
                             isLoading = false,
                             error = e.message ?: "Failed to find drug information.",
-                            showManualEntry = true
+//                            showManualEntry = true
                         )
                     }
                 }
             }
         }
+    }
+
+
+    fun resumeScanning() {
+        _uiState.update {
+            it.copy(
+                isLoading = false,
+                showNdcNotMatchedDialog = false
+            )
+        }
+
+        analyzer.resume()
     }
 
 
@@ -170,6 +233,10 @@ class ScanBarcodeViewModel @Inject constructor(
         }
     }
 
+    fun hideNdcNotMatchedDialog() {
+        _uiState.update { it.copy(showNdcNotMatchedDialog = false) }
+    }
+
     /**
      * Handle confirmation of a scanned drug and create a pill count transaction.
      *
@@ -178,43 +245,47 @@ class ScanBarcodeViewModel @Inject constructor(
      * - Creates a [PillCountTxnEntity] and persists it in [PillCountTxnDao].
      * - Emits a navigation event to proceed to pill count screen.
      */
-    private fun handleStartCount() {
-        val currentNdc = uiState.value.ndc
-        val currentDrugName = uiState.value.drugName
+    private fun handleStartCount(receivedFromHL7: Boolean) {
 
-        if (currentNdc.isBlank()) {
-            logger.w("StartCount ignored: NDC is blank.")
-            _uiState.update { it.copy(error = "Please scan an item first.") }
-            return
-        }
+        val currentNdc = uiState.value.ndc
+        if (currentNdc.isBlank()) return
 
         viewModelScope.launch {
-            val drugId = drugMasterDao.upsertPreservingId(
-                DrugMasterEntity(
-                    ndc = currentNdc,
-                    drugName = currentDrugName
+
+            val txnId = preferenceHelper.getTxnId()
+
+            if (receivedFromHL7) {
+                val txn = pillCountTxnDao.getById(txnId) ?: return@launch
+                pillCountTxnDao.update(
+                    txn.copy(
+                        countType = CountType.valueOf(uiState.value.scanType),
+                        status = CountStatus.PARTIAL,
+                        expiry = uiState.value.expiry,
+                        barcodeImage = uiState.value.barcodeImagePath
+                    )
                 )
-            )
-            val localId = preferenceHelper.getLocalId()
-            logger.i("LocalId retrieved from preferences: $localId")
+                logger.i("HL7 txn updated with scan data txnId=$txnId")
+            } else {
+                val drugId = drugMasterDao.upsertPreservingId(
+                    DrugMasterEntity(
+                        ndc = currentNdc,
+                        drugName = uiState.value.drugName
+                    )
+                )
 
-            val txn = PillCountTxnEntity(
-                localId = localId,
-                drugId = drugId,
-                countType = when (uiState.value.scanType) {
-                    "FIXED" -> CountType.FIXED
-                    "REGULAR" -> CountType.REGULAR
-                    else -> CountType.REGULAR
-                },
-                status = CountStatus.PARTIAL,
-                expiry = uiState.value.expiry,
-                lotNo = uiState.value.lotNo,
-                barcodeImage = uiState.value.barcodeImagePath
-            )
+                val txn = PillCountTxnEntity(
+                    localId = preferenceHelper.getLocalId(),
+                    drugId = drugId,
+                    countType = CountType.valueOf(uiState.value.scanType),
+                    status = CountStatus.PARTIAL,
+                    expiry = uiState.value.expiry,
+                    lotNo = uiState.value.lotNo,
+                    barcodeImage = uiState.value.barcodeImagePath
+                )
 
-            val txnId = pillCountTxnDao.upsertPreservingId(txn)
-            preferenceHelper.saveTxnId(txnId)
-            logger.d("Transaction created with txnId=$txnId")
+                val newTxnId = pillCountTxnDao.upsertPreservingId(txn)
+                preferenceHelper.saveTxnId(newTxnId)
+            }
 
             _navigationEvent.send(
                 NavigationEvent.NavigateToPillCount(
@@ -224,6 +295,7 @@ class ScanBarcodeViewModel @Inject constructor(
             )
         }
     }
+
 
     /**
      * Handle scanner errors reported from MLKit or CameraX.
@@ -250,23 +322,11 @@ class ScanBarcodeViewModel @Inject constructor(
                 drugName = drugName,
                 ndc = ndc,
                 isScannerActive = false,
-                showManualEntry = false,
+//                showManualEntry = false,
                 error = null
             )
         }
-        onEvent(ScanBarcodeEvent.StartCount)
-    }
-
-    /** Show the manual entry dialog. */
-    fun showManualEntryDialog() {
-        analyzer.pause()
-        _uiState.update { it.copy(showManualEntry = true, error = null,  isScannerActive = false) }
-    }
-
-    /** Hide the manual entry dialog. */
-    fun hideManualEntryDialog() {
-        analyzer.resume()
-        _uiState.update { it.copy(showManualEntry = false, error = null, isScannerActive = true ) }
+        onEvent(ScanBarcodeEvent.StartCount())
     }
 
     companion object {

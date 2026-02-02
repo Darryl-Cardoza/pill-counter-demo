@@ -65,7 +65,15 @@ android {
     }
 
     packaging {
-        resources.excludes += "/META-INF/{AL2.0,LGPL2.1}"
+        resources {
+            excludes += setOf(
+                "META-INF/INDEX.LIST",
+                "META-INF/io.netty.versions.properties",
+                "META-INF/*.SF",
+                "META-INF/*.DSA",
+                "META-INF/*.RSA"
+            )
+        }
     }
 }
 
@@ -176,5 +184,21 @@ dependencies {
     androidTestImplementation("org.mockito:mockito-android:5.4.0")
     androidTestImplementation("org.mockito.kotlin:mockito-kotlin:5.2.1")
 
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.7.0")
+    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.7.0")
 
+
+// Image Server - HL7
+    implementation("io.ktor:ktor-server-core:2.3.12")
+    implementation("io.ktor:ktor-server-netty:2.3.12")
+    implementation("io.ktor:ktor-network-tls:2.3.12")
+
+// ✅ Add Netty SSL with ALPN control
+    implementation("io.netty:netty-handler:4.1.100.Final")
+    implementation("io.netty:netty-codec-http:4.1.100.Final")
+
+// 🔥 CRITICAL: This gives you control over SSL/ALPN
+    implementation("io.netty:netty-tcnative-boringssl-static:2.0.61.Final")
+
+    implementation("org.json:json:20230227")
 }
