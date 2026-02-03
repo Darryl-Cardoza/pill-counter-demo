@@ -54,7 +54,8 @@ import com.rite.pillcounting.ui.theme.AppTheme.extendedColors
 fun MenuScreen(
     navController: NavController,
     viewModel: MenuViewModel = hiltViewModel(),
-    loginViewModel: LoginViewModel = hiltViewModel()
+    loginViewModel: LoginViewModel = hiltViewModel(),
+    onLogOut:()-> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val logoutState by loginViewModel.logoutUiState.collectAsState()
@@ -246,6 +247,10 @@ fun MenuScreen(
                         // Navigate back to login/auth graph
                         navController.navigate(AUTH_GRAPH_ROUTE) {
                             popUpTo(0) { inclusive = true }
+                        }
+
+                        if(!loginViewModel.preferenceHelper.isUserLoggedIn()){
+                            onLogOut()
                         }
                     }
                 }

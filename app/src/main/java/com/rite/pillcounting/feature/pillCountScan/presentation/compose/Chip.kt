@@ -1,9 +1,12 @@
 package com.rite.pillcounting.feature.pillCountScan.presentation.compose
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -14,10 +17,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.rite.pillcounting.core.utils.constants.Dimens.medium
+import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.responsiveDp
 import com.rite.pillcounting.feature.pillCountScan.domain.model.TxnDetail
 import com.rite.pillcounting.ui.theme.AppTheme
 
@@ -34,35 +38,37 @@ import com.rite.pillcounting.ui.theme.AppTheme
  */
 @Composable
 fun Chip(
-    shouldHighlight: Boolean,
     txnDetail: TxnDetail,
     modifier: Modifier = Modifier,
     index: Int,
-    onDelete: (txnDetailId: Long) -> Unit
+    onDelete: (txnDetailId: Long) -> Unit,
+    count: String,
+    highlight: Boolean
 ) {
-    var showDialog by remember { mutableStateOf(false) }
 
+    var showDialog by remember { mutableStateOf(false) }
     Box(
-        modifier = modifier
-            .background(
-                color = AppTheme.extendedColors.secondaryBackground,
-                shape = RoundedCornerShape(6.dp)
+        modifier = Modifier
+            .fillMaxSize()
+            .width(responsiveDp(55.dp))
+            .padding(horizontal = 2.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .background(Color.Transparent)
+            .border(
+                width = 1.5.dp,
+                color = if (highlight) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.primary,
+                shape = RoundedCornerShape(8.dp)
             )
             .clickable { showDialog = true }
-            .padding(medium),
-        contentAlignment = Alignment.TopCenter
+            .padding(horizontal = 10.dp),
+        contentAlignment = Alignment.Center
     ) {
-        val countText = txnDetail.count.toString()
-        val displayText = if (countText.length == 1) " $countText " else countText // add space for 1-digit numbers
-
         Text(
-            text = displayText,
-            color = MaterialTheme.colorScheme.secondary,
-            fontWeight = if (shouldHighlight) FontWeight.Black else FontWeight.Normal,
-            fontSize = if (shouldHighlight) 22.sp else 20.sp
+            text = count,
+            color = AppTheme.extendedColors.textColor,
+            fontSize = 15.sp
         )
     }
-
 
     if (showDialog) {
         TxnDetailDialog(

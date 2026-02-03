@@ -2,6 +2,7 @@ package com.rite.pillcounting.feature.dashboard.presentation
 
 import Screen
 import android.app.Activity
+import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -51,9 +52,10 @@ import com.rite.pillcounting.ui.theme.AppTheme
 @Composable
 fun DashboardScreen(
     navController: NavController,
-    viewModel: DashboardViewModel = hiltViewModel()
+    viewModel: DashboardViewModel = hiltViewModel(),
 ) {
     var showLogoutDialog by remember { mutableStateOf(false) }
+
     val context = LocalContext.current
     val activity = context as? Activity
     val preferenceHelper = remember { PreferenceHelper(context) }
@@ -65,6 +67,7 @@ fun DashboardScreen(
 
     // Collect dashboard UI state reactively
     val uiState by viewModel.uiState.collectAsState()
+
 
     // Handle navigation to Profile screen if profile is incomplete
     LaunchedEffect(uiState.navigateToProfile) {
@@ -102,14 +105,16 @@ fun DashboardScreen(
                 FixedCountSection(
                     completedFixedCount = uiState.completedFixedCount,
                     partialFixedCount = uiState.partialFixedCount,
-                    navController = navController
+                    navController = navController,
+                    onNavigate = {viewModel.saveTxnId()}
                 )
             },
             bottomOrRight = {
                 RegularCountSection(
                     completedRegularCount = uiState.completedRegularCount,
                     partialRegularCount = uiState.partialRegularCount,
-                    navController = navController
+                    navController = navController,
+                    onNavigate = {viewModel.saveTxnId()}
                 )
             }
         )

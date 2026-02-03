@@ -175,4 +175,11 @@
     <string name="maintenance_text">El contador está en el mostrador del farmacéutico para una rápida revisión. ¡Volveremos pronto\ncon conteos precisos!</string>
     <string name="update_version_text">Tu versión actual ha expirado - es hora de obtener una nueva receta. ¡Actualiza ahora para \nla dosis correcta de funciones!</string>
     <string name="session_expired">Session Expired!</string>
+
+    <!--    PillScanning Screen Constants-->
+    <string name="pill_scanning_add_button">Agregar</string>
+    <string name="pill_scanning_total_count">Recuento total</string>
+    <string name="pill_scanning_all_done">Todo hecho</string>
+
+
 </resources>

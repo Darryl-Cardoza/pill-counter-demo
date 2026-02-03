@@ -175,4 +175,9 @@
     <string name="maintenance_text">Le compteur est au comptoir du pharmacien pour une vérification rapide. De retour bientôt\navec des comptages précis !</string>
     <string name="update_version_text">Votre version actuelle a expiré - il est temps d\'obtenir une nouvelle ordonnance. Mettez à jour maintenant pour \nla bonne dose de fonctionnalités !</string>
     <string name="session_expired">Session Expired!</string>
+
+    <!--    PillScanning Screen Constants-->
+    <string name="pill_scanning_add_button">Ajouter</string>
+    <string name="pill_scanning_total_count">Nombre total</string>
+    <string name="pill_scanning_all_done">Tout est fait</string>
 </resources>

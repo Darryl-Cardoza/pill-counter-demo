@@ -22,5 +22,5 @@ data class CountItem(
     val target: Int,
     val barcodeImage: String?,
     val date: String,
-    val image: Int = R.drawable.logo
+    val image: Int = R.drawable.logo,
 )

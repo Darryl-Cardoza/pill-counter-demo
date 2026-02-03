@@ -1,11 +1,7 @@
 package com.rite.pillcounting.feature.pillCountScan.presentation.compose
 
 import android.content.res.Configuration
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.scaleIn
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -13,13 +9,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.wrapContentWidth
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -27,10 +21,17 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.rite.pillcounting.R
+import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.CommonDialog
+import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.showToast
 import com.rite.pillcounting.feature.pillCountScan.domain.data.PillScanningEvent
 import com.rite.pillcounting.feature.pillCountScan.domain.model.PillScanningUiState
 import com.rite.pillcounting.feature.pillCountScan.presentation.viewmodel.PillScanningViewModel
@@ -61,140 +62,197 @@ fun InformationPanelSection(
     onEvent: (PillScanningEvent) -> Unit,
     filteredPillCount: Int
 ) {
-    val configuration = LocalConfiguration.current
-    val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
-    val listState = rememberLazyListState()
     val totalCount = uiState.txnDetailHistory.sumOf { it.count }
-    var showListOfTxnDetails by remember { mutableStateOf(true) }
-
-    val countDisplay = when (uiState.scanType) {
-        "FIXED" -> "Total $totalCount/${uiState.targetCount}"
-        else -> "Total $totalCount"
+    var showHistory by remember { mutableStateOf(false) }
+    val txnHistory = uiState.txnDetailHistory
+    val onToggleHistory = { showHistory = !showHistory }
+    val drugName = uiState.drugName
+    val targetCount = uiState.targetCount
+    val scanType = uiState.scanType
+    val onReset = {  onEvent(PillScanningEvent.AllTransactionDetailsDeleted) }
+    val onAdd = { onEvent(PillScanningEvent.AddTransactionDetailClicked(filteredPillCount)) }
+    val onDone = { onEvent(PillScanningEvent.DoneClicked) }
+    val onDeleteTxn: (Long) -> Unit = { id ->
+        onEvent(PillScanningEvent.TransactionDetailDeleted(id))
     }
+    //CodeReview is different composable required as we are already in one dedicated composable
+    val isLandscape =
+        LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
+    var showDeleteConfirmationDialog by remember { mutableStateOf(false) }
+    val context = LocalContext.current
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.SpaceBetween
+            .background(AppTheme.extendedColors.secondaryBackground)
+            .padding(horizontal = 16.dp, vertical = 10.dp)
     ) {
+
         if (isLandscape) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f),
-                verticalArrangement = Arrangement.SpaceAround,
-                horizontalAlignment = Alignment.CenterHorizontally
+            // ---------------- Row 1: Reset (L) + History/Focus (R) ----------------
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
             ) {
+                IconButton(onClick = {
+                    if (txnHistory.isEmpty()) {
+                        showDeleteConfirmationDialog = false
+                        showToast(context, R.string.cannot_reset_no_pills_detected)
+                    } else {
+                        showDeleteConfirmationDialog = true
+                    }
+                }) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.reset_count),
+                        contentDescription = "Reset",
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                }
+
+                Spacer(modifier = Modifier.weight(1f))
+
+                IconButton(onClick = onToggleHistory) {
+                    Icon(
+                        painter = painterResource(
+                            id = if (showHistory) R.drawable.scanning_foucs else R.drawable.history
+                        ),
+                        contentDescription = if (showHistory) "Focus" else "History",
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+
+                }
+
+            }
+        } else {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton(onClick = {
+                    if (txnHistory.isEmpty()) {
+                        showDeleteConfirmationDialog = false
+                        showToast(context, R.string.cannot_reset_no_pills_detected)
+                    } else {
+                        showDeleteConfirmationDialog = true
+                    }
+                }) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.reset_count),
+                        contentDescription = "Reset",
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                }
+
                 Text(
-                    text = uiState.drugName,
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Normal,
+                    text = drugName,
                     color = AppTheme.extendedColors.textColor,
+                    fontSize = 18.sp,
+                    modifier = Modifier.weight(1f),
+                    textAlign = TextAlign.Center,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
 
-                CircularCountIndicator(
-                    count = filteredPillCount,
+                IconButton(onClick = onToggleHistory) {
+                    Icon(
+                        painter = painterResource(
+                            id = if (showHistory) R.drawable.scanning_foucs else R.drawable.history
+                        ),
+                        contentDescription = if (showHistory) "Focus" else "History",
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                }
+
+            }
+
+        }
+
+        if (isLandscape) {
+
+            Spacer(Modifier.height(12.dp))
+            Text(
+                text = drugName,
+                color = AppTheme.extendedColors.textColor,
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Medium,
+                modifier = Modifier.fillMaxWidth(),
+                textAlign = TextAlign.Center,
+                maxLines = 1
+            )
+        }
+
+
+        // ---------- Middle: either "Count mode" OR "History mode" ----------
+        if (!showHistory) {
+            if (isLandscape) {
+                CountModeLandscape(
+                    totalCount = totalCount,
+                    targetCount = targetCount,
+                    scanType = scanType,
+                    detectedCount = filteredPillCount,
+                    onAdd = onAdd,
+                    onDone = onDone,
                     viewModel = viewModel
                 )
-
-                Text(
-                    text = countDisplay,
-                    fontSize = 24.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = AppTheme.extendedColors.textColor,
+            } else {
+                CountModePortrait(
+                    totalCount = totalCount,
+                    targetCount = targetCount,
+                    scanType = scanType,
+                    detectedCount = filteredPillCount,
+                    onAdd = onAdd,
+                    onDone = onDone,
+                    viewModel = viewModel
                 )
             }
         } else {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 8.dp, top = 10.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                CircularCountIndicator(
-                    count = filteredPillCount,
-                    modifier = Modifier.padding(all = 10.dp),
-                    viewModel = viewModel
+            if (isLandscape) {
+                HistoryModeLandscape(
+                    scanType = scanType,
+                    targetCount = targetCount,
+                    totalCount = totalCount,
+                    txnHistory = txnHistory,
+                    onDeleteTxn = onDeleteTxn
                 )
-
-                Column(
-                    modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(
-                        text = uiState.drugName,
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Normal,
-                        color = AppTheme.extendedColors.textColor,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                    Spacer(modifier = Modifier.height(10.dp))
-                    Text(
-                        text = countDisplay,
-                        fontSize = 24.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = AppTheme.extendedColors.textColor,
-                    )
-                }
+            } else {
+                HistoryModePortrait(
+                    scanType = scanType,
+                    targetCount = targetCount,
+                    totalCount = totalCount,
+                    txnHistory = txnHistory,
+                    onDeleteTxn = onDeleteTxn
+                )
             }
         }
-
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .then(
-                    if (!isLandscape) Modifier.weight(1f, fill = true) else Modifier.height(
-                        90.dp
-                    )
-                ),
-            contentAlignment = Alignment.Center,
-        ) {
-            androidx.compose.animation.AnimatedVisibility(
-                visible = showListOfTxnDetails,
-                enter = fadeIn() + scaleIn(initialScale = 0.95f),
-                exit = fadeOut()
-            ) {
-                LazyRow(
-                    state = listState,
-                    reverseLayout = true,
-                    horizontalArrangement = Arrangement.spacedBy(15.dp),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .wrapContentWidth(),
-                ) {
-                    itemsIndexed(
-                        uiState.txnDetailHistory,
-                        key = { _, txn -> txn.txnDetailId }
-                    ) { index, txn ->
-                        Chip(
-                            shouldHighlight = index == 0,
-                            txnDetail = txn,
-                            index = uiState.txnDetailHistory.size - index,
-                            onDelete = { id ->
-                                onEvent(PillScanningEvent.TransactionDetailDeleted(id))
-                            }
-                        )
-                    }
-                }
-            }
-
-        }
-
-
-
-        ActionButtons(onEvent, filteredPillCount, onListClicked = {
-            showListOfTxnDetails = !showListOfTxnDetails
-        })
+    }
+    if (showDeleteConfirmationDialog) {
+        CommonDialog(
+            message = stringResource(R.string.confirm_delete_message_on_reset_click),
+            title = stringResource(R.string.confirm_delete_title),
+            confirmText = stringResource(R.string.yes),
+            cancelText = stringResource(R.string.no),
+            onConfirm = {
+                showDeleteConfirmationDialog = false
+                onReset()
+            },
+            onCancel = { showDeleteConfirmationDialog = false }
+        )
     }
 
-    LaunchedEffect(uiState.txnDetailHistory.size) {
-        if (uiState.txnDetailHistory.isNotEmpty()) {
-            listState.animateScrollToItem(0)
-        }
-    }
 }
+
+//    BottomPillPanel(
+//        drugName = uiState.drugName,
+//        totalCount = totalCount,
+//        targetCount = uiState.targetCount,
+//        scanType = uiState.scanType,
+//        detectedCount = filteredPillCount,
+//        showHistory = showListOfTxnDetails,
+//        txnHistory = uiState.txnDetailHistory,
+//        onToggleHistory = { showListOfTxnDetails = !showListOfTxnDetails },
+//        onReset = {  onEvent(PillScanningEvent.AllTransactionDetailsDeleted) },
+//        onAdd = { onEvent(PillScanningEvent.AddTransactionDetailClicked(filteredPillCount)) },
+//        onDone = { onEvent(PillScanningEvent.DoneClicked) },
+//        onDeleteTxn = { id -> onEvent(PillScanningEvent.TransactionDetailDeleted(id)) },
+//        viewModel = viewModel
+//    )

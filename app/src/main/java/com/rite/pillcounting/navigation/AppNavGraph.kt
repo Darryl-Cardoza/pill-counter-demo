@@ -7,6 +7,7 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.navDeepLink
 import com.rite.pillcounting.feature.barcodeScan.presentation.ScanBarCodeScreen
 import com.rite.pillcounting.feature.countResume.presentation.FixedCountResumeScreen
 import com.rite.pillcounting.feature.countResume.presentation.RegularCountResumeScreen
@@ -23,21 +24,30 @@ const val AUTH_GRAPH_ROUTE = "auth"
 
 @Composable
 fun AppNavGraph(
-    navController: NavHostController, startDestination: String
+    navController: NavHostController,
+    startDestination: String,
+    onLogin: () -> Unit,
+    onLogOut: () -> Unit
 ) {
     NavHost(
         navController = navController, startDestination = startDestination
     ) {
-        // Nested graph for all authentication-related screens
-        authGraph(navController)
+        authGraph(
+            navController,
+            onLogin = onLogin
+        )
 
-        // Main app screens (post-login)
         composable(route = Screen.Dashboard.route) {
             DashboardScreen(navController)
         }
 
         composable(
-            route = Screen.ScanBarcode.route, arguments = Screen.ScanBarcode.navArguments
+            route = Screen.ScanBarcode.route, arguments = Screen.ScanBarcode.navArguments,
+            deepLinks = listOf(
+                navDeepLink {
+                    uriPattern = "pillcounter://scan/{type}"
+                }
+            )
         ) { backStackEntry ->
             val scanType = backStackEntry.arguments?.getString(Screen.ScanBarcode.ARG_TYPE) ?: ""
             ScanBarCodeScreen(navController, scanType)
@@ -52,7 +62,7 @@ fun AppNavGraph(
 
 
         composable(route = Screen.Menu.route) {
-            MenuScreen(navController)
+            MenuScreen(navController, onLogOut = onLogOut)
         }
 
         composable(route = Screen.Settings.route) {

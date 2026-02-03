@@ -13,6 +13,7 @@ import com.rite.pillcounting.core.utils.validator.CredentialsValidator
 import com.rite.pillcounting.feature.login.domain.model.LoginUiState
 import com.rite.pillcounting.feature.login.domain.model.LogoutUiState
 import com.google.gson.Gson
+import com.rite.pillcounting.core.hl7.service.Hl7serviceHandler
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -42,7 +43,8 @@ class LoginViewModel @Inject constructor(
     private val repository: LoginRepository,
     private val validator: CredentialsValidator,
     @ApplicationContext private val context: Context,
-    val preferenceHelper: PreferenceHelper
+    val preferenceHelper: PreferenceHelper,
+    val serviceManager: Hl7serviceHandler
 ) : ViewModel() {
 
     private val logger = AppLogger.create<LoginViewModel>()
@@ -82,6 +84,7 @@ class LoginViewModel @Inject constructor(
                 .onSuccess {
                     logger.i("Login successful for user: $email.")
                     _uiState.value = LoginUiState.Success
+                    serviceManager.startService()
                 }
                 .onFailure { exception ->
                     logger.e("Login failed for user: $email", exception)

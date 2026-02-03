@@ -50,7 +50,8 @@ import com.rite.pillcounting.ui.theme.AppTheme
 fun FixedCountSection(
     completedFixedCount: String,
     partialFixedCount: String,
-    navController: NavController
+    navController: NavController,
+    onNavigate:()-> Unit
 ) {
     Column(
         modifier = Modifier
@@ -64,6 +65,7 @@ fun FixedCountSection(
             modifier = Modifier
                 .bounceClick {
                     navigateToBarcodeScanFixedCount(navController)
+                    onNavigate()
                 },
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {

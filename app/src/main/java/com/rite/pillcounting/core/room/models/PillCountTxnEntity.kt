@@ -54,6 +54,7 @@ import com.rite.pillcounting.core.room.models.enums.CountType
         Index(value = ["drugId"], name = "idx_txn_drugId")
     ]
 )
+
 @TypeConverters(PillCountTxnConverters::class)
 data class PillCountTxnEntity(
     @PrimaryKey(autoGenerate = true)
@@ -77,5 +78,9 @@ data class PillCountTxnEntity(
     val isDeleted: Boolean = false,
 
     val createdAt: Long = System.currentTimeMillis(),
-    val updatedAt: Long = System.currentTimeMillis()
+    val updatedAt: Long = System.currentTimeMillis(),
+
+    /** Require for HL7 flow **/
+    val isComingFromHL7: Boolean? = null,
+    val isSynced: Boolean? = null
 )

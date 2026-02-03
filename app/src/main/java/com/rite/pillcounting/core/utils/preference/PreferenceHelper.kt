@@ -68,6 +68,15 @@ private const val KEY_SHOW_NOTES_DIALOG = "key_show_notes_dialog"
 private const val KEY_RECENT_LOGINS = "recent_logins"
 private const val KEY_HISTORY_RETENTION = "history_retention"
 
+private const val KEY_SENT_TXN_ID = "last_txn_id"
+
+//HL7
+private const val KEY_NSD_BROADCAST_TYPE = "key_nsd_broadcast_type"
+private const val KEY_NSD_DISCOVERY_TYPE = "key_nsd_discovery_type"
+private const val KEY_HL7_ENABLED = "key_hl7_enabled"
+
+
+
 @Singleton
 class PreferenceHelper @Inject constructor(
     @ApplicationContext private val context: Context
@@ -328,5 +337,90 @@ class PreferenceHelper @Inject constructor(
         val days = prefs.getInt(KEY_HISTORY_RETENTION, 7)
         logger.d("Retrieved history retention: $days days")
         return days
+    }
+
+
+    /********* Required HL7 flow  preferences ****************/
+
+
+    /**
+     * Saves the transaction ID of the last HL7 message sent to the PMS.
+     * This is used to track outbound messages and avoid duplicate sends
+     * in case of retries, reconnects, or app restarts.
+     */
+    fun saveSentMessageTxnId(txnId: Long) {
+        prefs.edit {
+            putLong(KEY_SENT_TXN_ID, txnId)
+        }
+    }
+
+    /**
+     * Retrieves the transaction ID of the last HL7 message sent to the PMS.
+     * Returns -1 if no message has been sent yet.
+     */
+    fun getSentMessageTxnId(): Long {
+        return prefs.getLong(KEY_SENT_TXN_ID, -1L)
+    }
+
+
+
+    /**
+     * Saves the NSD broadcast service type.
+     * This defines how PillCounter advertises itself on the local network.
+     */
+    fun saveNsdBroadcastType(type: String) {
+        prefs.edit { putString(KEY_NSD_BROADCAST_TYPE, type) }
+        logger.i("Saved NSD broadcast type: $type")
+    }
+
+    /**
+     * Retrieves the NSD broadcast service type.
+     */
+    fun getNsdBroadcastType(): String {
+        val type = prefs.getString(KEY_NSD_BROADCAST_TYPE, "")
+            ?: ""
+        logger.d("Retrieved NSD broadcast type: $type")
+        return type
+    }
+
+
+
+    /**
+     * Saves the NSD discovery service type.
+     * This defines which PMS services PillCounter searches for.
+     */
+    fun saveNsdDiscoveryType(type: String) {
+        prefs.edit { putString(KEY_NSD_DISCOVERY_TYPE, type) }
+        logger.i("Saved NSD discovery type: $type")
+    }
+
+    /**
+     * Retrieves the NSD discovery service type.
+     */
+    fun getNsdDiscoveryType(): String {
+        val type = prefs.getString(KEY_NSD_DISCOVERY_TYPE, "")
+            ?: ""
+        logger.d("Retrieved NSD discovery type: $type")
+        return type
+    }
+
+
+    /**
+     * Enables or disables HL7 functionality.
+     * When disabled, no HL7 server/client operations should start.
+     */
+    fun setHl7Enabled(enabled: Boolean) {
+        prefs.edit { putBoolean(KEY_HL7_ENABLED, enabled) }
+        logger.i("HL7 enabled set to: $enabled")
+    }
+
+    /**
+     * Checks whether HL7 functionality is enabled.
+     * @return true if enabled, false otherwise (default: true)
+     */
+    fun isHl7Enabled(): Boolean {
+        val enabled = prefs.getBoolean(KEY_HL7_ENABLED, true)
+        logger.d("HL7 enabled: $enabled")
+        return enabled
     }
 }

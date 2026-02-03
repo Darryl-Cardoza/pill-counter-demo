@@ -5,7 +5,20 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
+
+    <!-- /** HL7 **/-->
+    <!-- Network permissions -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE" />
+
+    <!-- Required for NSD (Network Service Discovery) -->
+    <uses-permission android:name="android.permission.CHANGE_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
 
     <uses-feature
         android:name="android.hardware.camera"
@@ -49,7 +62,9 @@
                     android:resource="@xml/file_paths" />
             </provider>
 
-
+        <service android:name=".core.hl7.service.HL7Service"
+            android:foregroundServiceType="dataSync|connectedDevice"
+            android:exported="false"
+            tools:ignore="ForegroundServicePermission" />
     </application>
-
 </manifest>

@@ -1,17 +1,23 @@
 package com.rite.pillcounting
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.compose.animation.Crossfade
+import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.NavController
+import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import com.rite.pillcounting.core.settings.presentation.viewmodel.MainActivityViewModel
 import com.rite.pillcounting.core.utils.common.HelperFunctions.enableImmersiveFullscreen
@@ -41,11 +47,16 @@ import javax.inject.Inject
  */
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
-
     private val settingsViewModel: MainActivityViewModel by viewModels()
 
     @Inject
     lateinit var fcmService: FCMService
+
+
+    @Inject
+    lateinit var preferenceHelper: PreferenceHelper
+
+    private lateinit var navController: NavController
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -53,9 +64,14 @@ class MainActivity : ComponentActivity() {
         fcmService.initFCM()
         fcmService.subscribeToTopic("global_updates")
 
-        setContent {
-            val settingsState by settingsViewModel.uiState.collectAsStateWithLifecycle()
 
+
+        setContent {
+            LaunchedEffect(Unit) {
+                handleNavigationIntent(intent)
+            }
+
+            val settingsState by settingsViewModel.uiState.collectAsStateWithLifecycle()
             Crossfade(
                 targetState = settingsState.isLoading || settingsState.colorSettings == null,
                 label = "LoadingOrContent"
@@ -65,13 +81,13 @@ class MainActivity : ComponentActivity() {
                 } else {
                     val colorSettings = requireNotNull(settingsState.colorSettings)
 
-                    val lightColorSchemeDynamic = androidx.compose.material3.lightColorScheme(
+                    val lightColorSchemeDynamic = lightColorScheme(
                         primary = colorSettings.light.primary.toColor(),
                         secondary = colorSettings.light.secondary.toColor(),
                         tertiary = colorSettings.light.tertiary.toColor()
                     )
 
-                    val darkColorSchemeDynamic = androidx.compose.material3.darkColorScheme(
+                    val darkColorSchemeDynamic = darkColorScheme(
                         primary = colorSettings.dark.primary.toColor(),
                         secondary = colorSettings.dark.secondary.toColor(),
                         tertiary = colorSettings.dark.tertiary.toColor()
@@ -101,7 +117,7 @@ class MainActivity : ComponentActivity() {
                         lightExtendedColors = extendedDynamicLight,
                         darkExtendedColors = extendedDynamicDark
                     ) {
-                        val navController = rememberNavController()
+                        navController = rememberNavController()
                         val preferenceHelper = remember { PreferenceHelper(this) }
                         val startDestination = remember { getStartDestination(preferenceHelper) }
 
@@ -117,8 +133,10 @@ class MainActivity : ComponentActivity() {
 
                             else -> {
                                 AppNavGraph(
-                                    navController = navController,
-                                    startDestination = startDestination
+                                    navController = navController as NavHostController,
+                                    startDestination = startDestination,
+                                    onLogin = { settingsViewModel.onUserLoginOrLogOut() },
+                                    onLogOut = { settingsViewModel.onUserLoginOrLogOut() }
                                 )
                             }
                         }
@@ -137,12 +155,36 @@ class MainActivity : ComponentActivity() {
         requestLocationPermission()
     }
 
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        handleNavigationIntent(intent)
+    }
+
     private fun requestLocationPermission() {
         val permission = Manifest.permission.ACCESS_FINE_LOCATION
-        if (ContextCompat.checkSelfPermission(this, permission) != PackageManager.PERMISSION_GRANTED) {
+        if (ContextCompat.checkSelfPermission(
+                this,
+                permission
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
             ActivityCompat.requestPermissions(this, arrayOf(permission), 1001)
         }
     }
+    private fun handleNavigationIntent(intent: Intent) {
+        val route = intent.getStringExtra("navigate_route") ?: return
+
+        navController.navigate(route) {
+            launchSingleTop = true
+
+            popUpTo(navController.graph.startDestinationId) {
+                saveState = true
+            }
+
+            restoreState = true
+        }
+
+        intent.removeExtra("navigate_route")
+    }
+
 }
-
-

@@ -3,6 +3,7 @@ package com.rite.pillcounting.feature.pillCountScan.domain.data
 sealed interface PillScanningEvent {
     data class AddTransactionDetailClicked(val filteredCount: Int) : PillScanningEvent
     data class TransactionDetailDeleted(val txnDetailId: Long) : PillScanningEvent
+    data object AllTransactionDetailsDeleted : PillScanningEvent
     data object RescanClicked : PillScanningEvent
     data object PauseClicked : PillScanningEvent
     data object DoneClicked : PillScanningEvent

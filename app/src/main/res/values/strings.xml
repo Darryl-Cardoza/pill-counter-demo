@@ -233,4 +233,20 @@
         <item quantity="other">%1$d items selected</item>
     </plurals>
 
+<!--    PillScanning Screen Constants-->
+    <string name="pill_scanning_add_button">Add</string>
+    <string name="pill_scanning_wait_button">Wait..</string>
+    <string name="pill_scanning_total_count">Total Count</string>
+    <string name="pill_scanning_all_done">All Done</string>
+    <string name="confirm_delete_message_on_reset_click">Are you sure you want to delete all the transaction for this current transaction.</string>
+    <string name="cannot_reset_no_pills_detected">Cannot reset no pills detected transactionDetails.</string>
+
+<!--    ManualDrugEntry -->
+    <string name="ndc_number">NDC Number</string>
+    <string name="drug_name">Drug Name</string>
+    <string name="all_fields_are_required">All fields are required</string>
+    <string name="manual_drug_info_cancel">CANCEL</string>
+    <string name="manual_drug_info_ok">OK</string>
+
+
 </resources>

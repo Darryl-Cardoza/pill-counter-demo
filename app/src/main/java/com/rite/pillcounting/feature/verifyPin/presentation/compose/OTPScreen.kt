@@ -64,7 +64,8 @@ fun OTPScreen(
     userEmail: String,
     rememberMe: Boolean,
     viewModel: VerifyPinViewModel = hiltViewModel(),
-    loginViewModel: LoginViewModel = hiltViewModel()
+    loginViewModel: LoginViewModel = hiltViewModel(),
+    onLogin: () -> Unit
 ) {
     var otp by remember { mutableStateOf("") }
     val verifyPinUiState by viewModel.uiState.collectAsState()
@@ -89,6 +90,10 @@ fun OTPScreen(
             isTimerRunning = false
         }
     }
+
+
+
+
 
     if (showExitConfirmationDialog) {
         CommonDialog(
@@ -193,12 +198,13 @@ fun OTPScreen(
                                     popUpTo(Screen.Dashboard.route) { inclusive = true }
                                 }
                                 viewModel.clearAfterSuccess()
+
+                                if(loginViewModel.preferenceHelper.isUserLoggedIn()){
+                                    onLogin()
+                                }
                             }
                         }
                     }
-
-
-
                     ActionButtonPrimary(
                         text = stringResource(R.string.verify).uppercase(),
                         onClick = {
