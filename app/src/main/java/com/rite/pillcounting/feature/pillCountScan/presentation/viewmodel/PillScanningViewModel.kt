@@ -28,8 +28,9 @@ import com.rite.pillcounting.feature.pillCountScan.domain.model.DetectedPill
 import com.rite.pillcounting.feature.pillCountScan.domain.model.PillScanningUiState
 import com.rite.pillcounting.feature.pillCountScan.domain.model.TxnDetail
 import com.rite.pillcounting.feature.pillCountScan.presentation.logic.CameraHelper
+import com.rite.pillcounting.feature.pillCountScan.presentation.logic.CentroidMapper
+import com.rite.pillcounting.feature.pillCountScan.presentation.logic.Detection
 import com.rite.pillcounting.feature.pillCountScan.presentation.logic.PillAnalyzer
-import com.rite.pillcounting.feature.pillCountScan.presentation.logic.Postprocessor
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -111,7 +112,7 @@ class PillScanningViewModel @Inject constructor(
 
 
     companion object {
-        private const val MODEL_FILENAME = "best_float32.tflite"
+        private const val MODEL_FILENAME = "model"
         private const val ZERO_DETECTIONS_THRESHOLD = 25
     }
 
@@ -158,8 +159,8 @@ class PillScanningViewModel @Inject constructor(
     /** Initialize TensorFlow Lite interpreter for pill detection. */
     fun initializeInterpreter(
         retryCount: Int = 1,
-        viewWidth: Int = 640,
-        viewHeight: Int = 640
+        previewWidth: Int,
+        previewHeight: Int
     ) {
         if (_modelState.value is ModelState.Ready) {
             logger.w("Interpreter already initialized, skipping reinitialization.")
@@ -176,7 +177,7 @@ class PillScanningViewModel @Inject constructor(
                     val buffer = loadModelFile()
                     val options = Interpreter.Options()
 
-                    // Move GPU delegate creation to MAIN thread
+                    // GPU delegate must be created on MAIN thread
                     withContext(Dispatchers.Main) {
                         val compatList = CompatibilityList()
                         if (compatList.isDelegateSupportedOnThisDevice) {
@@ -184,38 +185,41 @@ class PillScanningViewModel @Inject constructor(
                                 val delegateOptions = compatList.bestOptionsForThisDevice
                                 createdDelegate = GpuDelegate(delegateOptions)
                                 options.addDelegate(createdDelegate)
-                                logger.i("GPU delegate initialized on main thread.")
-                            } catch (gpuInitEx: Exception) {
-                                logger.w("GPU delegate creation failed: ${gpuInitEx.message}. Will use CPU fallback.")
+                                logger.i("GPU delegate initialized.")
+                            } catch (e: Exception) {
+                                logger.w("GPU delegate failed, falling back to CPU.")
                                 createdDelegate?.close()
                                 createdDelegate = null
                             }
-                        } else {
-                            logger.w("GPU delegate not supported by CompatibilityList. Using CPU.")
                         }
                     }
 
-                    // CPU fallback if GPU not available
+                    // CPU fallback
                     if (createdDelegate == null) {
                         options.setUseXNNPACK(true)
                         options.numThreads =
                             Runtime.getRuntime().availableProcessors().coerceAtMost(4)
                     }
 
-                    // Now safely create interpreter (IO thread)
                     val tflite = Interpreter(buffer, options)
                     interpreter = tflite
 
-                    // Keep delegate reference for cleanup
                     gpuDelegate?.close()
                     gpuDelegate = createdDelegate
 
                     val analyzer = PillAnalyzer(
                         interpreter = tflite,
-                        viewWidth = viewWidth,
-                        viewHeight = viewHeight
-                    ) { count, detections, bitmap, matrix ->
-                        processDetections(count, detections, bitmap, matrix, viewWidth, viewHeight)
+                    ) { count, detections, bitmap, matrix, imageWidth, imageHeight ->
+                        processDetections(
+                            count,
+                            detections,
+                            bitmap,
+                            matrix,
+                            previewWidth,
+                            previewHeight,
+                            imageWidth,
+                            imageHeight
+                        )
                     }
 
                     _modelState.value = ModelState.Ready(analyzer)
@@ -223,20 +227,17 @@ class PillScanningViewModel @Inject constructor(
                     return@launch
 
                 } catch (e: Exception) {
-                    try {
-                        createdDelegate?.close()
-                    } catch (_: Exception) {
-                    }
+                    createdDelegate?.close()
                     attempt++
-                    logger.e("Interpreter initialization failed (attempt $attempt)", e)
+                    logger.e("Interpreter init failed (attempt $attempt)", e)
                     if (attempt > retryCount) {
-                        _modelState.value = ModelState.Error("Initialization failed", e)
+                        _modelState.value =
+                            ModelState.Error("Interpreter initialization failed", e)
                     }
                 }
             }
         }
     }
-
 
     // ------------------------------------------------------------------------
     // Frame Processing and Detection Logic
@@ -245,11 +246,13 @@ class PillScanningViewModel @Inject constructor(
     /** Handle each analyzed frame and maintain rolling detection state. */
     private fun processDetections(
         count: Int,
-        detections: List<Postprocessor.Detection>,
+        detections: List<Detection>,
         bitmap: Bitmap,
         matrix: Matrix,
-        viewWidth: Int,
-        viewHeight: Int
+        previewWidth: Int,
+        previewHeight: Int,
+        imageWidth: Int,
+        imageHeight: Int
     ) {
         if (isPaused) {
             bitmap.recycle()
@@ -260,22 +263,34 @@ class PillScanningViewModel @Inject constructor(
         currentFrameBitmap?.recycle()
         currentFrameBitmap = bitmap
         lastTransformationMatrix = Matrix(matrix)
-        logger.d("Frame analyzed. Count=$count, ScanId=$currentScanId")
 
+        logger.d("Frame analyzed | count=$count | scanId=$currentScanId")
+
+        // Rolling count buffer
         val buffer = ArrayDeque(_lastTenDetections.value)
         if (buffer.size >= ZERO_DETECTIONS_THRESHOLD) buffer.removeFirst()
         buffer.addLast(count)
         _lastTenDetections.value = buffer
 
+        // 🔑 Correct, single normalization
         updateDetectedPills(
-            detections.map {
+            detections.map { det ->
+                val pt = CentroidMapper.toPreview(
+                    detection = det,
+                    imageWidth = imageWidth,
+                    imageHeight = imageHeight,
+                    previewWidth = previewWidth,
+                    previewHeight = previewHeight
+                )
+
                 DetectedPill(
-                    x = it.pixelX / viewWidth,
-                    y = it.pixelY / viewHeight,
-                    confidence = it.confidence
+                    x = (pt.x / previewWidth).coerceIn(0f, 1f),
+                    y = (pt.y / previewHeight).coerceIn(0f, 1f),
+                    confidence = det.confidence
                 )
             }
         )
+
     }
 
     private fun pauseAndClearBuffers() {
@@ -575,12 +590,12 @@ class PillScanningViewModel @Inject constructor(
                 if (txn.countType == CountType.FIXED && txn.targetCount != null && total < txn.targetCount)
                     CountStatus.PARTIAL else CountStatus.COMPLETED
 
-            if (txn.isComingFromHL7 == true){
+            if (txn.isComingFromHL7 == true) {
                 pillCountTxnDao.markCompletedAndUnsynced(
                     txnId = txnId,
                     status = status
                 )
-            }else{
+            } else {
                 pillCountTxnDao.updateTxnStatus(txnId, status)
             }
 

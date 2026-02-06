@@ -1,9 +1,9 @@
+@file:Suppress("COMPOSE_APPLIER_CALL_MISMATCH")
+
 package com.rite.pillcounting.feature.pillCountScan.presentation.compose
 
 import android.annotation.SuppressLint
 import android.content.res.Configuration
-import android.graphics.Paint
-import android.graphics.Typeface
 import androidx.camera.core.ImageProxy
 import androidx.camera.view.PreviewView
 import androidx.compose.foundation.Canvas
@@ -36,6 +36,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -159,7 +160,8 @@ fun CameraPreviewSection(
     onFrame: (ImageProxy) -> Unit,
     onFilteredCountChanged: (Int) -> Unit,
     modifier: Modifier = Modifier,
-    onPreviewStarted: (() -> Unit)? = null
+    onPreviewStarted: (() -> Unit)? = null,
+    onPreviewSizeKnown: ((width: Int, height: Int) -> Unit)? = null
 ) {
     val context = LocalContext.current
     val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
@@ -208,19 +210,19 @@ fun CameraPreviewSection(
     BoxWithConstraints(
         modifier = modifier
             .fillMaxSize()
-            .padding(
-                top = if (isLandscape) 0.dp else 60.dp,
-                start = if (isLandscape) 60.dp else 0.dp
-            )
+//            .padding(
+//                top = if (isLandscape) 0.dp else 60.dp,
+//                start = if (isLandscape) 60.dp else 0.dp
+//            )
     ) {
-        val squareSide = minOf(constraints.maxWidth, constraints.maxHeight)
+//        val squareSide = minOf(constraints.maxWidth, constraints.maxHeight)
 
         // ==========================
         // SQUARE CAMERA PREVIEW AREA
         // ==========================
         Box(
             modifier = Modifier
-                .size(with(density) { squareSide.toDp() })
+//                .size(with(density) { squareSide.toDp() })
                 .align(Alignment.Center)
         ) {
             // CAMERA PREVIEW
@@ -228,6 +230,10 @@ fun CameraPreviewSection(
                 factory = { previewView },
                 modifier = Modifier
                     .fillMaxSize()
+                    .onSizeChanged { size ->
+                        // This is the REAL preview size on screen
+                        onPreviewSizeKnown?.invoke(size.width, size.height)
+                    }
                     .pointerInput(Unit) {
                         detectTransformGestures { _, _, zoom, _ ->
                             val current = cameraHelper.getCurrentZoomRatio() ?: 1f
@@ -240,20 +246,23 @@ fun CameraPreviewSection(
 
             // PILL MARKER OVERLAY
             Canvas(modifier = Modifier.matchParentSize()) {
-                // Prepare text paint
-                val textPaint = Paint().apply {
-                    color = android.graphics.Color.WHITE
-                    textAlign = Paint.Align.CENTER
-                    textSize = 26f
-                    isAntiAlias = true
-                    typeface = Typeface.create(Typeface.DEFAULT_BOLD, Typeface.BOLD)
-                    setShadowLayer(6f, 0f, 0f, android.graphics.Color.BLACK)
-                }
-
-                // Map normalized coordinates to preview pixels
                 val previewW = size.width
                 val previewH = size.height
 
+                // 1. Prepare Text Paint
+                val textPaint = android.graphics.Paint().apply {
+                    color = android.graphics.Color.WHITE
+                    textAlign = android.graphics.Paint.Align.CENTER
+                    textSize = 28f
+                    isAntiAlias = true
+                    typeface = android.graphics.Typeface.create(
+                        android.graphics.Typeface.DEFAULT,
+                        android.graphics.Typeface.BOLD
+                    )
+                    setShadowLayer(6f, 0f, 0f, android.graphics.Color.BLACK)
+                }
+
+                // 2. Map Coordinates with Vertical/Horizontal Shift correction
                 val mapped = pills.map { pill ->
                     val px = pill.x * previewW
                     val py = pill.y * previewH
@@ -264,48 +273,38 @@ fun CameraPreviewSection(
                 viewModel.updateFilteredPills(mapped.map { it.first })
                 onFilteredCountChanged(mapped.size)
 
-                // Draw pills
+                // 3. Draw Pills
                 drawIntoCanvas { canvas ->
                     mapped.forEachIndexed { i, (_, pos) ->
                         val isLast = i == mapped.lastIndex
-                        val scale = 1f
 
-                        val innerRadius =
-                            with(density) { (5.dp).toPx() * scale }
-                        val outerRadius =
-                            with(density) { (8.dp).toPx() * scale }
-                        val strokeWidth =
-                            with(density) { (1.dp).toPx() * scale }
-                        val textSizePx = (if (isLast) 34 else 28) * scale
+                        // Scaled sizes for better visibility
+                        val innerRadius = 6.dp.toPx()
+                        val outerRadius = 9.dp.toPx()
+                        val strokeWidth = 2.dp.toPx()
+                        val textSizePx = if (isLast) 36f else 28f
 
                         textPaint.textSize = textSizePx
                         if (isLast) {
-                            textPaint.setShadowLayer(8f, 0f, 0f, android.graphics.Color.YELLOW)
+                            textPaint.setShadowLayer(10f, 0f, 0f, android.graphics.Color.YELLOW)
                         } else {
                             textPaint.setShadowLayer(6f, 0f, 0f, android.graphics.Color.BLACK)
                         }
 
-                        // background + border
+                        // A. Draw Glow/Background for visibility
                         drawCircle(
-                            color = Color.Black.copy(
-                                alpha = 0.8f
-                            ),
-                            radius = innerRadius,
+                            color = Color.Black.copy(alpha = 0.6f),
+                            radius = outerRadius,
                             center = pos
                         )
+
+                        // B. Draw Border
                         drawCircle(
-                            color = Color.White.copy(
-                                alpha = 0.5f
-                            ),
+                            color = if (isLast) Color.Yellow else Color.White,
                             radius = outerRadius,
                             center = pos,
                             style = Stroke(width = strokeWidth)
                         )
-
-                        // pill number
-//                        val fm = textPaint.fontMetrics
-//                        val off = (fm.descent - fm.ascent) / 2 - fm.descent
-//                        canvas.nativeCanvas.drawText("${i + 1}", pos.x, pos.y + off, textPaint)
                     }
                 }
             }

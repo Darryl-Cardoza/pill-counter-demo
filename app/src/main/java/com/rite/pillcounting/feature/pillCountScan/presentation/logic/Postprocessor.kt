@@ -1,91 +1,51 @@
 package com.rite.pillcounting.feature.pillCountScan.presentation.logic
 
-import android.graphics.Matrix
 import android.graphics.RectF
-import com.rite.pillcounting.core.utils.logger.AppLogger
-import kotlin.math.max
-import kotlin.math.min
 
 object Postprocessor {
 
-    private const val INPUT_SIZE = 640
-    private const val CONF_THRESHOLD = 0.70f
-    private val logger = AppLogger.create<Postprocessor>()
-
-    data class Detection(
-        val boundingBox: RectF,
-        val confidence: Float,
-        val pixelX: Float,
-        val pixelY: Float
-    )
-
-    /**
-     * POSTPROCESS PIPELINE
-     *
-     * model(640) → remove padding → unscale → preview space
-     */
-    fun parseDetections(
-        det: Array<FloatArray>,      // [x,y,w,h,conf]
-        letterbox: Preprocessor.LetterboxInfo,
-        viewWidth: Int,
-        viewHeight: Int,
-        isFrontCamera: Boolean = false
-    ): Pair<List<Detection>, Matrix> {
-
-        val transform = Matrix()
-
-        // Source → Preview (CENTER_CROP like PreviewView)
-        val scaleToView = max(
-            viewWidth / letterbox.srcWidth.toFloat(),
-            viewHeight / letterbox.srcHeight.toFloat()
-        )
-
-        val dx = (viewWidth - letterbox.srcWidth * scaleToView) / 2f
-        val dy = (viewHeight - letterbox.srcHeight * scaleToView) / 2f
-
-        transform.postScale(scaleToView, scaleToView)
-        transform.postTranslate(dx, dy)
-
-        if (isFrontCamera) {
-            transform.postScale(-1f, 1f, viewWidth / 2f, viewHeight / 2f)
-        }
+    fun decode(
+        coords: Array<FloatArray>,
+        conf: Array<FloatArray>,
+        confThreshold: Float,
+        scale: Float,
+        padX: Float,
+        padY: Float
+    ): List<Detection> {
 
         val results = mutableListOf<Detection>()
-        val tmp = FloatArray(2)
 
-        for (i in det[0].indices) {
-            val conf = det[4][i]
-            if (conf < CONF_THRESHOLD) continue
+        for (i in coords.indices) {
+            val score = conf[i][0]
+            if (score < confThreshold) continue
 
-            // Model → source image
-            val xModel = det[0][i] * INPUT_SIZE
-            val yModel = det[1][i] * INPUT_SIZE
+            // MODEL SPACE (640)
+            val cx = coords[i][0] * 640f
+            val cy = coords[i][1] * 640f
+            val w = coords[i][2] * 640f
+            val h = coords[i][3] * 640f
 
-            val xSrc =
-                (xModel - letterbox.padX) / letterbox.scale
-            val ySrc =
-                (yModel - letterbox.padY) / letterbox.scale
+            var x1 = cx - w / 2f
+            var y1 = cy - h / 2f
+            var x2 = cx + w / 2f
+            var y2 = cy + h / 2f
 
-            tmp[0] = xSrc
-            tmp[1] = ySrc
-            transform.mapPoints(tmp)
+            // REVERSE LETTERBOX
+            x1 = (x1 - padX) / scale
+            y1 = (y1 - padY) / scale
+            x2 = (x2 - padX) / scale
+            y2 = (y2 - padY) / scale
 
-            val px = tmp[0].coerceIn(0f, viewWidth.toFloat())
-            val py = tmp[1].coerceIn(0f, viewHeight.toFloat())
+            val rect = RectF(x1, y1, x2, y2)
 
-            val r =
-                max(det[2][i], det[3][i]) *
-                        INPUT_SIZE / (2f * letterbox.scale)
-
-            results += Detection(
-                boundingBox = RectF(px - r, py - r, px + r, py + r),
-                confidence = conf,
-                pixelX = px,
-                pixelY = py
+            results.add(
+                Detection(
+                    rect = rect,
+                    confidence = score
+                )
             )
         }
 
-        logger.i("Postprocess | detections=${results.size}")
-        return results to transform
+        return results
     }
 }
