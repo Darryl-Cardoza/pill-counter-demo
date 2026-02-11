@@ -3,7 +3,6 @@
 package com.rite.pillcounting.feature.pillCountScan.presentation.compose
 
 import android.annotation.SuppressLint
-import android.content.res.Configuration
 import androidx.camera.core.ImageProxy
 import androidx.camera.view.PreviewView
 import androidx.compose.foundation.Canvas
@@ -37,9 +36,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -157,6 +154,8 @@ fun CameraPreviewSection(
     viewModel: PillScanningViewModel,
     pills: List<DetectedPill>,
     isCameraPaused: Boolean,
+    imageFrameWidth: Int,
+    imageFrameHeight: Int,
     onFrame: (ImageProxy) -> Unit,
     onFilteredCountChanged: (Int) -> Unit,
     modifier: Modifier = Modifier,
@@ -165,7 +164,6 @@ fun CameraPreviewSection(
 ) {
     val context = LocalContext.current
     val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
-    val density = LocalDensity.current
     val previewView = remember { PreviewView(context) }
 
     val cameraHelper = remember {
@@ -175,8 +173,6 @@ fun CameraPreviewSection(
     val zoomRatio = remember { mutableFloatStateOf(1f) }
     val minZoom = 1f
     val maxZoom = 2f
-
-    val isLandscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
 
     // Listen to CameraHelper zoom
     LaunchedEffect(Unit) {
@@ -194,6 +190,7 @@ fun CameraPreviewSection(
             .collect { image -> onFrame(image) }
     }
 
+    // FILL_CENTER ensures it fully fills your 70% pane!
     LaunchedEffect(Unit) {
         previewView.scaleType = PreviewView.ScaleType.FILL_CENTER
     }
@@ -207,31 +204,17 @@ fun CameraPreviewSection(
     // =========================================================
     // MAIN LAYOUT
     // =========================================================
-    BoxWithConstraints(
-        modifier = modifier
-            .fillMaxSize()
-//            .padding(
-//                top = if (isLandscape) 0.dp else 60.dp,
-//                start = if (isLandscape) 60.dp else 0.dp
-//            )
-    ) {
-//        val squareSide = minOf(constraints.maxWidth, constraints.maxHeight)
+    BoxWithConstraints(modifier = modifier.fillMaxSize()) {
 
-        // ==========================
-        // SQUARE CAMERA PREVIEW AREA
-        // ==========================
-        Box(
-            modifier = Modifier
-//                .size(with(density) { squareSide.toDp() })
-                .align(Alignment.Center)
-        ) {
+        // This Box simply fills the available space (70% of the screen)
+        Box(modifier = Modifier.fillMaxSize()) {
+
             // CAMERA PREVIEW
             AndroidView(
                 factory = { previewView },
                 modifier = Modifier
                     .fillMaxSize()
                     .onSizeChanged { size ->
-                        // This is the REAL preview size on screen
                         onPreviewSizeKnown?.invoke(size.width, size.height)
                     }
                     .pointerInput(Unit) {
@@ -248,8 +231,47 @@ fun CameraPreviewSection(
             Canvas(modifier = Modifier.matchParentSize()) {
                 val previewW = size.width
                 val previewH = size.height
+                val isLandscape = previewW > previewH
 
-                // 1. Prepare Text Paint
+                // Align camera frame dimensions to match the screen's orientation
+                val actualFrameW =
+                    if (isLandscape) maxOf(imageFrameWidth, imageFrameHeight).toFloat() else minOf(
+                        imageFrameWidth,
+                        imageFrameHeight
+                    ).toFloat()
+                val actualFrameH =
+                    if (isLandscape) minOf(imageFrameWidth, imageFrameHeight).toFloat() else maxOf(
+                        imageFrameWidth,
+                        imageFrameHeight
+                    ).toFloat()
+
+                var mapped = pills.map { it to Offset(0f, 0f) }
+
+                // THE MATH: Calculate FILL_CENTER cropping correctly
+                if (actualFrameW > 0f && actualFrameH > 0f) {
+                    // Find the scale applied by FILL_CENTER
+                    val scale = maxOf(previewW / actualFrameW, previewH / actualFrameH)
+
+                    val scaledW = actualFrameW * scale
+                    val scaledH = actualFrameH * scale
+
+                    // The offsets are the parts of the image that get cropped out!
+                    val offsetX = (previewW - scaledW) / 2f
+                    val offsetY = (previewH - scaledH) / 2f
+
+                    // Map the coordinates using the offsets
+                    mapped = pills.map { pill ->
+                        val px = (pill.x * scaledW) + offsetX
+                        val py = (pill.y * scaledH) + offsetY
+                        pill to Offset(px, py)
+                    }
+                }
+
+                // Update count based on mapped pills
+                viewModel.updateFilteredPills(mapped.map { it.first })
+                onFilteredCountChanged(mapped.size)
+
+                // DRAWING
                 val textPaint = android.graphics.Paint().apply {
                     color = android.graphics.Color.WHITE
                     textAlign = android.graphics.Paint.Align.CENTER
@@ -262,56 +284,35 @@ fun CameraPreviewSection(
                     setShadowLayer(6f, 0f, 0f, android.graphics.Color.BLACK)
                 }
 
-                // 2. Map Coordinates with Vertical/Horizontal Shift correction
-                val mapped = pills.map { pill ->
-                    val px = pill.x * previewW
-                    val py = pill.y * previewH
-                    pill to Offset(px, py)
-                }
-
-                // Update count
-                viewModel.updateFilteredPills(mapped.map { it.first })
-                onFilteredCountChanged(mapped.size)
-
-                // 3. Draw Pills
                 drawIntoCanvas { canvas ->
                     mapped.forEachIndexed { i, (_, pos) ->
-                        val isLast = i == mapped.lastIndex
 
-                        // Scaled sizes for better visibility
-                        val innerRadius = 6.dp.toPx()
-                        val outerRadius = 9.dp.toPx()
-                        val strokeWidth = 2.dp.toPx()
-                        val textSizePx = if (isLast) 36f else 28f
+                        // Prevent drawing dots that are outside the visible cropped area!
+                        if (pos.x in 0f..previewW && pos.y in 0f..previewH) {
+                            val isLast = i == mapped.lastIndex
+                            val outerRadius = 9.dp.toPx()
+                            val strokeWidth = 2.dp.toPx()
 
-                        textPaint.textSize = textSizePx
-                        if (isLast) {
-                            textPaint.setShadowLayer(10f, 0f, 0f, android.graphics.Color.YELLOW)
-                        } else {
-                            textPaint.setShadowLayer(6f, 0f, 0f, android.graphics.Color.BLACK)
+                            drawCircle(
+                                color = Color.Black.copy(alpha = 0.6f),
+                                radius = outerRadius,
+                                center = pos
+                            )
+
+                            drawCircle(
+                                color = if (isLast) Color.Yellow else Color.White,
+                                radius = outerRadius,
+                                center = pos,
+                                style = Stroke(width = strokeWidth)
+                            )
                         }
-
-                        // A. Draw Glow/Background for visibility
-                        drawCircle(
-                            color = Color.Black.copy(alpha = 0.6f),
-                            radius = outerRadius,
-                            center = pos
-                        )
-
-                        // B. Draw Border
-                        drawCircle(
-                            color = if (isLast) Color.Yellow else Color.White,
-                            radius = outerRadius,
-                            center = pos,
-                            style = Stroke(width = strokeWidth)
-                        )
                     }
                 }
             }
         }
 
         // ==========================
-        // FINAL ZOOM BAR (Real Bottom)
+        // FINAL ZOOM BAR
         // ==========================
         ZoomControls(
             zoom = zoomRatio.value,

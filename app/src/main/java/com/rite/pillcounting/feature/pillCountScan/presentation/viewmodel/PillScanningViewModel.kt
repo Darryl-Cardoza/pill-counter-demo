@@ -28,7 +28,6 @@ import com.rite.pillcounting.feature.pillCountScan.domain.model.DetectedPill
 import com.rite.pillcounting.feature.pillCountScan.domain.model.PillScanningUiState
 import com.rite.pillcounting.feature.pillCountScan.domain.model.TxnDetail
 import com.rite.pillcounting.feature.pillCountScan.presentation.logic.CameraHelper
-import com.rite.pillcounting.feature.pillCountScan.presentation.logic.CentroidMapper
 import com.rite.pillcounting.feature.pillCountScan.presentation.logic.Detection
 import com.rite.pillcounting.feature.pillCountScan.presentation.logic.PillAnalyzer
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -272,25 +271,31 @@ class PillScanningViewModel @Inject constructor(
         buffer.addLast(count)
         _lastTenDetections.value = buffer
 
-        // 🔑 Correct, single normalization
+        // 🔑 SIMPLIFIED MAPPING:
+        // Because the Canvas and Image are the exact same ratio,
+        // we just divide the detection centers by the original image dimensions.
         updateDetectedPills(
-            detections.map { det ->
-                val pt = CentroidMapper.toPreview(
-                    detection = det,
-                    imageWidth = imageWidth,
-                    imageHeight = imageHeight,
-                    previewWidth = previewWidth,
-                    previewHeight = previewHeight
-                )
-
+            pills = detections.map { det ->
                 DetectedPill(
-                    x = (pt.x / previewWidth).coerceIn(0f, 1f),
-                    y = (pt.y / previewHeight).coerceIn(0f, 1f),
+                    x = (det.rect.centerX() / imageWidth.toFloat()).coerceIn(0f, 1f),
+                    y = (det.rect.centerY() / imageHeight.toFloat()).coerceIn(0f, 1f),
                     confidence = det.confidence
                 )
-            }
+            },
+            frameWidth = imageWidth,
+            frameHeight = imageHeight
         )
+    }
 
+    /** Update the list of detected pills in UI state AND the frame dimensions. */
+    private fun updateDetectedPills(pills: List<DetectedPill>, frameWidth: Int, frameHeight: Int) {
+        _uiState.update {
+            it.copy(
+                detectedPills = pills,
+                imageFrameWidth = frameWidth,
+                imageFrameHeight = frameHeight
+            )
+        }
     }
 
     private fun pauseAndClearBuffers() {

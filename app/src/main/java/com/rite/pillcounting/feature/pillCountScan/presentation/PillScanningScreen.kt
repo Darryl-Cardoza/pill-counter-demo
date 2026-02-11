@@ -185,6 +185,9 @@ fun PillScanningScreen(
                     onFilteredCountChanged = { count -> filteredPillCount = count },
                     modifier = Modifier.fillMaxSize(),
 
+                    imageFrameWidth = uiState.imageFrameWidth,
+                    imageFrameHeight = uiState.imageFrameHeight,
+
                     onPreviewSizeKnown = { w, h ->
                         // Store once
                         if (previewWidth == null || previewHeight == null) {
