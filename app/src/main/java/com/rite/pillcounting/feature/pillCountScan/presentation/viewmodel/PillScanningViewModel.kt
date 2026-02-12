@@ -15,13 +15,13 @@ import com.rite.pillcounting.core.room.dao.UserDao
 import com.rite.pillcounting.core.room.models.PillCountTxnDetailsEntity
 import com.rite.pillcounting.core.room.models.enums.CountStatus
 import com.rite.pillcounting.core.room.models.enums.CountType
-import com.rite.pillcounting.core.security.ModelDecryptor
 import com.rite.pillcounting.core.utils.common.HelperFunctions.saveBitmapToFile
 import com.rite.pillcounting.core.utils.common.LocationProvider
 import com.rite.pillcounting.core.utils.common.OverlayUtils
 import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.showToast
 import com.rite.pillcounting.core.utils.logger.AppLogger
 import com.rite.pillcounting.core.utils.preference.PreferenceHelper
+import com.rite.pillcounting.feature.pillCountScan.domain.PillDetectionModelLoader
 import com.rite.pillcounting.feature.pillCountScan.domain.data.NavigationEvent
 import com.rite.pillcounting.feature.pillCountScan.domain.data.PillScanningEvent
 import com.rite.pillcounting.feature.pillCountScan.domain.model.DetectedPill
@@ -42,21 +42,15 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import org.tensorflow.lite.Interpreter
-import org.tensorflow.lite.gpu.CompatibilityList
-import org.tensorflow.lite.gpu.GpuDelegate
-import java.io.File
-import java.nio.ByteBuffer
 import java.util.ArrayDeque
 import javax.inject.Inject
 
 /**
  * ViewModel responsible for:
- *  - Managing camera frame analysis and TensorFlow inference.
- *  - Updating UI state for pill counting workflow.
- *  - Managing database transactions.
- *  - Preventing duplicate "Add" operations without a new scan.
+ * - Managing camera frame analysis (via Singleton ModelLoader).
+ * - Updating UI state for pill counting workflow.
+ * - Managing database transactions.
+ * - Preventing duplicate "Add" operations without a new scan.
  */
 @HiltViewModel
 class PillScanningViewModel @Inject constructor(
@@ -66,13 +60,11 @@ class PillScanningViewModel @Inject constructor(
     private val userDao: UserDao,
     private val pillCountTxnDetailsDao: PillCountTxnDetailsDao,
     private val locationProvider: LocationProvider,
-    private val drugMasterDao: DrugMasterDao
+    private val drugMasterDao: DrugMasterDao,
+    private val modelLoader: PillDetectionModelLoader
 ) : AndroidViewModel(app) {
 
     private val logger = AppLogger("PillScanningVM")
-
-    /** TensorFlow interpreter instance */
-    private var interpreter: Interpreter? = null
 
     private var currentFrameBitmap: Bitmap? = null
     private var lastTransformationMatrix: Matrix? = null
@@ -107,11 +99,8 @@ class PillScanningViewModel @Inject constructor(
     // --- Duplicate prevention ---
     private var lastAddedScanSignature: String? = null
     private var lastAddClickTime: Long = 0L
-    private var gpuDelegate: GpuDelegate? = null
-
 
     companion object {
-        private const val MODEL_FILENAME = "model"
         private const val ZERO_DETECTIONS_THRESHOLD = 25
     }
 
@@ -126,7 +115,6 @@ class PillScanningViewModel @Inject constructor(
     init {
         resetIdleTimer()
     }
-
 
     // ------------------------------------------------------------------------
     // Initialization and Observation
@@ -155,7 +143,7 @@ class PillScanningViewModel @Inject constructor(
         }
     }
 
-    /** Initialize TensorFlow Lite interpreter for pill detection. */
+    /** Initialize TensorFlow Lite interpreter using the Singleton Loader. */
     fun initializeInterpreter(
         retryCount: Int = 1,
         previewWidth: Int,
@@ -166,74 +154,34 @@ class PillScanningViewModel @Inject constructor(
             return
         }
 
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch {
             _modelState.value = ModelState.Loading
-            var attempt = 0
 
-            while (attempt <= retryCount) {
-                var createdDelegate: GpuDelegate? = null
-                try {
-                    val buffer = loadModelFile()
-                    val options = Interpreter.Options()
+            try {
+                // Fetch the singleton interpreter instance
+                val interpreter = modelLoader.getOrLoadInterpreter()
 
-                    // GPU delegate must be created on MAIN thread
-                    withContext(Dispatchers.Main) {
-                        val compatList = CompatibilityList()
-                        if (compatList.isDelegateSupportedOnThisDevice) {
-                            try {
-                                val delegateOptions = compatList.bestOptionsForThisDevice
-                                createdDelegate = GpuDelegate(delegateOptions)
-                                options.addDelegate(createdDelegate)
-                                logger.i("GPU delegate initialized.")
-                            } catch (e: Exception) {
-                                logger.w("GPU delegate failed, falling back to CPU.")
-                                createdDelegate?.close()
-                                createdDelegate = null
-                            }
-                        }
-                    }
-
-                    // CPU fallback
-                    if (createdDelegate == null) {
-                        options.setUseXNNPACK(true)
-                        options.numThreads =
-                            Runtime.getRuntime().availableProcessors().coerceAtMost(4)
-                    }
-
-                    val tflite = Interpreter(buffer, options)
-                    interpreter = tflite
-
-                    gpuDelegate?.close()
-                    gpuDelegate = createdDelegate
-
-                    val analyzer = PillAnalyzer(
-                        interpreter = tflite,
-                    ) { count, detections, bitmap, matrix, imageWidth, imageHeight ->
-                        processDetections(
-                            count,
-                            detections,
-                            bitmap,
-                            matrix,
-                            previewWidth,
-                            previewHeight,
-                            imageWidth,
-                            imageHeight
-                        )
-                    }
-
-                    _modelState.value = ModelState.Ready(analyzer)
-                    logger.i("Interpreter initialized successfully.")
-                    return@launch
-
-                } catch (e: Exception) {
-                    createdDelegate?.close()
-                    attempt++
-                    logger.e("Interpreter init failed (attempt $attempt)", e)
-                    if (attempt > retryCount) {
-                        _modelState.value =
-                            ModelState.Error("Interpreter initialization failed", e)
-                    }
+                val analyzer = PillAnalyzer(
+                    interpreter = interpreter,
+                ) { count, detections, bitmap, matrix, imageWidth, imageHeight ->
+                    processDetections(
+                        count,
+                        detections,
+                        bitmap,
+                        matrix,
+                        previewWidth,
+                        previewHeight,
+                        imageWidth,
+                        imageHeight
+                    )
                 }
+
+                _modelState.value = ModelState.Ready(analyzer)
+                logger.i("Interpreter initialized successfully (via Singleton).")
+
+            } catch (e: Exception) {
+                logger.e("Interpreter init failed", e)
+                _modelState.value = ModelState.Error("Interpreter initialization failed", e)
             }
         }
     }
@@ -271,9 +219,7 @@ class PillScanningViewModel @Inject constructor(
         buffer.addLast(count)
         _lastTenDetections.value = buffer
 
-        // 🔑 SIMPLIFIED MAPPING:
-        // Because the Canvas and Image are the exact same ratio,
-        // we just divide the detection centers by the original image dimensions.
+        // SIMPLIFIED MAPPING:
         updateDetectedPills(
             pills = detections.map { det ->
                 DetectedPill(
@@ -304,7 +250,7 @@ class PillScanningViewModel @Inject constructor(
         _uiState.update { it.copy(showIdleOverlay = true, detectedPills = emptyList()) }
         isPaused = true
         _cameraPaused.value = true
-        logger.w("Camera paused due to stable detection pattern. Buffers cleared.")
+        logger.w("Camera paused due to idle timeout. Buffers cleared.")
     }
 
     fun resetIdleTimer() {
@@ -359,7 +305,7 @@ class PillScanningViewModel @Inject constructor(
         isPaused = false
         _cameraPaused.value = false
 
-        logger.i("Idle overlay reset → buffers, snapshots, and timers cleared. Analysis resumed cleanly.")
+        logger.i("Idle overlay reset -> Analysis resumed.")
     }
 
 
@@ -372,35 +318,9 @@ class PillScanningViewModel @Inject constructor(
         _uiState.update { it.copy(filteredPills = filtered) }
     }
 
-    /** Load TensorFlow Lite model from assets. */
-    private fun loadModelFile(fileName: String = MODEL_FILENAME): ByteBuffer {
-        val context = getApplication<Application>()
-        val encFile = File(context.filesDir, "$fileName.enc")
-
-        if (!encFile.exists()) {
-            context.assets.open("$fileName.enc").use { input ->
-                encFile.outputStream().use { output -> input.copyTo(output) }
-            }
-        }
-
-        val decryptedBytes = ModelDecryptor.decryptToBytes(encFile)
-        return ByteBuffer.allocateDirect(decryptedBytes.size).apply {
-            put(decryptedBytes)
-            rewind()
-        }
-    }
-
 
     override fun onCleared() {
         super.onCleared()
-
-        try {
-            gpuDelegate?.close()
-        } catch (e: Exception) {
-            logger.w("Error closing GPU delegate: ${e.message}")
-        } finally {
-            gpuDelegate = null
-        }
 
         try {
             currentFrameBitmap?.recycle()
@@ -410,8 +330,10 @@ class PillScanningViewModel @Inject constructor(
             currentFrameBitmap = null
         }
         _modelState.value = ModelState.Idle
-        logger.i("ViewModel cleared and all TensorFlow resources released.")
+        // Note: We do NOT close the modelLoader here. It remains alive in the Singleton.
+        logger.i("ViewModel cleared. Model remains loaded in Singleton.")
     }
+
     // ------------------------------------------------------------------------
     // Event Handling
     // ------------------------------------------------------------------------
