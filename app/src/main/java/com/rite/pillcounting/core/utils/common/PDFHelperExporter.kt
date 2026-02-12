@@ -1,28 +1,99 @@
 package com.rite.pillcounting.core.utils.common
 
 import android.content.Context
-import com.itextpdf.kernel.colors.ColorConstants
-import com.itextpdf.kernel.pdf.PdfDocument
-import com.itextpdf.kernel.pdf.PdfWriter
-import com.itextpdf.layout.Document
-import com.itextpdf.layout.element.Cell
-import com.itextpdf.layout.element.Paragraph
-import com.itextpdf.layout.element.Table
-import com.itextpdf.layout.properties.HorizontalAlignment
-import com.itextpdf.layout.properties.TextAlignment
-import com.itextpdf.layout.properties.UnitValue
-import com.itextpdf.layout.properties.VerticalAlignment
+import android.graphics.Canvas
+import android.graphics.Color
+import android.graphics.Paint
+import android.graphics.Typeface
+import android.graphics.pdf.PdfDocument
+import android.text.Layout
+import android.text.StaticLayout
+import android.text.TextPaint
 import com.rite.pillcounting.R
 import java.io.File
+import java.io.FileOutputStream
+import java.io.IOException
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
 /**
- * Utility class for generating and exporting **drug history PDFs** using iText.
- * Handles file naming, existence checks, and structured PDF content creation.
+ * Utility class for generating and exporting **drug history PDFs** using Android's native PdfDocument API.
+ * Handles file naming, existence checks, and manual drawing of structured content on the PDF Canvas.
  */
 class PDFHelperExporter(private val context: Context) {
+
+    // Define standard A4 page dimensions in points (1 inch = 72 points)
+    // A4 width: 595 points, height: 842 points
+    private val pageWidth = 595
+    private val pageHeight = 842
+    private val margin = 50
+
+    // --- Paint Objects for Styling ---
+
+    // Title: Bold, Large, Centered
+    private val titlePaint = Paint().apply {
+        color = Color.BLACK
+        textSize = 24f
+        typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+        textAlign = Paint.Align.CENTER
+    }
+
+    // Header: Bold, Medium, Centered
+    private val headerPaint = Paint().apply {
+        color = Color.BLACK
+        textSize = 18f
+        typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+        textAlign = Paint.Align.CENTER
+    }
+
+    // Normal Cell Text
+    private val cellTextPaint = Paint().apply {
+        color = Color.BLACK
+        textSize = 14f
+        typeface = Typeface.DEFAULT
+    }
+
+    // Bold Label Text (for first column)
+    private val cellLabelPaint = Paint().apply {
+        color = Color.BLACK
+        textSize = 14f
+        typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+    }
+
+    // Table Header Background (Dark Gray)
+    private val tableHeaderBgPaint = Paint().apply {
+        color = Color.DKGRAY
+        style = Paint.Style.FILL
+    }
+
+    // Table Header Text (White)
+    private val tableHeaderTextPaint = Paint().apply {
+        color = Color.WHITE
+        textSize = 14f
+        typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+    }
+
+    // Light Gray Background for labels
+    private val lightGrayPaint = Paint().apply {
+        color = Color.LTGRAY
+        style = Paint.Style.FILL
+    }
+
+    // Footer: Italic, Small, Gray
+    private val footerPaint = Paint().apply {
+        color = Color.GRAY
+        textSize = 12f
+        typeface = Typeface.create(Typeface.DEFAULT, Typeface.ITALIC)
+        textAlign = Paint.Align.CENTER
+    }
+
+    // Borders
+    private val borderPaint = Paint().apply {
+        color = Color.BLACK
+        style = Paint.Style.STROKE
+        strokeWidth = 1f
+    }
 
     /** Generates a consistent PDF filename using drug details. */
     private fun generateFileName(drugName: String, ndc: String, batch: String): String {
@@ -39,7 +110,7 @@ class PDFHelperExporter(private val context: Context) {
 
     /**
      * Creates a new drug history PDF or returns the existing one.
-     * Includes drug info, counts, notes, and generated date.
+     * Uses native Android PdfDocument API.
      */
     fun generateDrugHistoryPdf(
         drugName: String,
@@ -51,128 +122,195 @@ class PDFHelperExporter(private val context: Context) {
         date: String,
         time: String
     ): File? {
-        return try {
-            val existingFile = doesPdfExist(drugName, ndc, lotNo)
-            if (existingFile != null) return existingFile
+        // 1. Check for existing file
+        val existingFile = doesPdfExist(drugName, ndc, lotNo)
+        if (existingFile != null) return existingFile
 
-            val fileName = generateFileName(drugName, ndc, lotNo)
-            val file = File(context.getExternalFilesDir(null), fileName)
+        val fileName = generateFileName(drugName, ndc, lotNo)
+        val file = File(context.getExternalFilesDir(null), fileName)
 
-            val pdfWriter = PdfWriter(file)
-            val pdfDocument = PdfDocument(pdfWriter)
-            val document = Document(pdfDocument)
+        // 2. Initialize PDF Document
+        val pdfDocument = PdfDocument()
+        val pageInfo = PdfDocument.PageInfo.Builder(pageWidth, pageHeight, 1).create()
+        val page = pdfDocument.startPage(pageInfo)
+        val canvas = page.canvas
 
-            addPdfContent(document, drugName, totalCount, notes, ndc, expiry, lotNo, date, time)
+        try {
+            var yPosition = margin.toFloat()
 
-            document.close()
-            file
+            // --- Draw Main Title ---
+            yPosition += 40
+            canvas.drawText(
+                context.getString(R.string.drug_history_details),
+                (pageWidth / 2).toFloat(),
+                yPosition,
+                titlePaint
+            )
+            yPosition += 40
+
+            // --- Draw "Drug Information" Header ---
+            canvas.drawText(
+                "Drug Information",
+                (pageWidth / 2).toFloat(),
+                yPosition,
+                headerPaint
+            )
+            yPosition += 30
+
+            // --- Draw Table ---
+            val tableWidth = pageWidth - (2 * margin)
+            val column1Width = tableWidth * 0.4f // 40% width for Labels
+            val column2Width = tableWidth * 0.6f // 60% width for Values
+            val startX = margin.toFloat()
+            val rowHeight = 35f
+
+            // Table Header Row
+            drawTableRow(
+                canvas, startX, yPosition, column1Width, column2Width, rowHeight,
+                "Field", "Value", isHeader = true
+            )
+            yPosition += rowHeight
+
+            // Table Data Rows
+            val rows = listOf(
+                context.getString(R.string.drugname) to drugName,
+                context.getString(R.string.total_count) to "$totalCount Pills",
+                context.getString(R.string.ndc_gtin14).uppercase() to ndc,
+                context.getString(R.string.expiry) to expiry,
+                context.getString(R.string.lotNo) to lotNo,
+                context.getString(R.string.date) to date,
+                context.getString(R.string.time) to time
+            )
+
+            for ((label, value) in rows) {
+                drawTableRow(
+                    canvas, startX, yPosition, column1Width, column2Width, rowHeight,
+                    label, value, isHeader = false
+                )
+                yPosition += rowHeight
+            }
+
+            yPosition += 30
+
+            // --- Draw "Notes" Header ---
+            canvas.drawText(
+                context.getString(R.string.note),
+                (pageWidth / 2).toFloat(),
+                yPosition,
+                headerPaint
+            )
+            yPosition += 20
+
+            // --- Draw Notes Body (Multi-line) ---
+            // We use StaticLayout to handle text wrapping automatically
+            val notesTextPaint = TextPaint(cellTextPaint)
+            val notesLayout = StaticLayout.Builder.obtain(
+                notes,
+                0,
+                notes.length,
+                notesTextPaint,
+                pageWidth - (2 * margin)
+            )
+                .setAlignment(Layout.Alignment.ALIGN_CENTER)
+                .setLineSpacing(0f, 1.0f)
+                .setIncludePad(false)
+                .build()
+
+            canvas.save()
+            canvas.translate(margin.toFloat(), yPosition)
+            notesLayout.draw(canvas)
+            canvas.restore()
+
+            // Update Y position based on how tall the notes were
+            yPosition += notesLayout.height + 40
+
+            // --- Draw Footer (Date) ---
+            val footerText = "${context.getString(R.string.generated_on)} " +
+                    SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).format(Date())
+
+            canvas.drawText(
+                footerText,
+                (pageWidth / 2).toFloat(),
+                yPosition,
+                footerPaint
+            )
+
+            // 3. Finish Page and Write File
+            pdfDocument.finishPage(page)
+
+            val fileOutputStream = FileOutputStream(file)
+            pdfDocument.writeTo(fileOutputStream)
+            fileOutputStream.close()
+
+            return file
+        } catch (e: IOException) {
+            e.printStackTrace()
+            // If writing fails, try to close the page cleanly
+            try {
+                pdfDocument.finishPage(page)
+            } catch (ignored: Exception) {
+            }
+            return null
         } catch (e: Exception) {
             e.printStackTrace()
-            null
+            return null
+        } finally {
+            pdfDocument.close()
         }
     }
 
-    /** Adds table, title, and footer content to the PDF document. */
-    private fun addPdfContent(
-        document: Document,
-        drugName: String,
-        totalCount: String,
-        description: String,
-        ndc: String,
-        expiry: String,
-        batch: String,
-        date: String,
-        time: String
+    /**
+     * Helper to draw a specific row in the table (Header or Normal).
+     * Draws background rects, borders, and text.
+     */
+    private fun drawTableRow(
+        canvas: Canvas,
+        startX: Float,
+        y: Float,
+        col1Width: Float,
+        col2Width: Float,
+        height: Float,
+        text1: String,
+        text2: String,
+        isHeader: Boolean
     ) {
-        document.add(
-            Paragraph(context.getString(R.string.drug_history_details))
-                .setTextAlignment(TextAlignment.CENTER)
-                .setFontSize(20f)
-                .setBold()
-        )
-
-        document.add(Paragraph("\n"))
-
-        document.add(
-            Paragraph("Drug Information")
-                .setFontSize(16f)
-                .setBold()
-                .setTextAlignment(TextAlignment.CENTER)
-        )
-
-        val drugInfo = Table(2).apply {
-            setHorizontalAlignment(HorizontalAlignment.CENTER)
-            setWidth(UnitValue.createPercentValue(80f))
-            addHeaderCell(createHeaderCell("Field"))
-            addHeaderCell(createHeaderCell("Value"))
-        }
-
-        drugInfo.addCell(createCell(context.getString(R.string.drugname), true))
-        drugInfo.addCell(createCell(drugName))
-
-        drugInfo.addCell(createCell(context.getString(R.string.total_count), true))
-        drugInfo.addCell(createCell("$totalCount Pills"))
-
-        drugInfo.addCell(createCell(context.getString(R.string.ndc_gtin14).uppercase(), true))
-        drugInfo.addCell(createCell(ndc))
-
-        drugInfo.addCell(createCell(context.getString(R.string.expiry), true))
-        drugInfo.addCell(createCell(expiry))
-
-        drugInfo.addCell(createCell(context.getString(R.string.lotNo), true))
-        drugInfo.addCell(createCell(batch))
-
-        drugInfo.addCell(createCell(context.getString(R.string.date), true))
-        drugInfo.addCell(createCell(date))
-
-        drugInfo.addCell(createCell(context.getString(R.string.time), true))
-        drugInfo.addCell(createCell(time))
-
-        document.add(drugInfo)
-        document.add(Paragraph("\n"))
-
-        document.add(
-            Paragraph(context.getString(R.string.note))
-                .setFontSize(16f)
-                .setBold()
-                .setTextAlignment(TextAlignment.CENTER)
-        )
-        document.add(Paragraph(description).setTextAlignment(TextAlignment.CENTER))
-
-        document.add(Paragraph("\n\n"))
-        document.add(
-            Paragraph(
-                "${context.getString(R.string.generated_on)} " +
-                        SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).format(Date())
+        // 1. Draw Backgrounds
+        if (isHeader) {
+            // Dark gray background for whole header row
+            canvas.drawRect(
+                startX,
+                y,
+                startX + col1Width + col2Width,
+                y + height,
+                tableHeaderBgPaint
             )
-                .setFontSize(10f)
-                .setTextAlignment(TextAlignment.CENTER)
-                .setItalic()
-        )
-    }
-
-    /** Creates a table cell with optional header styling. */
-    private fun createCell(text: String, isHeader: Boolean = false): Cell {
-        return Cell().apply {
-            setPadding(8f)
-            setVerticalAlignment(VerticalAlignment.MIDDLE)
-            add(Paragraph(text).apply {
-                if (isHeader) {
-                    setBold()
-                    setBackgroundColor(ColorConstants.LIGHT_GRAY)
-                }
-            })
+        } else {
+            // Light gray background for the Label cell (left side)
+            canvas.drawRect(startX, y, startX + col1Width, y + height, lightGrayPaint)
         }
-    }
 
-    /** Creates a styled header cell with bold white text on a gray background. */
-    private fun createHeaderCell(text: String): Cell {
-        return Cell().apply {
-            setPadding(10f)
-            setBackgroundColor(ColorConstants.GRAY)
-            setVerticalAlignment(VerticalAlignment.MIDDLE)
-            setTextAlignment(TextAlignment.CENTER)
-            add(Paragraph(text).setBold().setFontColor(ColorConstants.WHITE))
-        }
+        // 2. Draw Borders (Outlines)
+        canvas.drawRect(startX, y, startX + col1Width, y + height, borderPaint) // Cell 1 Border
+        canvas.drawRect(
+            startX + col1Width,
+            y,
+            startX + col1Width + col2Width,
+            y + height,
+            borderPaint
+        ) // Cell 2 Border
+
+        // 3. Calculate Text Vertical Center
+        // Font metrics are needed for perfect centering, but (height/2) + fudge_factor works well for simple PDFs
+        val textY = y + (height / 2) + 5
+
+        // 4. Draw Text
+        val paint1 = if (isHeader) tableHeaderTextPaint else cellLabelPaint
+        val paint2 = if (isHeader) tableHeaderTextPaint else cellTextPaint
+
+        // Draw Column 1 (Left aligned with padding)
+        canvas.drawText(text1, startX + 10, textY, paint1)
+
+        // Draw Column 2 (Left aligned with padding)
+        canvas.drawText(text2, startX + col1Width + 10, textY, paint2)
     }
 }
