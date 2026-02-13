@@ -84,7 +84,7 @@ class PDFHelperExporter(private val context: Context) {
     private val footerPaint = Paint().apply {
         color = Color.GRAY
         textSize = 12f
-        typeface = Typeface.create(Typeface.DEFAULT, Typeface.ITALIC)
+        typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
         textAlign = Paint.Align.CENTER
     }
 

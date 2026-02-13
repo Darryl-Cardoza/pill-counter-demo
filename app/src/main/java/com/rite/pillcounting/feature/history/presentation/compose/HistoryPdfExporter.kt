@@ -71,12 +71,12 @@ class HistoryPdfExporter(private val context: Context) {
     private val footerPaint = Paint().apply {
         color = Color.GRAY
         textSize = 10f
-        typeface = Typeface.create(Typeface.DEFAULT, Typeface.ITALIC)
+        typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
         textAlign = Paint.Align.CENTER
     }
 
     fun generateHistoryPdf(counts: List<TxnWithDrugDto>, selectedDate: String): File? {
-        val fileName = "DrugHistory_${selectedDate}_${System.currentTimeMillis()}.pdf"
+        val fileName = "DrugHistory_${selectedDate}.pdf"
         val file = File(context.getExternalFilesDir(null), fileName)
 
         val pdfDocument = PdfDocument()

@@ -39,7 +39,10 @@ android {
         release {
             isMinifyEnabled = true
             isShrinkResources = true
-            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
         }
         debug {
             enableUnitTestCoverage = true
@@ -161,10 +164,6 @@ dependencies {
     implementation("org.tensorflow:tensorflow-lite-gpu:2.17.0")
     implementation("org.tensorflow:tensorflow-lite-gpu-api:2.17.0")
     implementation("org.tensorflow:tensorflow-lite-support:0.5.0")
-
-
-    // --- PDF / iText7 ---
-    implementation("com.itextpdf:itext7-core:7.2.5")
 
     //Location
     implementation("com.google.android.gms:play-services-location:21.3.0")
