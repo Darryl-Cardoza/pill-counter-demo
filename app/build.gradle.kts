@@ -39,7 +39,10 @@ android {
         release {
             isMinifyEnabled = true
             isShrinkResources = true
-            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
         }
         debug {
             enableUnitTestCoverage = true
@@ -71,7 +74,8 @@ android {
                 "META-INF/io.netty.versions.properties",
                 "META-INF/*.SF",
                 "META-INF/*.DSA",
-                "META-INF/*.RSA"
+                "META-INF/*.RSA",
+                "META-INF/versions/9/OSGI-INF/MANIFEST.MF"
             )
         }
     }
@@ -162,10 +166,6 @@ dependencies {
     implementation("org.tensorflow:tensorflow-lite-gpu-api:2.17.0")
     implementation("org.tensorflow:tensorflow-lite-support:0.5.0")
 
-
-    // --- PDF / iText7 ---
-    implementation("com.itextpdf:itext7-core:7.2.5")
-
     //Location
     implementation("com.google.android.gms:play-services-location:21.3.0")
 
@@ -201,4 +201,8 @@ dependencies {
     implementation("io.netty:netty-tcnative-boringssl-static:2.0.61.Final")
 
     implementation("org.json:json:20230227")
+
+    // Bouncy Castle for TLS Keystore generation
+    implementation("org.bouncycastle:bcprov-jdk18on:1.83")
+    implementation("org.bouncycastle:bcpkix-jdk18on:1.83")
 }
