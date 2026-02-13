@@ -18,6 +18,7 @@ import com.rite.pillcounting.feature.menu.presentation.MenuScreen
 import com.rite.pillcounting.feature.pillCountScan.presentation.PillScanningScreen
 import com.rite.pillcounting.feature.profile.presentation.ProfileScreen
 import com.rite.pillcounting.feature.settings.presentation.SettingsScreen
+import com.rite.pillcounting.feature.unsyncedTransaction.presentation.compose.UnsyncedTransactionScreen
 
 // Define constants for nested graph routes for better organization
 const val AUTH_GRAPH_ROUTE = "auth"
@@ -92,6 +93,12 @@ fun AppNavGraph(
 
         composable(route = Screen.HistoryDetail.route) {
             HistoryDetailScreen(
+                navController = navController,
+            )
+        }
+
+        composable(route = Screen.UnsyncedTransactionScreen.route) {
+            UnsyncedTransactionScreen(
                 navController = navController,
             )
         }

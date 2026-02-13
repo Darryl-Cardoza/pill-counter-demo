@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -71,6 +70,9 @@ fun PillScanningScreen(
     var lastTenDetections by remember { mutableStateOf<List<Int>>(emptyList()) }
 
     var filteredPillCount by remember { mutableStateOf(0) }
+
+    var previewWidth by remember { mutableStateOf<Int?>(null) }
+    var previewHeight by remember { mutableStateOf<Int?>(null) }
 
     // Whenever detected pills update, push into buffer
     LaunchedEffect(uiState.detectedPills) {
@@ -159,7 +161,6 @@ fun PillScanningScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .systemBarsPadding()
             .background(AppTheme.extendedColors.secondaryBackground)
             .pointerInput(Unit) {
                 awaitPointerEventScope {
@@ -182,8 +183,22 @@ fun PillScanningScreen(
                     },
                     onFilteredCountChanged = { count -> filteredPillCount = count },
                     modifier = Modifier.fillMaxSize(),
-                    onPreviewStarted = {
-                        viewModel.initializeInterpreter(retryCount = 2)
+
+                    imageFrameWidth = uiState.imageFrameWidth,
+                    imageFrameHeight = uiState.imageFrameHeight,
+
+                    onPreviewSizeKnown = { w, h ->
+                        // Store once
+                        if (previewWidth == null || previewHeight == null) {
+                            previewWidth = w
+                            previewHeight = h
+
+                            viewModel.initializeInterpreter(
+                                retryCount = 2,
+                                previewWidth = w,
+                                previewHeight = h
+                            )
+                        }
                     }
                 )
             },
@@ -215,7 +230,9 @@ fun PillScanningScreen(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(top = 18.dp).fillMaxWidth()
+                    modifier = Modifier
+                        .padding(top = 18.dp)
+                        .fillMaxWidth()
                 )
             }
         }

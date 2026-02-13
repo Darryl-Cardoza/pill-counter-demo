@@ -167,20 +167,6 @@ fun InformationPanelSection(
 
         }
 
-        if (isLandscape) {
-
-            Spacer(Modifier.height(12.dp))
-            Text(
-                text = drugName,
-                color = AppTheme.extendedColors.textColor,
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Medium,
-                modifier = Modifier.fillMaxWidth(),
-                textAlign = TextAlign.Center,
-                maxLines = 1
-            )
-        }
-
 
         // ---------- Middle: either "Count mode" OR "History mode" ----------
         if (!showHistory) {
@@ -192,7 +178,8 @@ fun InformationPanelSection(
                     detectedCount = filteredPillCount,
                     onAdd = onAdd,
                     onDone = onDone,
-                    viewModel = viewModel
+                    viewModel = viewModel,
+                    drugName =drugName
                 )
             } else {
                 CountModePortrait(
@@ -212,7 +199,8 @@ fun InformationPanelSection(
                     targetCount = targetCount,
                     totalCount = totalCount,
                     txnHistory = txnHistory,
-                    onDeleteTxn = onDeleteTxn
+                    onDeleteTxn = onDeleteTxn,
+                    drugName =drugName
                 )
             } else {
                 HistoryModePortrait(

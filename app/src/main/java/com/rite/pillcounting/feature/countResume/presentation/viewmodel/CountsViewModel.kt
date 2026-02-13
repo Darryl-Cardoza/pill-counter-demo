@@ -161,6 +161,7 @@ class CountsViewModel @Inject constructor(
                             target = it.targetCount ?: 0,
                             barcodeImage = it.barcodeImage,
                             date = it.createdAt.toFormattedDate(),
+                            isComingFromHL7 = it.isComingFromHL7
                         )
                     }
                 }
@@ -238,7 +239,8 @@ class CountsViewModel @Inject constructor(
                             pillCount = it.totalPillCount,
                             target = it.targetCount ?: 0,
                             barcodeImage = it.barcodeImage,
-                            date = it.createdAt.toFormattedDate()
+                            date = it.createdAt.toFormattedDate(),
+                            isComingFromHL7 = it.isComingFromHL7
                         )
                     }
                 }
@@ -298,10 +300,4 @@ class CountsViewModel @Inject constructor(
         _regularUiState.update { it.copy(isMultiSelectMode = false, selectedItems = emptyList()) }
     }
 
-    /**
-     * Convert epoch millis into formatted date string.
-     *
-     * @param millis Timestamp to format.
-     * @return Human-readable formatted date, or "-" if invalid.
-     */
 }

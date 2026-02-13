@@ -23,10 +23,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.rite.pillcounting.R
 import com.rite.pillcounting.feature.pillCountScan.domain.model.TxnDetail
+import com.rite.pillcounting.ui.theme.AppTheme
 
 @Composable
 fun HistoryModeLandscape(
@@ -34,7 +36,8 @@ fun HistoryModeLandscape(
     targetCount: Int,
     totalCount: Int,
     txnHistory: List<TxnDetail>,
-    onDeleteTxn: (Long) -> Unit
+    onDeleteTxn: (Long) -> Unit,
+    drugName : String
 ) {
     val latestTxnId = txnHistory.maxByOrNull { it.createdAt }?.txnDetailId
     val activeHistory = txnHistory
@@ -53,6 +56,28 @@ fun HistoryModeLandscape(
         modifier = Modifier.fillMaxHeight(),
     ) {
         Spacer(modifier = Modifier.weight(0.8f))
+        Text(
+            text = drugName,
+            color = AppTheme.extendedColors.textColor,
+            fontSize = 18.sp,
+            fontWeight = FontWeight.Medium,
+            modifier = Modifier.fillMaxWidth(),
+            textAlign = TextAlign.Center,
+            maxLines = 1
+        )
+        Spacer(modifier = Modifier.weight(0.8f))
+//        Spacer(modifier = Modifier.height(responsiveDp(50.dp)))
+        Text(
+            text = drugName,
+            color = AppTheme.extendedColors.textColor,
+            fontSize = 18.sp,
+            fontWeight = FontWeight.Medium,
+            modifier = Modifier.fillMaxWidth(),
+            textAlign = TextAlign.Center,
+            maxLines = 1
+        )
+        Spacer(modifier = Modifier.weight(0.8f))
+//        Spacer(modifier = Modifier.height(responsiveDp(50.dp)))
         LazyRow(
             state = listState,
             horizontalArrangement = Arrangement.spacedBy(10.dp),
@@ -75,6 +100,7 @@ fun HistoryModeLandscape(
         }
 
         Spacer(modifier = Modifier.weight(0.8f))
+//        Spacer(modifier = Modifier.height(responsiveDp(50.dp)))
 
         Column(
             modifier = Modifier

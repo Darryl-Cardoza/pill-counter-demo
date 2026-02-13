@@ -30,6 +30,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.rite.pillcounting.R
 import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.ActionButtonPrimary
+import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.responsiveButtonHeight
 import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.responsiveDp
 import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.responsiveDpForCircularCountProgressPotrait
 import com.rite.pillcounting.feature.pillCountScan.presentation.viewmodel.PillScanningViewModel
@@ -103,13 +104,13 @@ fun CountModePortrait(
 
         Box(
             modifier = Modifier
-                .height(responsiveDpForCircularCountProgressPotrait(0.3f))
+                .height(responsiveDpForCircularCountProgressPotrait(150.dp))
                 .weight(1f),
             contentAlignment = Alignment.BottomCenter
         ) {
             Box(
                 modifier = Modifier
-                    .size(responsiveDpForCircularCountProgressPotrait(0.27f))
+                    .size(responsiveDpForCircularCountProgressPotrait(130.dp))
                     .align(Alignment.TopCenter),
                 contentAlignment = Alignment.Center
             ) {
@@ -137,7 +138,7 @@ fun CountModePortrait(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .offset(y = (-6).dp)
-                    .height(responsiveDp(40.dp))
+                    .height(responsiveButtonHeight(40.dp))
                     .padding(horizontal = 14.dp),
 
                 width = 80,

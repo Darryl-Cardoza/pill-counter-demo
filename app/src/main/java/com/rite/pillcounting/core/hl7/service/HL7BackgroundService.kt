@@ -74,7 +74,6 @@ class HL7Service : Service() {
     private lateinit var builder: HL7MessageBuilder
 
     private var listener: Hl7EventListener? = null
-    private val localIp by lazy { NetworkUtils.getLocalIpAddress() }
 
     private lateinit var imageServer: ImageWebServer
 

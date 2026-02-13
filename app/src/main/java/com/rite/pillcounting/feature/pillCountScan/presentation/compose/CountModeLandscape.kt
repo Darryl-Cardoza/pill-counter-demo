@@ -26,11 +26,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.rite.pillcounting.R
 import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.ActionButtonPrimary
+import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.responsiveButtonHeight
 import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.responsiveDp
+import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.responsiveDpForCircularCountProgressLandscape
 import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.responsiveDpForCircularCountProgressPotrait
 import com.rite.pillcounting.feature.pillCountScan.presentation.viewmodel.PillScanningViewModel
 import com.rite.pillcounting.ui.theme.AppTheme
@@ -43,7 +46,8 @@ fun CountModeLandscape(
     detectedCount: Int,
     onAdd: () -> Unit,
     onDone: () -> Unit,
-    viewModel: PillScanningViewModel
+    viewModel: PillScanningViewModel,
+    drugName :String
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
@@ -56,15 +60,24 @@ fun CountModeLandscape(
     ) {
         Spacer(modifier = Modifier.height(responsiveDp(30.dp)))
         // Row: Circle + Add (center)
+        Text(
+            text = drugName,
+            color = AppTheme.extendedColors.textColor,
+            fontSize = 18.sp,
+            fontWeight = FontWeight.Medium,
+            modifier = Modifier.fillMaxWidth(),
+            textAlign = TextAlign.Center,
+            maxLines = 1
+        )
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(responsiveDpForCircularCountProgressPotrait(0.3f)),
+                .height(responsiveDpForCircularCountProgressLandscape(160.dp)),
             contentAlignment = Alignment.TopCenter
         ) {
             Box(
                 modifier = Modifier
-                    .size(responsiveDpForCircularCountProgressPotrait(0.27f)),
+                    .size(responsiveDpForCircularCountProgressLandscape(160.dp)),
                 contentAlignment = Alignment.Center
             ) {
                 CircularCountIndicator(
@@ -91,7 +104,7 @@ fun CountModeLandscape(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .offset(y = (-6).dp)
-                    .height(responsiveDp(40.dp))
+                    .height(responsiveButtonHeight(40.dp))
                     .padding(horizontal = 14.dp),
                 width = 80,
                 fontSize = 15

@@ -1,5 +1,6 @@
 package com.rite.pillcounting.feature.hl7.core
 
+import com.google.gson.Gson
 import com.rite.pillcounting.core.hl7.core.Hl7EventListener
 import com.rite.pillcounting.core.utils.logger.AppLogger
 import com.rite.pillcounting.feature.hl7.data.repository.Hl7Repository
@@ -43,6 +44,7 @@ class Hl7EventHandler @Inject constructor(
         parsed: CompleteHL7Message,
         idempotencyKey: String
     ) {
+        logger.i("HL7 message parsed received | msgId=${Gson().toJson(parsed)} | key=$idempotencyKey ")
         logger.i("HL7 message received | msgId=${parsed.messageId} | key=$idempotencyKey ")
         hl7Repository.handleReceivedMessage(parsed)
 

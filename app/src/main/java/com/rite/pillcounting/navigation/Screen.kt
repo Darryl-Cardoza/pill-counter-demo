@@ -49,6 +49,10 @@ sealed interface Screen {
         override val route: String = "profile"
     }
 
+    data object UnsyncedTransactionScreen : Screen {
+        override val route: String = "unsynced_transaction_screen"
+    }
+
 
     // For screens with arguments
     data object OtpVerify : Screen {
@@ -57,7 +61,8 @@ sealed interface Screen {
         const val ARG_REMEMBER_ME = "rememberMe"
 
         // Full route with query parameters
-        override val route: String = "$ROUTE_PREFIX?$ARG_EMAIL={$ARG_EMAIL}&$ARG_REMEMBER_ME={$ARG_REMEMBER_ME}"
+        override val route: String =
+            "$ROUTE_PREFIX?$ARG_EMAIL={$ARG_EMAIL}&$ARG_REMEMBER_ME={$ARG_REMEMBER_ME}"
 
         // List of arguments to parse from the NavBackStackEntry
         val navArguments: List<NamedNavArgument> = listOf(
@@ -126,7 +131,6 @@ sealed interface Screen {
 
         fun createRoute(type: String) = "$ROUTE_PREFIX/$type"
     }
-
 
 
 }

@@ -52,8 +52,15 @@
 # RETROFIT
 ############################################
 
--keep class retrofit2.Call
--keep class retrofit2.Response
+# --- Retrofit (required for suspend + annotations reflection) ---
+-keepattributes Signature, InnerClasses, EnclosingMethod
+-keepattributes RuntimeVisibleAnnotations, RuntimeVisibleParameterAnnotations, AnnotationDefault
+
+# Keep Retrofit service interfaces (so method generic signatures remain intact)
+-keep interface com.rite.pillcounting.** { *; }
+-keep class retrofit2.** { *; }
+-keep class kotlin.coroutines.** { *; }
+
 
 -dontwarn retrofit2.**
 
@@ -149,4 +156,42 @@
 
 # Example: JSON / DB / Serialization models
 # Adjust package as needed
--keep class com.rite.pillcounting.model.** { *; }
+############################################
+# API MODELS (Retrofit JSON)
+############################################
+-keep class com.rite.pillcounting.feature.**.model.** { *; }
+
+############################################
+# KTOR + NETTY (ANDROID SAFE)
+############################################
+
+# BlockHound (JVM-only)
+-dontwarn reactor.blockhound.**
+
+# Netty OpenSSL / tcnative (native Linux only)
+-dontwarn io.netty.internal.tcnative.**
+-dontwarn io.netty.handler.ssl.OpenSsl**
+-dontwarn io.netty.handler.ssl.ReferenceCountedOpenSsl**
+
+# Jetty NPN / ALPN (JVM-only)
+-dontwarn org.eclipse.jetty.npn.**
+
+# JVM management APIs (not on Android)
+-dontwarn java.lang.management.**
+
+# Optional logging frameworks (not bundled)
+-dontwarn org.apache.log4j.**
+-dontwarn org.apache.logging.log4j.**
+
+# Netty internal logging bridges
+-dontwarn io.netty.util.internal.logging.**
+# Netty uses reflection to instantiate channel classes (required for Ktor Netty server)
+-keep class io.netty.channel.ReflectiveChannelFactory { *; }
+-keep class io.netty.channel.socket.nio.NioServerSocketChannel { public <init>(); }
+-keep class io.netty.channel.socket.nio.NioSocketChannel { public <init>(); }
+-keep class io.netty.channel.nio.NioEventLoopGroup { public <init>(...); }
+-keep class io.netty.channel.nio.NioEventLoop { *; }
+
+# Safer broad keep for Netty channel/socket (if above isn't enough)
+-keep class io.netty.channel.** { *; }
+-keep class io.netty.bootstrap.** { *; }

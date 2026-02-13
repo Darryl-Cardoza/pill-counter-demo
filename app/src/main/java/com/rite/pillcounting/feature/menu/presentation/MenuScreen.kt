@@ -157,11 +157,22 @@ fun MenuScreen(
 
             HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
 
+            SimpleMenuRow(
+                navController = navController,
+                icon = R.drawable.unsynced_transaction_icon,
+                iconTint = MaterialTheme.colorScheme.secondary,
+                title = stringResource(R.string.menu_unsync_transaction),
+                trailingText = uiState.unsyncedTransactionCount.toString(),
+                onClick = { navController.navigate(Screen.UnsyncedTransactionScreen.route) }
+            )
+
+            HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
+
             // Settings
             SimpleMenuRow(
                 navController = navController,
                 icon = R.drawable.settings,
-                iconTint = MaterialTheme.colorScheme.secondary,
+                iconTint = MaterialTheme.colorScheme.primary,
                 title = stringResource(R.string.menu_settings),
                 onClick = { navController.navigate(Screen.Settings.route) }
             )
@@ -172,7 +183,7 @@ fun MenuScreen(
             SimpleMenuRow(
                 navController = navController,
                 icon = R.drawable.logout,
-                iconTint = MaterialTheme.colorScheme.primary,
+                iconTint = MaterialTheme.colorScheme.secondary,
                 title = stringResource(R.string.menu_logout),
                 onClick = {
                     showLogoutConfirmDialog = true

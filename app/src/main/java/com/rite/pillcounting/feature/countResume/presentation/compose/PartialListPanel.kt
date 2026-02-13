@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.ExperimentalMaterialApi
@@ -48,6 +49,7 @@ fun <E : ResumeEvent> PartialListPanel(
     var showMoreDialog by remember { mutableStateOf(false) }
     var deleteMode by remember { mutableStateOf(DeleteMode.None) }
     var pendingItem by remember { mutableStateOf<CountItem?>(null) }
+    var selectedFilter by remember { mutableStateOf(FilterType.ALL) }
 
     Column(
         modifier = Modifier
@@ -74,10 +76,48 @@ fun <E : ResumeEvent> PartialListPanel(
             Spacer(Modifier.height(8.dp))
         }
 
-        val filteredItems = remember(searchQuery, items) {
-            if (searchQuery.isBlank()) items
-            else items.filter { it.name.contains(searchQuery, ignoreCase = true) }
+        val filteredItems = remember(searchQuery, items, selectedFilter) {
+            val searchFiltered = if (searchQuery.isBlank()) {
+                items
+            } else {
+                items.filter { it.name.contains(searchQuery, ignoreCase = true) }
+            }
+
+            when (selectedFilter) {
+                FilterType.ALL -> searchFiltered
+                FilterType.PMS -> searchFiltered.filter { it.isComingFromHL7 }
+                FilterType.NON_PMS -> searchFiltered.filter { !it.isComingFromHL7 }
+            }
         }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.End,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            FilterButton(
+                text = stringResource(R.string.filter_all),
+                isSelected = selectedFilter == FilterType.ALL
+            ) { selectedFilter = FilterType.ALL }
+
+            Spacer(modifier = Modifier.width(12.dp))
+
+            FilterButton(
+                text = stringResource(R.string.filter_pms),
+                isSelected = selectedFilter == FilterType.PMS
+            ) { selectedFilter = FilterType.PMS }
+
+            Spacer(modifier = Modifier.width(12.dp))
+
+            FilterButton(
+                text = stringResource(R.string.filter_non_nms),
+                isSelected = selectedFilter == FilterType.NON_PMS
+            ) { selectedFilter = FilterType.NON_PMS }
+        }
+
+        Spacer(modifier = Modifier.height(28.dp))
 
         LazyColumn(
             modifier = Modifier.fillMaxSize(),

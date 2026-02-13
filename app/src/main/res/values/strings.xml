@@ -4,6 +4,9 @@
     <string name="rite_title">RITE TECHNOLOGIES</string>
     <string name="version">Version</string>
 
+    <!--    Common   -->
+    <string name="pms">PMS</string>
+
     <!-- ================== AUTH / LOGIN / REGISTER ================== -->
     <string name="email">Email</string>
     <string name="password">Password</string>
@@ -84,6 +87,9 @@
     <!-- ================== PARTIAL COUNTS ================== -->
     <string name="fixed_partial_count_title">Pending Dispense Counts</string>
     <string name="regular_partial_count_title">Pending Quick Counts</string>
+    <string name="filter_all">All</string>
+    <string name="filter_pms">PMS</string>
+    <string name="filter_non_nms">Non PMS</string>
 
     <!-- ================== COMMON BUTTONS ================== -->
     <string name="redo">Redo</string>
@@ -147,6 +153,7 @@
     <string name="menu_logout">Logout</string>
     <string name="menu_completed">%1$d completed</string>
     <string name="menu_partial">%1$d pending</string>
+    <string name="menu_unsync_transaction">Unsynced Transactions</string>
 
     <!-- ================== UI CONTENT DESCRIPTIONS ================== -->
     <string name="back_content_description">Navigate back</string>
@@ -233,7 +240,7 @@
         <item quantity="other">%1$d items selected</item>
     </plurals>
 
-<!--    PillScanning Screen Constants-->
+    <!--    PillScanning Screen Constants-->
     <string name="pill_scanning_add_button">Add</string>
     <string name="pill_scanning_wait_button">Wait..</string>
     <string name="pill_scanning_total_count">Total Count</string>
@@ -241,12 +248,15 @@
     <string name="confirm_delete_message_on_reset_click">Are you sure you want to delete all the transaction for this current transaction.</string>
     <string name="cannot_reset_no_pills_detected">Cannot reset no pills detected transactionDetails.</string>
 
-<!--    ManualDrugEntry -->
+    <!--    ManualDrugEntry -->
     <string name="ndc_number">NDC Number</string>
     <string name="drug_name">Drug Name</string>
     <string name="all_fields_are_required">All fields are required</string>
     <string name="manual_drug_info_cancel">CANCEL</string>
     <string name="manual_drug_info_ok">OK</string>
 
+    <!-- Unsynced Transaction-->
+    <string name="unsynced_transaction">UNSYNCED TRANSACTION</string>
+    <string name="sync_all">SYNC ALL</string>
 
 </resources>

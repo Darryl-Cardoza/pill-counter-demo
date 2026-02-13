@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -41,6 +42,7 @@ class MenuViewModel @Inject constructor(
 
     init {
         observeDashboardCounts()
+        observeUnsyncedTransactionCount()
     }
 
     /**
@@ -54,25 +56,42 @@ class MenuViewModel @Inject constructor(
     private fun observeDashboardCounts() {
         viewModelScope.launch {
             pillCountTxnDao.observeDashboardCountsGrouped()
-                .map { rows ->
-                    val counts = mapCounts(rows)
-                    MenuUiState(
-                        fixedCompleted = counts.fixedCompleted,
-                        fixedPartial = counts.fixedPartial,
-                        regularCompleted = counts.regularCompleted,
-                        regularPartial = counts.regularPartial
-                    )
-                }
+                .map { rows -> mapCounts(rows) }
                 .catch { e ->
                     e.printStackTrace()
-                    emit(MenuUiState()) // fallback to default
                 }
-                .collect { state -> _uiState.value = state }
+                .collect { counts ->
+                    _uiState.update { current ->
+                        current.copy(
+                            fixedCompleted = counts.fixedCompleted,
+                            fixedPartial = counts.fixedPartial,
+                            regularCompleted = counts.regularCompleted,
+                            regularPartial = counts.regularPartial
+                        )
+                    }
+                }
         }
     }
 
     fun getSavedHistoryOption(): Int {
         return preferenceHelper.getHistoryRetention()
     }
+
+    private fun observeUnsyncedTransactionCount() {
+        viewModelScope.launch {
+            pillCountTxnDao.getTotalCompletedTransactionCount()
+                .catch { e ->
+                    e.printStackTrace()
+                }
+                .collect { count ->
+                    _uiState.update { current ->
+                        current.copy(
+                            unsyncedTransactionCount = count
+                        )
+                    }
+                }
+        }
+    }
+
 }
 
