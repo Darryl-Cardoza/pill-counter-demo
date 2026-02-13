@@ -17,7 +17,6 @@ import java.util.Locale
 
 class HistoryPdfExporter(private val context: Context) {
 
-
     // A4 Dimensions (Points)
     private val pageWidth = 595
     private val pageHeight = 842
@@ -50,7 +49,7 @@ class HistoryPdfExporter(private val context: Context) {
 
     private val tableHeaderTextPaint = Paint().apply {
         color = Color.WHITE
-        textSize = 10f // Slightly smaller to fit 5 columns
+        textSize = 10f
         typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
         textAlign = Paint.Align.CENTER
     }
@@ -68,27 +67,51 @@ class HistoryPdfExporter(private val context: Context) {
         strokeWidth = 1f
     }
 
-    private val footerPaint = Paint().apply {
-        color = Color.GRAY
-        textSize = 10f
+    // UPDATED: Now styled as normal body text (Black, larger size)
+    private val timestampPaint = Paint().apply {
+        color = Color.BLACK
+        textSize = 12f // Matched closer to body
         typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
         textAlign = Paint.Align.CENTER
     }
 
     fun generateHistoryPdf(counts: List<TxnWithDrugDto>, selectedDate: String): File? {
-        val fileName = "DrugHistory_${selectedDate}.pdf"
-        val file = File(context.getExternalFilesDir(null), fileName)
+        // 1. Setup Path
+        val folderName = "PillReports/DailyHistoryReports"
+        val directory = File(context.getExternalFilesDir(null), folderName)
 
+        if (!directory.exists()) {
+            if (!directory.mkdirs()) return null
+        }
+
+        // 2. Define strict filename
+        val fileName = "DrugHistory_$selectedDate.pdf"
+        val file = File(directory, fileName)
+
+        // 3. STRICT CLEANUP
+        if (file.exists()) {
+            val deleted = file.delete()
+            if (!deleted) {
+                // If delete fails, it usually means the file is OPEN in another app.
+                // We will try to overwrite it anyway using the stream below,
+                // but sometimes the OS locks it.
+                android.util.Log.e(
+                    "PDFExporter",
+                    "Could not delete existing file. It might be open."
+                )
+            }
+        }
+
+        // 4. Create New PDF Document
         val pdfDocument = PdfDocument()
 
         try {
-            // Define Column Widths (Must sum up to contentWidth approx 515)
-            // 1. Name (30%), 2. NDC (20%), 3. Count (15%), 4. Status (15%), 5. Type (20%)
-            val col1 = contentWidth * 0.30f // Drug Name
-            val col2 = contentWidth * 0.22f // NDC
-            val col3 = contentWidth * 0.13f // Count
-            val col4 = contentWidth * 0.15f // Status
-            val col5 = contentWidth * 0.20f // Type
+            // Column Widths
+            val col1 = contentWidth * 0.30f
+            val col2 = contentWidth * 0.22f
+            val col3 = contentWidth * 0.13f
+            val col4 = contentWidth * 0.15f
+            val col5 = contentWidth * 0.20f
 
             val colWidths = floatArrayOf(col1, col2, col3, col4, col5)
             val headers = arrayOf(
@@ -99,7 +122,7 @@ class HistoryPdfExporter(private val context: Context) {
                 context.getString(R.string.count_type_two_lines)
             )
 
-            // --- Page 1 Setup ---
+            // Page 1 Setup
             var pageNumber = 1
             var pageInfo = PdfDocument.PageInfo.Builder(pageWidth, pageHeight, pageNumber).create()
             var page = pdfDocument.startPage(pageInfo)
@@ -118,7 +141,6 @@ class HistoryPdfExporter(private val context: Context) {
             )
             yPosition += 30
 
-            // Handle Empty State
             if (counts.isEmpty()) {
                 yPosition += 50
                 canvas.drawText(
@@ -128,30 +150,23 @@ class HistoryPdfExporter(private val context: Context) {
                     subTitlePaint
                 )
             } else {
-                // Draw Initial Table Header
                 drawTableHeader(canvas, margin.toFloat(), yPosition, colWidths, headers)
                 yPosition += headerHeight
 
-                // Iterate Data
                 for (item in counts) {
-                    // Check if we reached the bottom of the page
-                    if (yPosition + rowHeight > pageHeight - margin - 30) { // 30 padding for footer
+                    // Check for Page Break
+                    if (yPosition + rowHeight > pageHeight - margin - 30) {
                         pdfDocument.finishPage(page)
-
-                        // Start New Page
                         pageNumber++
                         pageInfo =
                             PdfDocument.PageInfo.Builder(pageWidth, pageHeight, pageNumber).create()
                         page = pdfDocument.startPage(pageInfo)
                         canvas = page.canvas
-                        yPosition = margin.toFloat() + 30 // Reset Y
-
-                        // Draw Header again on new page
+                        yPosition = margin.toFloat() + 30
                         drawTableHeader(canvas, margin.toFloat(), yPosition, colWidths, headers)
                         yPosition += headerHeight
                     }
 
-                    // Prepare Row Data
                     val rowData = arrayOf(
                         item.drugName ?: "",
                         item.ndc ?: "N/A",
@@ -165,15 +180,28 @@ class HistoryPdfExporter(private val context: Context) {
                 }
             }
 
-            // Draw Footer (on the last page)
+            // UPDATED: Draw Timestamp flowing after the table (not pinned to bottom)
+            yPosition += 30
+
+            // Check if we have space for the timestamp, if not, new page
+            if (yPosition + 20 > pageHeight - margin) {
+                pdfDocument.finishPage(page)
+                pageNumber++
+                pageInfo = PdfDocument.PageInfo.Builder(pageWidth, pageHeight, pageNumber).create()
+                page = pdfDocument.startPage(pageInfo)
+                canvas = page.canvas
+                yPosition = margin.toFloat() + 30
+            }
+
             val footerText = "Generated on: ${
                 SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).format(Date())
             }"
+
             canvas.drawText(
                 footerText,
                 (pageWidth / 2).toFloat(),
-                pageHeight - margin.toFloat(),
-                footerPaint
+                yPosition,
+                timestampPaint
             )
 
             pdfDocument.finishPage(page)
@@ -187,7 +215,6 @@ class HistoryPdfExporter(private val context: Context) {
 
         } catch (e: Exception) {
             e.printStackTrace()
-            // Try to close page if open to prevent crash
             try {
                 pdfDocument.close()
             } catch (ex: Exception) { /* ignore */
@@ -198,9 +225,6 @@ class HistoryPdfExporter(private val context: Context) {
         }
     }
 
-    /**
-     * Draws the Gray Header Row with White Text
-     */
     private fun drawTableHeader(
         canvas: Canvas,
         startX: Float,
@@ -209,35 +233,23 @@ class HistoryPdfExporter(private val context: Context) {
         headers: Array<String>
     ) {
         var currentX = startX
-
-        // Draw background bar
         val totalWidth = colWidths.sum()
         canvas.drawRect(startX, y, startX + totalWidth, y + headerHeight, tableHeaderBgPaint)
 
-        // Draw cells
         for (i in headers.indices) {
             val width = colWidths[i]
-
-            // Draw Border
             canvas.drawRect(currentX, y, currentX + width, y + headerHeight, borderPaint)
 
-            // Draw Text (Centered)
             val textX = currentX + (width / 2)
             val textY =
                 y + (headerHeight / 2) - ((tableHeaderTextPaint.descent() + tableHeaderTextPaint.ascent()) / 2)
 
-            // Handle newlines in headers (e.g. "Drug Name\n(Details)") simply by replacing with space or truncating
-            // For simplicity in native canvas, we stick to single line or ellipsize
             val safeHeader = headers[i].replace("\n", " ")
             canvas.drawText(safeHeader, textX, textY, tableHeaderTextPaint)
-
             currentX += width
         }
     }
 
-    /**
-     * Draws a single data row
-     */
     private fun drawTableRow(
         canvas: Canvas,
         startX: Float,
@@ -248,25 +260,20 @@ class HistoryPdfExporter(private val context: Context) {
         var currentX = startX
         for (i in data.indices) {
             val width = colWidths[i]
-
-            // Draw Border
             canvas.drawRect(currentX, y, currentX + width, y + rowHeight, borderPaint)
 
-            // Draw Text (Centered)
             val textX = currentX + (width / 2)
             val textY =
                 y + (rowHeight / 2) - ((cellTextPaint.descent() + cellTextPaint.ascent()) / 2)
 
-            // Truncate text if too long to fit in column
             val truncatedText = TextUtils.ellipsize(
                 data[i],
                 android.text.TextPaint(cellTextPaint),
-                width - 10f, // 10f padding
+                width - 10f,
                 TextUtils.TruncateAt.END
             ).toString()
 
             canvas.drawText(truncatedText, textX, textY, cellTextPaint)
-
             currentX += width
         }
     }

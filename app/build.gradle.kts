@@ -74,7 +74,8 @@ android {
                 "META-INF/io.netty.versions.properties",
                 "META-INF/*.SF",
                 "META-INF/*.DSA",
-                "META-INF/*.RSA"
+                "META-INF/*.RSA",
+                "META-INF/versions/9/OSGI-INF/MANIFEST.MF"
             )
         }
     }
@@ -200,4 +201,8 @@ dependencies {
     implementation("io.netty:netty-tcnative-boringssl-static:2.0.61.Final")
 
     implementation("org.json:json:20230227")
+
+    // Bouncy Castle for TLS Keystore generation
+    implementation("org.bouncycastle:bcprov-jdk18on:1.83")
+    implementation("org.bouncycastle:bcpkix-jdk18on:1.83")
 }
