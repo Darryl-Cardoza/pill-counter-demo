@@ -67,17 +67,6 @@ fun HistoryModeLandscape(
         )
         Spacer(modifier = Modifier.weight(0.8f))
 //        Spacer(modifier = Modifier.height(responsiveDp(50.dp)))
-        Text(
-            text = drugName,
-            color = AppTheme.extendedColors.textColor,
-            fontSize = 18.sp,
-            fontWeight = FontWeight.Medium,
-            modifier = Modifier.fillMaxWidth(),
-            textAlign = TextAlign.Center,
-            maxLines = 1
-        )
-        Spacer(modifier = Modifier.weight(0.8f))
-//        Spacer(modifier = Modifier.height(responsiveDp(50.dp)))
         LazyRow(
             state = listState,
             horizontalArrangement = Arrangement.spacedBy(10.dp),
