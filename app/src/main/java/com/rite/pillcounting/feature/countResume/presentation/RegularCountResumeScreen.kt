@@ -17,6 +17,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.rite.pillcounting.R
 import com.rite.pillcounting.core.room.models.enums.CountType
+import com.rite.pillcounting.feature.countResume.domain.data.FixedCountsEvent
 import com.rite.pillcounting.feature.countResume.domain.data.NavigationEvent
 import com.rite.pillcounting.feature.countResume.domain.data.RegularCountsEvent
 import com.rite.pillcounting.feature.countResume.domain.data.ResumeEventFactory
@@ -58,6 +59,11 @@ fun RegularCountResumeScreen(
         override fun resumeTransaction(item: CountItem) = RegularCountsEvent.resumeTransaction(item)
     }
 
+    val isAllSelected =
+        uiState.regularCounts.isNotEmpty() &&
+                uiState.selectedItems.size == uiState.regularCounts.size
+
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -68,12 +74,17 @@ fun RegularCountResumeScreen(
             title = stringResource(R.string.regular_partial_count_title),
             searchQuery = searchQuery,
             showSearch = showSearch,
+            isMultiSelectMode = uiState.isMultiSelectMode,
             onSearchClick = {
                 showSearch = !showSearch
                 if (!showSearch) searchQuery = "" // reset when closing
             },
             onSearchChange = { searchQuery = it },
-            onDeleteClick = { viewModel.onRegularEvent(RegularCountsEvent.ToggleMultiSelectMode) }
+            onDeleteClick = { viewModel.onRegularEvent(RegularCountsEvent.ToggleMultiSelectMode) },
+            isAllSelected = isAllSelected,
+            onCancelClick = {viewModel.onRegularEvent(RegularCountsEvent.ToggleMultiSelectMode)},
+            onConfirmDelete = {viewModel.onRegularEvent(RegularCountsEvent.DeleteClicked)},
+            onSelectAll = {viewModel.onRegularEvent(RegularCountsEvent.SelectAllClicked)}
         )
 
         PartialListPanel(

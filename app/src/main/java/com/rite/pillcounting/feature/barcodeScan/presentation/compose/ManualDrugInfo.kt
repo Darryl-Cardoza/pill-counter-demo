@@ -34,6 +34,7 @@ import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.ActionButtonPr
 import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.AppTextField
 import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.HollowButton
 import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.responsiveDp
+import com.rite.pillcounting.feature.barcodeScan.presentation.viewmodel.ScanBarcodeViewModel
 import com.rite.pillcounting.ui.theme.AppTheme
 
 /**
@@ -46,12 +47,12 @@ import com.rite.pillcounting.ui.theme.AppTheme
  */
 @Composable
 fun ManualDrugInfo(
+    viewModel: ScanBarcodeViewModel,
     onConfirm: (drugName: String, ndc: String) -> Unit,
     onDismiss: () -> Unit
 ) {
     // Local form state (kept inside this composable)
-    var drugName by remember { mutableStateOf("") }
-    var ndc by remember { mutableStateOf("") }
+
     var errorMessage by remember { mutableStateOf<Int?>(0) }
 
     // Detect orientation
@@ -64,10 +65,10 @@ fun ManualDrugInfo(
      * - Calls onConfirm with trimmed values
      */
     fun handleOk() {
-        if (drugName.isBlank() || ndc.isBlank()) {
+        if (viewModel.drugName.isBlank() || viewModel.ndc.isBlank()) {
             errorMessage = R.string.all_fields_are_required
         } else {
-            onConfirm(drugName.trim(), ndc.trim())
+            onConfirm( viewModel.drugName.trim(),  viewModel.ndc.trim())
         }
     }
 
@@ -126,8 +127,8 @@ fun ManualDrugInfo(
                 )
                 Spacer(Modifier.height(10.dp))
                 AppTextField(
-                    value = ndc,
-                    onValueChange = { ndc = it; errorMessage = 0 }, // clear error on typing
+                    value =  viewModel.ndc,
+                    onValueChange = {  viewModel.ndc = it; errorMessage = 0 }, // clear error on typing
                     keyboardType = KeyboardType.Number,
                     imeAction = ImeAction.Next,
                     modifier = Modifier
@@ -146,8 +147,8 @@ fun ManualDrugInfo(
                 )
                 Spacer(Modifier.height(10.dp))
                 AppTextField(
-                    value = drugName,
-                    onValueChange = { drugName = it; errorMessage = 0 },
+                    value =  viewModel.drugName,
+                    onValueChange = {  viewModel.drugName = it; errorMessage = 0 },
                     keyboardType = KeyboardType.Text,
                     imeAction = ImeAction.Done,
                     modifier = Modifier
@@ -213,8 +214,8 @@ fun ManualDrugInfo(
                     )
 
                     AppTextField(
-                        value = ndc,
-                        onValueChange = { ndc = it; errorMessage = 0 },
+                        value =  viewModel.ndc,
+                        onValueChange = {  viewModel.ndc = it; errorMessage = 0 },
                         keyboardType = KeyboardType.Number,
                         imeAction = ImeAction.Next,
                         modifier = Modifier
@@ -239,8 +240,8 @@ fun ManualDrugInfo(
                     )
 
                     AppTextField(
-                        value = drugName,
-                        onValueChange = { drugName = it; errorMessage = 0 },
+                        value =  viewModel.drugName,
+                        onValueChange = {  viewModel.drugName = it; errorMessage = 0 },
                         keyboardType = KeyboardType.Text,
                         imeAction = ImeAction.Done,
                         modifier = Modifier

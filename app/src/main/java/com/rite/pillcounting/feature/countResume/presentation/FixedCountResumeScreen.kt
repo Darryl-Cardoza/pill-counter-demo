@@ -58,23 +58,33 @@ fun FixedCountResumeScreen(
         override fun resumeTransaction(item: CountItem) = FixedCountsEvent.resumeTransaction(item)
     }
 
+    val isAllSelected =
+        uiState.fixedCounts.isNotEmpty() &&
+                uiState.selectedItems.size == uiState.fixedCounts.size
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(AppTheme.extendedColors.primaryBackground)
     ) {
-        HeadlineBar(
-            navController = navController,
-            title = stringResource(R.string.fixed_partial_count_title),
-            searchQuery = searchQuery,
-            showSearch = showSearch,
-            onSearchClick = {
-                showSearch = !showSearch
-                if (!showSearch) searchQuery = "" // reset when closing
-            },
-            onSearchChange = { searchQuery = it },
-            onDeleteClick = { viewModel.onFixedEvent(FixedCountsEvent.ToggleMultiSelectMode) }
-        )
+
+            HeadlineBar(
+                navController = navController,
+                title = stringResource(R.string.fixed_partial_count_title),
+                searchQuery = searchQuery,
+                showSearch = showSearch,
+                isMultiSelectMode = uiState.isMultiSelectMode,
+                onSearchClick = {
+                    showSearch = !showSearch
+                    if (!showSearch) searchQuery = "" // reset when closing
+                },
+                onSearchChange = { searchQuery = it },
+                onDeleteClick = { viewModel.onFixedEvent(FixedCountsEvent.ToggleMultiSelectMode) },
+                isAllSelected = isAllSelected,
+                onCancelClick = {viewModel.onFixedEvent(FixedCountsEvent.ToggleMultiSelectMode)},
+                onConfirmDelete = {viewModel.onFixedEvent(FixedCountsEvent.DeleteClicked)},
+                onSelectAll = {viewModel.onFixedEvent(FixedCountsEvent.SelectAllClicked)}
+            )
 
         PartialListPanel(
             items = uiState.fixedCounts,

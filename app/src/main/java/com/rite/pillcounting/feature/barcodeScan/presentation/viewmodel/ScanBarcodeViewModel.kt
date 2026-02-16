@@ -1,5 +1,9 @@
 package com.rite.pillcounting.feature.barcodeScan.presentation.viewmodel
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -69,6 +73,10 @@ class ScanBarcodeViewModel @Inject constructor(
     /** Public Flow that UI can collect to observe navigation actions. */
     val navigationEvent = _navigationEvent.receiveAsFlow()
 
+    /** Manual entry of drugname and ndc **/
+    var drugName by mutableStateOf("")
+    var ndc by mutableStateOf("")
+
     init {
         val scanType = savedStateHandle.get<String>(ARG_TYPE) ?: ""
         _uiState.update { it.copy(scanType = scanType) }
@@ -137,7 +145,7 @@ class ScanBarcodeViewModel @Inject constructor(
         viewModelScope.launch {
             /* ---------- HL7 NDC VALIDATION ---------- */
 
-            var result: Boolean = false
+            var result = false
 
             val expectedHl7Ndc = uiState.value.hl7ExpectedNdc
             if (expectedHl7Ndc != null && expectedHl7Ndc != gtin14) {
@@ -261,7 +269,8 @@ class ScanBarcodeViewModel @Inject constructor(
                         countType = CountType.valueOf(uiState.value.scanType),
                         status = CountStatus.PARTIAL,
                         expiry = uiState.value.expiry,
-                        barcodeImage = uiState.value.barcodeImagePath
+                        barcodeImage = uiState.value.barcodeImagePath,
+                        isNdcVerified = true
                     )
                 )
                 logger.i("HL7 txn updated with scan data txnId=$txnId")
@@ -280,7 +289,8 @@ class ScanBarcodeViewModel @Inject constructor(
                     status = CountStatus.PARTIAL,
                     expiry = uiState.value.expiry,
                     lotNo = uiState.value.lotNo,
-                    barcodeImage = uiState.value.barcodeImagePath
+                    barcodeImage = uiState.value.barcodeImagePath,
+                    isNdcVerified = true
                 )
 
                 val newTxnId = pillCountTxnDao.upsertPreservingId(txn)

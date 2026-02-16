@@ -32,6 +32,7 @@ import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.responsiveDp
 import com.rite.pillcounting.core.utils.compose.bounceClick
 import com.rite.pillcounting.core.utils.constants.Dimens.extraLarge
 import com.rite.pillcounting.core.utils.constants.Dimens.small
+import com.rite.pillcounting.feature.history.domain.model.HistoryType
 import com.rite.pillcounting.ui.theme.AppTheme
 
 /**
@@ -113,7 +114,7 @@ fun FixedCountSection(
                     indication = null,
                     interactionSource = remember { MutableInteractionSource() }
                 ) {
-                    navController.navigate(Screen.History.route)
+                    navController.navigate(Screen.History.createRoute(HistoryType.DISPENSE))
                 }
             ) {
                 StatusChip(

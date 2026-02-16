@@ -3,6 +3,7 @@
 import androidx.navigation.NamedNavArgument
 import androidx.navigation.NavType
 import androidx.navigation.navArgument
+import com.rite.pillcounting.feature.history.domain.model.HistoryType
 
 /**
  * A sealed interfaceDetail to represent all navigable screens in the app.
@@ -37,9 +38,9 @@ sealed interface Screen {
         override val route: String = "settings"
     }
 
-    data object History : Screen {
-        override val route: String = "history"
-    }
+//    data object History : Screen {
+//        override val route: String = "history"
+//    }
 
     data object HistoryDetail : Screen {
         override val route: String = "history_detail"
@@ -51,6 +52,25 @@ sealed interface Screen {
 
     data object UnsyncedTransactionScreen : Screen {
         override val route: String = "unsynced_transaction_screen"
+    }
+
+    //For dispense and regular completed transaction
+    data object History : Screen {
+
+        private const val ROUTE_PREFIX = "history"
+        const val ARG_TYPE = "type"
+
+        // old route (normal history)
+        override val route: String = ROUTE_PREFIX
+
+        // new route (typed history)
+        val routeWithType = "$ROUTE_PREFIX/{$ARG_TYPE}"
+
+        val navArguments: List<NamedNavArgument> = listOf(
+            navArgument(ARG_TYPE) { type = NavType.StringType }
+        )
+
+        fun createRoute(type: HistoryType) = "$ROUTE_PREFIX/${type.name}"
     }
 
 
@@ -134,4 +154,6 @@ sealed interface Screen {
 
 
 }
+
+
 

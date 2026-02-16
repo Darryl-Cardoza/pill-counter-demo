@@ -46,36 +46,20 @@ fun <E : ResumeEvent> PartialListPanel(
     countType: String
 ) {
     var showDeleteDialog by remember { mutableStateOf(false) }
+    var showMultipleDeleteDialog by remember { mutableStateOf(false) }
+    var showForceCompletedDialog by remember { mutableStateOf(false) }
     var showMoreDialog by remember { mutableStateOf(false) }
-    var deleteMode by remember { mutableStateOf(DeleteMode.None) }
     var pendingItem by remember { mutableStateOf<CountItem?>(null) }
     var selectedFilter by remember { mutableStateOf(FilterType.ALL) }
+    var deleteMode by remember { mutableStateOf(DeleteMode.None) }
+
+
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(start = small, end = small, bottom = extraSmall)
     ) {
-        if (isMultiSelectMode) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = stringResource(R.string.selected_items_count, selectedItems.size),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = AppTheme.extendedColors.textColor
-                )
-                Text(
-                    text = stringResource(R.string.tap_to_delete),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.secondary
-                )
-            }
-            Spacer(Modifier.height(8.dp))
-        }
-
         val filteredItems = remember(searchQuery, items, selectedFilter) {
             val searchFiltered = if (searchQuery.isBlank()) {
                 items
@@ -90,7 +74,7 @@ fun <E : ResumeEvent> PartialListPanel(
             }
         }
 
-        Spacer(modifier = Modifier.height(8.dp))
+
 
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -117,7 +101,30 @@ fun <E : ResumeEvent> PartialListPanel(
             ) { selectedFilter = FilterType.NON_PMS }
         }
 
-        Spacer(modifier = Modifier.height(28.dp))
+        Spacer(modifier = Modifier.height(25.dp))
+
+
+        if (isMultiSelectMode) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = stringResource(R.string.selected_items_count, selectedItems.size),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = AppTheme.extendedColors.textColor
+                )
+                Text(
+                    text = stringResource(R.string.tap_to_delete),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.secondary
+                )
+            }
+            Spacer(Modifier.height(8.dp))
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
 
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
@@ -139,33 +146,72 @@ fun <E : ResumeEvent> PartialListPanel(
             }
         }
     }
+//
+//    if (showDeleteDialog || showForceCompletedDialog) {
+//        val message = when (deleteMode) {
+//            DeleteMode.Single -> stringResource(R.string.delete_item_text)
+//            DeleteMode.Multi -> stringResource(R.string.delete_selected_items_text)
+//            DeleteMode.ForceComplete -> stringResource(R.string.confirm_force_completed_txn)
+//            else -> ""
+//        }
+//        CommonDialog(
+//            message = message,
+//            confirmText = stringResource(R.string.yes),
+//            cancelText = stringResource(R.string.no),
+//            onConfirm = {
+//                when (deleteMode) {
+//                    DeleteMode.Single -> pendingItem?.let {
+//                        onEvent(eventFactory.itemSwipedToDelete(it))
+//                    }
+//
+//                    DeleteMode.Multi -> onEvent(eventFactory.deleteClicked())
+//
+//                    DeleteMode.ForceComplete ->  pendingItem?.let {
+//                        onEvent(eventFactory.forceCompleteTransaction(it))
+//                    }
+//
+//
+//                    else -> {}
+//                }
+//                showDeleteDialog = false
+//                pendingItem = null
+//                deleteMode = DeleteMode.None
+//            },
+//            onCancel = {
+//                showDeleteDialog = false
+//                pendingItem = null
+//                deleteMode = DeleteMode.None
+//            }
+//        )
+//    }
 
-    if (showDeleteDialog) {
-        val message = when (deleteMode) {
-            DeleteMode.Single -> stringResource(R.string.delete_item_text)
-            DeleteMode.Multi -> stringResource(R.string.delete_selected_items_text)
-            else -> ""
-        }
+    if (showDeleteDialog || showForceCompletedDialog) {
+        val message = if (showDeleteDialog) stringResource(R.string.delete_item_text)
+        else stringResource(R.string.confirm_force_completed_txn)
+
         CommonDialog(
             message = message,
             confirmText = stringResource(R.string.yes),
             cancelText = stringResource(R.string.no),
             onConfirm = {
-                when (deleteMode) {
-                    DeleteMode.Single -> pendingItem?.let {
+                if (showDeleteDialog) {
+                    pendingItem?.let {
                         onEvent(eventFactory.itemSwipedToDelete(it))
+                        println("delete transaction")
                     }
-                    DeleteMode.Multi -> onEvent(eventFactory.deleteClicked())
-                    else -> {}
+                } else {
+                    pendingItem?.let {
+                        onEvent(eventFactory.forceCompleteTransaction(it))
+                        println("force complete transaction")
+                    }
+
                 }
                 showDeleteDialog = false
-                pendingItem = null
-                deleteMode = DeleteMode.None
+                showForceCompletedDialog = false
             },
             onCancel = {
                 showDeleteDialog = false
-                pendingItem = null
-                deleteMode = DeleteMode.None
+                showForceCompletedDialog = false
             }
         )
     }
@@ -184,16 +230,23 @@ fun <E : ResumeEvent> PartialListPanel(
             onOk = { index ->
                 pendingItem?.let { item ->
                     when (index) {
-                        0 -> onEvent(eventFactory.resumeTransaction(item))
-                        1 -> onEvent(eventFactory.forceCompleteTransaction(item))
-                        2 -> onEvent(eventFactory.itemSwipedToDelete(item))
+                        0 -> {
+                            onEvent(eventFactory.resumeTransaction(item))
+                            pendingItem = null
+                        }
+                        1 -> {
+                            showForceCompletedDialog = true
+
+                        }
+                        2 -> {
+                            showDeleteDialog = true
+                        }
                     }
                 }
                 showMoreDialog = false
-                pendingItem = null
             }
         )
     }
 }
 
-private enum class DeleteMode { None, Single, Multi }
+private enum class DeleteMode { None, Single, Multi, ForceComplete }

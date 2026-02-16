@@ -1,6 +1,8 @@
 package com.rite.pillcounting.feature.history.data
 
 import com.rite.pillcounting.core.room.dao.PillCountTxnDao
+import com.rite.pillcounting.core.room.models.enums.CountStatus
+import com.rite.pillcounting.core.room.models.enums.CountType
 import com.rite.pillcounting.feature.history.domain.model.TxnWithDrugDto
 
 
@@ -19,20 +21,68 @@ class HistoryRepository @Inject constructor(
         Locale.getDefault()
     )
 
-    fun getTransactionsForDate(date: LocalDate): Flow<List<TxnWithDrugDto>> {
-        val startOfDay = date.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
-        val endOfDay = date.plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
-
-        return dao.getTransactionsWithDrugByDate(startOfDay, endOfDay)
+    private fun LocalDate.toEpochRange(): Pair<Long, Long> {
+        val zone = ZoneId.systemDefault()
+        val start = atStartOfDay(zone).toInstant().toEpochMilli()
+        val end = plusDays(1).atStartOfDay(zone).toInstant().toEpochMilli()
+        return start to end
     }
 
+    fun getTransactionsForDate(date: LocalDate): Flow<List<TxnWithDrugDto>> {
+        val (start, end) = date.toEpochRange()
+        return dao.getHistoryTransactions(start, end, null, null)
+    }
+
+    fun getDispenseTransactionsWithDrugByDate(date: LocalDate): Flow<List<TxnWithDrugDto>> {
+        val (start, end) = date.toEpochRange()
+        return dao.getHistoryTransactions(
+            start,
+            end,
+            CountType.FIXED,
+            CountStatus.COMPLETED
+        )
+    }
+
+    fun getRegularTransactionsWithDrugByDate(date: LocalDate): Flow<List<TxnWithDrugDto>> {
+        val (start, end) = date.toEpochRange()
+        return dao.getHistoryTransactions(
+            start,
+            end,
+            CountType.REGULAR,
+            CountStatus.COMPLETED
+        )
+    }
 
 
     suspend fun deleteTransactionsForDate(date: LocalDate) {
-        val startOfDay = date.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
-        val endOfDay = date.plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+        val (start, end) = date.toEpochRange()
 
-        dao.deleteTransactionsByDate(startOfDay, endOfDay)
+        // NORMAL history → delete everything in that date
+        dao.deleteTransactionsByDate(start, end, null, null)
     }
+
+    suspend fun deleteRegularTransactionsForDate(date: LocalDate) {
+        val (start, end) = date.toEpochRange()
+
+        // Only REGULAR completed transactions
+        dao.deleteTransactionsByDate(
+            start,
+            end,
+            CountType.REGULAR,
+            CountStatus.COMPLETED
+        )
+    }
+
+    suspend fun deleteDispenseTransactionsForDate(date: LocalDate) {
+        val (start, end) = date.toEpochRange()
+
+        dao.deleteTransactionsByDate(
+            start,
+            end,
+            CountType.FIXED,
+            CountStatus.COMPLETED
+        )
+    }
+
 }
 

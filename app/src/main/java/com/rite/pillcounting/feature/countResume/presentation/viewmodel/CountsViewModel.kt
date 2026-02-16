@@ -64,6 +64,9 @@ class CountsViewModel @Inject constructor(
     /** Formatter for displaying human-readable dates from epoch millis. */
 
 
+    private fun isAllSelected(items: List<CountItem>, selected: List<CountItem>) =
+        items.isNotEmpty() && items.size == selected.size
+
     init {
         observeFixedCounts()
         observeRegularCounts()
@@ -81,6 +84,7 @@ class CountsViewModel @Inject constructor(
             FixedCountsEvent.DeleteClicked -> handleFixedDeleteClick()
             FixedCountsEvent.ToggleMultiSelectMode -> toggleFixedMultiSelectMode()
             FixedCountsEvent.CloseMultiSelectMode -> closeFixedMultiSelectMode()
+            FixedCountsEvent.SelectAllClicked -> toggleSelectAllFixedTxn()
             is FixedCountsEvent.resumeTransaction -> resumeTransaction(CountType.FIXED, event.item)
             is FixedCountsEvent.ForceCompleteTransaction -> forceCompleteTransaction(event.item)
         }
@@ -102,8 +106,35 @@ class CountsViewModel @Inject constructor(
             )
 
             is RegularCountsEvent.ForceCompleteTransaction -> forceCompleteTransaction(event.item)
+            RegularCountsEvent.SelectAllClicked -> toggleSelectAllRegularTxn()
         }
     }
+
+
+    private fun toggleSelectAllRegularTxn() {
+        _regularUiState.update { state ->
+            val allItems = state.regularCounts
+            val allSelected = allItems.size == state.selectedItems.size && allItems.isNotEmpty()
+
+            state.copy(
+                selectedItems = if (allSelected) emptyList() else allItems
+            )
+        }
+    }
+
+
+
+    private fun toggleSelectAllFixedTxn() {
+        _fixedUiState.update { state ->
+            val allItems = state.fixedCounts
+            val allSelected = allItems.size == state.selectedItems.size && allItems.isNotEmpty()
+
+            state.copy(
+                selectedItems = if (allSelected) emptyList() else allItems
+            )
+        }
+    }
+
 
     private fun forceCompleteTransaction(item: CountItem) {
         viewModelScope.launch {
@@ -114,13 +145,13 @@ class CountsViewModel @Inject constructor(
             if (total == 0) {
                 return@launch
             }
-            if (txn.isComingFromHL7 == true){
+            if (txn.isComingFromHL7 == true) {
                 pillCountTxnDao.markCompletedAndUnsynced(
                     txnId = txn.txnId,
                     status = txn.status
                 )
-            }else{
-                pillCountTxnDao.updateTxnStatus( txn.txnId, txn.status)
+            } else {
+                pillCountTxnDao.updateTxnStatus(txn.txnId, txn.status)
             }
         }
     }
@@ -129,7 +160,7 @@ class CountsViewModel @Inject constructor(
     private fun resumeTransaction(countType: CountType, item: CountItem) {
         viewModelScope.launch {
             preferenceHelper.saveTxnId(item.id)
-            if (item.barcodeImage == null) {
+            if (item.isComingFromHL7 && item.isNdcVerified) {
                 _navigationEvent.send(
                     NavigationEvent.NavigateToScanBarcode(
                         countType = countType
@@ -161,7 +192,8 @@ class CountsViewModel @Inject constructor(
                             target = it.targetCount ?: 0,
                             barcodeImage = it.barcodeImage,
                             date = it.createdAt.toFormattedDate(),
-                            isComingFromHL7 = it.isComingFromHL7
+                            isComingFromHL7 = it.isComingFromHL7,
+                            isNdcVerified = it.isNdcVerified
                         )
                     }
                 }
@@ -178,7 +210,9 @@ class CountsViewModel @Inject constructor(
     private fun toggleFixedSelection(item: CountItem) {
         val selected = _fixedUiState.value.selectedItems.toMutableList()
         if (selected.contains(item)) selected.remove(item) else selected.add(item)
-        _fixedUiState.update { it.copy(selectedItems = selected) }
+        _fixedUiState.update {
+            it.copy(selectedItems = selected)
+        }
     }
 
     /**
@@ -240,7 +274,8 @@ class CountsViewModel @Inject constructor(
                             target = it.targetCount ?: 0,
                             barcodeImage = it.barcodeImage,
                             date = it.createdAt.toFormattedDate(),
-                            isComingFromHL7 = it.isComingFromHL7
+                            isComingFromHL7 = it.isComingFromHL7,
+                            isNdcVerified = it.isNdcVerified
                         )
                     }
                 }
@@ -255,10 +290,16 @@ class CountsViewModel @Inject constructor(
      * Toggle selection of a [CountItem] in Regular Counts.
      */
     private fun toggleRegularSelection(item: CountItem) {
-        val selected = _regularUiState.value.selectedItems.toMutableList()
-        if (selected.contains(item)) selected.remove(item) else selected.add(item)
-        _regularUiState.update { it.copy(selectedItems = selected) }
+        _regularUiState.update { state ->
+            val selected = state.selectedItems.toMutableList()
+
+            if (selected.contains(item)) selected.remove(item)
+            else selected.add(item)
+
+            state.copy(selectedItems = selected)
+        }
     }
+
 
     /**
      * Handle delete button click for Regular Counts.
