@@ -123,7 +123,7 @@ fun ManualDrugInfo(
                     text = stringResource(R.string.ndc_number),
                     color = AppTheme.extendedColors.textColor,
                     fontSize = 18.sp,
-                    fontWeight = FontWeight.SemiBold
+                    fontWeight = FontWeight.Normal
                 )
                 Spacer(Modifier.height(10.dp))
                 AppTextField(
@@ -143,7 +143,7 @@ fun ManualDrugInfo(
                     text = stringResource(R.string.drug_name),
                     color = AppTheme.extendedColors.textColor,
                     fontSize = 18.sp,
-                    fontWeight = FontWeight.SemiBold
+                    fontWeight = FontWeight.Normal
                 )
                 Spacer(Modifier.height(10.dp))
                 AppTextField(
@@ -209,7 +209,7 @@ fun ManualDrugInfo(
                         text = stringResource(R.string.ndc_number),
                         color = AppTheme.extendedColors.textColor,
                         fontSize = 18.sp,
-                        fontWeight = FontWeight.SemiBold,
+                        fontWeight = FontWeight.Normal,
                         modifier = Modifier.weight(0.42f)
                     )
 
@@ -235,7 +235,7 @@ fun ManualDrugInfo(
                         text = stringResource(R.string.drug_name),
                         color = AppTheme.extendedColors.textColor,
                         fontSize = 18.sp,
-                        fontWeight = FontWeight.SemiBold,
+                        fontWeight = FontWeight.Normal,
                         modifier = Modifier.weight(0.42f)
                     )
 

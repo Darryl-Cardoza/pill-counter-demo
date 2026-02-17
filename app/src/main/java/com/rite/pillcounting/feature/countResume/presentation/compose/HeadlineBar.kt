@@ -54,7 +54,7 @@ fun HeadlineBar(
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         if (showSearch) {
-            // 🔍 Search mode
+            // Search mode
             Row(
                 modifier = Modifier
                     .weight(1f)

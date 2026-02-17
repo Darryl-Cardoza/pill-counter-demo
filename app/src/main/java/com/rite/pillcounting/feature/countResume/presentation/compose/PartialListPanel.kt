@@ -51,9 +51,6 @@ fun <E : ResumeEvent> PartialListPanel(
     var showMoreDialog by remember { mutableStateOf(false) }
     var pendingItem by remember { mutableStateOf<CountItem?>(null) }
     var selectedFilter by remember { mutableStateOf(FilterType.ALL) }
-    var deleteMode by remember { mutableStateOf(DeleteMode.None) }
-
-
 
     Column(
         modifier = Modifier
@@ -146,44 +143,6 @@ fun <E : ResumeEvent> PartialListPanel(
             }
         }
     }
-//
-//    if (showDeleteDialog || showForceCompletedDialog) {
-//        val message = when (deleteMode) {
-//            DeleteMode.Single -> stringResource(R.string.delete_item_text)
-//            DeleteMode.Multi -> stringResource(R.string.delete_selected_items_text)
-//            DeleteMode.ForceComplete -> stringResource(R.string.confirm_force_completed_txn)
-//            else -> ""
-//        }
-//        CommonDialog(
-//            message = message,
-//            confirmText = stringResource(R.string.yes),
-//            cancelText = stringResource(R.string.no),
-//            onConfirm = {
-//                when (deleteMode) {
-//                    DeleteMode.Single -> pendingItem?.let {
-//                        onEvent(eventFactory.itemSwipedToDelete(it))
-//                    }
-//
-//                    DeleteMode.Multi -> onEvent(eventFactory.deleteClicked())
-//
-//                    DeleteMode.ForceComplete ->  pendingItem?.let {
-//                        onEvent(eventFactory.forceCompleteTransaction(it))
-//                    }
-//
-//
-//                    else -> {}
-//                }
-//                showDeleteDialog = false
-//                pendingItem = null
-//                deleteMode = DeleteMode.None
-//            },
-//            onCancel = {
-//                showDeleteDialog = false
-//                pendingItem = null
-//                deleteMode = DeleteMode.None
-//            }
-//        )
-//    }
 
     if (showDeleteDialog || showForceCompletedDialog) {
         val message = if (showDeleteDialog) stringResource(R.string.delete_item_text)
@@ -249,4 +208,4 @@ fun <E : ResumeEvent> PartialListPanel(
     }
 }
 
-private enum class DeleteMode { None, Single, Multi, ForceComplete }
+enum class DeleteMode { None, Single, Multi, ForceComplete }

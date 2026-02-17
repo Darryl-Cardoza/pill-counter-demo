@@ -44,21 +44,23 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.zIndex
 import androidx.core.content.ContextCompat
+import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.responsiveSp
 import com.rite.pillcounting.feature.pillCountScan.domain.model.DetectedPill
 import com.rite.pillcounting.feature.pillCountScan.presentation.logic.CameraHelper
 import com.rite.pillcounting.feature.pillCountScan.presentation.viewmodel.PillScanningViewModel
 import kotlinx.coroutines.flow.conflate
+import androidx.compose.ui.text.TextStyle
 
 // =========================================================
 // ZOOM CONTROL COMPOSABLE
@@ -98,14 +100,22 @@ fun ZoomControls(
                 Text(
                     text = zoomLabel,
                     color = MaterialTheme.colorScheme.secondary,
-                    fontSize = 14.sp,
+                    fontSize = responsiveSp(18.sp),
+                    style = TextStyle(
+                        shadow = Shadow(
+                            color = Color.Black.copy(alpha = 0.8f), // shadow color
+                            offset = Offset(1f, 1f),                 // x and y offset
+                            blurRadius = 4f                          // blur amount
+                        )
+                    ),
                     modifier = Modifier
                         .align(Alignment.CenterStart)
                         .offset(x = trackWidth * fraction)
                 )
+
             }
 
-            // 🔹 SLIDER
+            // SLIDER
             Slider(
                 value = zoom,
                 onValueChange = onChange,
@@ -127,7 +137,7 @@ fun ZoomControls(
                     )
                 },
 
-                // 🧵 CUSTOM TRACK
+                // CUSTOM TRACK
                 track = { sliderState ->
                     val trackFraction =
                         (sliderState.value - sliderState.valueRange.start) /

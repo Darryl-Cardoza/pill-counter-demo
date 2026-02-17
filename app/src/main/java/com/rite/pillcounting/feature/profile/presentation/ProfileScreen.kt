@@ -279,7 +279,8 @@ private fun ProfileTextField(
     imeAction: ImeAction = ImeAction.Next,
     error: String?,
     modifier: Modifier = Modifier,
-    readOnly: Boolean = false
+    readOnly: Boolean = false,
+    maxLength: Int? = null
 ) {
     Column(
         modifier = modifier
@@ -288,7 +289,21 @@ private fun ProfileTextField(
     ) {
         FloatingLabelTextField(
             value = value,
-            onValueChange = { if (!readOnly) onValueChange(it) }, // disable editing
+            onValueChange = {
+                if (!readOnly) {
+                    var input = it
+
+                    if (keyboardType == KeyboardType.Phone) {
+                        input = input.filter { char -> char.isDigit() }
+                    }
+
+                    maxLength?.let { length ->
+                        input = input.take(length)
+                    }
+
+                    onValueChange(input)
+                }
+            },
             label = label,
             keyboardType = keyboardType,
             imeAction = imeAction,
@@ -337,7 +352,9 @@ private fun ResponsiveProfileFields(
             viewModel.phoneNumber,
             { v -> viewModel.onPhoneChanged(v) },
             R.string.phone_number,
-            viewModel.phoneError
+            viewModel.phoneError,
+            keyboardType = KeyboardType.Phone,
+            maxLength = 10
         ),
         ProfileField(
             viewModel.email,
@@ -350,17 +367,9 @@ private fun ResponsiveProfileFields(
             viewModel.npi,
             { v -> viewModel.npi = v },
             R.string.npi_number,
-            viewModel.npiError
+            viewModel.npiError,
+            keyboardType = KeyboardType.Number
         )
-    )
-
-    val errors = listOf(
-        viewModel.firstNameError,
-        viewModel.lastNameError,
-        viewModel.pharmacyNameError,
-        viewModel.phoneError,
-        viewModel.emailError,
-        viewModel.npiError
     )
 
     if (isLandscape) {
@@ -374,9 +383,11 @@ private fun ResponsiveProfileFields(
                     value = field1.value,
                     onValueChange = field1.onChange,
                     label = stringResource(field1.labelRes),
+                    keyboardType = field1.keyboardType,
                     error = field1.error?.let { stringResource(it) },
                     modifier = Modifier.weight(1f),
-                    readOnly = field1.readOnly
+                    readOnly = field1.readOnly,
+                    maxLength = field1.maxLength
                 )
 
                 if (i + 1 < fields.size) {
@@ -385,9 +396,11 @@ private fun ResponsiveProfileFields(
                         value = field2.value,
                         onValueChange = field2.onChange,
                         label = stringResource(field2.labelRes),
+                        keyboardType = field2.keyboardType,
                         error = field2.error?.let { stringResource(it) },
                         modifier = Modifier.weight(1f),
-                        readOnly = field2.readOnly
+                        readOnly = field2.readOnly,
+                        maxLength = field2.maxLength
                     )
                 } else {
                     Spacer(modifier = Modifier.weight(1f))
@@ -401,8 +414,10 @@ private fun ResponsiveProfileFields(
                 value = field.value,
                 onValueChange = field.onChange,
                 label = stringResource(field.labelRes),
+                keyboardType = field.keyboardType,
                 error = field.error?.let { stringResource(it) },
-                readOnly = field.readOnly
+                readOnly = field.readOnly,
+                maxLength = field.maxLength
             )
         }
     }

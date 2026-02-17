@@ -34,7 +34,6 @@ import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.ActionButtonPr
 import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.responsiveButtonHeight
 import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.responsiveDp
 import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.responsiveDpForCircularCountProgressLandscape
-import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.responsiveDpForCircularCountProgressPotrait
 import com.rite.pillcounting.feature.pillCountScan.presentation.viewmodel.PillScanningViewModel
 import com.rite.pillcounting.ui.theme.AppTheme
 
@@ -136,13 +135,13 @@ fun CountModeLandscape(
                         text = totalCount.toString(),
                         color = MaterialTheme.colorScheme.primary,
                         fontSize = 28.sp,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Medium
                     )
 
                     Spacer(Modifier.height(4.dp))
 
                     if (scanType == "FIXED") {
-                        // ✅ Divider with static width logic
+                        // Divider with static width logic
                         Box(
                             modifier = Modifier
                                 .width(48.dp)
@@ -189,7 +188,7 @@ fun CountModeLandscape(
                     Spacer(modifier = Modifier.height(responsiveDp(20.dp)))
                     Text(
                         text = stringResource(R.string.pill_scanning_all_done),
-                        color = AppTheme.extendedColors.textColor.copy(alpha = 0.7f),
+                        color = AppTheme.extendedColors.textColor,
                         fontSize = 15.sp
                     )
                 }

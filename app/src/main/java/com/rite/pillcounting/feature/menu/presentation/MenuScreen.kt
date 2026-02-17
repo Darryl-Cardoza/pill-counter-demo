@@ -96,6 +96,7 @@ fun MenuScreen(
                             )
                         )
                 },
+                onCompletedClick = { navController.navigate(Screen.History.route) },
             )
 
             HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
@@ -120,6 +121,7 @@ fun MenuScreen(
                             )
                         )
                 },
+                onCompletedClick = { navController.navigate(Screen.History.route) },
             )
 
             HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
