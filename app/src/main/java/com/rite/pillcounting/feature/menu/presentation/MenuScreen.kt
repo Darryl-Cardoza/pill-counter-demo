@@ -87,7 +87,7 @@ fun MenuScreen(
                 partialTint = MaterialTheme.colorScheme.secondary,
                 completedIcon = R.drawable.tick,
                 partialIcon = R.drawable.partial,
-                mainClick = { navController.navigate(Screen.ScanBarcode.createRoute(CountType.FIXED.toString())) },
+                mainClick = { navController.navigate(Screen.History.route) },
                 onPartialClick = {
                     if (uiState.fixedPartial > 0)
                         navController.navigate(
@@ -111,7 +111,7 @@ fun MenuScreen(
                 partialTint = MaterialTheme.colorScheme.primary,
                 completedIcon = R.drawable.tick,
                 partialIcon = R.drawable.partial,
-                mainClick = { navController.navigate(Screen.ScanBarcode.createRoute(CountType.REGULAR.toString())) },
+                mainClick = { navController.navigate(Screen.History.route) },
                 onPartialClick = {
                     if (uiState.regularPartial > 0)
                         navController.navigate(

@@ -137,7 +137,7 @@ fun InformationPanelSection(
                     }
                 }) {
                     Icon(
-                        painter = painterResource(id = R.drawable.reset_count),
+                        painter = painterResource(id = R.drawable.delete),
                         contentDescription = "Reset",
                         tint = MaterialTheme.colorScheme.primary
                     )

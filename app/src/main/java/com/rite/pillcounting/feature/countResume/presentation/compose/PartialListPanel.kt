@@ -43,11 +43,14 @@ fun <E : ResumeEvent> PartialListPanel(
     searchQuery: String,
     onEvent: (E) -> Unit,
     eventFactory: ResumeEventFactory<E>,
-    countType: String
+    countType: String,
+    showDeleteDialog: Boolean,
+    deleteMode: DeleteMode,
+    onDismissDeleteDialog: () -> Unit,
+    onConfirmDelete: () -> Unit
 ) {
-    var showDeleteDialog by remember { mutableStateOf(false) }
+
     var showMoreDialog by remember { mutableStateOf(false) }
-    var deleteMode by remember { mutableStateOf(DeleteMode.None) }
     var pendingItem by remember { mutableStateOf<CountItem?>(null) }
     var selectedFilter by remember { mutableStateOf(FilterType.ALL) }
 
@@ -151,22 +154,10 @@ fun <E : ResumeEvent> PartialListPanel(
             confirmText = stringResource(R.string.yes),
             cancelText = stringResource(R.string.no),
             onConfirm = {
-                when (deleteMode) {
-                    DeleteMode.Single -> pendingItem?.let {
-                        onEvent(eventFactory.itemSwipedToDelete(it))
-                    }
-                    DeleteMode.Multi -> onEvent(eventFactory.deleteClicked())
-                    else -> {}
-                }
-                showDeleteDialog = false
-                pendingItem = null
-                deleteMode = DeleteMode.None
+                onConfirmDelete()
+                onDismissDeleteDialog()
             },
-            onCancel = {
-                showDeleteDialog = false
-                pendingItem = null
-                deleteMode = DeleteMode.None
-            }
+            onCancel = onDismissDeleteDialog
         )
     }
 
@@ -196,4 +187,4 @@ fun <E : ResumeEvent> PartialListPanel(
     }
 }
 
-private enum class DeleteMode { None, Single, Multi }
+enum class DeleteMode { None, Single, Multi }

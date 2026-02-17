@@ -1010,7 +1010,7 @@ object UserInterfaceUtils {
     }
 
     @Composable
-    fun responsiveDpForCircularCountProgressPotrait(baseDp: Dp): Dp {
+    fun responsiveDpForCircularCountProgressPortrait(baseDp: Dp): Dp {
         val config = LocalConfiguration.current
         val sw = minOf(config.screenWidthDp, config.screenHeightDp)
 
@@ -1024,7 +1024,7 @@ object UserInterfaceUtils {
     }
 
     @Composable
-    fun responsiveDpForCircularCountProgressPotrait(percent: Float): Dp {
+    fun responsiveDpForCircularCountProgressPortrait(percent: Float): Dp {
         val config = LocalConfiguration.current
         val sw = minOf(config.screenWidthDp, config.screenHeightDp)
 
@@ -1050,7 +1050,7 @@ object UserInterfaceUtils {
         val configuration = LocalConfiguration.current
         val smallestWidthDp = minOf(configuration.screenWidthDp, configuration.screenHeightDp)
         val scale = when {
-            smallestWidthDp < 400 -> 0.8f //small phone
+//            smallestWidthDp < 400 -> 0.8f //small phone
             smallestWidthDp < 600 -> 1f   //phone
             smallestWidthDp < 840 -> 1.5f //small tablets
             else -> 2f          //large tablets

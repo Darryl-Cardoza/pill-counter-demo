@@ -125,7 +125,7 @@ fun SettingsScreen(
             // History save options
             Text(
                 text = stringResource(R.string.setting_save_history_for),
-                fontSize = 14.sp,
+                fontSize = 16.sp,
                 color = extendedColors.textColor,
                 modifier = Modifier
                     .padding(bottom = 8.dp)
