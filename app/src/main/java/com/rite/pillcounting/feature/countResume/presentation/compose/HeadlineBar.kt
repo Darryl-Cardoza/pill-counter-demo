@@ -39,6 +39,7 @@ fun HeadlineBar(
     showSearch: Boolean,
     isMultiSelectMode: Boolean,
     isAllSelected: Boolean,
+    hasSelection : Boolean,
     onSearchClick: () -> Unit,
     onSearchChange: (String) -> Unit,
     onDeleteClick: () -> Unit,
@@ -152,8 +153,12 @@ fun HeadlineBar(
                         text = stringResource(R.string.delete),
                         fontSize = 14.sp,
                         fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.clickable { onConfirmDelete() }
+                        color = if (hasSelection) MaterialTheme.colorScheme.primary else Color.Gray,
+                        modifier = Modifier.clickable {
+                            if (hasSelection) {
+                                onConfirmDelete()
+                            }
+                        }
                     )
 
                     Spacer(Modifier.width(18.dp))

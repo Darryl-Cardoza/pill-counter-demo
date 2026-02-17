@@ -170,6 +170,7 @@ fun ProfileScreen(
                                 popUpTo(Screen.Dashboard.route) { inclusive = true }
                                 launchSingleTop = true
                             }
+                            viewModel.resetUpdateState()
                         }
                     }
 

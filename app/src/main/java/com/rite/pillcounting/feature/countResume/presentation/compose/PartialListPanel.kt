@@ -1,5 +1,6 @@
 package com.rite.pillcounting.feature.countResume.presentation.compose
 
+import android.app.Dialog
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -43,10 +44,12 @@ fun <E : ResumeEvent> PartialListPanel(
     searchQuery: String,
     onEvent: (E) -> Unit,
     eventFactory: ResumeEventFactory<E>,
-    countType: String
+    countType: String,
+    showMultiDeleteConfirmDialog: Boolean,
+    onMultiDelete:()-> Unit,
+    onCloseDialog:()-> Unit
 ) {
     var showDeleteDialog by remember { mutableStateOf(false) }
-    var showMultipleDeleteDialog by remember { mutableStateOf(false) }
     var showForceCompletedDialog by remember { mutableStateOf(false) }
     var showMoreDialog by remember { mutableStateOf(false) }
     var pendingItem by remember { mutableStateOf<CountItem?>(null) }
@@ -72,34 +75,34 @@ fun <E : ResumeEvent> PartialListPanel(
         }
 
 
+        if (!isMultiSelectMode) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                FilterButton(
+                    text = stringResource(R.string.filter_all),
+                    isSelected = selectedFilter == FilterType.ALL
+                ) { selectedFilter = FilterType.ALL }
 
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.End,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            FilterButton(
-                text = stringResource(R.string.filter_all),
-                isSelected = selectedFilter == FilterType.ALL
-            ) { selectedFilter = FilterType.ALL }
+                Spacer(modifier = Modifier.width(12.dp))
 
-            Spacer(modifier = Modifier.width(12.dp))
+                FilterButton(
+                    text = stringResource(R.string.filter_pms),
+                    isSelected = selectedFilter == FilterType.PMS
+                ) { selectedFilter = FilterType.PMS }
 
-            FilterButton(
-                text = stringResource(R.string.filter_pms),
-                isSelected = selectedFilter == FilterType.PMS
-            ) { selectedFilter = FilterType.PMS }
+                Spacer(modifier = Modifier.width(12.dp))
 
-            Spacer(modifier = Modifier.width(12.dp))
+                FilterButton(
+                    text = stringResource(R.string.filter_non_nms),
+                    isSelected = selectedFilter == FilterType.NON_PMS
+                ) { selectedFilter = FilterType.NON_PMS }
+            }
 
-            FilterButton(
-                text = stringResource(R.string.filter_non_nms),
-                isSelected = selectedFilter == FilterType.NON_PMS
-            ) { selectedFilter = FilterType.NON_PMS }
+            Spacer(modifier = Modifier.height(25.dp))
         }
-
-        Spacer(modifier = Modifier.height(25.dp))
-
 
         if (isMultiSelectMode) {
             Row(
@@ -156,12 +159,10 @@ fun <E : ResumeEvent> PartialListPanel(
                 if (showDeleteDialog) {
                     pendingItem?.let {
                         onEvent(eventFactory.itemSwipedToDelete(it))
-                        println("delete transaction")
                     }
                 } else {
                     pendingItem?.let {
                         onEvent(eventFactory.forceCompleteTransaction(it))
-                        println("force complete transaction")
                     }
 
                 }
@@ -171,6 +172,21 @@ fun <E : ResumeEvent> PartialListPanel(
             onCancel = {
                 showDeleteDialog = false
                 showForceCompletedDialog = false
+            }
+        )
+    }
+
+
+    if (showMultiDeleteConfirmDialog ) {
+        CommonDialog(
+            message = stringResource(R.string.delete_selected_items_text),
+            confirmText = stringResource(R.string.yes),
+            cancelText = stringResource(R.string.no),
+            onConfirm = {
+                onMultiDelete()
+            },
+            onCancel = {
+                onCloseDialog()
             }
         )
     }
@@ -193,10 +209,12 @@ fun <E : ResumeEvent> PartialListPanel(
                             onEvent(eventFactory.resumeTransaction(item))
                             pendingItem = null
                         }
+
                         1 -> {
                             showForceCompletedDialog = true
 
                         }
+
                         2 -> {
                             showDeleteDialog = true
                         }
