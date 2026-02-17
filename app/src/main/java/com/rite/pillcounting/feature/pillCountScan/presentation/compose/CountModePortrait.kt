@@ -32,7 +32,7 @@ import com.rite.pillcounting.R
 import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.ActionButtonPrimary
 import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.responsiveButtonHeight
 import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.responsiveDp
-import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.responsiveDpForCircularCountProgressPotrait
+import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.responsiveDpForCircularCountProgressPortrait
 import com.rite.pillcounting.feature.pillCountScan.presentation.viewmodel.PillScanningViewModel
 import com.rite.pillcounting.ui.theme.AppTheme
 
@@ -70,7 +70,7 @@ fun CountModePortrait(
                     text = totalCount.toString(),
                     color = MaterialTheme.colorScheme.primary,
                     fontSize = 28.sp,
-                    fontWeight = FontWeight.SemiBold
+                    fontWeight = FontWeight.Medium
                 )
 
                 if (scanType == "FIXED") {
@@ -85,7 +85,7 @@ fun CountModePortrait(
                         text = targetCount.toString(),
                         color = MaterialTheme.colorScheme.primary,
                         fontSize = 20.sp,
-                        fontWeight = FontWeight.SemiBold
+                        fontWeight = FontWeight.Medium
                     )
                 } else {
                     Spacer(modifier = Modifier.height(responsiveDp(25.dp)))
@@ -104,13 +104,13 @@ fun CountModePortrait(
 
         Box(
             modifier = Modifier
-                .height(responsiveDpForCircularCountProgressPotrait(150.dp))
+                .height(responsiveDpForCircularCountProgressPortrait(150.dp))
                 .weight(1f),
             contentAlignment = Alignment.BottomCenter
         ) {
             Box(
                 modifier = Modifier
-                    .size(responsiveDpForCircularCountProgressPotrait(130.dp))
+                    .size(responsiveDpForCircularCountProgressPortrait(130.dp))
                     .align(Alignment.TopCenter),
                 contentAlignment = Alignment.Center
             ) {

@@ -21,6 +21,7 @@ import com.rite.pillcounting.feature.countResume.domain.data.FixedCountsEvent
 import com.rite.pillcounting.feature.countResume.domain.data.NavigationEvent
 import com.rite.pillcounting.feature.countResume.domain.data.ResumeEventFactory
 import com.rite.pillcounting.feature.countResume.domain.model.CountItem
+import com.rite.pillcounting.feature.countResume.presentation.compose.DeleteMode
 import com.rite.pillcounting.feature.countResume.presentation.compose.HeadlineBar
 import com.rite.pillcounting.feature.countResume.presentation.compose.PartialListPanel
 import com.rite.pillcounting.feature.countResume.presentation.viewmodel.CountsViewModel
@@ -34,6 +35,8 @@ fun FixedCountResumeScreen(
     val uiState by viewModel.fixedUiState.collectAsState()
     var showSearch by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
+    var showDeleteDialog by remember { mutableStateOf(false) }
+    var deleteMode by remember { mutableStateOf(DeleteMode.None) }
 
     LaunchedEffect(Unit) {
         viewModel.navigationEvent.collect { event ->
@@ -42,7 +45,7 @@ fun FixedCountResumeScreen(
                     navController.navigate(Screen.PillCount.createRoute(event.countType.toString())) {}
                 NavigationEvent.NavigateBack -> navController.popBackStack()
                 is NavigationEvent.NavigateToScanBarcode -> navController.navigate(
-                    Screen.ScanBarcode.createRoute(CountType.FIXED.toString(),)
+                    Screen.ScanBarcode.createRoute(CountType.FIXED.toString())
                 )
             }
         }
@@ -53,7 +56,9 @@ fun FixedCountResumeScreen(
         override fun closeMultiSelectMode() = FixedCountsEvent.CloseMultiSelectMode
         override fun deleteClicked() = FixedCountsEvent.DeleteClicked
         override fun itemSwipedToDelete(item: CountItem) = FixedCountsEvent.ItemSwipedToDelete(item)
-        override fun forceCompleteTransaction(item: CountItem) = FixedCountsEvent.ForceCompleteTransaction(item)
+        override fun forceCompleteTransaction(item: CountItem) =
+            FixedCountsEvent.ForceCompleteTransaction(item)
+
         override fun selectItem(item: CountItem) = FixedCountsEvent.SelectItem(item)
         override fun resumeTransaction(item: CountItem) = FixedCountsEvent.resumeTransaction(item)
     }
@@ -65,6 +70,13 @@ fun FixedCountResumeScreen(
     ) {
         HeadlineBar(
             navController = navController,
+            onBackClick = {
+                if (uiState.isMultiSelectMode) {
+                    viewModel.onFixedEvent(FixedCountsEvent.ToggleMultiSelectMode)
+                } else {
+                    navController.popBackStack()
+                }
+            },
             title = stringResource(R.string.fixed_partial_count_title),
             searchQuery = searchQuery,
             showSearch = showSearch,
@@ -73,7 +85,14 @@ fun FixedCountResumeScreen(
                 if (!showSearch) searchQuery = "" // reset when closing
             },
             onSearchChange = { searchQuery = it },
-            onDeleteClick = { viewModel.onFixedEvent(FixedCountsEvent.ToggleMultiSelectMode) }
+            onDeleteClick = {
+                if (uiState.isMultiSelectMode && uiState.selectedItems.isNotEmpty()) {
+                    deleteMode = DeleteMode.Multi
+                    showDeleteDialog = true
+                } else {
+                    viewModel.onFixedEvent(FixedCountsEvent.ToggleMultiSelectMode)
+                }
+            }
         )
 
         PartialListPanel(
@@ -83,7 +102,16 @@ fun FixedCountResumeScreen(
             searchQuery = searchQuery,
             onEvent = viewModel::onFixedEvent,
             eventFactory = fixedEventFactory,
-            countType = CountType.FIXED.toString()
+            countType = CountType.FIXED.toString(),
+            showDeleteDialog = showDeleteDialog,
+            deleteMode = deleteMode,
+            onDismissDeleteDialog = {
+                showDeleteDialog = false
+                deleteMode = DeleteMode.None
+            },
+            onConfirmDelete = {
+                viewModel.onFixedEvent(FixedCountsEvent.DeleteClicked)
+            }
         )
     }
 }

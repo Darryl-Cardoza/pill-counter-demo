@@ -37,7 +37,8 @@ fun HeadlineBar(
     showSearch: Boolean,
     onSearchClick: () -> Unit,
     onSearchChange: (String) -> Unit,
-    onDeleteClick: () -> Unit
+    onDeleteClick: () -> Unit,
+    onBackClick: () -> Unit
 ) {
     Row(
         modifier = Modifier
@@ -47,14 +48,14 @@ fun HeadlineBar(
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         if (showSearch) {
-            // 🔍 Search mode
+            // Search mode
             Row(
                 modifier = Modifier
                     .weight(1f)
                     .padding(start = 4.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                BackButton(navController)
+                BackButton(navController, onClick = { onSearchClick() })
 
                 Spacer(Modifier.width(6.dp))
                 TextField(
@@ -86,9 +87,9 @@ fun HeadlineBar(
                     .clickable { onSearchClick() }
             )
         } else {
-            // 🧭 Normal mode
+            // Normal mode
             Row(verticalAlignment = Alignment.CenterVertically) {
-                BackButton(navController)
+                BackButton(navController, onClick = { onBackClick() })
                 Spacer(Modifier.width(4.dp))
                 Text(
                     text = title.uppercase(),
