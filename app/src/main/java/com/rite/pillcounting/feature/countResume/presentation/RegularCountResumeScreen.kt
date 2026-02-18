@@ -21,7 +21,6 @@ import com.rite.pillcounting.feature.countResume.domain.data.NavigationEvent
 import com.rite.pillcounting.feature.countResume.domain.data.RegularCountsEvent
 import com.rite.pillcounting.feature.countResume.domain.data.ResumeEventFactory
 import com.rite.pillcounting.feature.countResume.domain.model.CountItem
-import com.rite.pillcounting.feature.countResume.presentation.compose.DeleteMode
 import com.rite.pillcounting.feature.countResume.presentation.compose.HeadlineBar
 import com.rite.pillcounting.feature.countResume.presentation.compose.PartialListPanel
 import com.rite.pillcounting.feature.countResume.presentation.viewmodel.CountsViewModel
@@ -36,7 +35,7 @@ fun RegularCountResumeScreen(
     var showSearch by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
     var showDeleteDialog by remember { mutableStateOf(false) }
-    var deleteMode by remember { mutableStateOf(DeleteMode.None) }
+    val hasSelection = uiState.selectedItems.isNotEmpty()
 
     LaunchedEffect(Unit) {
         viewModel.navigationEvent.collect { event ->
@@ -61,6 +60,11 @@ fun RegularCountResumeScreen(
         override fun resumeTransaction(item: CountItem) = RegularCountsEvent.resumeTransaction(item)
     }
 
+    val isAllSelected =
+        uiState.regularCounts.isNotEmpty() &&
+                uiState.selectedItems.size == uiState.regularCounts.size
+
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -68,29 +72,21 @@ fun RegularCountResumeScreen(
     ) {
         HeadlineBar(
             navController = navController,
-            onBackClick = {
-                if (uiState.isMultiSelectMode) {
-                    viewModel.onRegularEvent(RegularCountsEvent.ToggleMultiSelectMode)
-                } else {
-                    navController.popBackStack()
-                }
-            },
             title = stringResource(R.string.regular_partial_count_title),
             searchQuery = searchQuery,
             showSearch = showSearch,
+            isMultiSelectMode = uiState.isMultiSelectMode,
+            hasSelection = hasSelection,
             onSearchClick = {
                 showSearch = !showSearch
                 if (!showSearch) searchQuery = "" // reset when closing
             },
             onSearchChange = { searchQuery = it },
-            onDeleteClick = {
-                if (uiState.isMultiSelectMode && uiState.selectedItems.isNotEmpty()) {
-                    deleteMode = DeleteMode.Multi
-                    showDeleteDialog = true
-                } else {
-                    viewModel.onRegularEvent(RegularCountsEvent.ToggleMultiSelectMode)
-                }
-            }
+            onDeleteClick = { viewModel.onRegularEvent(RegularCountsEvent.ToggleMultiSelectMode) },
+            isAllSelected = isAllSelected,
+            onCancelClick = {viewModel.onRegularEvent(RegularCountsEvent.ToggleMultiSelectMode)},
+            onConfirmDelete = {showDeleteDialog = true},
+            onSelectAll = {viewModel.onRegularEvent(RegularCountsEvent.SelectAllClicked)}
         )
 
         PartialListPanel(
@@ -101,15 +97,12 @@ fun RegularCountResumeScreen(
             onEvent = viewModel::onRegularEvent,
             eventFactory = regularEventFactory,
             countType = CountType.REGULAR.toString(),
-            showDeleteDialog = showDeleteDialog,
-            deleteMode = deleteMode,
-            onDismissDeleteDialog = {
-                showDeleteDialog = false
-                deleteMode = DeleteMode.None
-            },
-            onConfirmDelete = {
+            showMultiDeleteConfirmDialog = showDeleteDialog,
+            onMultiDelete = {
                 viewModel.onRegularEvent(RegularCountsEvent.DeleteClicked)
-            }
+                showDeleteDialog = false
+            },
+            onCloseDialog = {showDeleteDialog = false }
         )
     }
 }

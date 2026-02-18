@@ -7,5 +7,6 @@ data class PillCountWithDrugAndTotal(
     val targetCount: Int?,
     val barcodeImage: String?,
     val totalPillCount: Int,
-    val isComingFromHL7 : Boolean
+    val isComingFromHL7 : Boolean,
+    val isNdcVerified: Boolean
 )

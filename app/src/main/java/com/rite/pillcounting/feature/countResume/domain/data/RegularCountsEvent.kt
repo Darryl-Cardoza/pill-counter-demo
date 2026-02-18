@@ -19,6 +19,9 @@ sealed interface RegularCountsEvent : ResumeEvent {
     /** Triggered when the user clicks the delete button to remove selected items. */
     object DeleteClicked : RegularCountsEvent
 
+    /** when user select all txn **/
+    object SelectAllClicked: RegularCountsEvent
+
     /**
      * Triggered when the user swipes a single item to delete it.
      *

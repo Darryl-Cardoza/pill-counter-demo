@@ -44,7 +44,8 @@ class UnsyncedTransactionViewModel @Inject constructor(
                             target = it.targetCount ?: 0,
                             barcodeImage = it.barcodeImage,
                             date = it.createdAt.toFormattedDate(),
-                            isComingFromHL7 = it.isComingFromHL7
+                            isComingFromHL7 = it.isComingFromHL7,
+                            isNdcVerified = it.isNdcVerified
                         )
                     }
                 }

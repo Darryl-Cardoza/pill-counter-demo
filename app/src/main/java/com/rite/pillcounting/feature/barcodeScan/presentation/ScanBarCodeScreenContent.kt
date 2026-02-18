@@ -111,6 +111,7 @@ fun ScanBarCodeScreenContent(
             },
             bottomOrRight = {
                 ManualDrugInfo(
+                    viewModel = viewModel,
                     onConfirm = { drugName, ndc -> viewModel.addManualDrug(drugName, ndc) },
                     onDismiss = { navController.popBackStack() },
                 )

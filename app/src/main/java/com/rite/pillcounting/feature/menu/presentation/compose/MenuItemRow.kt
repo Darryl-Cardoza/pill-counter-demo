@@ -130,7 +130,7 @@ fun MenuItemRow(
                         tint = partialTint,
                         icon = partialIcon,
                         hasBackground = true,
-                        onBadgeClick = { onPartialClick},
+                        onBadgeClick = { onPartialClick() },
                     )
                 }
             }

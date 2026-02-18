@@ -21,7 +21,6 @@ import com.rite.pillcounting.feature.countResume.domain.data.FixedCountsEvent
 import com.rite.pillcounting.feature.countResume.domain.data.NavigationEvent
 import com.rite.pillcounting.feature.countResume.domain.data.ResumeEventFactory
 import com.rite.pillcounting.feature.countResume.domain.model.CountItem
-import com.rite.pillcounting.feature.countResume.presentation.compose.DeleteMode
 import com.rite.pillcounting.feature.countResume.presentation.compose.HeadlineBar
 import com.rite.pillcounting.feature.countResume.presentation.compose.PartialListPanel
 import com.rite.pillcounting.feature.countResume.presentation.viewmodel.CountsViewModel
@@ -36,13 +35,14 @@ fun FixedCountResumeScreen(
     var showSearch by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
     var showDeleteDialog by remember { mutableStateOf(false) }
-    var deleteMode by remember { mutableStateOf(DeleteMode.None) }
+    val hasSelection = uiState.selectedItems.isNotEmpty()
 
     LaunchedEffect(Unit) {
         viewModel.navigationEvent.collect { event ->
             when (event) {
                 is NavigationEvent.NavigateToPillCount ->
                     navController.navigate(Screen.PillCount.createRoute(event.countType.toString())) {}
+
                 NavigationEvent.NavigateBack -> navController.popBackStack()
                 is NavigationEvent.NavigateToScanBarcode -> navController.navigate(
                     Screen.ScanBarcode.createRoute(CountType.FIXED.toString())
@@ -63,36 +63,33 @@ fun FixedCountResumeScreen(
         override fun resumeTransaction(item: CountItem) = FixedCountsEvent.resumeTransaction(item)
     }
 
+    val isAllSelected =
+        uiState.fixedCounts.isNotEmpty() &&
+                uiState.selectedItems.size == uiState.fixedCounts.size
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(AppTheme.extendedColors.primaryBackground)
     ) {
+
         HeadlineBar(
             navController = navController,
-            onBackClick = {
-                if (uiState.isMultiSelectMode) {
-                    viewModel.onFixedEvent(FixedCountsEvent.ToggleMultiSelectMode)
-                } else {
-                    navController.popBackStack()
-                }
-            },
             title = stringResource(R.string.fixed_partial_count_title),
             searchQuery = searchQuery,
             showSearch = showSearch,
+            isMultiSelectMode = uiState.isMultiSelectMode,
+            hasSelection = hasSelection,
             onSearchClick = {
                 showSearch = !showSearch
                 if (!showSearch) searchQuery = "" // reset when closing
             },
             onSearchChange = { searchQuery = it },
-            onDeleteClick = {
-                if (uiState.isMultiSelectMode && uiState.selectedItems.isNotEmpty()) {
-                    deleteMode = DeleteMode.Multi
-                    showDeleteDialog = true
-                } else {
-                    viewModel.onFixedEvent(FixedCountsEvent.ToggleMultiSelectMode)
-                }
-            }
+            onDeleteClick = { viewModel.onFixedEvent(FixedCountsEvent.ToggleMultiSelectMode) },
+            isAllSelected = isAllSelected,
+            onCancelClick = { viewModel.onFixedEvent(FixedCountsEvent.ToggleMultiSelectMode) },
+            onConfirmDelete = { showDeleteDialog = true },
+            onSelectAll = { viewModel.onFixedEvent(FixedCountsEvent.SelectAllClicked) }
         )
 
         PartialListPanel(
@@ -103,15 +100,14 @@ fun FixedCountResumeScreen(
             onEvent = viewModel::onFixedEvent,
             eventFactory = fixedEventFactory,
             countType = CountType.FIXED.toString(),
-            showDeleteDialog = showDeleteDialog,
-            deleteMode = deleteMode,
-            onDismissDeleteDialog = {
-                showDeleteDialog = false
-                deleteMode = DeleteMode.None
-            },
-            onConfirmDelete = {
+            showMultiDeleteConfirmDialog = showDeleteDialog,
+            onMultiDelete = {
                 viewModel.onFixedEvent(FixedCountsEvent.DeleteClicked)
-            }
+                showDeleteDialog = false
+            },
+            onCloseDialog = { showDeleteDialog = false }
         )
     }
+
+
 }

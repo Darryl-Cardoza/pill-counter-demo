@@ -12,6 +12,7 @@ import com.rite.pillcounting.feature.barcodeScan.presentation.ScanBarCodeScreen
 import com.rite.pillcounting.feature.countResume.presentation.FixedCountResumeScreen
 import com.rite.pillcounting.feature.countResume.presentation.RegularCountResumeScreen
 import com.rite.pillcounting.feature.dashboard.presentation.DashboardScreen
+import com.rite.pillcounting.feature.history.domain.model.HistoryMode
 import com.rite.pillcounting.feature.history.presentation.HistoryDetailScreen
 import com.rite.pillcounting.feature.history.presentation.HistoryScreen
 import com.rite.pillcounting.feature.menu.presentation.MenuScreen
@@ -82,14 +83,23 @@ fun AppNavGraph(
             )
         }
 
-        composable(route = Screen.History.route) {
+        composable(
+            route = Screen.History.route,
+            arguments = Screen.History.navArguments
+        ) { backStackEntry ->
+
+            val historyMode = backStackEntry.arguments
+                ?.getString(Screen.History.ARG_TYPE)
+                ?.let { runCatching { HistoryMode.valueOf(it) }.getOrNull() }
+                ?: HistoryMode.NORMAL
+
             HistoryScreen(
                 navController = navController,
-                onBackClick = {
-                    navController.popBackStack()
-                }
+                historyMode = historyMode,
+                onBackClick = { navController.popBackStack() }
             )
         }
+
 
         composable(route = Screen.HistoryDetail.route) {
             HistoryDetailScreen(

@@ -61,7 +61,9 @@ class ProfileViewModel @Inject constructor(
 
     // ─────────────────────────── Profile Fields ───────────────────────────
     var firstName by mutableStateOf("")
+        private set
     var lastName by mutableStateOf("")
+        private set
     var pharmacyName by mutableStateOf("")
     var phoneNumber by mutableStateOf("")
     var email by mutableStateOf("")
@@ -113,6 +115,27 @@ class ProfileViewModel @Inject constructor(
         }
     }
 
+    fun onPhoneChanged(input: String) {
+        val digits = input.filter { it.isDigit() }
+
+        val limited = digits.take(10)
+
+        phoneNumber = limited
+    }
+
+    private val allowedNameChars = Regex("[\\p{L} '-]")
+
+    fun onFirstNameChanged(input: String) {
+        firstName = input
+            .filter { it.toString().matches(allowedNameChars) }
+            .take(50)
+    }
+
+    fun onLastNameChanged(input: String) {
+        lastName = input
+            .filter { it.toString().matches(allowedNameChars) }
+            .take(50)
+    }
     // ─────────────────────────── Validation ───────────────────────────
     private fun validateInputs(): Boolean {
         firstNameError = validator.validateName(firstName).errorMessageResId
@@ -129,90 +152,90 @@ class ProfileViewModel @Inject constructor(
     }
 
     // ─────────────────────────── API Actions ───────────────────────────
-    fun updateProfile() {
-        if (!validateInputs()) {
-            logger.w("Validation failed. Aborting update.")
-            return
-        }
+        fun updateProfile() {
+            if (!validateInputs()) {
+                logger.w("Validation failed. Aborting update.")
+                return
+            }
 
-        // Network check using NetworkUtils
-        if (!NetworkUtils.isNetworkAvailable(context)) {
-            _updateUiState.value =
-                ProfileUpdateUiState.Error(context.getString(R.string.error_no_internet))
-            return
-        }
+            // Network check using NetworkUtils
+            if (!NetworkUtils.isNetworkAvailable(context)) {
+                _updateUiState.value =
+                    ProfileUpdateUiState.Error(context.getString(R.string.error_no_internet))
+                return
+            }
 
-        viewModelScope.launch {
-            _updateUiState.value = ProfileUpdateUiState.Loading
-            val request = ProfileUpdateRequest(
-                fullName = "$firstName $lastName".trim(),
-                pharmacyName = pharmacyName,
-                phoneNumber = phoneNumber,
-                npiId = npi,
-                isProfileComplete = true,
-                avatarUrl = "",
-                notificationsEnabled = !doNotAskAgain,
-                language = "en",
-                timezone = "Asia/Kolkata"
-            )
+            viewModelScope.launch {
+                _updateUiState.value = ProfileUpdateUiState.Loading
+                val request = ProfileUpdateRequest(
+                    fullName = "$firstName $lastName".trim(),
+                    pharmacyName = pharmacyName,
+                    phoneNumber = phoneNumber,
+                    npiId = npi,
+                    isProfileComplete = true,
+                    avatarUrl = "",
+                    notificationsEnabled = !doNotAskAgain,
+                    language = "en",
+                    timezone = "Asia/Kolkata"
+                )
 
-            repository.updateProfile(request)
-                .onSuccess {
-                    logger.i("Profile update success")
+                repository.updateProfile(request)
+                    .onSuccess {
+                        logger.i("Profile update success")
 
-                    val localId = preferenceHelper.getLocalId()
-                    if (localId != null && localId != 0L) {
-                        val entity = UserEntity(
-                            localId = localId,
-                            userId = preferenceHelper.getUserId().orEmpty(),
-                            email = email.secure(),
-                            name = "$firstName $lastName".trim(),
-                            phoneNumber = phoneNumber.secure(),
-                            pharmacyName = pharmacyName,
-                            npiId = npi,
-                            notifications = !doNotAskAgain,
-                            isVerified = true,
-                            isProfileCompleted = true,
-                            createdAt = System.currentTimeMillis()
-                        )
-                        userDao.update(entity)
-                        logger.i("User entity updated in Room via localId=$localId")
+                        val localId = preferenceHelper.getLocalId()
+                        if (localId != null && localId != 0L) {
+                            val entity = UserEntity(
+                                localId = localId,
+                                userId = preferenceHelper.getUserId().orEmpty(),
+                                email = email.secure(),
+                                name = "$firstName $lastName".trim(),
+                                phoneNumber = phoneNumber.secure(),
+                                pharmacyName = pharmacyName,
+                                npiId = npi,
+                                notifications = !doNotAskAgain,
+                                isVerified = true,
+                                isProfileCompleted = true,
+                                createdAt = System.currentTimeMillis()
+                            )
+                            userDao.update(entity)
+                            logger.i("User entity updated in Room via localId=$localId")
+                        }
+
+                        preferenceHelper.saveDoNotAskAgain(doNotAskAgain)
+                        _updateUiState.value = ProfileUpdateUiState.Success
                     }
-
-                    preferenceHelper.saveDoNotAskAgain(doNotAskAgain)
-                    _updateUiState.value = ProfileUpdateUiState.Success
-                }
-                .onFailure { e ->
-                    logger.e("Profile update failed", e)
-                    _updateUiState.value =
-                        ProfileUpdateUiState.Error(getFriendlyErrorMessage(e))
-                }
-        }
-    }
-
-    fun deleteProfile() {
-        // Check internet before delete
-        if (!NetworkUtils.isNetworkAvailable(context)) {
-            _deleteUiState.value =
-                ProfileDeleteUiState.Error(context.getString(R.string.error_no_internet))
-            return
+                    .onFailure { e ->
+                        logger.e("Profile update failed", e)
+                        _updateUiState.value =
+                            ProfileUpdateUiState.Error(getFriendlyErrorMessage(e))
+                    }
+            }
         }
 
-        viewModelScope.launch {
-            _deleteUiState.value = ProfileDeleteUiState.Loading
+        fun deleteProfile() {
+            // Check internet before delete
+            if (!NetworkUtils.isNetworkAvailable(context)) {
+                _deleteUiState.value =
+                    ProfileDeleteUiState.Error(context.getString(R.string.error_no_internet))
+                return
+            }
 
-            repository.deleteProfile()
-                .onSuccess {
-                    logger.i("Profile delete success")
-                    _deleteUiState.value = ProfileDeleteUiState.Success
-                }
-                .onFailure { e ->
-                    logger.e("Profile delete failed", e)
-                    _deleteUiState.value =
-                        ProfileDeleteUiState.Error(getFriendlyErrorMessage(e))
-                }
+            viewModelScope.launch {
+                _deleteUiState.value = ProfileDeleteUiState.Loading
+
+                repository.deleteProfile()
+                    .onSuccess {
+                        logger.i("Profile delete success")
+                        _deleteUiState.value = ProfileDeleteUiState.Success
+                    }
+                    .onFailure { e ->
+                        logger.e("Profile delete failed", e)
+                        _deleteUiState.value =
+                            ProfileDeleteUiState.Error(getFriendlyErrorMessage(e))
+                    }
+            }
         }
-    }
 
     // ─────────────────────────── Friendly Error Mapping ───────────────────────────
     private fun getFriendlyErrorMessage(exception: Throwable): String {

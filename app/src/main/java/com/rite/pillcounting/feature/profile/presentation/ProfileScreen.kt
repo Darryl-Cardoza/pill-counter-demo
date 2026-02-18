@@ -153,68 +153,72 @@ fun ProfileScreen(
             }
 
             // -------------------- STATE FEEDBACK --------------------
-            when (updateUiState) {
-                is ProfileUpdateUiState.Loading -> {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(bottom = 16.dp)
-                    ) {
-                        LoadingIndicator()
-                    }
-                }
-
-                is ProfileUpdateUiState.Success -> {
-                    navController.navigate(Screen.Dashboard.route) {
-                        popUpTo(Screen.Dashboard.route) { inclusive = true }
-                        launchSingleTop = true
-                    }
-                }
-
-                is ProfileUpdateUiState.Error -> {
-                    Text(
-                        text = (updateUiState as ProfileUpdateUiState.Error).message,
-                        color = MaterialTheme.colorScheme.error,
-                        modifier = Modifier
-                            .align(Alignment.CenterHorizontally)
-                            .padding(start = 16.dp)
-                    )
-                }
-
-                else -> {}
-            }
-
-            when (deleteUiState) {
-                is ProfileDeleteUiState.Loading -> {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(bottom = 16.dp)
-                    ) {
-                        LoadingIndicator()
-                    }
-                }
-
-                is ProfileDeleteUiState.Success -> {
-                    LaunchedEffect(Unit) {
-                        navController.navigate(AUTH_GRAPH_ROUTE) {
-                            popUpTo(0) { inclusive = true }
+                when (updateUiState) {
+                    is ProfileUpdateUiState.Loading -> {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(bottom = 16.dp)
+                        ) {
+                            LoadingIndicator()
                         }
                     }
+
+                    is ProfileUpdateUiState.Success -> {
+                        LaunchedEffect(updateUiState) {
+                            navController.navigate(Screen.Dashboard.route) {
+                                popUpTo(Screen.Dashboard.route) { inclusive = true }
+                                launchSingleTop = true
+                            }
+                            viewModel.resetUpdateState()
+                        }
+                    }
+
+
+                    is ProfileUpdateUiState.Error -> {
+                        Text(
+                            text = (updateUiState as ProfileUpdateUiState.Error).message,
+                            color = MaterialTheme.colorScheme.error,
+                            modifier = Modifier
+                                .align(Alignment.CenterHorizontally)
+                                .padding(start = 16.dp)
+                        )
+                    }
+
+                    else -> {}
                 }
 
-                is ProfileDeleteUiState.Error -> {
-                    Text(
-                        text = (deleteUiState as ProfileDeleteUiState.Error).message,
-                        color = MaterialTheme.colorScheme.error,
-                        modifier = Modifier
-                            .align(Alignment.CenterHorizontally)
-                            .padding(start = 16.dp)
-                    )
-                }
+                when (deleteUiState) {
+                    is ProfileDeleteUiState.Loading -> {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(bottom = 16.dp)
+                        ) {
+                            LoadingIndicator()
+                        }
+                    }
 
-                else -> {}
-            }
+                    is ProfileDeleteUiState.Success -> {
+                        LaunchedEffect(Unit) {
+                            navController.navigate(AUTH_GRAPH_ROUTE) {
+                                popUpTo(0) { inclusive = true }
+                            }
+                        }
+                    }
+
+                    is ProfileDeleteUiState.Error -> {
+                        Text(
+                            text = (deleteUiState as ProfileDeleteUiState.Error).message,
+                            color = MaterialTheme.colorScheme.error,
+                            modifier = Modifier
+                                .align(Alignment.CenterHorizontally)
+                                .padding(start = 16.dp)
+                        )
+                    }
+
+                    else -> {}
+                }
 
             Spacer(Modifier.weight(1f))
 
@@ -327,16 +331,18 @@ private fun ResponsiveProfileFields(
     val fields = listOf(
         ProfileField(
             viewModel.firstName,
-            { v -> viewModel.firstName = v },
+            { v -> viewModel.onFirstNameChanged(v) },
             R.string.first_name,
             viewModel.firstNameError
         ),
+
         ProfileField(
             viewModel.lastName,
-            { v -> viewModel.lastName = v },
+            { v -> viewModel.onLastNameChanged(v) },
             R.string.last_name,
             viewModel.lastNameError
         ),
+
         ProfileField(
             viewModel.pharmacyName,
             { v -> viewModel.pharmacyName = v },
@@ -345,7 +351,7 @@ private fun ResponsiveProfileFields(
         ),
         ProfileField(
             viewModel.phoneNumber,
-            { v -> viewModel.phoneNumber = v },
+            { v -> viewModel.onPhoneChanged(v) },
             R.string.phone_number,
             viewModel.phoneError,
             keyboardType = KeyboardType.Phone,

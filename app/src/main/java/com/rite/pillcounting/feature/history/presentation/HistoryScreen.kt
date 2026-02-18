@@ -26,6 +26,7 @@ import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.YearMonth
 import com.rite.pillcounting.R
+import com.rite.pillcounting.feature.history.domain.model.HistoryMode
 
 /**
  * HistoryScreen
@@ -42,6 +43,7 @@ import com.rite.pillcounting.R
 @Composable
 fun HistoryScreen(
     navController: NavController,
+    historyMode: HistoryMode = HistoryMode.NORMAL,
     viewModel: HistoryViewModel = hiltViewModel(),
     onBackClick: () -> Unit = {}
 ) {
@@ -63,6 +65,10 @@ fun HistoryScreen(
         firstDayOfWeek = DayOfWeek.SUNDAY
     )
 
+    LaunchedEffect(historyMode) {
+        viewModel.setHistoryMode(historyMode)
+    }
+
 
     Box(
         modifier = Modifier
@@ -76,7 +82,7 @@ fun HistoryScreen(
                 CalendarSection(
                     calendarState = calendarState,
                     selectedDate = selectedDate,
-                    onDateSelected = { viewModel.selectDate(it) },
+                    onDateSelected = { viewModel.   selectDate(it) },
                     onBackClick = onBackClick,
                     navController = navController
                 )

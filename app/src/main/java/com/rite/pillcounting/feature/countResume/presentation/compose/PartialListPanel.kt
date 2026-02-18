@@ -44,12 +44,12 @@ fun <E : ResumeEvent> PartialListPanel(
     onEvent: (E) -> Unit,
     eventFactory: ResumeEventFactory<E>,
     countType: String,
-    showDeleteDialog: Boolean,
-    deleteMode: DeleteMode,
-    onDismissDeleteDialog: () -> Unit,
-    onConfirmDelete: () -> Unit
+    showMultiDeleteConfirmDialog: Boolean,
+    onMultiDelete:()-> Unit,
+    onCloseDialog:()-> Unit
 ) {
-
+    var showDeleteDialog by remember { mutableStateOf(false) }
+    var showForceCompletedDialog by remember { mutableStateOf(false) }
     var showMoreDialog by remember { mutableStateOf(false) }
     var pendingItem by remember { mutableStateOf<CountItem?>(null) }
     var selectedFilter by remember { mutableStateOf(FilterType.ALL) }
@@ -59,7 +59,22 @@ fun <E : ResumeEvent> PartialListPanel(
             .fillMaxSize()
             .padding(start = small, end = small, bottom = extraSmall)
     ) {
+        val filteredItems = remember(searchQuery, items, selectedFilter) {
+            val searchFiltered = if (searchQuery.isBlank()) {
+                items
+            } else {
+                items.filter { it.name.contains(searchQuery, ignoreCase = true) }
+            }
+
+            when (selectedFilter) {
+                FilterType.ALL -> searchFiltered
+                FilterType.PMS -> searchFiltered.filter { it.isComingFromHL7 }
+                FilterType.NON_PMS -> searchFiltered.filter { !it.isComingFromHL7 }
+            }
+        }
+
         if (isMultiSelectMode) {
+            Spacer(modifier = Modifier.height(10.dp))
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -76,51 +91,35 @@ fun <E : ResumeEvent> PartialListPanel(
                     color = MaterialTheme.colorScheme.secondary
                 )
             }
-            Spacer(Modifier.height(8.dp))
-        }
+        } else {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                FilterButton(
+                    text = stringResource(R.string.filter_all),
+                    isSelected = selectedFilter == FilterType.ALL
+                ) { selectedFilter = FilterType.ALL }
 
-        val filteredItems = remember(searchQuery, items, selectedFilter) {
-            val searchFiltered = if (searchQuery.isBlank()) {
-                items
-            } else {
-                items.filter { it.name.contains(searchQuery, ignoreCase = true) }
+                Spacer(modifier = Modifier.width(12.dp))
+
+                FilterButton(
+                    text = stringResource(R.string.filter_pms),
+                    isSelected = selectedFilter == FilterType.PMS
+                ) { selectedFilter = FilterType.PMS }
+
+                Spacer(modifier = Modifier.width(12.dp))
+
+                FilterButton(
+                    text = stringResource(R.string.filter_non_nms),
+                    isSelected = selectedFilter == FilterType.NON_PMS
+                ) { selectedFilter = FilterType.NON_PMS }
             }
 
-            when (selectedFilter) {
-                FilterType.ALL -> searchFiltered
-                FilterType.PMS -> searchFiltered.filter { it.isComingFromHL7 }
-                FilterType.NON_PMS -> searchFiltered.filter { !it.isComingFromHL7 }
-            }
         }
 
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.End,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            FilterButton(
-                text = stringResource(R.string.filter_all),
-                isSelected = selectedFilter == FilterType.ALL
-            ) { selectedFilter = FilterType.ALL }
-
-            Spacer(modifier = Modifier.width(12.dp))
-
-            FilterButton(
-                text = stringResource(R.string.filter_pms),
-                isSelected = selectedFilter == FilterType.PMS
-            ) { selectedFilter = FilterType.PMS }
-
-            Spacer(modifier = Modifier.width(12.dp))
-
-            FilterButton(
-                text = stringResource(R.string.filter_non_nms),
-                isSelected = selectedFilter == FilterType.NON_PMS
-            ) { selectedFilter = FilterType.NON_PMS }
-        }
-
-        Spacer(modifier = Modifier.height(28.dp))
+        Spacer(modifier = Modifier.height(25.dp))
 
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
@@ -143,21 +142,47 @@ fun <E : ResumeEvent> PartialListPanel(
         }
     }
 
-    if (showDeleteDialog) {
-        val message = when (deleteMode) {
-            DeleteMode.Single -> stringResource(R.string.delete_item_text)
-            DeleteMode.Multi -> stringResource(R.string.delete_selected_items_text)
-            else -> ""
-        }
+    if (showDeleteDialog || showForceCompletedDialog) {
+        val message = if (showDeleteDialog) stringResource(R.string.delete_item_text)
+        else stringResource(R.string.confirm_force_completed_txn)
+
         CommonDialog(
             message = message,
             confirmText = stringResource(R.string.yes),
             cancelText = stringResource(R.string.no),
             onConfirm = {
-                onConfirmDelete()
-                onDismissDeleteDialog()
+                if (showDeleteDialog) {
+                    pendingItem?.let {
+                        onEvent(eventFactory.itemSwipedToDelete(it))
+                    }
+                } else {
+                    pendingItem?.let {
+                        onEvent(eventFactory.forceCompleteTransaction(it))
+                    }
+
+                }
+                showDeleteDialog = false
+                showForceCompletedDialog = false
             },
-            onCancel = onDismissDeleteDialog
+            onCancel = {
+                showDeleteDialog = false
+                showForceCompletedDialog = false
+            }
+        )
+    }
+
+
+    if (showMultiDeleteConfirmDialog ) {
+        CommonDialog(
+            message = stringResource(R.string.delete_selected_items_text),
+            confirmText = stringResource(R.string.yes),
+            cancelText = stringResource(R.string.no),
+            onConfirm = {
+                onMultiDelete()
+            },
+            onCancel = {
+                onCloseDialog()
+            }
         )
     }
 
@@ -175,16 +200,18 @@ fun <E : ResumeEvent> PartialListPanel(
             onOk = { index ->
                 pendingItem?.let { item ->
                     when (index) {
-                        0 -> onEvent(eventFactory.resumeTransaction(item))
-                        1 -> onEvent(eventFactory.forceCompleteTransaction(item))
-                        2 -> onEvent(eventFactory.itemSwipedToDelete(item))
+                        0 -> {
+                            onEvent(eventFactory.resumeTransaction(item))
+                            pendingItem = null
+                        }
+
+                        1 -> showForceCompletedDialog = true
+
+                        2 -> showDeleteDialog = true
                     }
                 }
                 showMoreDialog = false
-                pendingItem = null
             }
         )
     }
 }
-
-enum class DeleteMode { None, Single, Multi }
