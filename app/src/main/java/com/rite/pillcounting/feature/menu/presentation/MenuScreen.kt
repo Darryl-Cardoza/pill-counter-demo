@@ -19,6 +19,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.stringArrayResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -99,7 +100,7 @@ fun MenuScreen(
                 onCompletedClick = { navController.navigate(Screen.History.route) },
             )
 
-            HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
+            HorizontalDivider(color = colorResource(R.color.border_gray).copy(alpha = 0.3f))
 
             // Regular Count
             MenuItemRow(
@@ -124,7 +125,7 @@ fun MenuScreen(
                 onCompletedClick = { navController.navigate(Screen.History.route) },
             )
 
-            HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
+            HorizontalDivider(color = colorResource(R.color.border_gray).copy(alpha = 0.3f))
 
             // Profile
             SimpleMenuRow(
@@ -135,7 +136,7 @@ fun MenuScreen(
                 onClick = { navController.navigate(Screen.Profile.route) }
             )
 
-            HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
+            HorizontalDivider(color = colorResource(R.color.border_gray).copy(alpha = 0.3f))
 
             // Load options from strings.xml
             val historyOptions = stringArrayResource(R.array.history_options).toList()
@@ -157,8 +158,7 @@ fun MenuScreen(
                 onClick = { navController.navigate(Screen.History.route) }
             )
 
-            HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
-
+            HorizontalDivider(color = colorResource(R.color.border_gray).copy(alpha = 0.3f))
             SimpleMenuRow(
                 navController = navController,
                 icon = R.drawable.unsynced_transaction_icon,
@@ -168,7 +168,7 @@ fun MenuScreen(
                 onClick = { navController.navigate(Screen.UnsyncedTransactionScreen.route) }
             )
 
-            HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
+            HorizontalDivider(color = colorResource(R.color.border_gray).copy(alpha = 0.3f))
 
             // Settings
             SimpleMenuRow(
@@ -179,7 +179,7 @@ fun MenuScreen(
                 onClick = { navController.navigate(Screen.Settings.route) }
             )
 
-            HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
+            HorizontalDivider(color = colorResource(R.color.border_gray).copy(alpha = 0.3f))
 
             // Logout
             SimpleMenuRow(

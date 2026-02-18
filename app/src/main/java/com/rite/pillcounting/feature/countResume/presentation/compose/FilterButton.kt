@@ -12,6 +12,8 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.colorResource
+import com.rite.pillcounting.R
 import com.rite.pillcounting.ui.theme.AppTheme
 
 
@@ -29,7 +31,7 @@ fun FilterButton(
                 color = if (isSelected)
                     MaterialTheme.colorScheme.primary
                 else
-                    MaterialTheme.colorScheme.outline,
+                    colorResource(R.color.border_gray),
                 shape = RoundedCornerShape(12.dp)
             )
             .clickable { onClick() }
