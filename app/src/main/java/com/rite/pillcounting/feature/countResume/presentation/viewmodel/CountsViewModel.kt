@@ -60,12 +60,6 @@ class CountsViewModel @Inject constructor(
     private val _navigationEvent = Channel<NavigationEvent>()
     val navigationEvent = _navigationEvent.receiveAsFlow()
 
-    /** Formatter for displaying human-readable dates from epoch millis. */
-
-
-    private fun isAllSelected(items: List<CountItem>, selected: List<CountItem>) =
-        items.isNotEmpty() && items.size == selected.size
-
     init {
         observeFixedCounts()
         observeRegularCounts()
