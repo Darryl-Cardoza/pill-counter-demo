@@ -1,6 +1,5 @@
 package com.rite.pillcounting.feature.history.presentation.viewmodel
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.rite.pillcounting.core.room.models.enums.CountStatus
@@ -88,7 +87,7 @@ class HistoryViewModel @Inject constructor(
     fun deleteCountsForSelectedDate() {
         viewModelScope.launch {
 
-            val (type, status) = _currentMode.value.toQueryParams()
+            val (type, status) = currentMode.value.toQueryParams()
 
             repository.deleteTransactionsForDate(
                 date = _selectedDate.value,
