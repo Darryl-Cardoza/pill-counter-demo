@@ -81,7 +81,7 @@ fun ImageWithCount(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier.padding(bottom = 3.dp)
             ) {
-
+                //target count is null -> countType is Regular
                 if (targetCount == null) {
                     Text(
                         text = totalPillCount,

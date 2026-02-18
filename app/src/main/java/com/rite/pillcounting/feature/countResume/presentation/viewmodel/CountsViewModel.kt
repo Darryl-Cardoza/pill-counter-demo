@@ -40,7 +40,6 @@ import javax.inject.Inject
 class CountsViewModel @Inject constructor(
     private val pillCountTxnDao: PillCountTxnDao,
     private val preferenceHelper: PreferenceHelper,
-//    private val hL7Repository: HL7TransactionRepository
     private val pillCountTxnDetailsDao: PillCountTxnDetailsDao
 ) : ViewModel() {
 

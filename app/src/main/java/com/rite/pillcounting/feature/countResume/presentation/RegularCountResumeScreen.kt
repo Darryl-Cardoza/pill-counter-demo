@@ -17,7 +17,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.rite.pillcounting.R
 import com.rite.pillcounting.core.room.models.enums.CountType
-import com.rite.pillcounting.feature.countResume.domain.data.FixedCountsEvent
 import com.rite.pillcounting.feature.countResume.domain.data.NavigationEvent
 import com.rite.pillcounting.feature.countResume.domain.data.RegularCountsEvent
 import com.rite.pillcounting.feature.countResume.domain.data.ResumeEventFactory

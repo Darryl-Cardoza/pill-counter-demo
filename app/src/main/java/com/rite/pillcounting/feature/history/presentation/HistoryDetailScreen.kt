@@ -118,7 +118,7 @@ fun HistoryDetailScreen(
             }
 
         }
-
+        uiState.txnInfo
         DrugInfoSection(
             ndc = uiState.txnInfo?.ndc ?: "",
             expiry = uiState.txnInfo?.expiry ?: "",

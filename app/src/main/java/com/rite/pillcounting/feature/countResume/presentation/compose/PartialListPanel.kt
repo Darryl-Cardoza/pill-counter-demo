@@ -1,6 +1,5 @@
 package com.rite.pillcounting.feature.countResume.presentation.compose
 
-import android.app.Dialog
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -74,8 +73,25 @@ fun <E : ResumeEvent> PartialListPanel(
             }
         }
 
-
-        if (!isMultiSelectMode) {
+        if (isMultiSelectMode) {
+            Spacer(modifier = Modifier.height(10.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = stringResource(R.string.selected_items_count, selectedItems.size),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = AppTheme.extendedColors.textColor
+                )
+                Text(
+                    text = stringResource(R.string.tap_to_delete),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.secondary
+                )
+            }
+        } else {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.End,
@@ -101,30 +117,9 @@ fun <E : ResumeEvent> PartialListPanel(
                 ) { selectedFilter = FilterType.NON_PMS }
             }
 
-            Spacer(modifier = Modifier.height(25.dp))
         }
 
-        if (isMultiSelectMode) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = stringResource(R.string.selected_items_count, selectedItems.size),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = AppTheme.extendedColors.textColor
-                )
-                Text(
-                    text = stringResource(R.string.tap_to_delete),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.secondary
-                )
-            }
-            Spacer(Modifier.height(8.dp))
-        }
-
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(25.dp))
 
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
@@ -210,14 +205,9 @@ fun <E : ResumeEvent> PartialListPanel(
                             pendingItem = null
                         }
 
-                        1 -> {
-                            showForceCompletedDialog = true
+                        1 -> showForceCompletedDialog = true
 
-                        }
-
-                        2 -> {
-                            showDeleteDialog = true
-                        }
+                        2 -> showDeleteDialog = true
                     }
                 }
                 showMoreDialog = false
@@ -225,5 +215,3 @@ fun <E : ResumeEvent> PartialListPanel(
         )
     }
 }
-
-enum class DeleteMode { None, Single, Multi, ForceComplete }
