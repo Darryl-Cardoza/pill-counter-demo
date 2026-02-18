@@ -66,7 +66,7 @@ fun HistoryScreen(
     )
 
     LaunchedEffect(historyMode) {
-        viewModel.start(historyMode)
+        viewModel.setHistoryMode(historyMode)
     }
 
 
@@ -82,7 +82,7 @@ fun HistoryScreen(
                 CalendarSection(
                     calendarState = calendarState,
                     selectedDate = selectedDate,
-                    onDateSelected = { viewModel.selectDate(it) },
+                    onDateSelected = { viewModel.   selectDate(it) },
                     onBackClick = onBackClick,
                     navController = navController
                 )

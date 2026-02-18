@@ -1,7 +1,10 @@
 package com.rite.pillcounting.feature.history.presentation.viewmodel
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.rite.pillcounting.core.room.models.enums.CountStatus
+import com.rite.pillcounting.core.room.models.enums.CountType
 import com.rite.pillcounting.core.utils.preference.PreferenceHelper
 import com.rite.pillcounting.feature.history.data.HistoryRepository
 import com.rite.pillcounting.feature.history.domain.model.HistoryMode
@@ -28,49 +31,55 @@ class HistoryViewModel @Inject constructor(
     private val repository: HistoryRepository,
     private val preferenceHelper: PreferenceHelper
 ) : ViewModel() {
-
-
-    private val _counts = MutableStateFlow<List<TxnWithDrugDto>>(emptyList())
-    val counts: StateFlow<List<TxnWithDrugDto>> = _counts
-
     private val _selectedDate = MutableStateFlow(LocalDate.now())
     val selectedDate: StateFlow<LocalDate> = _selectedDate
 
-    private var currentMode: HistoryMode = HistoryMode.NORMAL
+    private val _currentMode = MutableStateFlow(HistoryMode.NORMAL)
+    val currentMode: StateFlow<HistoryMode> = _currentMode
+
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val counts: StateFlow<List<TxnWithDrugDto>> =
+        combine(_selectedDate, _currentMode) { date, mode ->
+            date to mode
+        }
+            .flatMapLatest { (date, mode) ->
+
+                val (type, status) = mode.toQueryParams()
+
+                repository.getTransactionsForDate(
+                    date = date,
+                    type = type,
+                    status = status
+                )
+            }
+            .stateIn(
+                viewModelScope,
+                SharingStarted.WhileSubscribed(5_000),
+                emptyList()
+            )
 
 
 
-    fun start(mode: HistoryMode) {
-        currentMode = mode
-        loadCounts(_selectedDate.value)
+
+    fun setHistoryMode(mode: HistoryMode) {
+        _currentMode.value = mode
     }
-
-
     fun selectDate(date: LocalDate) {
         _selectedDate.value = date
-        loadCounts(date)
     }
 
-    /** Load all completed Transaction **/
-    private fun loadCounts(date: LocalDate) {
-        viewModelScope.launch {
+    private fun HistoryMode.toQueryParams(): Pair<CountType?, CountStatus?> =
+        when (this) {
+            HistoryMode.NORMAL ->
+                null to null
 
-            val flow = when (currentMode) {
-                HistoryMode.NORMAL ->
-                    repository.getTransactionsForDate(date)
+            HistoryMode.REGULAR ->
+                CountType.REGULAR to CountStatus.COMPLETED
 
-                HistoryMode.REGULAR ->
-                    repository.getRegularTransactionsWithDrugByDate(date)
-
-                HistoryMode.DISPENSE ->
-                    repository.getDispenseTransactionsWithDrugByDate(date)
-            }
-
-            flow.collect {
-                _counts.value = it
-            }
+            HistoryMode.DISPENSE ->
+                CountType.FIXED to CountStatus.COMPLETED
         }
-    }
 
 
 
@@ -79,20 +88,16 @@ class HistoryViewModel @Inject constructor(
     fun deleteCountsForSelectedDate() {
         viewModelScope.launch {
 
-            when (currentMode) {
-                HistoryMode.NORMAL ->
-                    repository.deleteTransactionsForDate(_selectedDate.value)
+            val (type, status) = _currentMode.value.toQueryParams()
 
-                HistoryMode.REGULAR ->
-                    repository.deleteRegularTransactionsForDate(_selectedDate.value)
-
-                HistoryMode.DISPENSE ->
-                    repository.deleteDispenseTransactionsForDate(_selectedDate.value)
-            }
-
-            loadCounts(_selectedDate.value) // refresh immediately
+            repository.deleteTransactionsForDate(
+                date = _selectedDate.value,
+                type = type,
+                status = status
+            )
         }
     }
+
 
 
     fun selectCurrentTransaction(txnId: Long) {

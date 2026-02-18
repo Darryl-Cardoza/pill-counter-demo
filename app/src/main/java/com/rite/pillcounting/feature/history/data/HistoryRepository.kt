@@ -16,10 +16,6 @@ import javax.inject.Inject
 class HistoryRepository @Inject constructor(
     private val dao: PillCountTxnDao
 ) {
-    private val formatter = DateTimeFormatter.ofPattern(
-        "dd MMM yyyy • hh:mm a",
-        Locale.getDefault()
-    )
 
     private fun LocalDate.toEpochRange(): Pair<Long, Long> {
         val zone = ZoneId.systemDefault()
@@ -28,61 +24,16 @@ class HistoryRepository @Inject constructor(
         return start to end
     }
 
-    fun getTransactionsForDate(date: LocalDate): Flow<List<TxnWithDrugDto>> {
+    fun getTransactionsForDate(date: LocalDate,type: CountType?, status: CountStatus?): Flow<List<TxnWithDrugDto>> {
         val (start, end) = date.toEpochRange()
-        return dao.getHistoryTransactions(start, end, null, null)
+        return dao.getTransactionsWithDrugByDate(start, end, type, status)
     }
 
-    fun getDispenseTransactionsWithDrugByDate(date: LocalDate): Flow<List<TxnWithDrugDto>> {
-        val (start, end) = date.toEpochRange()
-        return dao.getHistoryTransactions(
-            start,
-            end,
-            CountType.FIXED,
-            CountStatus.COMPLETED
-        )
-    }
-
-    fun getRegularTransactionsWithDrugByDate(date: LocalDate): Flow<List<TxnWithDrugDto>> {
-        val (start, end) = date.toEpochRange()
-        return dao.getHistoryTransactions(
-            start,
-            end,
-            CountType.REGULAR,
-            CountStatus.COMPLETED
-        )
-    }
-
-
-    suspend fun deleteTransactionsForDate(date: LocalDate) {
+    suspend fun deleteTransactionsForDate(date: LocalDate, type: CountType?, status: CountStatus?) {
         val (start, end) = date.toEpochRange()
 
         // NORMAL history → delete everything in that date
-        dao.deleteTransactionsByDate(start, end, null, null)
+        dao.deleteTransactionsByDate(start, end, type, status)
     }
-
-    suspend fun deleteRegularTransactionsForDate(date: LocalDate) {
-        val (start, end) = date.toEpochRange()
-
-        // Only REGULAR completed transactions
-        dao.deleteTransactionsByDate(
-            start,
-            end,
-            CountType.REGULAR,
-            CountStatus.COMPLETED
-        )
-    }
-
-    suspend fun deleteDispenseTransactionsForDate(date: LocalDate) {
-        val (start, end) = date.toEpochRange()
-
-        dao.deleteTransactionsByDate(
-            start,
-            end,
-            CountType.FIXED,
-            CountStatus.COMPLETED
-        )
-    }
-
 }
 

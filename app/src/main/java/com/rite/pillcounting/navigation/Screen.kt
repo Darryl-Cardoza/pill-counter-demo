@@ -3,7 +3,7 @@
 import androidx.navigation.NamedNavArgument
 import androidx.navigation.NavType
 import androidx.navigation.navArgument
-import com.rite.pillcounting.feature.history.domain.model.HistoryType
+import com.rite.pillcounting.feature.history.domain.model.HistoryMode
 
 /**
  * A sealed interfaceDetail to represent all navigable screens in the app.
@@ -61,16 +61,13 @@ sealed interface Screen {
         const val ARG_TYPE = "type"
 
         // old route (normal history)
-        override val route: String = ROUTE_PREFIX
-
-        // new route (typed history)
-        val routeWithType = "$ROUTE_PREFIX/{$ARG_TYPE}"
+        override val route: String = "$ROUTE_PREFIX/{$ARG_TYPE}"
 
         val navArguments: List<NamedNavArgument> = listOf(
             navArgument(ARG_TYPE) { type = NavType.StringType }
         )
 
-        fun createRoute(type: HistoryType) = "$ROUTE_PREFIX/${type.name}"
+        fun createRoute(type: HistoryMode) = "$ROUTE_PREFIX/${type.name}"
     }
 
 

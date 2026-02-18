@@ -294,7 +294,7 @@ interface PillCountTxnDao {
     ORDER BY txn.createdAt DESC
     """
     )
-    fun getHistoryTransactions(
+    fun getTransactionsWithDrugByDate(
         startOfDay: Long,
         endOfDay: Long,
         type: CountType?,
