@@ -41,6 +41,7 @@
     <string name="setting_barcode_scan_first">Always do Barcode Scan first</string>
     <string name="setting_ask_to_add_notes">Always ask to add Notes</string>
     <string name="setting_save_history_for">Save history for</string>
+    <string name="pill_counting_sound">Pill Counting Sound</string>
 
     <string-array name="history_options">
         <item>1 Week (Default)</item>

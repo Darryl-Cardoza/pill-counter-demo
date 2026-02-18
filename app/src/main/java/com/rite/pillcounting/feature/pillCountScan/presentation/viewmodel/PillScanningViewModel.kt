@@ -4,6 +4,7 @@ import android.app.Application
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Matrix
+import android.media.MediaActionSound
 import androidx.camera.core.ImageProxy
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -112,6 +113,11 @@ class PillScanningViewModel @Inject constructor(
     private var gpuDelegate: GpuDelegate? = null
     private val _addPopEvents = MutableSharedFlow<Int>(extraBufferCapacity = 1)
     val addPopEvents = _addPopEvents.asSharedFlow()
+
+    private val shutterSound = MediaActionSound().apply {
+        load(MediaActionSound.SHUTTER_CLICK)
+    }
+
 
     companion object {
         private const val MODEL_FILENAME = "modelpilldetection"
@@ -387,28 +393,21 @@ class PillScanningViewModel @Inject constructor(
         }
     }
 
-
     override fun onCleared() {
         super.onCleared()
 
-        try {
-            gpuDelegate?.close()
-        } catch (e: Exception) {
-            logger.w("Error closing GPU delegate: ${e.message}")
-        } finally {
-            gpuDelegate = null
-        }
+        runCatching { shutterSound.release() }
 
-        try {
-            currentFrameBitmap?.recycle()
-        } catch (e: Exception) {
-            logger.w("Error recycling bitmap: ${e.message}")
-        } finally {
-            currentFrameBitmap = null
-        }
+        runCatching { gpuDelegate?.close() }
+        gpuDelegate = null
+
+        runCatching { currentFrameBitmap?.takeIf { !it.isRecycled }?.recycle() }
+        currentFrameBitmap = null
+
         _modelState.value = ModelState.Idle
         logger.i("ViewModel cleared and all TensorFlow resources released.")
     }
+
     // ------------------------------------------------------------------------
     // Event Handling
     // ------------------------------------------------------------------------
@@ -702,5 +701,11 @@ class PillScanningViewModel @Inject constructor(
 
     fun triggerAddPop(count: Int) {
         _addPopEvents.tryEmit(count)
+    }
+
+    fun playCountSoundIfEnabled() {
+        if (preferenceHelper.isSoundEnabled()) {
+            shutterSound.play(MediaActionSound.START_VIDEO_RECORDING)
+        }
     }
 }

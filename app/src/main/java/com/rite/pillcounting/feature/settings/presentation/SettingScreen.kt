@@ -29,6 +29,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.stringArrayResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -70,7 +71,7 @@ fun SettingsScreen(
     val isLandscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
 
     val extendedColors = LocalExtendedColors.current
-    val colorScheme = MaterialTheme.colorScheme
+    val isSoundEnabled by viewModel.isSoundOn.collectAsState()
 
     Column(
         modifier = Modifier
@@ -118,7 +119,7 @@ fun SettingsScreen(
                 }
             )
 
-            HorizontalDivider(color = colorScheme.outlineVariant)
+            HorizontalDivider(color = colorResource(R.color.border_gray).copy(alpha = 0.3f))
 
             Spacer(Modifier.height(24.dp))
 
@@ -142,6 +143,15 @@ fun SettingsScreen(
                     }
                 },
                 isLandscape = isLandscape
+            )
+            HorizontalDivider(color = colorResource(R.color.border_gray).copy(alpha = 0.3f))
+
+            SettingSwitch(
+                labelRes = R.string.pill_counting_sound,
+                checked = isSoundEnabled,
+                onCheckedChange = { newValue ->
+                    viewModel.toggleSoundOnOff(newValue)
+                }
             )
         }
     }
@@ -168,7 +178,7 @@ fun SettingsScreen(
  * Reusable setting row with a label and a switch.
  */
 @Composable
-private fun SettingSwitch(
+fun SettingSwitch(
     @StringRes labelRes: Int,
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit

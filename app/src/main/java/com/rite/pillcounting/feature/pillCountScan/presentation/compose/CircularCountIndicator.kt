@@ -1,6 +1,5 @@
 package com.rite.pillcounting.feature.pillCountScan.presentation.compose
 
-import android.media.MediaActionSound
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -41,10 +40,6 @@ fun CircularCountIndicator(
     val indicatorColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.8f)
     val lastDetections by viewModel.lastTenDetections.collectAsState()
 
-    val shutterSound = remember {
-        MediaActionSound().apply { load(MediaActionSound.SHUTTER_CLICK) }
-    }
-
     val uiState by viewModel.uiState.collectAsState()
 
     // Derive last 4 values and whether they're same
@@ -68,7 +63,7 @@ fun CircularCountIndicator(
 
     LaunchedEffect(lastFourSame) {
         if (lastFourSame) {
-            shutterSound.play(MediaActionSound.START_VIDEO_RECORDING)
+            viewModel.playCountSoundIfEnabled()
         }
     }
 
