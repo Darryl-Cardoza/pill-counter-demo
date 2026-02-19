@@ -156,8 +156,8 @@ class PillScanningViewModel @Inject constructor(
     /** Initialize TensorFlow Lite interpreter using the Singleton Loader. */
     fun initializeInterpreter(
         retryCount: Int = 1,
-        viewWidth: Int = 640,
-        viewHeight: Int = 640
+        viewWidth: Int,
+        viewHeight: Int
     ) {
         if (_modelState.value is ModelState.Ready) {
             logger.w("Interpreter already initialized, skipping reinitialization.")
