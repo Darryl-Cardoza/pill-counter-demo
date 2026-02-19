@@ -3,8 +3,15 @@
 package com.rite.pillcounting.feature.pillCountScan.presentation.compose
 
 import android.annotation.SuppressLint
+import android.content.res.Configuration
 import androidx.camera.core.ImageProxy
 import androidx.camera.view.PreviewView
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTransformGestures
@@ -26,12 +33,18 @@ import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.input.pointer.pointerInput
@@ -40,11 +53,14 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.compose.ui.zIndex
 import androidx.core.content.ContextCompat
+import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.responsiveSp
 import com.rite.pillcounting.feature.pillCountScan.domain.model.DetectedPill
 import com.rite.pillcounting.feature.pillCountScan.presentation.logic.CameraHelper
 import com.rite.pillcounting.feature.pillCountScan.presentation.viewmodel.PillScanningViewModel
 import kotlinx.coroutines.flow.conflate
+import androidx.compose.ui.text.TextStyle
 
 // =========================================================
 // ZOOM CONTROL COMPOSABLE
@@ -84,14 +100,22 @@ fun ZoomControls(
                 Text(
                     text = zoomLabel,
                     color = MaterialTheme.colorScheme.secondary,
-                    fontSize = 14.sp,
+                    fontSize = responsiveSp(18.sp),
+                    style = TextStyle(
+                        shadow = Shadow(
+                            color = Color.Black.copy(alpha = 0.8f), // shadow color
+                            offset = Offset(1f, 1f),                 // x and y offset
+                            blurRadius = 4f                          // blur amount
+                        )
+                    ),
                     modifier = Modifier
                         .align(Alignment.CenterStart)
                         .offset(x = trackWidth * fraction)
                 )
+
             }
 
-            // 🔹 SLIDER
+            // SLIDER
             Slider(
                 value = zoom,
                 onValueChange = onChange,
@@ -113,7 +137,7 @@ fun ZoomControls(
                     )
                 },
 
-                // 🧵 CUSTOM TRACK
+                // CUSTOM TRACK
                 track = { sliderState ->
                     val trackFraction =
                         (sliderState.value - sliderState.valueRange.start) /
@@ -174,6 +198,10 @@ fun CameraPreviewSection(
     val minZoom = 1f
     val maxZoom = 2f
 
+    var showPop by remember { mutableStateOf(false) }
+    var popKey by remember { mutableIntStateOf(0) }
+    var popText by remember { mutableStateOf("+0") }
+
     // Listen to CameraHelper zoom
     LaunchedEffect(Unit) {
         cameraHelper.zoomFlow.collect { zoomRatio.value = it }
@@ -193,6 +221,16 @@ fun CameraPreviewSection(
     // FILL_CENTER ensures it fully fills your 70% pane!
     LaunchedEffect(Unit) {
         previewView.scaleType = PreviewView.ScaleType.FILL_CENTER
+    }
+
+    LaunchedEffect(Unit) {
+        viewModel.addPopEvents.collect { count ->
+            popText = "+$count"
+            popKey++
+            showPop = true
+            kotlinx.coroutines.delay(700)
+            showPop = false
+        }
     }
 
     // Pause/Resume
@@ -226,6 +264,22 @@ fun CameraPreviewSection(
                         }
                     }
             )
+
+            AnimatedVisibility(
+                visible = showPop,
+                enter = fadeIn() +
+                        slideInVertically(initialOffsetY = { it / 2 }) +
+                        scaleIn(),
+                exit = fadeOut() +
+                        slideOutVertically(targetOffsetY = { -it }),
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .zIndex(1f)
+            ) {
+                key(popKey) {
+                    AddCountBubble(text = popText)
+                }
+            }
 
             // PILL MARKER OVERLAY
             Canvas(modifier = Modifier.matchParentSize()) {
@@ -271,26 +325,13 @@ fun CameraPreviewSection(
                 viewModel.updateFilteredPills(mapped.map { it.first })
                 onFilteredCountChanged(mapped.size)
 
-                // DRAWING
-                val textPaint = android.graphics.Paint().apply {
-                    color = android.graphics.Color.WHITE
-                    textAlign = android.graphics.Paint.Align.CENTER
-                    textSize = 28f
-                    isAntiAlias = true
-                    typeface = android.graphics.Typeface.create(
-                        android.graphics.Typeface.DEFAULT,
-                        android.graphics.Typeface.BOLD
-                    )
-                    setShadowLayer(6f, 0f, 0f, android.graphics.Color.BLACK)
-                }
-
                 drawIntoCanvas { canvas ->
                     mapped.forEachIndexed { i, (_, pos) ->
 
                         // Prevent drawing dots that are outside the visible cropped area!
                         if (pos.x in 0f..previewW && pos.y in 0f..previewH) {
                             val isLast = i == mapped.lastIndex
-                            val outerRadius = 9.dp.toPx()
+                            val outerRadius = 7.dp.toPx()
                             val strokeWidth = 2.dp.toPx()
 
                             drawCircle(

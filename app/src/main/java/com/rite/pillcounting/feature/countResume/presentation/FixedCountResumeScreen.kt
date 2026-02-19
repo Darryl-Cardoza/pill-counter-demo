@@ -34,15 +34,18 @@ fun FixedCountResumeScreen(
     val uiState by viewModel.fixedUiState.collectAsState()
     var showSearch by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
+    var showDeleteDialog by remember { mutableStateOf(false) }
+    val hasSelection = uiState.selectedItems.isNotEmpty()
 
     LaunchedEffect(Unit) {
         viewModel.navigationEvent.collect { event ->
             when (event) {
                 is NavigationEvent.NavigateToPillCount ->
                     navController.navigate(Screen.PillCount.createRoute(event.countType.toString())) {}
+
                 NavigationEvent.NavigateBack -> navController.popBackStack()
                 is NavigationEvent.NavigateToScanBarcode -> navController.navigate(
-                    Screen.ScanBarcode.createRoute(CountType.FIXED.toString(),)
+                    Screen.ScanBarcode.createRoute(CountType.FIXED.toString())
                 )
             }
         }
@@ -53,27 +56,40 @@ fun FixedCountResumeScreen(
         override fun closeMultiSelectMode() = FixedCountsEvent.CloseMultiSelectMode
         override fun deleteClicked() = FixedCountsEvent.DeleteClicked
         override fun itemSwipedToDelete(item: CountItem) = FixedCountsEvent.ItemSwipedToDelete(item)
-        override fun forceCompleteTransaction(item: CountItem) = FixedCountsEvent.ForceCompleteTransaction(item)
+        override fun forceCompleteTransaction(item: CountItem) =
+            FixedCountsEvent.ForceCompleteTransaction(item)
+
         override fun selectItem(item: CountItem) = FixedCountsEvent.SelectItem(item)
         override fun resumeTransaction(item: CountItem) = FixedCountsEvent.resumeTransaction(item)
     }
+
+    val isAllSelected =
+        uiState.fixedCounts.isNotEmpty() &&
+                uiState.selectedItems.size == uiState.fixedCounts.size
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(AppTheme.extendedColors.primaryBackground)
     ) {
+
         HeadlineBar(
             navController = navController,
             title = stringResource(R.string.fixed_partial_count_title),
             searchQuery = searchQuery,
             showSearch = showSearch,
+            isMultiSelectMode = uiState.isMultiSelectMode,
+            hasSelection = hasSelection,
             onSearchClick = {
                 showSearch = !showSearch
                 if (!showSearch) searchQuery = "" // reset when closing
             },
             onSearchChange = { searchQuery = it },
-            onDeleteClick = { viewModel.onFixedEvent(FixedCountsEvent.ToggleMultiSelectMode) }
+            onDeleteClick = { viewModel.onFixedEvent(FixedCountsEvent.ToggleMultiSelectMode) },
+            isAllSelected = isAllSelected,
+            onCancelClick = { viewModel.onFixedEvent(FixedCountsEvent.ToggleMultiSelectMode) },
+            onConfirmDelete = { showDeleteDialog = true },
+            onSelectAll = { viewModel.onFixedEvent(FixedCountsEvent.SelectAllClicked) }
         )
 
         PartialListPanel(
@@ -83,7 +99,15 @@ fun FixedCountResumeScreen(
             searchQuery = searchQuery,
             onEvent = viewModel::onFixedEvent,
             eventFactory = fixedEventFactory,
-            countType = CountType.FIXED.toString()
+            countType = CountType.FIXED.toString(),
+            showMultiDeleteConfirmDialog = showDeleteDialog,
+            onMultiDelete = {
+                viewModel.onFixedEvent(FixedCountsEvent.DeleteClicked)
+                showDeleteDialog = false
+            },
+            onCloseDialog = { showDeleteDialog = false }
         )
     }
+
+
 }

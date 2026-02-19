@@ -23,4 +23,6 @@ data class CountItem(
     val barcodeImage: String?,
     val date: String,
     val image: Int = R.drawable.logo,
+    val isComingFromHL7: Boolean,
+    val isNdcVerified: Boolean
 )

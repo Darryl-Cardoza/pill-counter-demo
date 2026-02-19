@@ -27,13 +27,13 @@ object Letterbox {
         val w = src.width.toFloat()
         val h = src.height.toFloat()
 
-        // 1️⃣ SCALE (same as iOS)
+        // SCALE (same as iOS)
         val scale = min(targetSize / w, targetSize / h)
 
         val newW = w * scale
         val newH = h * scale
 
-        // 2️⃣ PADDING (center)
+        // PADDING (center)
         val padX = (targetSize - newW) / 2f
         val padY = (targetSize - newH) / 2f
 
@@ -44,7 +44,7 @@ object Letterbox {
             inputSize = targetSize
         )
 
-        // 3️⃣ CREATE OUTPUT BITMAP
+        // CREATE OUTPUT BITMAP
         val output = Bitmap.createBitmap(
             targetSize,
             targetSize,

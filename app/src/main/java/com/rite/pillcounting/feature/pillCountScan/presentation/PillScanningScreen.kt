@@ -161,7 +161,6 @@ fun PillScanningScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-//            .systemBarsPadding()
             .background(AppTheme.extendedColors.secondaryBackground)
             .pointerInput(Unit) {
                 awaitPointerEventScope {
@@ -196,8 +195,8 @@ fun PillScanningScreen(
 
                             viewModel.initializeInterpreter(
                                 retryCount = 2,
-                                previewWidth = w,
-                                previewHeight = h
+                                viewWidth = w,
+                                viewHeight = h
                             )
                         }
                     }

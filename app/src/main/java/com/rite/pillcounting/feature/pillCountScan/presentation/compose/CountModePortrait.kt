@@ -30,8 +30,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.rite.pillcounting.R
 import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.ActionButtonPrimary
+import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.responsiveButtonHeight
 import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.responsiveDp
-import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.responsiveDpForCircularCountProgressPotrait
+import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.responsiveDpForCircularCountProgressPortrait
 import com.rite.pillcounting.feature.pillCountScan.presentation.viewmodel.PillScanningViewModel
 import com.rite.pillcounting.ui.theme.AppTheme
 
@@ -69,7 +70,7 @@ fun CountModePortrait(
                     text = totalCount.toString(),
                     color = MaterialTheme.colorScheme.primary,
                     fontSize = 28.sp,
-                    fontWeight = FontWeight.SemiBold
+                    fontWeight = FontWeight.Medium
                 )
 
                 if (scanType == "FIXED") {
@@ -84,7 +85,7 @@ fun CountModePortrait(
                         text = targetCount.toString(),
                         color = MaterialTheme.colorScheme.primary,
                         fontSize = 20.sp,
-                        fontWeight = FontWeight.SemiBold
+                        fontWeight = FontWeight.Medium
                     )
                 } else {
                     Spacer(modifier = Modifier.height(responsiveDp(25.dp)))
@@ -103,13 +104,13 @@ fun CountModePortrait(
 
         Box(
             modifier = Modifier
-                .height(responsiveDpForCircularCountProgressPotrait(0.3f))
+                .height(responsiveDpForCircularCountProgressPortrait(150.dp))
                 .weight(1f),
             contentAlignment = Alignment.BottomCenter
         ) {
             Box(
                 modifier = Modifier
-                    .size(responsiveDpForCircularCountProgressPotrait(0.27f))
+                    .size(responsiveDpForCircularCountProgressPortrait(130.dp))
                     .align(Alignment.TopCenter),
                 contentAlignment = Alignment.Center
             ) {
@@ -137,7 +138,7 @@ fun CountModePortrait(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .offset(y = (-6).dp)
-                    .height(responsiveDp(40.dp))
+                    .height(responsiveButtonHeight(40.dp))
                     .padding(horizontal = 14.dp),
 
                 width = 80,

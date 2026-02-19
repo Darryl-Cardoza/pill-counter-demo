@@ -12,12 +12,14 @@ import com.rite.pillcounting.feature.barcodeScan.presentation.ScanBarCodeScreen
 import com.rite.pillcounting.feature.countResume.presentation.FixedCountResumeScreen
 import com.rite.pillcounting.feature.countResume.presentation.RegularCountResumeScreen
 import com.rite.pillcounting.feature.dashboard.presentation.DashboardScreen
+import com.rite.pillcounting.feature.history.domain.model.HistoryMode
 import com.rite.pillcounting.feature.history.presentation.HistoryDetailScreen
 import com.rite.pillcounting.feature.history.presentation.HistoryScreen
 import com.rite.pillcounting.feature.menu.presentation.MenuScreen
 import com.rite.pillcounting.feature.pillCountScan.presentation.PillScanningScreen
 import com.rite.pillcounting.feature.profile.presentation.ProfileScreen
 import com.rite.pillcounting.feature.settings.presentation.SettingsScreen
+import com.rite.pillcounting.feature.unsyncedTransaction.presentation.compose.UnsyncedTransactionScreen
 
 // Define constants for nested graph routes for better organization
 const val AUTH_GRAPH_ROUTE = "auth"
@@ -81,17 +83,32 @@ fun AppNavGraph(
             )
         }
 
-        composable(route = Screen.History.route) {
+        composable(
+            route = Screen.History.route,
+            arguments = Screen.History.navArguments
+        ) { backStackEntry ->
+
+            val historyMode = backStackEntry.arguments
+                ?.getString(Screen.History.ARG_TYPE)
+                ?.let { runCatching { HistoryMode.valueOf(it) }.getOrNull() }
+                ?: HistoryMode.NORMAL
+
             HistoryScreen(
                 navController = navController,
-                onBackClick = {
-                    navController.popBackStack()
-                }
+                historyMode = historyMode,
+                onBackClick = { navController.popBackStack() }
             )
         }
 
+
         composable(route = Screen.HistoryDetail.route) {
             HistoryDetailScreen(
+                navController = navController,
+            )
+        }
+
+        composable(route = Screen.UnsyncedTransactionScreen.route) {
+            UnsyncedTransactionScreen(
                 navController = navController,
             )
         }

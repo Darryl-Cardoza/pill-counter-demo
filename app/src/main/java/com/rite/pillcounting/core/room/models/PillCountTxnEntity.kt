@@ -82,5 +82,6 @@ data class PillCountTxnEntity(
 
     /** Require for HL7 flow **/
     val isComingFromHL7: Boolean? = null,
-    val isSynced: Boolean? = null
+    val isSynced: Boolean? = null,
+    val isNdcVerified : Boolean? = null
 )

@@ -34,6 +34,8 @@ fun RegularCountResumeScreen(
     val uiState by viewModel.regularUiState.collectAsState()
     var showSearch by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
+    var showDeleteDialog by remember { mutableStateOf(false) }
+    val hasSelection = uiState.selectedItems.isNotEmpty()
 
     LaunchedEffect(Unit) {
         viewModel.navigationEvent.collect { event ->
@@ -58,6 +60,11 @@ fun RegularCountResumeScreen(
         override fun resumeTransaction(item: CountItem) = RegularCountsEvent.resumeTransaction(item)
     }
 
+    val isAllSelected =
+        uiState.regularCounts.isNotEmpty() &&
+                uiState.selectedItems.size == uiState.regularCounts.size
+
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -68,12 +75,18 @@ fun RegularCountResumeScreen(
             title = stringResource(R.string.regular_partial_count_title),
             searchQuery = searchQuery,
             showSearch = showSearch,
+            isMultiSelectMode = uiState.isMultiSelectMode,
+            hasSelection = hasSelection,
             onSearchClick = {
                 showSearch = !showSearch
                 if (!showSearch) searchQuery = "" // reset when closing
             },
             onSearchChange = { searchQuery = it },
-            onDeleteClick = { viewModel.onRegularEvent(RegularCountsEvent.ToggleMultiSelectMode) }
+            onDeleteClick = { viewModel.onRegularEvent(RegularCountsEvent.ToggleMultiSelectMode) },
+            isAllSelected = isAllSelected,
+            onCancelClick = {viewModel.onRegularEvent(RegularCountsEvent.ToggleMultiSelectMode)},
+            onConfirmDelete = {showDeleteDialog = true},
+            onSelectAll = {viewModel.onRegularEvent(RegularCountsEvent.SelectAllClicked)}
         )
 
         PartialListPanel(
@@ -83,7 +96,13 @@ fun RegularCountResumeScreen(
             searchQuery = searchQuery,
             onEvent = viewModel::onRegularEvent,
             eventFactory = regularEventFactory,
-            countType = CountType.REGULAR.toString()
+            countType = CountType.REGULAR.toString(),
+            showMultiDeleteConfirmDialog = showDeleteDialog,
+            onMultiDelete = {
+                viewModel.onRegularEvent(RegularCountsEvent.DeleteClicked)
+                showDeleteDialog = false
+            },
+            onCloseDialog = {showDeleteDialog = false }
         )
     }
 }

@@ -26,7 +26,7 @@ class PillAnalyzer(
 
         logger.i(
             """
-            🟢 [PillAnalyzer] Frame received
+            [PillAnalyzer] Frame received
             Camera image size = ${imageProxy.width} x ${imageProxy.height}
             Rotation          = ${imageProxy.imageInfo.rotationDegrees}
             """.trimIndent()
@@ -46,7 +46,7 @@ class PillAnalyzer(
             Letterbox.currentScaleInfo?.let {
                 logger.i(
                     """
-                    📐 [Letterbox]
+                    [Letterbox]
                     scale = ${it.scale}
                     padX  = ${it.padX}
                     padY  = ${it.padY}
@@ -57,7 +57,7 @@ class PillAnalyzer(
 
             logger.i(
                 """
-                ✅ [Preprocess]
+                [Preprocess]
                 Time   = ${System.currentTimeMillis() - preprocessStart} ms
                 Bitmap = ${bitmap640.width} x ${bitmap640.height}
                 """.trimIndent()
@@ -71,7 +71,7 @@ class PillAnalyzer(
             val outputShape = interpreter.getOutputTensor(0).shape()
             logger.i(
                 """
-                📦 [Model]
+               [Model]
                 Output tensor shape = ${outputShape.contentToString()}
                 """.trimIndent()
             )
@@ -82,7 +82,7 @@ class PillAnalyzer(
             interpreter.run(inputBuffer, output)
 
             logger.i(
-                "⚡ [Inference] Time = ${System.currentTimeMillis() - inferStart} ms"
+                " [Inference] Time = ${System.currentTimeMillis() - inferStart} ms"
             )
 
             // --------------------------------------------------
@@ -90,7 +90,7 @@ class PillAnalyzer(
             // --------------------------------------------------
             val raw = output[0]
             val numAnchors = raw[0].size
-            logger.i("🔍 [Decode] Raw predictions count = ${raw.size}")
+            logger.i(" [Decode] Raw predictions count = ${raw.size}")
 
             val coords = Array(numAnchors) { FloatArray(4) }
             val conf = Array(numAnchors) { FloatArray(1) }
@@ -128,7 +128,7 @@ class PillAnalyzer(
 
             logger.i(
                 """
-                🎯 [Postprocess]
+                 [Postprocess]
                 Time            = ${System.currentTimeMillis() - postStart} ms
                 Final detections = ${detections.size}
                 """.trimIndent()
@@ -143,7 +143,7 @@ class PillAnalyzer(
             )
 
             logger.i(
-                "✂️ [NMS] final = ${finalDetections.size}"
+                " [NMS] final = ${finalDetections.size}"
             )
 
             // --------------------------------------------------
@@ -151,7 +151,7 @@ class PillAnalyzer(
             // --------------------------------------------------
             logger.i(
                 """
-                🧮 [Result]
+               [Result]
                 FINAL COUNT = ${detections.size}
                 Total frame time = ${System.currentTimeMillis() - overallStart} ms
                 """.trimIndent()
@@ -167,7 +167,7 @@ class PillAnalyzer(
             )
 
         } catch (e: Exception) {
-            logger.e("❌ [PillAnalyzer] Frame analysis failed", e)
+            logger.e(" [PillAnalyzer] Frame analysis failed", e)
             letterboxedBitmap?.recycle()
         } finally {
             imageProxy.close()

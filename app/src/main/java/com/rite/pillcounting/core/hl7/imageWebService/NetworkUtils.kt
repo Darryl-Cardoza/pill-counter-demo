@@ -4,15 +4,22 @@ import java.net.Inet4Address
 import java.net.NetworkInterface
 
 object NetworkUtils {
-    fun getLocalIpAddress(): String {
-        NetworkInterface.getNetworkInterfaces().toList().forEach { iface ->
-            iface.inetAddresses.toList().forEach { addr ->
-                if (!addr.isLoopbackAddress && addr is Inet4Address) {
-                    return addr.hostAddress
+
+    fun getLocalIpAddress(): String? {
+        return try {
+            NetworkInterface.getNetworkInterfaces()?.toList()?.forEach { iface ->
+                iface.inetAddresses?.toList()?.forEach { addr ->
+                    if (!addr.isLoopbackAddress && addr is Inet4Address) {
+                        return addr.hostAddress
+                    }
                 }
             }
+            null // no IP found
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
         }
-        error("No local IP address found")
     }
 }
+
 

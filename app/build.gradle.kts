@@ -31,7 +31,7 @@ android {
         buildConfigField(
             "String",
             "BASE_URL",
-            "\"https://pill.ccrlindia.com:8000/\""
+            "\"https://pill.ccrlindia.com/\""
         )
     }
 
@@ -39,12 +39,21 @@ android {
         release {
             isMinifyEnabled = true
             isShrinkResources = true
-            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
         }
         debug {
             enableUnitTestCoverage = true
+//            isMinifyEnabled = true
+//            proguardFiles(
+//                getDefaultProguardFile("proguard-android-optimize.txt"),
+//                "proguard-rules.pro"
+//            )
         }
     }
+
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
@@ -71,7 +80,8 @@ android {
                 "META-INF/io.netty.versions.properties",
                 "META-INF/*.SF",
                 "META-INF/*.DSA",
-                "META-INF/*.RSA"
+                "META-INF/*.RSA",
+                "META-INF/versions/9/OSGI-INF/MANIFEST.MF"
             )
         }
     }
@@ -162,10 +172,6 @@ dependencies {
     implementation("org.tensorflow:tensorflow-lite-gpu-api:2.17.0")
     implementation("org.tensorflow:tensorflow-lite-support:0.5.0")
 
-
-    // --- PDF / iText7 ---
-    implementation("com.itextpdf:itext7-core:7.2.5")
-
     //Location
     implementation("com.google.android.gms:play-services-location:21.3.0")
 
@@ -187,18 +193,16 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.7.0")
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.7.0")
 
-
-// Image Server - HL7
     implementation("io.ktor:ktor-server-core:2.3.12")
-    implementation("io.ktor:ktor-server-netty:2.3.12")
-    implementation("io.ktor:ktor-network-tls:2.3.12")
+    implementation("io.ktor:ktor-server-netty:2.3.12") {
+        exclude(group = "io.projectreactor", module = "blockhound")
+    }
 
-// ✅ Add Netty SSL with ALPN control
-    implementation("io.netty:netty-handler:4.1.100.Final")
-    implementation("io.netty:netty-codec-http:4.1.100.Final")
-
-// 🔥 CRITICAL: This gives you control over SSL/ALPN
-    implementation("io.netty:netty-tcnative-boringssl-static:2.0.61.Final")
 
     implementation("org.json:json:20230227")
+
+    // Bouncy Castle for TLS Keystore generation
+    implementation("org.bouncycastle:bcprov-jdk18on:1.83")
+    implementation("org.bouncycastle:bcpkix-jdk18on:1.83")
+
 }

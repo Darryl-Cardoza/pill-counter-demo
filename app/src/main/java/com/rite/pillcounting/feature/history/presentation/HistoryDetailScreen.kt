@@ -118,7 +118,7 @@ fun HistoryDetailScreen(
             }
 
         }
-
+        uiState.txnInfo
         DrugInfoSection(
             ndc = uiState.txnInfo?.ndc ?: "",
             expiry = uiState.txnInfo?.expiry ?: "",
@@ -128,6 +128,7 @@ fun HistoryDetailScreen(
             note = uiState.txnInfo?.note ?: "",
             totalPillCount = uiState.txnInfo?.totalPillCount.toString(),
             barcodeImage = uiState.txnInfo?.barcodeImage,
+            targetCount = uiState.txnInfo?.targetCount,
             transactionDetails = uiState.txnInfo?.txnDetails ?: emptyList(),
             onDelete = {
                 showDeleteConfirmDialog = true

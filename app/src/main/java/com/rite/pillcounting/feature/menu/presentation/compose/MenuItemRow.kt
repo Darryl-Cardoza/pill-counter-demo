@@ -76,7 +76,8 @@ fun MenuItemRow(
     completedIcon: Int,
     partialIcon: Int,
     mainClick: () -> Unit,
-    onPartialClick: () -> Unit
+    onPartialClick: () -> Unit,
+    onCompletedClick: () -> Unit
 ) {
     val configuration = LocalConfiguration.current
     val isPortrait = configuration.orientation == Configuration.ORIENTATION_PORTRAIT
@@ -129,7 +130,7 @@ fun MenuItemRow(
                         tint = partialTint,
                         icon = partialIcon,
                         hasBackground = true,
-                        onBadgeClick = { onPartialClick},
+                        onBadgeClick = { onPartialClick() },
                     )
                 }
             }
@@ -148,7 +149,7 @@ fun MenuItemRow(
                     tint = completedTint,
                     icon = completedIcon,
                     hasBackground = false,
-                    onBadgeClick = { },
+                    onBadgeClick = onCompletedClick,
                 )
                 StatBadge(
                     text = partial,

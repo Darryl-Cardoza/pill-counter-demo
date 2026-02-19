@@ -169,7 +169,7 @@ object HL7MessageBuilder {
                     observationId = observationId,
                     observationText = "$label ${index + 1}",
                     observationValue = buildRoomImageUrl(
-                        localIp,
+                        localIp?:"",
                         path.substringAfterLast("/"),
                         IMAGE_PORT.toString()
                     ),

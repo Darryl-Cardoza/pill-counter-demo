@@ -162,13 +162,26 @@ fun CountRow(
                     overflow = TextOverflow.Ellipsis
                 )
 
-                Text(
-                    text = item.date,
-                    fontSize = 12.sp,
-                    color = AppTheme.extendedColors.textColor,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
+                Row {
+                    Text(
+                        text = item.date,
+                        fontSize = 12.sp,
+                        color = AppTheme.extendedColors.textColor,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+
+                    if (item.isComingFromHL7) {
+                        Spacer(modifier = Modifier.width(8.dp))
+
+                        Text(
+                            text = stringResource(R.string.pms),
+                            fontSize = 12.sp,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
+
             }
 
             Spacer(modifier = Modifier.width(5.dp))

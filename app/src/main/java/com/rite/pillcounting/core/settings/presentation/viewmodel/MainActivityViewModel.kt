@@ -68,6 +68,9 @@ class MainActivityViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(ApplicationSettingsUiState())
     override val uiState = _uiState.asStateFlow()
 
+    private val _isSoundOn = MutableStateFlow(preferenceHelper.isSoundEnabled())
+    val isSoundOn: StateFlow<Boolean> = _isSoundOn
+
     init {
         // Load cached/fallback theme instantly
         loadCachedOrFallbackTheme()
@@ -302,10 +305,10 @@ class MainActivityViewModel @Inject constructor(
     /**
      * Configures and starts the HL7 service and its event consumer.
      */
-    private fun startHl7Service(){
+    private fun startHl7Service() {
 
         val broadCastServiceName = _uiState.value.nsdBroadcastType ?: return
-        val discoverServiceName  = _uiState.value.nsdDiscoveryType ?: return
+        val discoverServiceName = _uiState.value.nsdDiscoveryType ?: return
 
         val config = HL7Config(
             serverPort = 2575,
@@ -316,7 +319,7 @@ class MainActivityViewModel @Inject constructor(
             imageServicePort = 8080,
             imageServiceSecurePort = 8443
         )
-        hl7ServiceManager.initialize(config,hl7EventHandler)
+        hl7ServiceManager.initialize(config, hl7EventHandler)
     }
 
 
@@ -336,7 +339,6 @@ class MainActivityViewModel @Inject constructor(
     }
 
 
-
     /**
      * Shuts down the HL7 service.
      */
@@ -352,4 +354,11 @@ class MainActivityViewModel @Inject constructor(
     fun onUserLoginOrLogOut() {
         evaluateHl7State()
     }
+
+    // Called when user toggles the switch
+    fun toggleSoundOnOff(newValue: Boolean) {
+        preferenceHelper.setSoundEnabled(newValue)
+        _isSoundOn.value = newValue
+    }
+
 }

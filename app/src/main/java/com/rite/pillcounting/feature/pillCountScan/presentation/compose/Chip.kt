@@ -5,6 +5,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -49,9 +50,9 @@ fun Chip(
     var showDialog by remember { mutableStateOf(false) }
     Box(
         modifier = Modifier
-            .fillMaxSize()
             .width(responsiveDp(55.dp))
             .padding(horizontal = 2.dp)
+            .height(responsiveDp(80.dp))
             .clip(RoundedCornerShape(8.dp))
             .background(Color.Transparent)
             .border(

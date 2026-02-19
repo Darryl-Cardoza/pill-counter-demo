@@ -1,38 +1,37 @@
 package com.rite.pillcounting.feature.history.data
 
 import com.rite.pillcounting.core.room.dao.PillCountTxnDao
+import com.rite.pillcounting.core.room.models.enums.CountStatus
+import com.rite.pillcounting.core.room.models.enums.CountType
 import com.rite.pillcounting.feature.history.domain.model.TxnWithDrugDto
 
 
 import kotlinx.coroutines.flow.Flow
 import java.time.LocalDate
 import java.time.ZoneId
-import java.time.format.DateTimeFormatter
-import java.util.Locale
 import javax.inject.Inject
 
 class HistoryRepository @Inject constructor(
     private val dao: PillCountTxnDao
 ) {
-    private val formatter = DateTimeFormatter.ofPattern(
-        "dd MMM yyyy • hh:mm a",
-        Locale.getDefault()
-    )
 
-    fun getTransactionsForDate(date: LocalDate): Flow<List<TxnWithDrugDto>> {
-        val startOfDay = date.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
-        val endOfDay = date.plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
-
-        return dao.getTransactionsWithDrugByDate(startOfDay, endOfDay)
+    private fun LocalDate.toEpochRange(): Pair<Long, Long> {
+        val zone = ZoneId.systemDefault()
+        val start = atStartOfDay(zone).toInstant().toEpochMilli()
+        val end = plusDays(1).atStartOfDay(zone).toInstant().toEpochMilli()
+        return start to end
     }
 
+    fun getTransactionsForDate(date: LocalDate,type: CountType?, status: CountStatus?): Flow<List<TxnWithDrugDto>> {
+        val (start, end) = date.toEpochRange()
+        return dao.getTransactionsWithDrugByDate(start, end, type, status)
+    }
 
+    suspend fun deleteTransactionsForDate(date: LocalDate, type: CountType?, status: CountStatus?) {
+        val (start, end) = date.toEpochRange()
 
-    suspend fun deleteTransactionsForDate(date: LocalDate) {
-        val startOfDay = date.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
-        val endOfDay = date.plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
-
-        dao.deleteTransactionsByDate(startOfDay, endOfDay)
+        // NORMAL history → delete everything in that date
+        dao.deleteTransactionsByDate(start, end, type, status)
     }
 }
 

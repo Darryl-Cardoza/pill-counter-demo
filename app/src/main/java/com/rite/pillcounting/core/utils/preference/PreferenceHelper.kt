@@ -74,7 +74,7 @@ private const val KEY_SENT_TXN_ID = "last_txn_id"
 private const val KEY_NSD_BROADCAST_TYPE = "key_nsd_broadcast_type"
 private const val KEY_NSD_DISCOVERY_TYPE = "key_nsd_discovery_type"
 private const val KEY_HL7_ENABLED = "key_hl7_enabled"
-
+private const val KEY_SOUND = "key_pill_count_sound_enabled"
 
 
 @Singleton
@@ -421,6 +421,17 @@ class PreferenceHelper @Inject constructor(
     fun isHl7Enabled(): Boolean {
         val enabled = prefs.getBoolean(KEY_HL7_ENABLED, true)
         logger.d("HL7 enabled: $enabled")
+        return enabled
+    }
+
+    fun setSoundEnabled(enabled: Boolean) {
+        val enabled = prefs.edit().putBoolean(KEY_SOUND, enabled).apply()
+        logger.i("setSoundEnabled : $enabled")
+    }
+
+    fun isSoundEnabled(): Boolean {
+        val enabled = prefs.getBoolean(KEY_SOUND, true)
+        logger.d("isSoundEnabled : $enabled")
         return enabled
     }
 }

@@ -176,7 +176,8 @@ fun TxnDetailDialog(
                             Text(
                                 text = "${details.count}",
                                 style = MaterialTheme.typography.titleMedium.copy(color = Color.White),
-                                fontSize = responsiveSp(14.sp),
+                                fontSize = responsiveSp(16.sp),
+                                fontWeight = FontWeight.Medium
                             )
                         }
                         Spacer(modifier = Modifier.height(smallMedium))

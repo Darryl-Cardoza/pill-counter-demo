@@ -980,7 +980,19 @@ object UserInterfaceUtils {
     private fun Boolean?.orFalse(): Boolean = this ?: false
 
 
+    @Composable
+    fun responsiveButtonHeight(baseDp: Dp): Dp {
+        val config = LocalConfiguration.current
+        val sw = minOf(config.screenWidthDp, config.screenHeightDp)
 
+        val scale = when {
+            sw < 400 -> 0.8f   // very small phones
+            sw < 600 -> 1f     // normal phones
+            sw < 840 -> 1.15f  // tablets
+            else -> 1.3f       // large tablets
+        }
+        return baseDp * scale
+    }
 
 
     @Composable
@@ -998,13 +1010,35 @@ object UserInterfaceUtils {
     }
 
     @Composable
-    fun responsiveDpForCircularCountProgressPotrait(baseDp: Dp): Dp {
+    fun responsiveDpForCircularCountProgressPortrait(baseDp: Dp): Dp {
         val config = LocalConfiguration.current
         val sw = minOf(config.screenWidthDp, config.screenHeightDp)
 
         val scale = when {
-            sw < 400 -> 0.7f   // very small phones
-            sw < 600 -> 1f     // normal phones
+            sw < 400 -> 1f   // very small phones
+            sw < 500 -> 1f     // normal phones
+            sw < 840 -> 1.1f  // tablets
+            else -> 1.3f       // large tablets
+        }
+        return baseDp * scale
+    }
+
+    @Composable
+    fun responsiveDpForCircularCountProgressPortrait(percent: Float): Dp {
+        val config = LocalConfiguration.current
+        val sw = minOf(config.screenWidthDp, config.screenHeightDp)
+
+        return (sw * percent).dp
+    }
+
+    @Composable
+    fun responsiveDpForCircularCountProgressLandscape(baseDp: Dp): Dp {
+        val config = LocalConfiguration.current
+        val sw = minOf(config.screenWidthDp, config.screenHeightDp)
+
+        val scale = when {
+            sw < 400 -> 0.8f   // very small phones
+            sw < 500 -> 1f     // normal phones
             sw < 840 -> 1.15f  // tablets
             else -> 1.3f       // large tablets
         }
@@ -1012,29 +1046,11 @@ object UserInterfaceUtils {
     }
 
     @Composable
-    fun responsiveDpForCircularCountProgressPotrait(percent: Float): Dp {
-        val config = LocalConfiguration.current
-        val sw = minOf(config.screenWidthDp, config.screenHeightDp)
-
-        return (sw * percent).dp
-    }
-
-    @Composable
-    fun responsiveDpForCircularCountProgressLandscape(percent: Float): Dp {
-        val config = LocalConfiguration.current
-        val sw = minOf(config.screenWidthDp, config.screenHeightDp)
-
-        // percent = 0.12f means 12% of screen
-        return (sw * percent).dp
-    }
-
-
-    @Composable
     fun responsiveSp(baseSp: TextUnit): TextUnit {
         val configuration = LocalConfiguration.current
         val smallestWidthDp = minOf(configuration.screenWidthDp, configuration.screenHeightDp)
         val scale = when {
-            smallestWidthDp < 400 -> 0.8f //small phone
+//            smallestWidthDp < 400 -> 0.8f //small phone
             smallestWidthDp < 600 -> 1f   //phone
             smallestWidthDp < 840 -> 1.5f //small tablets
             else -> 2f          //large tablets

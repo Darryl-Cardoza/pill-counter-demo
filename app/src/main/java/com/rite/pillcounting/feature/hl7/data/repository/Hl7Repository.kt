@@ -181,7 +181,8 @@ class Hl7Repository @Inject constructor(
             targetCount = targetCount,
             status = CountStatus.PARTIAL,
             isComingFromHL7 = true,
-            isSynced = false
+            isSynced = false,
+            isNdcVerified = false
         )
 
         val txnId = pillCountTxnDao.upsertPreservingId(txn)
@@ -213,7 +214,8 @@ class Hl7Repository @Inject constructor(
             targetCount = null,
             status = CountStatus.PARTIAL,
             isComingFromHL7 = true,
-            isSynced = false
+            isSynced = false,
+            isNdcVerified = false
         )
 
         logger.i("Received message $txn")

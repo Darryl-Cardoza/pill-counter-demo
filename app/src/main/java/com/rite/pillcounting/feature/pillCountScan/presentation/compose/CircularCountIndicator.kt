@@ -1,6 +1,5 @@
 package com.rite.pillcounting.feature.pillCountScan.presentation.compose
 
-import android.media.MediaActionSound
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -26,7 +25,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.responsiveDpForCircularCountProgressPotrait
+import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.responsiveDpForCircularCountProgressPortrait
 import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.responsiveSp
 import com.rite.pillcounting.feature.pillCountScan.presentation.viewmodel.PillScanningViewModel
 import com.rite.pillcounting.ui.theme.AppTheme
@@ -40,10 +39,6 @@ fun CircularCountIndicator(
 
     val indicatorColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.8f)
     val lastDetections by viewModel.lastTenDetections.collectAsState()
-
-    val shutterSound = remember {
-        MediaActionSound().apply { load(MediaActionSound.SHUTTER_CLICK) }
-    }
 
     val uiState by viewModel.uiState.collectAsState()
 
@@ -68,12 +63,12 @@ fun CircularCountIndicator(
 
     LaunchedEffect(lastFourSame) {
         if (lastFourSame) {
-            shutterSound.play(MediaActionSound.START_VIDEO_RECORDING)
+            viewModel.playCountSoundIfEnabled()
         }
     }
 
     Box(
-        modifier = modifier.size(responsiveDpForCircularCountProgressPotrait(0.27f)),
+        modifier = modifier.size(responsiveDpForCircularCountProgressPortrait(0.27f)),
         contentAlignment = Alignment.Center
     ) {
         Canvas(modifier = Modifier.fillMaxSize()) {
