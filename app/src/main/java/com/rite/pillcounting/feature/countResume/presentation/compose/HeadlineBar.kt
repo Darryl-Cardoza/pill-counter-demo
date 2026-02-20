@@ -49,7 +49,7 @@ fun HeadlineBar(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 12.dp, vertical = 4.dp),
+            .padding(end = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
@@ -57,8 +57,7 @@ fun HeadlineBar(
             // Search mode
             Row(
                 modifier = Modifier
-                    .weight(1f)
-                    .padding(start = 4.dp),
+                    .weight(1f),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 BackButton(navController)
