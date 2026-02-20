@@ -195,8 +195,8 @@ fun PillScanningScreen(
 
                             viewModel.initializeInterpreter(
                                 retryCount = 2,
-                                previewWidth = w,
-                                previewHeight = h
+                                viewWidth = w,
+                                viewHeight = h
                             )
                         }
                     }
