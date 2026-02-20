@@ -77,6 +77,7 @@ fun RegularCountResumeScreen(
             showSearch = showSearch,
             isMultiSelectMode = uiState.isMultiSelectMode,
             hasSelection = hasSelection,
+            showDelete = true,
             onSearchClick = {
                 showSearch = !showSearch
                 if (!showSearch) searchQuery = "" // reset when closing
