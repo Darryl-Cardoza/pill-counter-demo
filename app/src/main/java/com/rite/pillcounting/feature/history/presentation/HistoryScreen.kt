@@ -27,6 +27,7 @@ import java.time.LocalDate
 import java.time.YearMonth
 import com.rite.pillcounting.R
 import com.rite.pillcounting.feature.history.domain.model.HistoryMode
+import com.rite.pillcounting.feature.countResume.presentation.compose.HeadlineBar
 
 /**
  * HistoryScreen
@@ -58,8 +59,11 @@ fun HistoryScreen(
     // Calendar state must be initialized in Composable context
     val today = LocalDate.now()
     val currentMonth = YearMonth.from(today)
+    var showSearch by remember { mutableStateOf(false) }
+    val searchQuery by viewModel.searchQuery.collectAsState()
+
     val calendarState = rememberCalendarState(
-        startMonth = currentMonth.minusMonths(12),
+        startMonth = currentMonth.minusMonths(3),
         endMonth = currentMonth,
         firstVisibleMonth = currentMonth,
         firstDayOfWeek = DayOfWeek.SUNDAY
@@ -69,44 +73,88 @@ fun HistoryScreen(
         viewModel.setHistoryMode(historyMode)
     }
 
-
-    Box(
+    Column(
         modifier = Modifier
             .fillMaxSize()
             .systemBarsPadding()
             .background(AppTheme.extendedColors.secondaryBackground)
     ) {
-        SplitResponsive(
-            topOrLeft = {
-                // Calendar section
-                CalendarSection(
-                    calendarState = calendarState,
-                    selectedDate = selectedDate,
-                    onDateSelected = { viewModel.   selectDate(it) },
-                    onBackClick = onBackClick,
-                    navController = navController
-                )
-            },
-            bottomOrRight = {
-                // Counts section
-                val openPdfWith = stringResource(R.string.open_pdf_with)
-                CountsSection(
-                    counts = counts,
-                    onExportClick = {
-                        val file = pdfExporter.generateHistoryPdf(counts, selectedDate.toString())
-                        file?.let {
-                            // Share or open the PDF
-                            sharePdfFile(context, it, openPdfWith)
-                        }
-                    },
-                    onDeleteClick = { showDeleteConfirmationDialog = true },
-                    onTxnClick = { txnId ->
-                        viewModel.selectCurrentTransaction(txnId)
-                        navController.navigate(Screen.HistoryDetail.route)
+
+        if (showSearch) {
+
+            // SEARCH MODE SCREEN
+            HeadlineBar(
+                navController = navController,
+                title = "",
+                searchQuery = searchQuery,
+                showSearch = true,
+                isMultiSelectMode = false,
+                isAllSelected = false,
+                hasSelection = false,
+                showDelete = false,
+                onSearchClick = {
+                    viewModel.setSearchQuery("")  // clear text
+                    showSearch = false           // return to calendar mode
+                } ,
+                onSearchChange = { viewModel.setSearchQuery(it) },
+                onDeleteClick = {},
+                onCancelClick = {},
+                onConfirmDelete = {},
+                onSelectAll = {}
+            )
+
+            val openPdfWith = stringResource(R.string.open_pdf_with)
+            CountsSection(
+                counts = counts,
+                onExportClick = {
+                    val file = pdfExporter.generateHistoryPdf(counts, selectedDate.toString())
+                    file?.let {
+                        sharePdfFile(context, it, openPdfWith)
                     }
-                )
-            }
-        )
+                },
+                onDeleteClick = { showDeleteConfirmationDialog = true },
+                onTxnClick = { txnId ->
+                    viewModel.selectCurrentTransaction(txnId)
+                    navController.navigate(Screen.HistoryDetail.route)
+                }
+            )
+
+        } else {
+
+            // NORMAL MODE SCREEN
+            SplitResponsive(
+                topOrLeft = {
+                    CalendarSection(
+                        calendarState = calendarState,
+                        selectedDate = selectedDate,
+                        onDateSelected = { viewModel.selectDate(it) },
+                        onBackClick = onBackClick,
+                        navController = navController,
+                        viewModel = viewModel,
+                        showSearch = false,
+                        onSearchToggle = { showSearch = true }
+                    )
+                },
+                bottomOrRight = {
+                    val openPdfWith = stringResource(R.string.open_pdf_with)
+                    CountsSection(
+                        counts = counts,
+                        onExportClick = {
+                            val file =
+                                pdfExporter.generateHistoryPdf(counts, selectedDate.toString())
+                            file?.let {
+                                sharePdfFile(context, it, openPdfWith)
+                            }
+                        },
+                        onDeleteClick = { showDeleteConfirmationDialog = true },
+                        onTxnClick = { txnId ->
+                            viewModel.selectCurrentTransaction(txnId)
+                            navController.navigate(Screen.HistoryDetail.route)
+                        }
+                    )
+                }
+            )
+        }
     }
 
     if (showDeleteConfirmationDialog) {

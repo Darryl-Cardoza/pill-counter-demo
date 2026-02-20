@@ -39,6 +39,7 @@ fun HeadlineBar(
     isMultiSelectMode: Boolean,
     isAllSelected: Boolean,
     hasSelection : Boolean,
+    showDelete: Boolean,
     onSearchClick: () -> Unit,
     onSearchChange: (String) -> Unit,
     onDeleteClick: () -> Unit,
@@ -49,7 +50,7 @@ fun HeadlineBar(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 12.dp, vertical = 4.dp),
+            .padding(end = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
@@ -57,8 +58,7 @@ fun HeadlineBar(
             // Search mode
             Row(
                 modifier = Modifier
-                    .weight(1f)
-                    .padding(start = 4.dp),
+                    .weight(1f),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 BackButton(navController)
@@ -96,18 +96,22 @@ fun HeadlineBar(
             //  Normal mode
             // when delete mode is on
             if (!isMultiSelectMode) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     BackButton(navController)
+
                     Spacer(Modifier.width(4.dp))
+
                     Text(
                         text = title.uppercase(),
                         fontSize = 16.sp,
                         fontWeight = FontWeight.SemiBold,
-                        color = AppTheme.extendedColors.textColor
+                        color = AppTheme.extendedColors.textColor,
+                        modifier = Modifier.weight(1f)
                     )
-                }
 
-                Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
                         painter = painterResource(id = R.drawable.search),
                         contentDescription = stringResource(R.string.cd_search),
@@ -117,16 +121,17 @@ fun HeadlineBar(
                             .clickable { onSearchClick() }
                     )
 
-                    Spacer(Modifier.width(16.dp))
-
-                    Icon(
-                        painter = painterResource(id = R.drawable.delete),
-                        contentDescription = stringResource(R.string.cd_select_items_to_delete),
-                        tint = MaterialTheme.colorScheme.secondary,
-                        modifier = Modifier
-                            .size(26.dp)
-                            .clickable { onDeleteClick() }
-                    )
+                    if (showDelete) {
+                        Spacer(Modifier.width(16.dp))
+                        Icon(
+                            painter = painterResource(id = R.drawable.delete),
+                            contentDescription = stringResource(R.string.cd_select_items_to_delete),
+                            tint = MaterialTheme.colorScheme.secondary,
+                            modifier = Modifier
+                                .size(26.dp)
+                                .clickable { onDeleteClick() }
+                        )
+                    }
                 }
             }else{
                 //normal

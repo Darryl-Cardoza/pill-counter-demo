@@ -42,7 +42,6 @@ fun UnsyncedTransactionScreen(
         ) {
 
             Row(
-                modifier = Modifier.padding(start = 4.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 BackButton(navController)

@@ -301,6 +301,40 @@ interface PillCountTxnDao {
         status: CountStatus?
     ): Flow<List<TxnWithDrugDto>>
 
+    @Query(
+        """
+    SELECT 
+        txn.txnId,
+        txn.countType,
+        txn.status,
+        COALESCE(SUM(details.pillCount), 0) AS pillCount,
+        drug.drugName,
+        drug.ndc,
+        txn.barcodeImage,
+        txn.createdAt,
+        txn.targetCount,
+        txn.note
+    FROM pill_count_txn AS txn
+    LEFT JOIN pill_count_txn_details AS details
+           ON txn.txnId = details.txnId 
+           AND details.isDeleted = 0
+    LEFT JOIN drug_master AS drug
+           ON txn.drugId = drug.drugId
+    WHERE txn.createdAt BETWEEN :startDate AND :endDate
+      AND txn.isDeleted = 0
+      AND (:type IS NULL OR txn.countType = :type)
+      AND (:status IS NULL OR txn.status = :status)
+    GROUP BY txn.txnId
+    ORDER BY txn.createdAt DESC
+    """
+    )
+    fun getTransactionsForDateRange(
+        startDate: Long,
+        endDate: Long,
+        type: CountType?,
+        status: CountStatus?
+    ): Flow<List<TxnWithDrugDto>>
+
 
 
     // ─────────────────────────────── Deletes ───────────────────────────────
