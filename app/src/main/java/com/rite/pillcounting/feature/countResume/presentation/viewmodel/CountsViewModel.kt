@@ -175,7 +175,7 @@ class CountsViewModel @Inject constructor(
      */
     private fun observeFixedCounts() {
         viewModelScope.launch {
-            pillCountTxnDao.observePartialByCountType(CountType.FIXED)
+            pillCountTxnDao.observePartialByCountType(CountType.FIXED, userLocalId = preferenceHelper.getLocalId())
                 .map { txns ->
                     txns.map {
                         CountItem(
@@ -257,7 +257,7 @@ class CountsViewModel @Inject constructor(
      */
     private fun observeRegularCounts() {
         viewModelScope.launch {
-            pillCountTxnDao.observePartialByCountType(countType = CountType.REGULAR)
+            pillCountTxnDao.observePartialByCountType(countType = CountType.REGULAR, userLocalId = preferenceHelper.getLocalId())
                 .map { txns ->
                     txns.map {
                         CountItem(
