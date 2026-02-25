@@ -98,37 +98,70 @@ class HL7Service : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         intent?.let { loadConfigFromIntent(it) }
 
-        Log.i(TAG, "Service starting with config: $config")
-
         startForeground(NOTIFICATION_ID, buildNotification())
-        startImageServer()
-        initializeCoreComponents()
-        startMllpServer()
-        initNetworkMonitoring(this)
+
+        serviceScope.launch {
+            startServiceInternal()
+        }
 
         return START_STICKY
     }
 
+    private fun startServiceInternal() {
+        startImageServer()
+        initializeCoreComponents()
+        startMllpServer()
+        initNetworkMonitoring(this@HL7Service)
+    }
+
+//    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+//        intent?.let { loadConfigFromIntent(it) }
+//
+//        Log.i(TAG, "Service starting with config: $config")
+//
+//        startForeground(NOTIFICATION_ID, buildNotification())
+//        startImageServer()
+//        initializeCoreComponents()
+//        startMllpServer()
+//        initNetworkMonitoring(this)
+//
+//        return START_STICKY
+//    }
+//
+//    override fun onDestroy() {
+//        Log.i(TAG, "Service destroying")
+//
+//        runBlocking {
+//            try {
+//                server.stop()
+//                Log.d(TAG, "MLLP server stopped")
+//            } catch (e: Exception) {
+//                Log.e(TAG, "Error stopping server", e)
+//            }
+//        }
+//
+//        clientManager.shutdown()
+//        nsdHelper.shutdown()
+//        serviceScope.cancel()
+//        networkIpMonitor.stop()
+//        nsdHelper.shutdown()
+//        imageServer.stop()
+//        super.onDestroy()
+//        listener?.onServiceStopped()
+//    }
+
     override fun onDestroy() {
         Log.i(TAG, "Service destroying")
-
-        runBlocking {
-            try {
-                server.stop()
-                Log.d(TAG, "MLLP server stopped")
-            } catch (e: Exception) {
-                Log.e(TAG, "Error stopping server", e)
-            }
-        }
-
-        clientManager.shutdown()
-        nsdHelper.shutdown()
-        serviceScope.cancel()
-        networkIpMonitor.stop()
-        nsdHelper.shutdown()
-        imageServer.stop()
+        serviceScope.launch { cleanup() }
         super.onDestroy()
-        listener?.onServiceStopped()
+    }
+
+    private suspend fun cleanup() {
+        try { server.stop() } catch (_: Exception) {}
+        try { clientManager.shutdown() } catch (_: Exception) {}
+        try { nsdHelper.shutdown() } catch (_: Exception) {}
+        try { networkIpMonitor.stop() } catch (_: Exception) {}
+        try { imageServer.stop() } catch (_: Exception) {}
     }
 
     /** -------------------- CONFIGURATION -------------------- **/
