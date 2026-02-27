@@ -56,18 +56,17 @@ fun FixedCountSection(
 ) {
     Column(
         modifier = Modifier
-            .fillMaxSize(),
+            .fillMaxSize()
+            .bounceClick {
+                navigateToBarcodeScanFixedCount(navController)
+                onNavigate()
+            },
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
         Spacer(modifier = Modifier.weight(1f))
 
         Column(
-            modifier = Modifier
-                .bounceClick {
-                    navigateToBarcodeScanFixedCount(navController)
-                    onNavigate()
-                },
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             // Fixed count icon leading to ScanBarcode screen
