@@ -187,6 +187,9 @@ interface PillCountTxnDao {
         now: Long = System.currentTimeMillis()
     )
 
+    @Query("DELETE FROM pill_count_txn")
+    suspend fun deleteAllTransactions()
+
     // ─────────────────────────────── Relations ───────────────────────────────
 
     /**

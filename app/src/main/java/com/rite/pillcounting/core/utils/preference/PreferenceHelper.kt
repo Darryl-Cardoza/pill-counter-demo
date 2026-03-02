@@ -75,6 +75,10 @@ private const val KEY_NSD_BROADCAST_TYPE = "key_nsd_broadcast_type"
 private const val KEY_NSD_DISCOVERY_TYPE = "key_nsd_discovery_type"
 private const val KEY_HL7_ENABLED = "key_hl7_enabled"
 private const val KEY_SOUND = "key_pill_count_sound_enabled"
+private const val KEY_HAPTIC = "key_pill_count_haptic_enabled"
+private const val KEY_REQUIRE_BACK_COUNT = "key_require_back_count"
+private const val KEY_REQUIRE_DOUBLE_COUNT = "key_require_double_count"
+private const val KEY_REQUIRE_ADJUST_REASONS = "key_require_adjust_reasons"
 
 
 @Singleton
@@ -434,4 +438,49 @@ class PreferenceHelper @Inject constructor(
         logger.d("isSoundEnabled : $enabled")
         return enabled
     }
+
+    fun setHapticEnabled(enabled: Boolean) {
+        val enabled = prefs.edit().putBoolean(KEY_HAPTIC, enabled).apply()
+        logger.i("setHapticEnabled : $enabled")
+    }
+
+    fun isHapticEnabled(): Boolean {
+        val enabled = prefs.getBoolean(KEY_HAPTIC, true)
+        logger.d("isHapticEnabled : $enabled")
+        return enabled
+    }
+
+    fun setRequireBackCountEnabled(enabled: Boolean) {
+        val enabled = prefs.edit().putBoolean(KEY_REQUIRE_BACK_COUNT, enabled).apply()
+        logger.i("setRequireBackCountEnabled : $enabled")
+    }
+
+    fun isRequireBackCountEnabled(): Boolean {
+        val enabled = prefs.getBoolean(KEY_REQUIRE_BACK_COUNT, true)
+        logger.d("isRequireBackCountEnabled : $enabled")
+        return enabled
+    }
+
+    fun setRequireDoubleCountEnabled(enabled: Boolean) {
+        val enabled = prefs.edit().putBoolean(KEY_REQUIRE_DOUBLE_COUNT, enabled).apply()
+        logger.i("setRequireDoubleCountEnabled : $enabled")
+    }
+
+    fun isRequireDoubleCountEnabled(): Boolean {
+        val enabled = prefs.getBoolean(KEY_REQUIRE_DOUBLE_COUNT, true)
+        logger.d("isRequireDoubleCountEnabled : $enabled")
+        return enabled
+    }
+
+    fun setRequireAdjustReasonEnable(enabled: Boolean) {
+        val enabled = prefs.edit().putBoolean(KEY_REQUIRE_ADJUST_REASONS, enabled).apply()
+        logger.i("setRequireAdjustReasonEnable : $enabled")
+    }
+
+    fun isRequireAdjustReasonEnable(): Boolean {
+        val enabled = prefs.getBoolean(KEY_REQUIRE_ADJUST_REASONS, true)
+        logger.d("isRequireAdjustReasonEnable : $enabled")
+        return enabled
+    }
+
 }

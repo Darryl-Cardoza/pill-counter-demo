@@ -13,6 +13,7 @@ import com.rite.pillcounting.core.settings.domain.model.ApplicationSettingsUiSta
 import com.rite.pillcounting.core.settings.domain.model.ColorSettings
 import com.rite.pillcounting.core.settings.domain.model.SettingsDataDto
 import com.rite.pillcounting.core.settings.domain.model.ThemeColors
+import com.rite.pillcounting.core.settings.domain.model.enums.ScheduleCode
 import com.rite.pillcounting.core.utils.logger.AppLogger
 import com.rite.pillcounting.core.utils.preference.PreferenceHelper
 import com.rite.pillcounting.feature.hl7.core.Hl7EventHandler
@@ -70,6 +71,24 @@ class MainActivityViewModel @Inject constructor(
 
     private val _isSoundOn = MutableStateFlow(preferenceHelper.isSoundEnabled())
     val isSoundOn: StateFlow<Boolean> = _isSoundOn
+
+    private val _isHapticOn = MutableStateFlow(preferenceHelper.isHapticEnabled())
+    val isHapticOn: StateFlow<Boolean> = _isHapticOn
+
+    private val _isRequireBackCountEnable = MutableStateFlow(preferenceHelper.isRequireBackCountEnabled())
+    val isRequireBackCountEnable: StateFlow<Boolean> = _isRequireBackCountEnable
+
+    private val _isRequireDoubleCountEnable = MutableStateFlow(preferenceHelper.isRequireBackCountEnabled())
+    val isRequireDoubleCountEnable: StateFlow<Boolean> = _isRequireDoubleCountEnable
+
+    private val _isRequireAdjustReasons = MutableStateFlow(preferenceHelper.isRequireAdjustReasonEnable())
+    val isRequireAdjustReasons: StateFlow<Boolean> = _isRequireAdjustReasons
+
+
+    private val _selectedSchedules =
+        MutableStateFlow(ScheduleCode.values().toSet())
+    val selectedSchedules: StateFlow<Set<ScheduleCode>> =
+        _selectedSchedules
 
     init {
         // Load cached/fallback theme instantly
@@ -359,6 +378,42 @@ class MainActivityViewModel @Inject constructor(
     fun toggleSoundOnOff(newValue: Boolean) {
         preferenceHelper.setSoundEnabled(newValue)
         _isSoundOn.value = newValue
+    }
+
+    fun toggleHapticOnOff(newValue: Boolean) {
+        preferenceHelper.setHapticEnabled(newValue)
+        _isHapticOn.value = newValue
+    }
+
+    fun toggleRequireBackCountOnOff(newValue: Boolean) {
+        preferenceHelper.setRequireBackCountEnabled(newValue)
+        _isRequireBackCountEnable.value = newValue
+    }
+
+    fun toggleRequireDoubleCountOnOff(newValue: Boolean) {
+        preferenceHelper.setRequireDoubleCountEnabled(newValue)
+        _isRequireDoubleCountEnable.value = newValue
+    }
+
+    fun deleteAllTransaction() {
+        viewModelScope.launch {
+            txnDao.deleteAllTransactions()
+        }
+    }
+
+    fun toggleSchedule(code: ScheduleCode) {
+        _selectedSchedules.value = _selectedSchedules.value.toMutableSet().apply {
+            if (contains(code)) remove(code) else add(code)
+        }
+    }
+
+    fun isScheduleSelected(code: ScheduleCode): Boolean {
+        return _selectedSchedules.value.contains(code)
+    }
+
+    fun toggleRequireAdjustReasonOnOff(newValue: Boolean) {
+        preferenceHelper.setRequireAdjustReasonEnable(newValue)
+        _isRequireAdjustReasons.value = newValue
     }
 
 }
