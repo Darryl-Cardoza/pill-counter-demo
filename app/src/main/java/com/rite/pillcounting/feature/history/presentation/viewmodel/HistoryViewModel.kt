@@ -78,7 +78,8 @@ class HistoryViewModel @Inject constructor(
                     startDate = start,
                     endDate = end,
                     type = type,
-                    status = status
+                    status = status,
+                    userLocalId = preferenceHelper.getLocalId()
                 )
             }
             .stateIn(
@@ -116,6 +117,7 @@ class HistoryViewModel @Inject constructor(
     fun setHistoryMode(mode: HistoryMode) {
         _currentMode.value = mode
     }
+
     fun selectDate(date: LocalDate) {
         _selectedDate.value = date
     }
@@ -133,8 +135,6 @@ class HistoryViewModel @Inject constructor(
         }
 
 
-
-
     /** delete all transaction selected date **/
     fun deleteCountsForSelectedDate() {
         viewModelScope.launch {
@@ -145,11 +145,11 @@ class HistoryViewModel @Inject constructor(
                 startDate = _startDate.value,
                 endDate = _endDate.value,
                 type = type,
-                status = status
+                status = status,
+                userLocalId = preferenceHelper.getLocalId()
             )
         }
     }
-
 
 
     fun selectCurrentTransaction(txnId: Long) {

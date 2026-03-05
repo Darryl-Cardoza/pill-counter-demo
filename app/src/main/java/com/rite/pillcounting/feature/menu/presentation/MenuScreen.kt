@@ -252,8 +252,7 @@ fun MenuScreen(
                 is LogoutUiState.Success -> {
                     LaunchedEffect(Unit) {
                         // Clear user session on successful logout
-                        loginViewModel.preferenceHelper.clearTokens()
-                        loginViewModel.preferenceHelper.setUserLoggedIn(false)
+                        loginViewModel.clearSession()
                         loginViewModel.clearAllStates()
                         showLogoutLoading = false
 
