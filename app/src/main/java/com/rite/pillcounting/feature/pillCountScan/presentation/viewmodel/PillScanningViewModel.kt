@@ -5,6 +5,10 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Matrix
 import android.media.MediaActionSound
+import android.os.Build
+import android.os.VibrationEffect
+import android.os.Vibrator
+import android.os.VibratorManager
 import androidx.camera.core.ImageProxy
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -68,7 +72,7 @@ class PillScanningViewModel @Inject constructor(
 ) : AndroidViewModel(app) {
 
     private val logger = AppLogger("PillScanningVM")
-
+    val context: Context = getApplication<Application>().applicationContext
     private var currentFrameBitmap: Bitmap? = null
     private var lastTransformationMatrix: Matrix? = null
     private var isAnalyzingFrame = false
@@ -639,5 +643,33 @@ class PillScanningViewModel @Inject constructor(
         if (preferenceHelper.isSoundEnabled()) {
             shutterSound.play(MediaActionSound.START_VIDEO_RECORDING)
         }
+        if(preferenceHelper.isHapticEnabled()){
+            triggerHaptic(context)
+        }
     }
+
+    private fun triggerHaptic(context: Context) {
+
+        val vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            val manager =
+                context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
+            manager.defaultVibrator
+        } else {
+            context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+        }
+
+        if (!vibrator.hasVibrator()) return
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            vibrator.vibrate(
+                VibrationEffect.createOneShot(
+                    120,      // duration (increase if needed)
+                    255       // MAX amplitude (1–255)
+                )
+            )
+        } else {
+            vibrator.vibrate(120)
+        }
+    }
+
 }

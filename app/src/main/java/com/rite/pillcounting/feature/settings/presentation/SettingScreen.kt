@@ -5,6 +5,7 @@ import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -12,6 +13,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.wrapContentWidth
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
@@ -37,10 +42,12 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.rite.pillcounting.R
+import com.rite.pillcounting.core.settings.domain.model.enums.ScheduleCode
 import com.rite.pillcounting.core.settings.presentation.viewmodel.MainActivityViewModel
 import com.rite.pillcounting.core.utils.common.HistoryRetention
 import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.BackButton
 import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.CommonDialog
+import com.rite.pillcounting.ui.theme.AppTheme.extendedColors
 import com.rite.pillcounting.ui.theme.LocalExtendedColors
 
 /**
@@ -72,6 +79,13 @@ fun SettingsScreen(
 
     val extendedColors = LocalExtendedColors.current
     val isSoundEnabled by viewModel.isSoundOn.collectAsState()
+    val isRequireDoubleCount by viewModel.isRequireDoubleCountEnable.collectAsState()
+    val isHapticEnable by viewModel.isHapticOn.collectAsState()
+    val isRequireBackCountEnable by viewModel.isRequireBackCountEnable.collectAsState()
+    var showCLearAllDataConfirmDialog by remember { mutableStateOf(false) }
+    val selectedSchedules by viewModel.selectedSchedules.collectAsState()
+    val isRequireAdjustReasons by viewModel.isRequireAdjustReasons.collectAsState()
+    val schedules = ScheduleCode.values().toList()
 
     Column(
         modifier = Modifier
@@ -85,7 +99,7 @@ fun SettingsScreen(
                 .fillMaxWidth()
                 .padding(bottom = 16.dp)
         ) {
-            BackButton(navController = navController )
+            BackButton(navController = navController)
 
             Text(
                 text = stringResource(R.string.settings_title),
@@ -97,18 +111,10 @@ fun SettingsScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(start = 16.dp, end = 16.dp)
+                .padding(start = 16.dp, end = 16.dp, bottom = 16.dp)
+                .verticalScroll(rememberScrollState())
 
         ) {
-
-            // Toggle: Barcode scan first
-            /*SettingSwitch(
-                labelRes = R.string.setting_barcode_scan_first,
-                checked = isBarcodeScanFirst,
-                onCheckedChange = { isBarcodeScanFirst = it }
-            )
-
-            HorizontalDivider(color = colorScheme.outlineVariant)*/
 
             // Toggle: Ask to add notes
             SettingSwitch(
@@ -116,13 +122,88 @@ fun SettingsScreen(
                 checked = isAskToAddNotes,
                 onCheckedChange = { newValue ->
                     viewModel.toggleAskToAddNotes(newValue)
-                }
+                },
+                checkedTrackColor = MaterialTheme.colorScheme.secondary
             )
 
             HorizontalDivider(color = colorResource(R.color.border_gray).copy(alpha = 0.3f))
 
-            Spacer(Modifier.height(24.dp))
+            SettingSwitch(
+                labelRes = R.string.require_double_count,
+                checked = isRequireDoubleCount,
+                onCheckedChange = { newValue ->
+                    viewModel.toggleRequireDoubleCountOnOff(newValue)
+                },
+                checkedTrackColor = MaterialTheme.colorScheme.secondary
+            )
 
+            if (isRequireDoubleCount) {
+                Text(
+                    text = stringResource(R.string.select_schedule_codes),
+                    fontSize = 16.sp,
+                    color = extendedColors.textColor,
+                    modifier = Modifier
+                        .padding(bottom = 8.dp)
+                        .padding(horizontal = 16.dp)
+                )
+                Row(
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    schedules.take(3).forEach { code ->
+                        Box(modifier = Modifier.weight(1f)) {
+                            ScheduleCheckBox(
+                                label = code.name,
+                                checked = selectedSchedules.contains(code),
+                                onCheckedChange = { viewModel.toggleSchedule(code) }
+                            )
+                        }
+                    }
+                }
+
+                Row(
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    schedules.drop(3).forEach { code ->
+                        Box(modifier = Modifier.weight(1f)) {
+                            ScheduleCheckBox(
+                                label = code.name,
+                                checked = selectedSchedules.contains(code),
+                                onCheckedChange = { viewModel.toggleSchedule(code) }
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.weight(1f))
+                }
+
+                HorizontalDivider(
+                    color = colorResource(R.color.border_gray).copy(alpha = 0.3f)
+                )
+            }
+            HorizontalDivider(color = colorResource(R.color.border_gray).copy(alpha = 0.3f))
+
+            SettingSwitch(
+                labelRes = R.string.require_back_count,
+                checked = isRequireBackCountEnable,
+                onCheckedChange = { newValue ->
+                    viewModel.toggleRequireBackCountOnOff(newValue)
+                },
+                checkedTrackColor = MaterialTheme.colorScheme.secondary
+            )
+            HorizontalDivider(color = colorResource(R.color.border_gray).copy(alpha = 0.3f))
+
+            SettingSwitch(
+                labelRes = R.string.require_adjust_resons,
+                checked = isRequireAdjustReasons,
+                onCheckedChange = { newValue ->
+                    viewModel.toggleRequireAdjustReasonOnOff(newValue)
+                },
+                checkedTrackColor = MaterialTheme.colorScheme.secondary
+            )
+
+            HorizontalDivider(color = colorResource(R.color.border_gray).copy(alpha = 0.3f))
+
+            Spacer(modifier = Modifier.height(16.dp))
             // History save options
             Text(
                 text = stringResource(R.string.setting_save_history_for),
@@ -151,15 +232,57 @@ fun SettingsScreen(
                 checked = isSoundEnabled,
                 onCheckedChange = { newValue ->
                     viewModel.toggleSoundOnOff(newValue)
-                }
+                },
+                checkedTrackColor = MaterialTheme.colorScheme.secondary
+            )
+            HorizontalDivider(color = colorResource(R.color.border_gray).copy(alpha = 0.3f))
+
+            SettingSwitch(
+                labelRes = R.string.haptic_feedback,
+                checked = isHapticEnable,
+                onCheckedChange = { newValue ->
+                    viewModel.toggleHapticOnOff(newValue)
+                },
+                checkedTrackColor = MaterialTheme.colorScheme.secondary
+            )
+
+            HorizontalDivider(color = colorResource(R.color.border_gray).copy(alpha = 0.3f))
+            Text(
+                text = stringResource(R.string.clear_all_local_data),
+                fontSize = 16.sp,
+                color = extendedColors.textColor,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable {
+                        showCLearAllDataConfirmDialog = true
+                    }
+                    .padding(vertical = 12.dp, horizontal = 16.dp)
             )
         }
+    }
+
+    if (showCLearAllDataConfirmDialog) {
+        CommonDialog(
+            message = stringResource(R.string.are_you_sure_you_want_to_clear_all_data),
+            confirmText = stringResource(R.string.ok),
+            cancelText = stringResource(R.string.cancel),
+            onConfirm = {
+                showCLearAllDataConfirmDialog = true
+                viewModel.deleteAllTransaction()
+                showCLearAllDataConfirmDialog = false
+            },
+            onCancel = { showCLearAllDataConfirmDialog = false }
+        )
     }
 
     if (showConfirmationDialog) {
         val days = historyOptionDays[historyOptions.indexOf(tempSelectedOption)]
         CommonDialog(
-            message = "${stringResource(R.string.save_history_confirmation)} $tempSelectedOption ${stringResource(R.string.save_history_note)}",
+            message = "${stringResource(R.string.save_history_confirmation)} $tempSelectedOption ${
+                stringResource(
+                    R.string.save_history_note
+                )
+            }",
             confirmText = stringResource(R.string.yes),
             cancelText = stringResource(R.string.no),
             onConfirm = {
@@ -171,7 +294,31 @@ fun SettingsScreen(
             }
         )
     }
+}
 
+@Composable
+fun ScheduleCheckBox(
+    label: String,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .wrapContentWidth()
+            .padding(horizontal = 4.dp)
+    ) {
+        Checkbox(
+            checked = checked,
+            onCheckedChange = onCheckedChange
+        )
+
+        Text(
+            text = label,
+            fontSize = 14.sp,
+            color = extendedColors.textColor,
+        )
+    }
 }
 
 /**
@@ -181,7 +328,8 @@ fun SettingsScreen(
 fun SettingSwitch(
     @StringRes labelRes: Int,
     checked: Boolean,
-    onCheckedChange: (Boolean) -> Unit
+    onCheckedChange: (Boolean) -> Unit,
+    checkedTrackColor: Color = MaterialTheme.colorScheme.secondary
 ) {
     val extendedColors = LocalExtendedColors.current
 
@@ -203,7 +351,7 @@ fun SettingSwitch(
             onCheckedChange = onCheckedChange,
             colors = SwitchDefaults.colors(
                 checkedThumbColor = Color.White,
-                checkedTrackColor = MaterialTheme.colorScheme.secondary,
+                checkedTrackColor = checkedTrackColor,
                 uncheckedThumbColor = Color.White,
                 uncheckedBorderColor = Color.Transparent,
                 checkedBorderColor = Color.Transparent

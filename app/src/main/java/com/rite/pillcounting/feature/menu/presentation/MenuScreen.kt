@@ -32,6 +32,7 @@ import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.BackButton
 import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.CommonDialog
 import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.LoadingIndicator
 import com.rite.pillcounting.core.utils.constants.Dimens.medium
+import com.rite.pillcounting.feature.history.domain.model.HistoryMode
 import com.rite.pillcounting.feature.login.domain.model.LogoutUiState
 import com.rite.pillcounting.feature.login.viewmodel.LoginViewModel
 import com.rite.pillcounting.feature.menu.presentation.compose.MenuItemRow
@@ -97,7 +98,7 @@ fun MenuScreen(
                             )
                         )
                 },
-                onCompletedClick = { navController.navigate(Screen.History.route) },
+                onCompletedClick = {  navController.navigate(Screen.History.createRoute(HistoryMode.DISPENSE)) },
             )
 
             HorizontalDivider(color = colorResource(R.color.border_gray).copy(alpha = 0.3f))
@@ -122,7 +123,7 @@ fun MenuScreen(
                             )
                         )
                 },
-                onCompletedClick = { navController.navigate(Screen.History.route) },
+                onCompletedClick = {  navController.navigate(Screen.History.createRoute(HistoryMode.REGULAR)) },
             )
 
             HorizontalDivider(color = colorResource(R.color.border_gray).copy(alpha = 0.3f))

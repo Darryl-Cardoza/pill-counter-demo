@@ -56,18 +56,17 @@ fun RegularCountSection(
 ) {
     Column(
         modifier = Modifier
-            .fillMaxSize(),
+            .fillMaxSize()
+            .bounceClick {
+                navigateToBarcodeScanRegularCount(navController)
+                onNavigate()
+            },
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
         Spacer(modifier = Modifier.weight(1f))
 
         Column(
-            modifier = Modifier
-                .bounceClick {
-                    navigateToBarcodeScanRegularCount(navController)
-                    onNavigate()
-                },
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             // Regular count icon (click → ScanBarcode)

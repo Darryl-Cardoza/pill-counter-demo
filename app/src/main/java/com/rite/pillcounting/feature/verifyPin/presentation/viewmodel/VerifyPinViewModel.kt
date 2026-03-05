@@ -133,7 +133,7 @@ class VerifyPinViewModel @Inject constructor(
                 }
 
                 when {
-                    code == 401 -> context.getString(R.string.error_unauthorized)
+                    code == 401 -> context.getString(R.string.error_invalid_otp) // because session is not created yet after verify otp session will create that's why we are showing invalid otp error
                     code == 400 -> apiMessage ?: context.getString(R.string.error_invalid_otp)
                     code in 500..599 -> context.getString(R.string.error_server_down)
                     else -> apiMessage ?: context.getString(R.string.error_unknown)

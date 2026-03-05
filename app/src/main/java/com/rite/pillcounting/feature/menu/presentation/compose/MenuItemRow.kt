@@ -122,7 +122,7 @@ fun MenuItemRow(
                         tint = completedTint,
                         icon = completedIcon,
                         hasBackground = false,
-                        onBadgeClick = {},
+                        onBadgeClick = {onCompletedClick()},
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     StatBadge(
