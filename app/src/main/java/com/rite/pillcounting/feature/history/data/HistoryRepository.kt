@@ -28,19 +28,20 @@ class HistoryRepository @Inject constructor(
         return dao.getTransactionsWithDrugByDate(start, end, type, status)
     }
 
-    suspend fun deleteTransactionsForDate(startDate: LocalDate, endDate: LocalDate, type: CountType?, status: CountStatus?) {
+    suspend fun deleteTransactionsForDate(startDate: LocalDate, endDate: LocalDate, type: CountType?, status: CountStatus?,userLocalId: Long) {
         val (startStartDate, _) = startDate.toEpochRange()
         val (_, endEndDate) = endDate.toEpochRange()
 
         // NORMAL history → delete everything in that date
-        dao.deleteTransactionsByDate(startStartDate, endEndDate, type, status)
+        dao.deleteTransactionsByDate(startStartDate, endEndDate, type, status,userLocalId)
     }
 
     fun getTransactionsForDateRange(
         startDate: LocalDate,
         endDate: LocalDate,
         type: CountType?,
-        status: CountStatus?
+        status: CountStatus?,
+        userLocalId: Long
     ): Flow<List<TxnWithDrugDto>> {
 
         val zoneId = ZoneId.systemDefault()
@@ -60,7 +61,8 @@ class HistoryRepository @Inject constructor(
             startDate = startMillis,
             endDate = endMillis,
             type = type,
-            status = status
+            status = status,
+            userLocalId = userLocalId
         )
     }
 

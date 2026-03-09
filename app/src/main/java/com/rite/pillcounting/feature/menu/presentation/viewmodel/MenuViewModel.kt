@@ -55,7 +55,7 @@ class MenuViewModel @Inject constructor(
      */
     private fun observeDashboardCounts() {
         viewModelScope.launch {
-            pillCountTxnDao.observeDashboardCountsGrouped()
+            pillCountTxnDao.observeDashboardCountsGrouped(preferenceHelper.getLocalId())
                 .map { rows -> mapCounts(rows) }
                 .catch { e ->
                     e.printStackTrace()

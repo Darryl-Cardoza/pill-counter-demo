@@ -57,7 +57,10 @@ class DashboardViewModel @Inject constructor(
 
     init {
         logger.i("DashboardViewModel initialized.")
-        observeDashboardCounts()
+        //  To avoid initial observe count call because of absence of localId
+        if (preferenceHelper.getLocalId() != 0.toLong()) {
+            observeDashboardCounts()
+        }
         fetchUserDetail()
     }
 
@@ -67,19 +70,20 @@ class DashboardViewModel @Inject constructor(
      * Counts are grouped by [CountType] and [CountStatus] (Completed/Partial).
      * Uses [mapCounts] to transform database rows into strongly typed buckets.
      */
-    private fun observeDashboardCounts() {
+    private fun observeDashboardCounts(localId: Long = preferenceHelper.getLocalId()) {
         viewModelScope.launch(Dispatchers.IO) {
-            pillCountTxnDao.observeDashboardCountsGrouped().collect { rows ->
-                val counts = mapCounts(rows)
-                _uiState.update {
-                    it.copy(
-                        completedFixedCount = counts.fixedCompleted.toString(),
-                        partialFixedCount = counts.fixedPartial.toString(),
-                        completedRegularCount = counts.regularCompleted.toString(),
-                        partialRegularCount = counts.regularPartial.toString()
-                    )
+            pillCountTxnDao.observeDashboardCountsGrouped(localId)
+                .collect { rows ->
+                    val counts = mapCounts(rows)
+                    _uiState.update {
+                        it.copy(
+                            completedFixedCount = counts.fixedCompleted.toString(),
+                            partialFixedCount = counts.fixedPartial.toString(),
+                            completedRegularCount = counts.regularCompleted.toString(),
+                            partialRegularCount = counts.regularPartial.toString()
+                        )
+                    }
                 }
-            }
         }
     }
 
@@ -122,6 +126,10 @@ class DashboardViewModel @Inject constructor(
                             val entity = detail.toUserEntity(jwtUserId = uiUser.profile?.userId)
                             val localId = userDao.upsertPreservingLocalId(user = entity)
                             preferenceHelper.saveUserId(entity.userId)
+                            //  To call observe count for first time when localId is 0 (from preference)
+                            if (preferenceHelper.getLocalId() == 0.toLong()) {
+                                observeDashboardCounts(localId)
+                            }
                             preferenceHelper.saveLocalId(localId)
                             logger.i("User persisted locally with localId=$localId")
                         }
@@ -175,7 +183,7 @@ class DashboardViewModel @Inject constructor(
         _uiState.update { it.copy(navigateToProfile = false) }
     }
 
-    fun saveTxnId(){
+    fun saveTxnId() {
         preferenceHelper.saveTxnId(0)
     }
 }

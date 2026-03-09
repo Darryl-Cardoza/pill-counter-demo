@@ -130,10 +130,10 @@ class LoginViewModel @Inject constructor(
         }
     }
 
-    fun resetLogoutState() {
-        if (_logoutUiState.value !is LogoutUiState.Idle) {
-            _logoutUiState.value = LogoutUiState.Idle
-        }
+    fun clearSession(){
+        preferenceHelper.clearTokens()
+        preferenceHelper.setUserLoggedIn(false)
+        preferenceHelper.saveLocalId(0)
     }
 
     fun clearAllStates() {
@@ -172,12 +172,4 @@ class LoginViewModel @Inject constructor(
         }
     }
 
-    // -------------------------------------------------------------------------
-    // SESSION MANAGEMENT HELPERS
-    // -------------------------------------------------------------------------
-    fun clearSession() {
-        preferenceHelper.clearTokens()
-        preferenceHelper.setUserLoggedIn(false)
-        logger.i("User session cleared.")
-    }
 }

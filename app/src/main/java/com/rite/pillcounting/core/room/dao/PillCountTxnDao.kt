@@ -133,6 +133,7 @@ interface PillCountTxnDao {
     WHERE txn.isDeleted = 0
       AND txn.status = :partialStatus
       AND txn.countType = :countType
+      AND txn.localId = :userLocalId
     GROUP BY txn.txnId
     ORDER BY txn.isComingFromHL7 DESC,
              txn.createdAt DESC
@@ -141,7 +142,8 @@ interface PillCountTxnDao {
 
     fun observePartialByCountType(
         countType: CountType,
-        partialStatus: CountStatus = CountStatus.PARTIAL
+        partialStatus: CountStatus = CountStatus.PARTIAL,
+        userLocalId: Long
     ): Flow<List<PillCountWithDrugAndTotal>>
 
     // ───────────────────────────── Field Updates ─────────────────────────────
@@ -202,15 +204,16 @@ interface PillCountTxnDao {
      */
     @Query(
         """
-        SELECT status AS status,
-               countType AS countType,
-               COUNT(*) AS cnt
-        FROM pill_count_txn
-        WHERE isDeleted = 0
-        GROUP BY status, countType
-        """
+    SELECT status AS status,
+           countType AS countType,
+           COUNT(*) AS cnt
+    FROM pill_count_txn
+    WHERE isDeleted = 0
+      AND localId = :userLocalId
+    GROUP BY status, countType
+    """
     )
-    fun observeDashboardCountsGrouped(): Flow<List<StatusTypeCount>>
+    fun observeDashboardCountsGrouped(userLocalId: Long): Flow<List<StatusTypeCount>>
 
     /**
      * Retrieves a detailed transaction with its associated drug and total pill count.
@@ -325,6 +328,7 @@ interface PillCountTxnDao {
            ON txn.drugId = drug.drugId
     WHERE txn.createdAt BETWEEN :startDate AND :endDate
       AND txn.isDeleted = 0
+      AND txn.localId = :userLocalId
       AND (:type IS NULL OR txn.countType = :type)
       AND (:status IS NULL OR txn.status = :status)
     GROUP BY txn.txnId
@@ -335,7 +339,8 @@ interface PillCountTxnDao {
         startDate: Long,
         endDate: Long,
         type: CountType?,
-        status: CountStatus?
+        status: CountStatus?,
+        userLocalId: Long
     ): Flow<List<TxnWithDrugDto>>
 
 
@@ -353,6 +358,7 @@ interface PillCountTxnDao {
     DELETE FROM pill_count_txn
     WHERE createdAt >= :start
       AND createdAt < :end
+      AND localId = :userLocalId
       AND (:type IS NULL OR countType = :type)
       AND (:status IS NULL OR status = :status)
     """
@@ -361,7 +367,8 @@ interface PillCountTxnDao {
         start: Long,
         end: Long,
         type: CountType?,
-        status: CountStatus?
+        status: CountStatus?,
+        userLocalId: Long
     )
 
     /**
