@@ -1,4 +1,4 @@
-# Pill Counting Application - Android
+# MobRite Pill Counting Application - Android
 
 A sophisticated Android application designed to count and manage pharmaceutical pills using advanced ML Kit technology and barcode scanning capabilities. The app leverages TensorFlow Lite for on-device AI-powered pill detection and integrates with healthcare systems via HL7 protocol.
 
