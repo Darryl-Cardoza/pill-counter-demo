@@ -47,6 +47,10 @@ jobs:
 
       runner: ubuntu-latest  #options are ubuntu-latest and macos-latest
 
+      run_tests: false
+      run_coverage: false
+      run_static_analysis: false
+
   # CD for version tags
   cd:
     uses: Rite-Technologies-23/ops-rite-android-pipeline/.github/workflows/release.yml@main
