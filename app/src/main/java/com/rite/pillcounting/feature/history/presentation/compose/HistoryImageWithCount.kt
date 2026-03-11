@@ -1,7 +1,9 @@
 package com.rite.pillcounting.feature.history.presentation.compose
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -26,6 +28,7 @@ import androidx.compose.ui.unit.sp
 import coil.compose.rememberAsyncImagePainter
 import coil.request.ImageRequest
 import com.rite.pillcounting.R
+import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.responsiveDp
 import com.rite.pillcounting.core.utils.constants.Dimens.medium
 import java.io.File
 
@@ -33,6 +36,7 @@ import java.io.File
 
 fun ImageWithCount(
     totalPillCount: String,
+    targetCount: Int? = null,
     barcodeImage: String?
 ) {
     Row(
@@ -61,8 +65,8 @@ fun ImageWithCount(
             contentDescription = null,
             contentScale = if (hasImage) ContentScale.Crop else ContentScale.Fit,
             modifier = Modifier
-                .width(160.dp)
-                .height(100.dp)
+                .width(responsiveDp(160.dp))
+                .height(responsiveDp(100.dp))
                 .clip(RoundedCornerShape(12.dp)),
         )
 
@@ -73,15 +77,55 @@ fun ImageWithCount(
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier.weight(1f)
         ) {
-            Text(
-                text = totalPillCount, // dynamic total count
-                style = MaterialTheme.typography.bodyLarge.copy(
-                    color = MaterialTheme.colorScheme.secondary,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 45.sp,
-                ),
-                textAlign = TextAlign.Center
-            )
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.padding(bottom = 3.dp)
+            ) {
+                //target count is null -> countType is Regular
+                if (targetCount == null) {
+                    Text(
+                        text = totalPillCount,
+                        style = MaterialTheme.typography.bodyLarge.copy(
+                            color = MaterialTheme.colorScheme.secondary,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 40.sp,
+                        )
+                    )
+
+                } else {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+
+                        Text(
+                            text = totalPillCount,
+                            style = MaterialTheme.typography.bodyLarge.copy(
+                                color = MaterialTheme.colorScheme.secondary,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 28.sp,
+                            )
+                        )
+
+                        Box(
+                            modifier = Modifier
+                                .padding(vertical = 4.dp)
+                                .width(80.dp)
+                                .height(2.dp)
+                                .background(MaterialTheme.colorScheme.secondary)
+                        )
+
+                        Text(
+                            text = targetCount.toString(),
+                            style = MaterialTheme.typography.bodyLarge.copy(
+                                color = MaterialTheme.colorScheme.secondary,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 28.sp,
+                            )
+                        )
+                    }
+                }
+            }
+
 
             Text(
                 text = stringResource(R.string.total_count).uppercase(),
@@ -89,10 +133,8 @@ fun ImageWithCount(
                     color = MaterialTheme.colorScheme.primary,
                     fontSize = 16.sp,
                 ),
-                textAlign = TextAlign.Center // Additional centering for text alignment
+                textAlign = TextAlign.Center
             )
         }
-
-
     }
 }

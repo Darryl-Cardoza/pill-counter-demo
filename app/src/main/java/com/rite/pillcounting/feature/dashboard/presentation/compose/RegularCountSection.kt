@@ -28,8 +28,11 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.rite.pillcounting.R
 import com.rite.pillcounting.core.room.models.enums.CountType
+import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.responsiveDp
+import com.rite.pillcounting.core.utils.compose.bounceClick
 import com.rite.pillcounting.core.utils.constants.Dimens.extraLarge
 import com.rite.pillcounting.core.utils.constants.Dimens.small
+import com.rite.pillcounting.feature.history.domain.model.HistoryMode
 import com.rite.pillcounting.ui.theme.AppTheme
 
 /**
@@ -48,60 +51,52 @@ import com.rite.pillcounting.ui.theme.AppTheme
 fun RegularCountSection(
     completedRegularCount: String,
     partialRegularCount: String,
-    navController: NavController
+    navController: NavController,
+    onNavigate: () -> Unit
 ) {
     Column(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier
+            .fillMaxSize()
+            .bounceClick {
+                navigateToBarcodeScanRegularCount(navController)
+                onNavigate()
+            },
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
         Spacer(modifier = Modifier.weight(1f))
 
-        // Regular count icon (click → ScanBarcode)
-        Icon(
-            painter = painterResource(id = R.drawable.regular_count),
-            contentDescription = stringResource(R.string.regular_count),
-            tint = MaterialTheme.colorScheme.primary,
-            modifier = Modifier
-                .size(120.dp)
-                .clickable(
-                    indication = null,
-                    interactionSource = remember { MutableInteractionSource() }
-                ) {
-                    navigateToBarcodeScanRegularCount(navController)
-                }
-        )
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            // Regular count icon (click → ScanBarcode)
+            Icon(
+                painter = painterResource(id = R.drawable.regular_count),
+                contentDescription = stringResource(R.string.regular_count),
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier
+                    .size(responsiveDp(120.dp))
+            )
 
-        Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(24.dp))
 
-        // Regular Count title (click → ScanBarcode)
-        Text(
-            text = stringResource(R.string.regular_count),
-            style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.Normal,
-            color = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.clickable(
-                indication = null,
-                interactionSource = remember { MutableInteractionSource() }
-            ) {
-                navigateToBarcodeScanRegularCount(navController)
-            }
-        )
+            // Regular Count title (click → ScanBarcode)
+            Text(
+                text = stringResource(R.string.regular_count),
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Normal,
+                color = MaterialTheme.colorScheme.primary,
+            )
 
-        Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(10.dp))
 
-        // Description label (click → ScanBarcode)
-        Text(
-            text = stringResource(R.string.regular_count_desc),
-            style = MaterialTheme.typography.bodyMedium,
-            color = AppTheme.extendedColors.textColor,
-            modifier = Modifier.clickable(
-                indication = null,
-                interactionSource = remember { MutableInteractionSource() }
-            ) {
-                navigateToBarcodeScanRegularCount(navController)
-            }
-        )
+            // Description label (click → ScanBarcode)
+            Text(
+                text = stringResource(R.string.regular_count_desc),
+                style = MaterialTheme.typography.bodyMedium,
+                color = AppTheme.extendedColors.textColor,
+            )
+        }
 
         Spacer(modifier = Modifier.weight(1f))
 
@@ -113,14 +108,23 @@ fun RegularCountSection(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Completed status (static, non-clickable)
-            StatusChip(
-                text = "$completedRegularCount ${stringResource(R.string.completed)}",
-                backgroundColor = Color.Transparent,
-                textColor = AppTheme.extendedColors.textColor,
-                iconRes = R.drawable.tick,
-                iconTint = MaterialTheme.colorScheme.primary
-            )
+            // Completed status
+            Box(
+                modifier = Modifier.clickable(
+                    indication = null,
+                    interactionSource = remember { MutableInteractionSource() }
+                ) {
+                    navController.navigate(Screen.History.createRoute(HistoryMode.REGULAR))
+                }
+            ) {
+                StatusChip(
+                    text = "$completedRegularCount ${stringResource(R.string.completed)}",
+                    backgroundColor = Color.Transparent,
+                    textColor = AppTheme.extendedColors.textColor,
+                    iconRes = R.drawable.tick,
+                    iconTint = MaterialTheme.colorScheme.primary
+                )
+            }
 
             // Partial status (click → ResumeRegularCounts screen)
             Box(

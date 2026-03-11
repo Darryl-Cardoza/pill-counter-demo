@@ -80,6 +80,13 @@ interface PillCountTxnDetailsDao {
     )
     suspend fun softDelete(id: Long, now: Long = System.currentTimeMillis())
 
+    @Query(
+        "UPDATE pill_count_txn_details SET isDeleted = 1, updatedAt = :now WHERE txnId = :id"
+    )
+    suspend fun softDeleteAllTransaction(id: Long, now: Long = System.currentTimeMillis())
+
+
+
     // ─────────────────────────────── Aggregations ───────────────────────────────
 
     /**
@@ -99,4 +106,15 @@ interface PillCountTxnDetailsDao {
         """
     )
     suspend fun getTotalPillCountForTxn(txnId: Long): Int
+
+
+
+    @Query(
+        """
+        SELECT * FROM pill_count_txn_details
+        WHERE txnId = :txnId AND isDeleted = 0
+        ORDER BY createdAt DESC
+        """
+    )
+    suspend fun getAllForTxn(txnId: String): List<PillCountTxnDetailsEntity>
 }

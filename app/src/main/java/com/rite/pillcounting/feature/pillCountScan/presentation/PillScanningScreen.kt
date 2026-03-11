@@ -1,6 +1,8 @@
 package com.rite.pillcounting.feature.pillCountScan.presentation
 
 import Screen
+import android.R.attr.maxHeight
+import android.R.attr.maxWidth
 import android.content.res.Configuration
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -9,9 +11,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.systemBarsPadding
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -25,7 +24,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -39,9 +37,9 @@ import com.rite.pillcounting.R
 import com.rite.pillcounting.core.room.models.enums.CountType
 import com.rite.pillcounting.core.utils.common.UserInterfaceUtils
 import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.ActionButtonPrimary
+import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.BackButton
 import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.CommonDialog
 import com.rite.pillcounting.core.utils.compose.SplitResponsive
-import com.rite.pillcounting.core.utils.constants.Dimens.extraSmall
 import com.rite.pillcounting.core.utils.logger.AppLogger
 import com.rite.pillcounting.feature.pillCountScan.domain.data.NavigationEvent
 import com.rite.pillcounting.feature.pillCountScan.domain.data.PillScanningEvent
@@ -63,11 +61,18 @@ fun PillScanningScreen(
     val context = navController.context
     val uiState by viewModel.uiState.collectAsState()
     val logger = remember { AppLogger("PillScanningScreen") }
+    val topHeightPortrait = maxHeight * 0.75f
+    val bottomHeightPortrait = maxHeight * 0.25f
+    val startWidthLandScape = maxWidth * 0.7f
+    val endWidthLandscape = maxWidth * 0.3f
 
     // Buffer of last 10 detections
     var lastTenDetections by remember { mutableStateOf<List<Int>>(emptyList()) }
 
     var filteredPillCount by remember { mutableStateOf(0) }
+
+    var previewWidth by remember { mutableStateOf<Int?>(null) }
+    var previewHeight by remember { mutableStateOf<Int?>(null) }
 
     // Whenever detected pills update, push into buffer
     LaunchedEffect(uiState.detectedPills) {
@@ -75,8 +80,6 @@ fun PillScanningScreen(
         lastTenDetections = (lastTenDetections + currentCount).takeLast(10)
     }
 
-    // Check if last 10 counts are all zero
-    val isLastTenAllZero = lastTenDetections.size == 10 && lastTenDetections.all { it == 0 }
     val isLandscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
     // === Toasts ===
     if (uiState.restrictAdd) {
@@ -158,8 +161,15 @@ fun PillScanningScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .systemBarsPadding()
             .background(AppTheme.extendedColors.secondaryBackground)
+            .pointerInput(Unit) {
+                awaitPointerEventScope {
+                    while (true) {
+                        awaitPointerEvent()
+                        viewModel.resetIdleTimer()
+                    }
+                }
+            }
     ) {
         // Camera + Info
         SplitResponsive(
@@ -173,9 +183,22 @@ fun PillScanningScreen(
                     },
                     onFilteredCountChanged = { count -> filteredPillCount = count },
                     modifier = Modifier.fillMaxSize(),
-                    onPreviewStarted = {
-                        // Safe place to initialize GPU-based model
-                        viewModel.initializeInterpreter(retryCount = 2)
+
+                    imageFrameWidth = uiState.imageFrameWidth,
+                    imageFrameHeight = uiState.imageFrameHeight,
+
+                    onPreviewSizeKnown = { w, h ->
+                        // Store once
+                        if (previewWidth == null || previewHeight == null) {
+                            previewWidth = w
+                            previewHeight = h
+
+                            viewModel.initializeInterpreter(
+                                retryCount = 2,
+                                viewWidth = w,
+                                viewHeight = h
+                            )
+                        }
                     }
                 )
             },
@@ -187,28 +210,15 @@ fun PillScanningScreen(
                     filteredPillCount = filteredPillCount
                 )
             },
-            landscapeRatio = 0.65f to 0.35f,
-            portraitRatio =  0.70f to 0.35f
+            landscapeRatio = startWidthLandScape to endWidthLandscape,
+            portraitRatio = topHeightPortrait to bottomHeightPortrait
         )
 
         if (!uiState.showIdleOverlay) {
-            /*BackButton(navController) {
+            BackButton(navController) {
                 navController.navigate(Screen.Dashboard.route) {
                     popUpTo(0) { inclusive = true }
                 }
-            }*/
-            IconButton(
-                onClick = { navController.navigate(Screen.Dashboard.route) {
-                    popUpTo(0) { inclusive = true }
-                } },
-                modifier = Modifier.padding(2.dp)
-            ) {
-                Icon(
-                    painter = painterResource(id = R.drawable.back),
-                    contentDescription = "Back",
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.padding(extraSmall)
-                )
             }
             if (!isLandscape) {
                 Text(
@@ -220,7 +230,9 @@ fun PillScanningScreen(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(top = 18.dp).fillMaxWidth()
+                    modifier = Modifier
+                        .padding(top = 18.dp)
+                        .fillMaxWidth()
                 )
             }
         }
@@ -255,7 +267,7 @@ fun PillScanningScreen(
                         text = stringResource(R.string.resume).uppercase(Locale.ROOT),
                         onClick = { viewModel.resetIdleOverlay() },
                         modifier = Modifier.padding(horizontal = 16.dp),
-                        color = MaterialTheme.colorScheme.secondary
+                        color = MaterialTheme.colorScheme.secondary,
                     )
                 }
             }

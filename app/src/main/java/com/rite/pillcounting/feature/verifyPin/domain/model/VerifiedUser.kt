@@ -27,5 +27,9 @@ data class VerifiedUser(
 
     /** Whether the user account is locked */
     @Json(name = "auth_is_locked")
-    val authIsLocked: Boolean? = null
+    val authIsLocked: Boolean? = null,
+
+    /** Whether the user have access to hl7 service or not **/
+    @Json(name = "is_hl7_enabled")
+    val isHl7Enabled: Boolean? = null
 )

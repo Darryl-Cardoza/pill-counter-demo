@@ -16,8 +16,8 @@ class BarcodeDecoder @Inject constructor() {
 
     private val regexPatterns = mapOf(
         "GTIN" to Regex("(?:\\(01\\)|01)(\\d{13,14})"),
-        "LotNumber" to Regex("(?:\\(10\\)|10)([\\w\\d]{1,20})"),
-        "SerialNumber" to Regex("(?:\\(21\\)|21)([\\w\\d]{1,20})"),
+        "LotNumber" to Regex("(?<=\u001D|17\\d{6})10([A-Za-z0-9]{1,20})(?=\u001D|(11|13|15|17|21|310\\d|320\\d|330\\d|340\\d)|$)"),
+        "SerialNumber" to Regex("21([^\\u001D]*?)(?=\\u001D|(01|10|11|13|15|17|21|310\\d|320\\d|330\\d|340\\d)|$)"),
         "ProductionDate" to Regex("(?:\\(11\\)|11)(\\d{6})"),
         "PackingDate" to Regex("(?:\\(13\\)|13)(\\d{6})"),
         "SellByDate" to Regex("(?:\\(15\\)|15)(\\d{6})"),
@@ -29,7 +29,7 @@ class BarcodeDecoder @Inject constructor() {
     )
 
     fun decode(rawBarcode: String): BarcodeData {
-        val cleaned = rawBarcode.replace(Regex("\\](?i)(c1|j1|q3|e0|d2)"), "")
+        val cleaned = rawBarcode.replace(Regex("\\](?i)(c1|j1|q3|e0|d2)"), "").replace("\u001D", "")
 
         var gtin: String? = null
         var lot: String? = null

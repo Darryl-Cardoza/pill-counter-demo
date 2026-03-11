@@ -4,7 +4,7 @@ plugins {
     id("com.google.dagger.hilt.android")
     id("kotlin-kapt")
     id("org.jetbrains.kotlin.plugin.serialization")
-    id("com.google.gms.google-services") // ✅ must be here for Firebase
+    id("com.google.gms.google-services")
 }
 
 android {
@@ -31,13 +31,14 @@ android {
         buildConfigField(
             "String",
             "BASE_URL",
-            "\"https://pill.ccrlindia.com:8000/\""
+            "\"https://pill.ccrlindia.com/\""
         )
     }
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -45,8 +46,14 @@ android {
         }
         debug {
             enableUnitTestCoverage = true
+//            isMinifyEnabled = true
+//            proguardFiles(
+//                getDefaultProguardFile("proguard-android-optimize.txt"),
+//                "proguard-rules.pro"
+//            )
         }
     }
+
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
@@ -67,7 +74,16 @@ android {
     }
 
     packaging {
-        resources.excludes += "/META-INF/{AL2.0,LGPL2.1}"
+        resources {
+            excludes += setOf(
+                "META-INF/INDEX.LIST",
+                "META-INF/io.netty.versions.properties",
+                "META-INF/*.SF",
+                "META-INF/*.DSA",
+                "META-INF/*.RSA",
+                "META-INF/versions/9/OSGI-INF/MANIFEST.MF"
+            )
+        }
     }
 }
 
@@ -156,10 +172,6 @@ dependencies {
     implementation("org.tensorflow:tensorflow-lite-gpu-api:2.17.0")
     implementation("org.tensorflow:tensorflow-lite-support:0.5.0")
 
-
-    // --- PDF / iText7 ---
-    implementation("com.itextpdf:itext7-core:7.2.5")
-
     //Location
     implementation("com.google.android.gms:play-services-location:21.3.0")
 
@@ -178,5 +190,19 @@ dependencies {
     androidTestImplementation("org.mockito:mockito-android:5.4.0")
     androidTestImplementation("org.mockito.kotlin:mockito-kotlin:5.2.1")
 
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.7.0")
+    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.7.0")
+
+    implementation("io.ktor:ktor-server-core:2.3.12")
+    implementation("io.ktor:ktor-server-netty:2.3.12") {
+        exclude(group = "io.projectreactor", module = "blockhound")
+    }
+
+
+    implementation("org.json:json:20230227")
+
+    // Bouncy Castle for TLS Keystore generation
+    implementation("org.bouncycastle:bcprov-jdk18on:1.83")
+    implementation("org.bouncycastle:bcpkix-jdk18on:1.83")
 
 }

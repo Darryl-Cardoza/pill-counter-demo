@@ -5,7 +5,6 @@ import android.app.Activity
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.os.Build
 import android.os.Environment
@@ -177,21 +176,6 @@ object HelperFunctions {
             bitmap.compress(Bitmap.CompressFormat.JPEG, 90, out)
         }
         return file.absolutePath
-    }
-
-    /**
-     * Retrieves the app version name defined in the build.gradle / AndroidManifest.
-     *
-     * @param context Application context.
-     * @return Version name (e.g. "1.0.0") or "unknown" if unavailable.
-     */
-    fun getAppVersionName(context: Context): String {
-        return try {
-            val packageInfo = context.packageManager.getPackageInfo(context.packageName, 0)
-            packageInfo.versionName ?: "unknown"
-        } catch (e: PackageManager.NameNotFoundException) {
-            "unknown"
-        }
     }
 
     /** Wraps a plain string into a [SecureString] for encrypted Room storage. */

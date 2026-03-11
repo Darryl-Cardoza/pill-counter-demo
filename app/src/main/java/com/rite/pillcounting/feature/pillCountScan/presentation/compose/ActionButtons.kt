@@ -17,6 +17,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import com.rite.pillcounting.R
+import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.responsiveDp
 import com.rite.pillcounting.core.utils.constants.Dimens.large
 import com.rite.pillcounting.core.utils.constants.Dimens.xxxLarge
 import com.rite.pillcounting.feature.pillCountScan.domain.data.PillScanningEvent
@@ -43,17 +44,21 @@ fun ActionButtons(
             .padding(start = large, end = large),
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        IconButton(onClick = { onListClicked() }) {
+        IconButton(
+            modifier = Modifier.size(responsiveDp(xxxLarge)),
+            onClick = { onListClicked() }
+        ) {
             Icon(
                 painter = painterResource(id = R.drawable.history),
                 contentDescription = "List",
                 tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(xxxLarge)
+                modifier = Modifier.size(responsiveDp(xxxLarge))
             )
         }
 
         // Add (disabled for 5 seconds after click)
         IconButton(
+            modifier = Modifier.size(responsiveDp(xxxLarge)),
             onClick = {
                 if (isAddEnabled) {
                     isAddEnabled = false
@@ -71,17 +76,19 @@ fun ActionButtons(
                     MaterialTheme.colorScheme.primary
                 else
                     MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
-                modifier = Modifier.size(xxxLarge)
+                modifier = Modifier.size(responsiveDp(xxxLarge))
             )
         }
 
         // Done/Complete
-        IconButton(onClick = { onEvent(PillScanningEvent.DoneClicked) }) {
+        IconButton(
+            modifier = Modifier.size(responsiveDp(xxxLarge)),
+            onClick = { onEvent(PillScanningEvent.DoneClicked) }) {
             Icon(
                 painter = painterResource(id = R.drawable.complete),
                 contentDescription = "Complete",
                 tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(xxxLarge)
+                modifier = Modifier.size(responsiveDp(xxxLarge))
             )
         }
     }

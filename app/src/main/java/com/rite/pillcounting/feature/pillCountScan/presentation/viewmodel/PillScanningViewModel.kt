@@ -4,59 +4,60 @@ import android.app.Application
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Matrix
+import android.media.MediaActionSound
+import android.os.Build
+import android.os.VibrationEffect
+import android.os.Vibrator
+import android.os.VibratorManager
 import androidx.camera.core.ImageProxy
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.rite.pillcounting.R
+import com.rite.pillcounting.core.room.dao.DrugMasterDao
 import com.rite.pillcounting.core.room.dao.PillCountTxnDao
 import com.rite.pillcounting.core.room.dao.PillCountTxnDetailsDao
 import com.rite.pillcounting.core.room.dao.UserDao
 import com.rite.pillcounting.core.room.models.PillCountTxnDetailsEntity
 import com.rite.pillcounting.core.room.models.enums.CountStatus
 import com.rite.pillcounting.core.room.models.enums.CountType
-import com.rite.pillcounting.core.security.ModelDecryptor
 import com.rite.pillcounting.core.utils.common.HelperFunctions.saveBitmapToFile
 import com.rite.pillcounting.core.utils.common.LocationProvider
 import com.rite.pillcounting.core.utils.common.OverlayUtils
 import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.showToast
 import com.rite.pillcounting.core.utils.logger.AppLogger
 import com.rite.pillcounting.core.utils.preference.PreferenceHelper
+import com.rite.pillcounting.feature.pillCountScan.domain.PillDetectionModelLoader
 import com.rite.pillcounting.feature.pillCountScan.domain.data.NavigationEvent
 import com.rite.pillcounting.feature.pillCountScan.domain.data.PillScanningEvent
 import com.rite.pillcounting.feature.pillCountScan.domain.model.DetectedPill
 import com.rite.pillcounting.feature.pillCountScan.domain.model.PillScanningUiState
 import com.rite.pillcounting.feature.pillCountScan.domain.model.TxnDetail
 import com.rite.pillcounting.feature.pillCountScan.presentation.logic.CameraHelper
+import com.rite.pillcounting.feature.pillCountScan.presentation.logic.Detection
 import com.rite.pillcounting.feature.pillCountScan.presentation.logic.PillAnalyzer
-import com.rite.pillcounting.feature.pillCountScan.presentation.logic.Postprocessor
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import org.tensorflow.lite.Interpreter
-import org.tensorflow.lite.gpu.CompatibilityList
-import org.tensorflow.lite.gpu.GpuDelegate
-import java.io.File
-import java.io.FileInputStream
-import java.nio.ByteBuffer
-import java.nio.MappedByteBuffer
-import java.nio.channels.FileChannel
 import java.util.ArrayDeque
 import javax.inject.Inject
 
 /**
  * ViewModel responsible for:
- *  - Managing camera frame analysis and TensorFlow inference.
- *  - Updating UI state for pill counting workflow.
- *  - Managing database transactions.
- *  - Preventing duplicate "Add" operations without a new scan.
+ * - Managing camera frame analysis (via Singleton ModelLoader).
+ * - Updating UI state for pill counting workflow.
+ * - Managing database transactions.
+ * - Preventing duplicate "Add" operations without a new scan.
  */
 @HiltViewModel
 class PillScanningViewModel @Inject constructor(
@@ -66,17 +67,18 @@ class PillScanningViewModel @Inject constructor(
     private val userDao: UserDao,
     private val pillCountTxnDetailsDao: PillCountTxnDetailsDao,
     private val locationProvider: LocationProvider,
+    private val drugMasterDao: DrugMasterDao,
+    private val modelLoader: PillDetectionModelLoader
 ) : AndroidViewModel(app) {
 
     private val logger = AppLogger("PillScanningVM")
-
-    /** TensorFlow interpreter instance */
-    private var interpreter: Interpreter? = null
-
+    val context: Context = getApplication<Application>().applicationContext
     private var currentFrameBitmap: Bitmap? = null
     private var lastTransformationMatrix: Matrix? = null
     private var isAnalyzingFrame = false
     private var isPaused = false
+    private var idleJob: Job? = null
+    private val idleTimeout = 30_000L
 
     private val _uiState = MutableStateFlow(PillScanningUiState())
     val uiState: StateFlow<PillScanningUiState> = _uiState.asStateFlow()
@@ -104,14 +106,16 @@ class PillScanningViewModel @Inject constructor(
     // --- Duplicate prevention ---
     private var lastAddedScanSignature: String? = null
     private var lastAddClickTime: Long = 0L
-    private var gpuDelegate: GpuDelegate? = null
+    private val _addPopEvents = MutableSharedFlow<Int>(extraBufferCapacity = 1)
+    val addPopEvents = _addPopEvents.asSharedFlow()
+
+    private val shutterSound = MediaActionSound().apply {
+        load(MediaActionSound.SHUTTER_CLICK)
+    }
 
 
     companion object {
-        private const val MODEL_FILENAME = "best_float32.tflite"
         private const val ZERO_DETECTIONS_THRESHOLD = 25
-        private const val REPEAT_THRESHOLD = 25
-        private const val IDLE_TIMEOUT_MS = 15_000L
     }
 
     /** Model initialization states */
@@ -120,6 +124,10 @@ class PillScanningViewModel @Inject constructor(
         object Loading : ModelState()
         data class Ready(val analyzer: PillAnalyzer) : ModelState()
         data class Error(val message: String, val cause: Throwable? = null) : ModelState()
+    }
+
+    init {
+        resetIdleTimer()
     }
 
     // ------------------------------------------------------------------------
@@ -149,86 +157,48 @@ class PillScanningViewModel @Inject constructor(
         }
     }
 
-    /** Initialize TensorFlow Lite interpreter for pill detection. */
+    /** Initialize TensorFlow Lite interpreter using the Singleton Loader. */
     fun initializeInterpreter(
         retryCount: Int = 1,
-        viewWidth: Int = 640,
-        viewHeight: Int = 640
+        viewWidth: Int,
+        viewHeight: Int
     ) {
         if (_modelState.value is ModelState.Ready) {
             logger.w("Interpreter already initialized, skipping reinitialization.")
             return
         }
 
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch {
             _modelState.value = ModelState.Loading
-            var attempt = 0
 
-            while (attempt <= retryCount) {
-                var createdDelegate: GpuDelegate? = null
-                try {
-                    val buffer = loadModelFile()
-                    val options = Interpreter.Options()
+            try {
+                // Fetch the singleton interpreter instance
+                val interpreter = modelLoader.getOrLoadInterpreter()
 
-                    // Move GPU delegate creation to MAIN thread
-                    withContext(Dispatchers.Main) {
-                        val compatList = CompatibilityList()
-                        if (compatList.isDelegateSupportedOnThisDevice) {
-                            try {
-                                val delegateOptions = compatList.bestOptionsForThisDevice
-                                createdDelegate = GpuDelegate(delegateOptions)
-                                options.addDelegate(createdDelegate)
-                                logger.i("GPU delegate initialized on main thread.")
-                            } catch (gpuInitEx: Exception) {
-                                logger.w("GPU delegate creation failed: ${gpuInitEx.message}. Will use CPU fallback.")
-                                createdDelegate?.close()
-                                createdDelegate = null
-                            }
-                        } else {
-                            logger.w("GPU delegate not supported by CompatibilityList. Using CPU.")
-                        }
-                    }
-
-                    // CPU fallback if GPU not available
-                    if (createdDelegate == null) {
-                        options.setUseXNNPACK(true)
-                        options.numThreads =
-                            Runtime.getRuntime().availableProcessors().coerceAtMost(4)
-                    }
-
-                    // Now safely create interpreter (IO thread)
-                    val tflite = Interpreter(buffer, options)
-                    interpreter = tflite
-
-                    // Keep delegate reference for cleanup
-                    gpuDelegate?.close()
-                    gpuDelegate = createdDelegate
-
-                    val analyzer = PillAnalyzer(
-                        interpreter = tflite,
-                        viewWidth = viewWidth,
-                        viewHeight = viewHeight
-                    ) { count, detections, bitmap, matrix ->
-                        processDetections(count, detections, bitmap, matrix, viewWidth, viewHeight)
-                    }
-
-                    _modelState.value = ModelState.Ready(analyzer)
-                    logger.i("Interpreter initialized successfully.")
-                    return@launch
-
-                } catch (e: Exception) {
-                    try { createdDelegate?.close() } catch (_: Exception) {}
-                    attempt++
-                    logger.e("Interpreter initialization failed (attempt $attempt)", e)
-                    if (attempt > retryCount) {
-                        _modelState.value = ModelState.Error("Initialization failed", e)
-                    }
+                val analyzer = PillAnalyzer(
+                    interpreter = interpreter,
+                ) { count, detections, bitmap, matrix, imageWidth, imageHeight ->
+                    processDetections(
+                        count,
+                        detections,
+                        bitmap,
+                        matrix,
+                        viewWidth,
+                        viewHeight,
+                        imageWidth,
+                        imageHeight
+                    )
                 }
+
+                _modelState.value = ModelState.Ready(analyzer)
+                logger.i("Interpreter initialized successfully (via Singleton).")
+
+            } catch (e: Exception) {
+                logger.e("Interpreter init failed", e)
+                _modelState.value = ModelState.Error("Interpreter initialization failed", e)
             }
         }
     }
-
-
 
     // ------------------------------------------------------------------------
     // Frame Processing and Detection Logic
@@ -237,11 +207,13 @@ class PillScanningViewModel @Inject constructor(
     /** Handle each analyzed frame and maintain rolling detection state. */
     private fun processDetections(
         count: Int,
-        detections: List<Postprocessor.Detection>,
+        detections: List<Detection>,
         bitmap: Bitmap,
         matrix: Matrix,
-        viewWidth: Int,
-        viewHeight: Int
+        previewWidth: Int,
+        previewHeight: Int,
+        imageWidth: Int,
+        imageHeight: Int
     ) {
         if (isPaused) {
             bitmap.recycle()
@@ -252,49 +224,57 @@ class PillScanningViewModel @Inject constructor(
         currentFrameBitmap?.recycle()
         currentFrameBitmap = bitmap
         lastTransformationMatrix = Matrix(matrix)
-        logger.d("Frame analyzed. Count=$count, ScanId=$currentScanId")
 
+        logger.d("Frame analyzed | count=$count | scanId=$currentScanId")
+
+        // Rolling count buffer
         val buffer = ArrayDeque(_lastTenDetections.value)
         if (buffer.size >= ZERO_DETECTIONS_THRESHOLD) buffer.removeFirst()
         buffer.addLast(count)
         _lastTenDetections.value = buffer
 
-        val allZero = buffer.size == ZERO_DETECTIONS_THRESHOLD && buffer.all { it == 0 }
-        val repeatedCount = buffer.size >= REPEAT_THRESHOLD &&
-                buffer.toList().takeLast(REPEAT_THRESHOLD).distinct().size == 1
-
-        val sameAsLast = detections.map { it.hashCode() } == lastDetectedSnapshot
-        val elapsed = System.currentTimeMillis() - lastChangeTimestamp
-
-        if (sameAsLast && elapsed >= IDLE_TIMEOUT_MS) {
-            _uiState.update { it.copy(showIdleOverlay = true) }
-            logger.w("Idle overlay triggered. Scene unchanged for ${elapsed}ms.")
-        } else if (!sameAsLast) {
-            lastDetectedSnapshot = detections.map { it.hashCode() }
-            lastChangeTimestamp = System.currentTimeMillis()
-            _uiState.update { it.copy(showIdleOverlay = false) }
-        }
-
-        if (allZero || repeatedCount) pauseAndClearBuffers()
-
+        // SIMPLIFIED MAPPING:
+        // Because the Canvas and Image are the exact same ratio,
+        // we just divide the detection centers by the original image dimensions.
         updateDetectedPills(
-            detections.map {
+            pills = detections.map { det ->
                 DetectedPill(
-                    x = it.pixelX / viewWidth,
-                    y = it.pixelY / viewHeight,
-                    confidence = it.confidence
+                    x = (det.rect.centerX() / imageWidth.toFloat()).coerceIn(0f, 1f),
+                    y = (det.rect.centerY() / imageHeight.toFloat()).coerceIn(0f, 1f),
+                    confidence = det.confidence
                 )
-            }
+            },
+            frameWidth = imageWidth,
+            frameHeight = imageHeight
         )
     }
 
+    /** Update the list of detected pills in UI state AND the frame dimensions. */
+    private fun updateDetectedPills(pills: List<DetectedPill>, frameWidth: Int, frameHeight: Int) {
+        _uiState.update {
+            it.copy(
+                detectedPills = pills,
+                imageFrameWidth = frameWidth,
+                imageFrameHeight = frameHeight
+            )
+        }
+    }
+
     private fun pauseAndClearBuffers() {
-        _uiState.update { it.copy(showIdleOverlay = true) }
-        isPaused = true
-        _cameraPaused.value = true
         _lastTenDetections.value.clear()
         lastDetectedSnapshot = emptyList()
-        logger.w("Camera paused due to stable detection pattern. Buffers cleared.")
+        _uiState.update { it.copy(showIdleOverlay = true, detectedPills = emptyList()) }
+        isPaused = true
+        _cameraPaused.value = true
+        logger.w("Camera paused due to idle timeout. Buffers cleared.")
+    }
+
+    fun resetIdleTimer() {
+        idleJob?.cancel()
+        idleJob = viewModelScope.launch {
+            delay(idleTimeout)
+            pauseAndClearBuffers()
+        }
     }
 
 
@@ -341,56 +321,16 @@ class PillScanningViewModel @Inject constructor(
         isPaused = false
         _cameraPaused.value = false
 
-        logger.i("Idle overlay reset → buffers, snapshots, and timers cleared. Analysis resumed cleanly.")
-    }
-
-
-    /** Update the list of detected pills in UI state. */
-    private fun updateDetectedPills(pills: List<DetectedPill>) {
-        _uiState.update { it.copy(detectedPills = pills) }
+        logger.i("Idle overlay reset -> Analysis resumed.")
     }
 
     fun updateFilteredPills(filtered: List<DetectedPill>) {
         _uiState.update { it.copy(filteredPills = filtered) }
     }
 
-    /** Load TensorFlow Lite model from assets. */
-    private fun loadModelFile(fileName: String = MODEL_FILENAME): ByteBuffer {
-        val context = getApplication<Application>()
-        val encFile = File(context.filesDir, "$fileName.enc")
-
-        if (!encFile.exists()) {
-            context.assets.open("$fileName.enc").use { input ->
-                encFile.outputStream().use { output -> input.copyTo(output) }
-            }
-        }
-
-        val decryptedBytes = ModelDecryptor.decryptToBytes(encFile)
-        return ByteBuffer.allocateDirect(decryptedBytes.size).apply {
-            put(decryptedBytes)
-            rewind()
-        }
-    }
-
 
     override fun onCleared() {
         super.onCleared()
-
-        try {
-            interpreter?.close()
-        } catch (e: Exception) {
-            logger.w("Error closing interpreter: ${e.message}")
-        } finally {
-            interpreter = null
-        }
-
-        try {
-            gpuDelegate?.close()
-        } catch (e: Exception) {
-            logger.w("Error closing GPU delegate: ${e.message}")
-        } finally {
-            gpuDelegate = null
-        }
 
         try {
             currentFrameBitmap?.recycle()
@@ -399,10 +339,11 @@ class PillScanningViewModel @Inject constructor(
         } finally {
             currentFrameBitmap = null
         }
-
         _modelState.value = ModelState.Idle
-        logger.i("ViewModel cleared and all TensorFlow resources released.")
+        // Note: We do NOT close the modelLoader here. It remains alive in the Singleton.
+        logger.i("ViewModel cleared. Model remains loaded in Singleton.")
     }
+
     // ------------------------------------------------------------------------
     // Event Handling
     // ------------------------------------------------------------------------
@@ -418,20 +359,36 @@ class PillScanningViewModel @Inject constructor(
             is PillScanningEvent.ConfirmDone -> handleConfirmDone()
             is PillScanningEvent.CancelDone -> handleCancelDone()
             is PillScanningEvent.TransactionDetailDeleted -> handleDeleteTransaction(event)
+            is PillScanningEvent.AllTransactionDetailsDeleted -> handleDeleteAllTransactionDetails()
         }
     }
+
+
+    private var addCooldownJob: Job? = null
+
+    private fun startAddCooldown() {
+        // cancel previous if any
+        addCooldownJob?.cancel()
+
+        _uiState.update { it.copy(isAddCooldown = true) }
+
+        addCooldownJob = viewModelScope.launch {
+            delay(3000)
+            _uiState.update { it.copy(isAddCooldown = false) }
+            lastAddClickTime = 0L
+        }
+    }
+
 
     private fun handleAddTransaction(event: PillScanningEvent.AddTransactionDetailClicked) {
         val context: Context = getApplication<Application>().applicationContext
         val currentTime = System.currentTimeMillis()
 
-        // --- Debounce: prevent taps within 2 seconds ---
-        if (currentTime - lastAddClickTime < 2000) {
+        if (_uiState.value.isAddCooldown) {
             showToast(context, context.getString(R.string.add_button_wait))
-            logger.w("Add action ignored: tapped too quickly.")
+            logger.w("Add action ignored: cooldown active.")
             return
         }
-        lastAddClickTime = currentTime
 
         val totalBatchCount = _uiState.value.txnDetailHistory.sumOf { it.count }
         val targetCount = _uiState.value.targetCount
@@ -440,7 +397,7 @@ class PillScanningViewModel @Inject constructor(
 
         if (_uiState.value.scanType == CountType.FIXED.toString() && predictedTotal > targetCount) {
             _uiState.update { it.copy(restrictAdd = true) }
-            showToast(context, context.getString(R.string.add_exceeds_target))
+            //showToast(context, context.getString(R.string.add_exceeds_target))
             logger.w("Add blocked: predicted total exceeds target count.")
             return
         }
@@ -449,7 +406,7 @@ class PillScanningViewModel @Inject constructor(
             logger.w("Add blocked: detected count is 0.")
             return
         }
-
+        triggerAddPop(currentCount)
         // --- Generate unique signature for current detections ---
         val signature = _uiState.value.detectedPills.joinToString(separator = "|") {
             "${"%.3f".format(it.x)}-${"%.3f".format(it.y)}"
@@ -462,47 +419,76 @@ class PillScanningViewModel @Inject constructor(
             return
         }
 
+        startAddCooldown()
+
+        lastAddClickTime = currentTime
         lastAddedScanSignature = signature
         logger.i("Adding transaction detail with unique signature. Count=$currentCount")
 
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             val userId = preferenceHelper.getUserId().orEmpty()
             val user = userDao.getByUserId(userId)
             val location = locationProvider.getCurrentLocationAsString()
 
-            val overlayBitmap = currentFrameBitmap?.let { base ->
-                val filteredPills = _uiState.value.filteredPills
-                if (filteredPills.isNotEmpty()) {
-                    try {
-                        OverlayUtils.drawDetectionsOnBitmap(
-                            bitmap = base,
-                            detectedPills = filteredPills,
-                            previewWidth = cameraHelper?.getPreviewWidth() ?: base.width,
-                            previewHeight = cameraHelper?.getPreviewHeight() ?: base.height,
-                            userName = user?.name,
-                            userId = user?.userId,
-                            location = location,
-                            timestamp = System.currentTimeMillis()
-                        )
-                    } catch (e: Exception) {
-                        logger.e("Overlay drawing failed, returning base bitmap", e)
-                        base
-                    }
-                } else base
+            val base = currentFrameBitmap
+
+            if (base == null || base.isRecycled) {
+                logger.e("Base frame bitmap is null or recycled, skipping save")
+                return@launch
             }
 
-            val filePath = overlayBitmap?.let {
-                saveBitmapToFile(
-                    getApplication(),
-                    it,
-                    "txn_detail_${System.currentTimeMillis()}.jpg",
-                    "transaction_details"
-                )
+            val workingBitmap = try {
+                base.copy(Bitmap.Config.ARGB_8888, true)
+            } catch (e: Exception) {
+                logger.e("Failed to copy base bitmap", e)
+                return@launch
+            }
+
+            val filteredPills = _uiState.value.filteredPills
+            val txnId = preferenceHelper.getTxnId()
+            val txn = pillCountTxnDao.getById(txnId)
+            val drug = drugMasterDao.getDrugById(txn?.drugId)
+
+            val overlayBitmap = if (filteredPills.isNotEmpty()) {
+                try {
+                    // IMPORTANT: OverlayUtils should draw on and return the bitmap you pass (workingBitmap)
+                    OverlayUtils.drawDetectionsOnBitmap(
+                        bitmap = workingBitmap,
+                        detectedPills = filteredPills,
+                        previewWidth = cameraHelper?.getPreviewWidth() ?: workingBitmap.width,
+                        previewHeight = cameraHelper?.getPreviewHeight() ?: workingBitmap.height,
+                        userName = user?.name,
+                        userId = user?.userId,
+                        location = location,
+                        timestamp = System.currentTimeMillis(),
+                        ndc = drug?.ndc,
+                        count = currentCount.toString(),
+                    )
+                } catch (e: Exception) {
+                    logger.e("Overlay drawing failed, using working bitmap without overlay", e)
+                    workingBitmap
+                }
+            } else {
+                workingBitmap
+            }
+
+            val filePath = try {
+                if (!overlayBitmap.isRecycled) {
+                    saveBitmapToFile(
+                        getApplication(),
+                        overlayBitmap,
+                        "txn_detail_${System.currentTimeMillis()}.jpg",
+                        "transaction_details"
+                    )
+                } else null
+            } catch (e: Exception) {
+                logger.e("Failed saving bitmap", e)
+                null
             }
 
             pillCountTxnDetailsDao.insert(
                 PillCountTxnDetailsEntity(
-                    txnId = preferenceHelper.getTxnId(),
+                    txnId = txnId,
                     pillCount = currentCount,
                     imagePath = filePath,
                     createdAt = System.currentTimeMillis(),
@@ -510,10 +496,13 @@ class PillScanningViewModel @Inject constructor(
                 )
             )
 
-            overlayBitmap?.recycle()
+            if (!workingBitmap.isRecycled) workingBitmap.recycle()
+
             currentFrameBitmap = null
+
             logger.i("Transaction detail saved. Count=$currentCount, File=$filePath")
         }
+
     }
 
     private fun handleRescan() {
@@ -562,8 +551,18 @@ class PillScanningViewModel @Inject constructor(
                 if (txn.countType == CountType.FIXED && txn.targetCount != null && total < txn.targetCount)
                     CountStatus.PARTIAL else CountStatus.COMPLETED
 
-            pillCountTxnDao.updateTxnStatus(txnId, status)
+            if (txn.isComingFromHL7 == true) {
+                pillCountTxnDao.markCompletedAndUnsynced(
+                    txnId = txnId,
+                    status = status
+                )
+            } else {
+                pillCountTxnDao.updateTxnStatus(txnId, status)
+            }
+
+
             _navigationEvent.send(NavigationEvent.NavigateToDashboard)
+
             logger.i("Transaction completed. Status=$status")
         }
     }
@@ -577,6 +576,13 @@ class PillScanningViewModel @Inject constructor(
         viewModelScope.launch {
             pillCountTxnDetailsDao.softDelete(event.txnDetailId)
             logger.i("Transaction detail deleted. Id=${event.txnDetailId}")
+        }
+    }
+
+    private fun handleDeleteAllTransactionDetails() {
+        viewModelScope.launch {
+            pillCountTxnDetailsDao.softDeleteAllTransaction(preferenceHelper.getTxnId())
+            logger.i("All Transaction details deleted. where transaction Id=${preferenceHelper.getTxnId()}")
         }
     }
 
@@ -628,4 +634,42 @@ class PillScanningViewModel @Inject constructor(
     private fun showConfirmDialogAfterDone() {
         _uiState.update { it.copy(showConfirmDialog = true) }
     }
+
+    fun triggerAddPop(count: Int) {
+        _addPopEvents.tryEmit(count)
+    }
+
+    fun playCountSoundIfEnabled() {
+        if (preferenceHelper.isSoundEnabled()) {
+            shutterSound.play(MediaActionSound.START_VIDEO_RECORDING)
+        }
+        if(preferenceHelper.isHapticEnabled()){
+            triggerHaptic(context)
+        }
+    }
+
+    private fun triggerHaptic(context: Context) {
+
+        val vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            val manager =
+                context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
+            manager.defaultVibrator
+        } else {
+            context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+        }
+
+        if (!vibrator.hasVibrator()) return
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            vibrator.vibrate(
+                VibrationEffect.createOneShot(
+                    120,      // duration (increase if needed)
+                    255       // MAX amplitude (1–255)
+                )
+            )
+        } else {
+            vibrator.vibrate(120)
+        }
+    }
+
 }

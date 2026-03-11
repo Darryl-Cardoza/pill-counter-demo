@@ -38,6 +38,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.responsiveDp
 import com.rite.pillcounting.core.utils.constants.Dimens.small
 import com.rite.pillcounting.ui.theme.AppTheme
 
@@ -109,8 +110,8 @@ fun PillCountTextField(
                 displayedValue.forEach { digit ->
                     Box(
                         modifier = Modifier
-                            .height(70.dp)
-                            .width(50.dp)
+                            .height(responsiveDp(70.dp))
+                            .width(responsiveDp(50.dp))
                             .background(
                                 boxBackground,
                                 shape = RoundedCornerShape(cornerRadius)

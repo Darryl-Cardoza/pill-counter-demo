@@ -43,5 +43,6 @@ data class DashboardUiState(
     val userDetail: UserDetail? = null,
 
     /** Triggers navigation to Profile screen if profile details are incomplete. */
-    val navigateToProfile: Boolean = false
+    val navigateToProfile: Boolean = false,
+    val logoutUser: Boolean = false
 )

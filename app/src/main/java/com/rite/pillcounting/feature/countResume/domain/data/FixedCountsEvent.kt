@@ -18,6 +18,8 @@ sealed interface FixedCountsEvent : ResumeEvent {
 
     /** Triggered when the user clicks the delete button to remove selected items. */
     object DeleteClicked : FixedCountsEvent
+    object SelectAllClicked: FixedCountsEvent
+
 
     /**
      * Triggered when the user swipes a single item to delete it.
@@ -26,6 +28,8 @@ sealed interface FixedCountsEvent : ResumeEvent {
      */
     data class ItemSwipedToDelete(val item: CountItem) : FixedCountsEvent
     data class ForceCompleteTransaction(val item: CountItem) : FixedCountsEvent
+
+
 
     /**
      * Triggered when the user selects or deselects an item in multi-select mode.

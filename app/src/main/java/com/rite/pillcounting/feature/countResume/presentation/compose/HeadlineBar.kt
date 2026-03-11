@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -35,23 +36,29 @@ fun HeadlineBar(
     title: String,
     searchQuery: String,
     showSearch: Boolean,
+    isMultiSelectMode: Boolean,
+    isAllSelected: Boolean,
+    hasSelection : Boolean,
+    showDelete: Boolean,
     onSearchClick: () -> Unit,
     onSearchChange: (String) -> Unit,
-    onDeleteClick: () -> Unit
+    onDeleteClick: () -> Unit,
+    onCancelClick: () -> Unit,
+    onConfirmDelete: () -> Unit,
+    onSelectAll: () -> Unit
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 12.dp, vertical = 4.dp),
+            .padding(end = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         if (showSearch) {
-            // 🔍 Search mode
+            // Search mode
             Row(
                 modifier = Modifier
-                    .weight(1f)
-                    .padding(start = 4.dp),
+                    .weight(1f),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 BackButton(navController)
@@ -86,38 +93,88 @@ fun HeadlineBar(
                     .clickable { onSearchClick() }
             )
         } else {
-            // 🧭 Normal mode
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                BackButton(navController)
-                Spacer(Modifier.width(4.dp))
-                Text(
-                    text = title.uppercase(),
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = AppTheme.extendedColors.textColor
-                )
-            }
+            //  Normal mode
+            // when delete mode is on
+            if (!isMultiSelectMode) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    BackButton(navController)
 
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    painter = painterResource(id = R.drawable.search),
-                    contentDescription = stringResource(R.string.cd_search),
-                    tint = MaterialTheme.colorScheme.secondary,
-                    modifier = Modifier
-                        .size(26.dp)
-                        .clickable { onSearchClick() }
-                )
+                    Spacer(Modifier.width(4.dp))
 
-                Spacer(Modifier.width(16.dp))
+                    Text(
+                        text = title.uppercase(),
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = AppTheme.extendedColors.textColor,
+                        modifier = Modifier.weight(1f)
+                    )
 
-                Icon(
-                    painter = painterResource(id = R.drawable.delete),
-                    contentDescription = stringResource(R.string.cd_select_items_to_delete),
-                    tint = MaterialTheme.colorScheme.secondary,
-                    modifier = Modifier
-                        .size(26.dp)
-                        .clickable { onDeleteClick() }
-                )
+                    Icon(
+                        painter = painterResource(id = R.drawable.search),
+                        contentDescription = stringResource(R.string.cd_search),
+                        tint = MaterialTheme.colorScheme.secondary,
+                        modifier = Modifier
+                            .size(26.dp)
+                            .clickable { onSearchClick() }
+                    )
+
+                    if (showDelete) {
+                        Spacer(Modifier.width(16.dp))
+                        Icon(
+                            painter = painterResource(id = R.drawable.delete),
+                            contentDescription = stringResource(R.string.cd_select_items_to_delete),
+                            tint = MaterialTheme.colorScheme.secondary,
+                            modifier = Modifier
+                                .size(26.dp)
+                                .clickable { onDeleteClick() }
+                        )
+                    }
+                }
+            }else{
+                //normal
+
+                Row(verticalAlignment = Alignment.CenterVertically) {
+
+                    Checkbox(
+                        checked = isAllSelected,
+                        onCheckedChange = { onSelectAll() }
+                    )
+
+                    Spacer(Modifier.width(6.dp))
+
+                    Text(
+                        text = stringResource(R.string.select_all),
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = AppTheme.extendedColors.textColor
+                    )
+                }
+
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = stringResource(R.string.delete),
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = if (hasSelection) MaterialTheme.colorScheme.primary else Color.Gray,
+                        modifier = Modifier.clickable {
+                            if (hasSelection) {
+                                onConfirmDelete()
+                            }
+                        }
+                    )
+
+                    Spacer(Modifier.width(18.dp))
+
+                    Text(
+                        text = stringResource(R.string.cancel),
+                        fontSize = 14.sp,
+                        color = MaterialTheme.colorScheme.secondary,
+                        modifier = Modifier.clickable { onCancelClick() }
+                    )
+                }
             }
         }
     }

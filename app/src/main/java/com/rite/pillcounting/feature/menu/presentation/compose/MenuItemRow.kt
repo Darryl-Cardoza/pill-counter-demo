@@ -21,6 +21,7 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.responsiveDp
 import com.rite.pillcounting.ui.theme.AppTheme.extendedColors
 
 /**
@@ -75,7 +76,8 @@ fun MenuItemRow(
     completedIcon: Int,
     partialIcon: Int,
     mainClick: () -> Unit,
-    onPartialClick: () -> Unit
+    onPartialClick: () -> Unit,
+    onCompletedClick: () -> Unit
 ) {
     val configuration = LocalConfiguration.current
     val isPortrait = configuration.orientation == Configuration.ORIENTATION_PORTRAIT
@@ -97,7 +99,7 @@ fun MenuItemRow(
                 painter = painterResource(id = icon),
                 contentDescription = title,
                 tint = iconTint,
-                modifier = Modifier.size(28.dp)
+                modifier = Modifier.size(responsiveDp(28.dp))
             )
 
             Spacer(modifier = Modifier.width(12.dp))
@@ -120,7 +122,7 @@ fun MenuItemRow(
                         tint = completedTint,
                         icon = completedIcon,
                         hasBackground = false,
-                        onBadgeClick = {},
+                        onBadgeClick = {onCompletedClick()},
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     StatBadge(
@@ -128,7 +130,7 @@ fun MenuItemRow(
                         tint = partialTint,
                         icon = partialIcon,
                         hasBackground = true,
-                        onBadgeClick = { onPartialClick},
+                        onBadgeClick = { onPartialClick() },
                     )
                 }
             }
@@ -147,7 +149,7 @@ fun MenuItemRow(
                     tint = completedTint,
                     icon = completedIcon,
                     hasBackground = false,
-                    onBadgeClick = { },
+                    onBadgeClick = onCompletedClick,
                 )
                 StatBadge(
                     text = partial,

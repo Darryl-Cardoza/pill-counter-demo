@@ -4,6 +4,9 @@
     <string name="rite_title">RITE TECHNOLOGIES</string>
     <string name="version">Version</string>
 
+    <!--    Common   -->
+    <string name="pms">PMS</string>
+
     <!-- ================== AUTH / LOGIN / REGISTER ================== -->
     <string name="email">Email</string>
     <string name="password">Password</string>
@@ -25,12 +28,12 @@
     <string name="send_otp">Send OTP</string>
 
     <!-- ================== DASHBOARD ================== -->
-    <string name="fixed_count">Fixed Count</string>
-    <string name="fixed_count_desc">For counting fixed quantities</string>
-    <string name="regular_count">Regular Count</string>
-    <string name="regular_count_desc">For day to day regular counts</string>
+    <string name="fixed_count">Dispense Count</string>
+    <string name="fixed_count_desc">For counting prescribed quantities</string>
+    <string name="regular_count">Quick Count</string>
+    <string name="regular_count_desc">For day to day counts</string>
     <string name="completed">completed</string>
-    <string name="partial">partial</string>
+    <string name="partial">pending</string>
     <string name="barcode_scan">Scan Code</string>
 
     <!-- ================== SETTINGS ================== -->
@@ -38,6 +41,14 @@
     <string name="setting_barcode_scan_first">Always do Barcode Scan first</string>
     <string name="setting_ask_to_add_notes">Always ask to add Notes</string>
     <string name="setting_save_history_for">Save history for</string>
+    <string name="pill_counting_sound">Pill Counting Sound</string>
+    <string name="require_double_count">Require Double Counts</string>
+    <string name="require_back_count">Require Back Counts</string>
+    <string name="require_adjust_resons">Require Adjust Reasons</string>
+    <string name="haptic_feedback">Haptic Feedback</string>
+    <string name="clear_all_local_data">Clear All Local Data</string>
+    <string name="are_you_sure_you_want_to_clear_all_data">Are you sure you want to clear all data?</string>
+    <string name="select_schedule_codes">Select Schedule Codes</string>
 
     <string-array name="history_options">
         <item>1 Week (Default)</item>
@@ -82,9 +93,11 @@
 
 
     <!-- ================== PARTIAL COUNTS ================== -->
-    <string name="fixed_partial_count_title">Fixed Partial Counts</string>
-    <string name="regular_partial_count_title">Regular Partial Counts</string>
-    <string name="partial_icon_description">Partial Fill Icons</string>
+    <string name="fixed_partial_count_title">Pending Dispense Counts</string>
+    <string name="regular_partial_count_title">Pending Quick Counts</string>
+    <string name="filter_all">All</string>
+    <string name="filter_pms">PMS</string>
+    <string name="filter_non_nms">Non PMS</string>
 
     <!-- ================== COMMON BUTTONS ================== -->
     <string name="redo">Redo</string>
@@ -96,7 +109,7 @@
     <string name="add">Add</string>
     <string name="wait">Wait</string>
     <string name="count">Count</string>
-    <string name="ok">Ok</string>
+    <string name="ok">OK</string>
     <string name="cancel">Cancel</string>
     <string name="yes">Yes</string>
     <string name="no">No</string>
@@ -105,12 +118,15 @@
     <string name="resume">Resume</string>
     <string name="manual">Manual</string>
     <string name="skip_alt">SKIP</string>
+    <string name="select_all">Select All</string>
+
 
     <!-- ================== PILL COUNT ================== -->
     <string name="pill_count_app_title">Pill Counter</string>
     <string name="pill_info_add_manually">Enter Pill Info Manually</string>
     <string name="drugname">Drug Name</string>
     <string name="ndc">Ndc</string>
+    <string name="ndc_gtin14">Ndc/GTIN14</string>
     <string name="expiry">Expiry</string>
     <string name="lotNo">Lot No.</string>
     <string name="pills_count">Pills Count</string>
@@ -122,11 +138,11 @@
     <string name="transaction_detail">Transaction Detail</string>
     <string name="total">Total</string>
     <string name="total_count">Total Count</string>
-    <string name="max_count_reached">Total Transaction Details count exceeds target.</string>
+    <string name="max_count_reached">Total Transaction count exceeds target.</string>
     <string name="no_transaction_found">No Transaction Found, please start counting pills</string>
     <string name="confirm_done">Confirm Completion</string>
     <string name="confirm_done_desc_regular">Are you sure you want to mark this transaction as completed?</string>
-    <string name="confirm_done_desc_fixed">Target not reached. This transaction will be marked as PARTIAL.</string>
+    <string name="confirm_done_desc_fixed">Target not reached. This transaction will be marked as PENDING.</string>
     <string name="force_complete">Force Complete</string>
 
     <!-- ================== PROFILE ================== -->
@@ -138,17 +154,17 @@
     <string name="npi_number">NPI No.</string>
     <string name="do_not_ask">Do not ask again</string>
     <string name="confirm_delete_profile">Are you sure you want to delete your profile? This action cannot be undone.</string>
-    <string name="logging_out">Logging out...</string>
+    <string name="logging_out">Logging out…</string>
+    <string name="profile_updated_successfully">Profile updated successfully</string>
 
     <!-- ================== MENUS ================== -->
-    <string name="menu_fixed_count">Fixed Count</string>
-    <string name="menu_regular_count">Regular Count</string>
     <string name="menu_profile">Profile</string>
     <string name="menu_history">History</string>
     <string name="menu_settings">Settings</string>
     <string name="menu_logout">Logout</string>
     <string name="menu_completed">%1$d completed</string>
-    <string name="menu_partial">%1$d partial</string>
+    <string name="menu_partial">%1$d pending</string>
+    <string name="menu_unsync_transaction">Unsynced Transactions</string>
 
     <!-- ================== UI CONTENT DESCRIPTIONS ================== -->
     <string name="back_content_description">Navigate back</string>
@@ -171,12 +187,13 @@
     <string name="confirm_delete_message">Are you sure you want to delete the records for the selected date? This action cannot be undone.</string>
     <string name="confirm_delete_title">Confirm Delete</string>
     <string name="confirm_delete_txn_detail">Are you sure you want to delete this transaction detail? This action cannot be undone.</string>
+    <string name="confirm_force_completed_txn"> Are you sure you want to force complete this transaction?</string>
 
     <!-- ================== TABLE HEADERS / LABELS ================== -->
     <string name="drug">Drug</string>
-    <string name="drugname_two_lines">Drug \\nName</string>
+    <string name="drugname_two_lines">Drug \nName</string>
     <string name="status">Status</string>
-    <string name="count_type_two_lines">Count \\nType</string>
+    <string name="count_type_two_lines">Count \nType</string>
     <string name="date">Date</string>
     <string name="time">Time</string>
     <string name="note">Note</string>
@@ -220,7 +237,6 @@
     <string name="confirm_logout_text">Are you sure you want to logout?</string>>
 
     <string name="add_button_wait">Please wait 2 seconds before adding again.</string>
-    <string name="add_exceeds_target">Cannot add — total exceeds target count.</string>
     <string name="scan_code">Scan Barcode/QR code</string>
     <string name="add_zero_detected">Cannot add — no pills detected.</string>
     <string name="duplicate_scan_ignored">Duplicate scan ignored — no new pills detected.</string>
@@ -228,11 +244,31 @@
     <!-- For multi-select mode text in PartialListPanel -->
     <string name="selected_items_count">%1$d items selected</string>
     <string name="tap_to_delete">Tap delete to remove</string>
+    <string name="session_expired">Session Expired!</string>
 
     <!-- Optional: if you want a singular/plural version -->
     <plurals name="selected_items_count_plural">
         <item quantity="one">%1$d item selected</item>
         <item quantity="other">%1$d items selected</item>
     </plurals>
+
+    <!--    PillScanning Screen Constants-->
+    <string name="pill_scanning_add_button">Add</string>
+    <string name="pill_scanning_wait_button">Wait..</string>
+    <string name="pill_scanning_total_count">Total Count</string>
+    <string name="pill_scanning_all_done">All Done</string>
+    <string name="confirm_delete_message_on_reset_click">Are you sure you want to delete all the transaction for this current transaction.</string>
+    <string name="cannot_reset_no_pills_detected">Cannot reset no pills detected transactionDetails.</string>
+
+    <!--    ManualDrugEntry -->
+    <string name="ndc_number">NDC Number</string>
+    <string name="drug_name">Drug Name</string>
+    <string name="all_fields_are_required">All fields are required</string>
+    <string name="manual_drug_info_cancel">CANCEL</string>
+    <string name="manual_drug_info_ok">OK</string>
+
+    <!-- Unsynced Transaction-->
+    <string name="unsynced_transaction">UNSYNCED TRANSACTION</string>
+    <string name="sync_all">SYNC ALL</string>
 
 </resources>

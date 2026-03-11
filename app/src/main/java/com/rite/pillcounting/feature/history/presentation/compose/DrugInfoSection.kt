@@ -16,6 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.dp
 import com.rite.pillcounting.core.room.models.dtos.TxnDetailInfo
+import com.rite.pillcounting.core.room.models.enums.CountType
 
 @Composable
 fun DrugInfoSection(
@@ -26,6 +27,7 @@ fun DrugInfoSection(
     time: String,
     note: String?,
     totalPillCount: String,
+    targetCount: Int?,
     barcodeImage: String?,
     transactionDetails: List<TxnDetailInfo>,
     onDelete: () -> Unit,
@@ -51,7 +53,7 @@ fun DrugInfoSection(
                             .padding(start = 20.dp),
                         verticalArrangement = Arrangement.SpaceEvenly
                     ) {
-                        ImageWithCount(totalPillCount, barcodeImage)
+                        ImageWithCount(totalPillCount, targetCount,barcodeImage)
                         Spacer(Modifier.height(15.dp))
                         HistoryNote(note)
                     }
@@ -80,7 +82,7 @@ fun DrugInfoSection(
             modifier = Modifier.fillMaxSize(),
             verticalArrangement = Arrangement.SpaceBetween
         ) {
-            ImageWithCount(totalPillCount, barcodeImage)
+            ImageWithCount(totalPillCount, targetCount ,barcodeImage)
             HistoryDrugDetails(ndc, expiry, lotNo.toString(), date, time)
             HistoryNote(note)
             TransactionDetailsList(transactionDetails)

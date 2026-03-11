@@ -73,6 +73,7 @@ fun StatBadge(
                 interactionSource = remember { MutableInteractionSource() })
     } else {
         Modifier.padding(horizontal = 4.dp)
+            .clickable(onClick = onBadgeClick)
     }
 
     Row(

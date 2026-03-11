@@ -19,7 +19,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.stringArrayResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -32,6 +32,7 @@ import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.BackButton
 import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.CommonDialog
 import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.LoadingIndicator
 import com.rite.pillcounting.core.utils.constants.Dimens.medium
+import com.rite.pillcounting.feature.history.domain.model.HistoryMode
 import com.rite.pillcounting.feature.login.domain.model.LogoutUiState
 import com.rite.pillcounting.feature.login.viewmodel.LoginViewModel
 import com.rite.pillcounting.feature.menu.presentation.compose.MenuItemRow
@@ -55,7 +56,8 @@ import com.rite.pillcounting.ui.theme.AppTheme.extendedColors
 fun MenuScreen(
     navController: NavController,
     viewModel: MenuViewModel = hiltViewModel(),
-    loginViewModel: LoginViewModel = hiltViewModel()
+    loginViewModel: LoginViewModel = hiltViewModel(),
+    onLogOut:()-> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val logoutState by loginViewModel.logoutUiState.collectAsState()
@@ -79,7 +81,7 @@ fun MenuScreen(
             // Fixed Count
             MenuItemRow(
                 icon = R.drawable.fixed_count,
-                title = stringResource(R.string.menu_fixed_count),
+                title = stringResource(R.string.fixed_count),
                 completed = stringResource(R.string.menu_completed, uiState.fixedCompleted),
                 partial = stringResource(R.string.menu_partial, uiState.fixedPartial),
                 iconTint = MaterialTheme.colorScheme.secondary,
@@ -96,14 +98,15 @@ fun MenuScreen(
                             )
                         )
                 },
+                onCompletedClick = {  navController.navigate(Screen.History.createRoute(HistoryMode.DISPENSE)) },
             )
 
-            HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
+            HorizontalDivider(color = colorResource(R.color.border_gray).copy(alpha = 0.3f))
 
             // Regular Count
             MenuItemRow(
                 icon = R.drawable.regular_count,
-                title = stringResource(R.string.menu_regular_count),
+                title = stringResource(R.string.regular_count),
                 completed = stringResource(R.string.menu_completed, uiState.regularCompleted),
                 partial = stringResource(R.string.menu_partial, uiState.regularPartial),
                 iconTint = MaterialTheme.colorScheme.primary,
@@ -120,9 +123,10 @@ fun MenuScreen(
                             )
                         )
                 },
+                onCompletedClick = {  navController.navigate(Screen.History.createRoute(HistoryMode.REGULAR)) },
             )
 
-            HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
+            HorizontalDivider(color = colorResource(R.color.border_gray).copy(alpha = 0.3f))
 
             // Profile
             SimpleMenuRow(
@@ -133,7 +137,7 @@ fun MenuScreen(
                 onClick = { navController.navigate(Screen.Profile.route) }
             )
 
-            HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
+            HorizontalDivider(color = colorResource(R.color.border_gray).copy(alpha = 0.3f))
 
             // Load options from strings.xml
             val historyOptions = stringArrayResource(R.array.history_options).toList()
@@ -155,24 +159,34 @@ fun MenuScreen(
                 onClick = { navController.navigate(Screen.History.route) }
             )
 
-            HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
+            HorizontalDivider(color = colorResource(R.color.border_gray).copy(alpha = 0.3f))
+            SimpleMenuRow(
+                navController = navController,
+                icon = R.drawable.unsynced_transaction_icon,
+                iconTint = MaterialTheme.colorScheme.secondary,
+                title = stringResource(R.string.menu_unsync_transaction),
+                trailingText = uiState.unsyncedTransactionCount.toString(),
+                onClick = { navController.navigate(Screen.UnsyncedTransactionScreen.route) }
+            )
+
+            HorizontalDivider(color = colorResource(R.color.border_gray).copy(alpha = 0.3f))
 
             // Settings
             SimpleMenuRow(
                 navController = navController,
                 icon = R.drawable.settings,
-                iconTint = MaterialTheme.colorScheme.secondary,
+                iconTint = MaterialTheme.colorScheme.primary,
                 title = stringResource(R.string.menu_settings),
                 onClick = { navController.navigate(Screen.Settings.route) }
             )
 
-            HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
+            HorizontalDivider(color = colorResource(R.color.border_gray).copy(alpha = 0.3f))
 
             // Logout
             SimpleMenuRow(
                 navController = navController,
                 icon = R.drawable.logout,
-                iconTint = MaterialTheme.colorScheme.primary,
+                iconTint = MaterialTheme.colorScheme.secondary,
                 title = stringResource(R.string.menu_logout),
                 onClick = {
                     showLogoutConfirmDialog = true
@@ -239,14 +253,17 @@ fun MenuScreen(
                 is LogoutUiState.Success -> {
                     LaunchedEffect(Unit) {
                         // Clear user session on successful logout
-                        loginViewModel.preferenceHelper.clearTokens()
-                        loginViewModel.preferenceHelper.setUserLoggedIn(false)
+                        loginViewModel.clearSession()
                         loginViewModel.clearAllStates()
                         showLogoutLoading = false
 
                         // Navigate back to login/auth graph
                         navController.navigate(AUTH_GRAPH_ROUTE) {
                             popUpTo(0) { inclusive = true }
+                        }
+
+                        if(!loginViewModel.preferenceHelper.isUserLoggedIn()){
+                            onLogOut()
                         }
                     }
                 }

@@ -73,7 +73,6 @@
     <!-- ================== PARTIAL COUNTS ================== -->
     <string name="fixed_partial_count_title">Comptages Fixes Partiels</string>
     <string name="regular_partial_count_title">Comptages Réguliers Partiels</string>
-    <string name="partial_icon_description">Icônes de remplissage partiel</string>
 
     <!-- ================== COMMON BUTTONS ================== -->
     <string name="redo">Refaire</string>
@@ -126,8 +125,6 @@
     <string name="confirm_delete_profile">Êtes-vous sûr de vouloir supprimer votre profil ? Cette action est irréversible.</string>
 
     <!-- ================== MENUS ================== -->
-    <string name="menu_fixed_count">Comptage Fixe</string>
-    <string name="menu_regular_count">Comptage Régulier</string>
     <string name="menu_profile">Profil</string>
     <string name="menu_history">Historique</string>
     <string name="menu_settings">Paramètres</string>
@@ -156,6 +153,8 @@
     <string name="confirm_delete_message">Êtes-vous sûr de vouloir supprimer les enregistrements pour la date sélectionnée ? Cette action est irréversible.</string>
     <string name="confirm_delete_title">Confirmer la Suppression</string>
     <string name="confirm_delete_txn_detail">Are you sure you want to delete this transaction detail? This action cannot be undone.</string>
+    <string name="confirm_force_completed_txn">Êtes-vous sûr de vouloir forcer la finalisation de cette transaction?</string>
+
 
     <!-- ================== TABLE HEADERS / LABELS ================== -->
     <string name="drug">Médicament</string>
@@ -177,4 +176,10 @@
     <string name="suspecious_activity_text">Notre système a détecté une \'double dose\' suspecte depuis un autre appareil. Il est temps de \nvérifier avec une nouvelle connexion.</string>
     <string name="maintenance_text">Le compteur est au comptoir du pharmacien pour une vérification rapide. De retour bientôt\navec des comptages précis !</string>
     <string name="update_version_text">Votre version actuelle a expiré - il est temps d\'obtenir une nouvelle ordonnance. Mettez à jour maintenant pour \nla bonne dose de fonctionnalités !</string>
+    <string name="session_expired">Session Expired!</string>
+
+    <!--    PillScanning Screen Constants-->
+    <string name="pill_scanning_add_button">Ajouter</string>
+    <string name="pill_scanning_total_count">Nombre total</string>
+    <string name="pill_scanning_all_done">Tout est fait</string>
 </resources>

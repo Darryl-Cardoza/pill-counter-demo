@@ -68,6 +68,19 @@ private const val KEY_SHOW_NOTES_DIALOG = "key_show_notes_dialog"
 private const val KEY_RECENT_LOGINS = "recent_logins"
 private const val KEY_HISTORY_RETENTION = "history_retention"
 
+private const val KEY_SENT_TXN_ID = "last_txn_id"
+
+//HL7
+private const val KEY_NSD_BROADCAST_TYPE = "key_nsd_broadcast_type"
+private const val KEY_NSD_DISCOVERY_TYPE = "key_nsd_discovery_type"
+private const val KEY_HL7_ENABLED = "key_hl7_enabled"
+private const val KEY_SOUND = "key_pill_count_sound_enabled"
+private const val KEY_HAPTIC = "key_pill_count_haptic_enabled"
+private const val KEY_REQUIRE_BACK_COUNT = "key_require_back_count"
+private const val KEY_REQUIRE_DOUBLE_COUNT = "key_require_double_count"
+private const val KEY_REQUIRE_ADJUST_REASONS = "key_require_adjust_reasons"
+
+
 @Singleton
 class PreferenceHelper @Inject constructor(
     @ApplicationContext private val context: Context
@@ -250,6 +263,16 @@ class PreferenceHelper @Inject constructor(
         return value
     }
 
+    // Save the flag that profile check has been completed
+    fun setProfileChecked(isChecked: Boolean) {
+        prefs.edit { putBoolean("isProfileChecked", isChecked) }
+    }
+
+    // Check if the profile check has been done before
+    fun isProfileChecked(): Boolean {
+        return prefs.getBoolean("isProfileChecked", false)
+    }
+
     /** Provides the application [Context] (used for PackageManager or resource access). */
     fun getContext(): Context = context
 
@@ -319,4 +342,145 @@ class PreferenceHelper @Inject constructor(
         logger.d("Retrieved history retention: $days days")
         return days
     }
+
+
+    /********* Required HL7 flow  preferences ****************/
+
+
+    /**
+     * Saves the transaction ID of the last HL7 message sent to the PMS.
+     * This is used to track outbound messages and avoid duplicate sends
+     * in case of retries, reconnects, or app restarts.
+     */
+    fun saveSentMessageTxnId(txnId: Long) {
+        prefs.edit {
+            putLong(KEY_SENT_TXN_ID, txnId)
+        }
+    }
+
+    /**
+     * Retrieves the transaction ID of the last HL7 message sent to the PMS.
+     * Returns -1 if no message has been sent yet.
+     */
+    fun getSentMessageTxnId(): Long {
+        return prefs.getLong(KEY_SENT_TXN_ID, -1L)
+    }
+
+
+
+    /**
+     * Saves the NSD broadcast service type.
+     * This defines how PillCounter advertises itself on the local network.
+     */
+    fun saveNsdBroadcastType(type: String) {
+        prefs.edit { putString(KEY_NSD_BROADCAST_TYPE, type) }
+        logger.i("Saved NSD broadcast type: $type")
+    }
+
+    /**
+     * Retrieves the NSD broadcast service type.
+     */
+    fun getNsdBroadcastType(): String {
+        val type = prefs.getString(KEY_NSD_BROADCAST_TYPE, "")
+            ?: ""
+        logger.d("Retrieved NSD broadcast type: $type")
+        return type
+    }
+
+
+
+    /**
+     * Saves the NSD discovery service type.
+     * This defines which PMS services PillCounter searches for.
+     */
+    fun saveNsdDiscoveryType(type: String) {
+        prefs.edit { putString(KEY_NSD_DISCOVERY_TYPE, type) }
+        logger.i("Saved NSD discovery type: $type")
+    }
+
+    /**
+     * Retrieves the NSD discovery service type.
+     */
+    fun getNsdDiscoveryType(): String {
+        val type = prefs.getString(KEY_NSD_DISCOVERY_TYPE, "")
+            ?: ""
+        logger.d("Retrieved NSD discovery type: $type")
+        return type
+    }
+
+
+    /**
+     * Enables or disables HL7 functionality.
+     * When disabled, no HL7 server/client operations should start.
+     */
+    fun setHl7Enabled(enabled: Boolean) {
+        prefs.edit { putBoolean(KEY_HL7_ENABLED, enabled) }
+        logger.i("HL7 enabled set to: $enabled")
+    }
+
+    /**
+     * Checks whether HL7 functionality is enabled.
+     * @return true if enabled, false otherwise (default: true)
+     */
+    fun isHl7Enabled(): Boolean {
+        val enabled = prefs.getBoolean(KEY_HL7_ENABLED, true)
+        logger.d("HL7 enabled: $enabled")
+        return enabled
+    }
+
+    fun setSoundEnabled(enabled: Boolean) {
+        val enabled = prefs.edit().putBoolean(KEY_SOUND, enabled).apply()
+        logger.i("setSoundEnabled : $enabled")
+    }
+
+    fun isSoundEnabled(): Boolean {
+        val enabled = prefs.getBoolean(KEY_SOUND, true)
+        logger.d("isSoundEnabled : $enabled")
+        return enabled
+    }
+
+    fun setHapticEnabled(enabled: Boolean) {
+        val enabled = prefs.edit().putBoolean(KEY_HAPTIC, enabled).apply()
+        logger.i("setHapticEnabled : $enabled")
+    }
+
+    fun isHapticEnabled(): Boolean {
+        val enabled = prefs.getBoolean(KEY_HAPTIC, true)
+        logger.d("isHapticEnabled : $enabled")
+        return enabled
+    }
+
+    fun setRequireBackCountEnabled(enabled: Boolean) {
+        val enabled = prefs.edit().putBoolean(KEY_REQUIRE_BACK_COUNT, enabled).apply()
+        logger.i("setRequireBackCountEnabled : $enabled")
+    }
+
+    fun isRequireBackCountEnabled(): Boolean {
+        val enabled = prefs.getBoolean(KEY_REQUIRE_BACK_COUNT, true)
+        logger.d("isRequireBackCountEnabled : $enabled")
+        return enabled
+    }
+
+    fun setRequireDoubleCountEnabled(enabled: Boolean) {
+        val enabled = prefs.edit().putBoolean(KEY_REQUIRE_DOUBLE_COUNT, enabled).apply()
+        logger.i("setRequireDoubleCountEnabled : $enabled")
+    }
+
+    fun isRequireDoubleCountEnabled(): Boolean {
+        val enabled = prefs.getBoolean(KEY_REQUIRE_DOUBLE_COUNT, true)
+        logger.d("isRequireDoubleCountEnabled : $enabled")
+        return enabled
+    }
+
+    fun setRequireAdjustReasonEnable(enabled: Boolean) {
+        val enabled = prefs.edit().putBoolean(KEY_REQUIRE_ADJUST_REASONS, enabled).apply()
+        logger.i("setRequireAdjustReasonEnable : $enabled")
+    }
+
+    fun isRequireAdjustReasonEnable(): Boolean {
+        val enabled = prefs.getBoolean(KEY_REQUIRE_ADJUST_REASONS, true)
+        logger.d("isRequireAdjustReasonEnable : $enabled")
+        return enabled
+    }
+
 }

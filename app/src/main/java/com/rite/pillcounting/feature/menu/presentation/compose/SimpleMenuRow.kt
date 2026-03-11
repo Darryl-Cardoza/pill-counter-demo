@@ -19,6 +19,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.responsiveDp
 import com.rite.pillcounting.ui.theme.AppTheme.extendedColors
 
 /**
@@ -79,7 +80,7 @@ fun SimpleMenuRow(
                 painter = painterResource(id = icon),
                 contentDescription = title,
                 tint = iconTint,
-                modifier = Modifier.size(28.dp)
+                modifier = Modifier.size(responsiveDp(28.dp))
             )
             Spacer(modifier = Modifier.width(12.dp))
             Text(

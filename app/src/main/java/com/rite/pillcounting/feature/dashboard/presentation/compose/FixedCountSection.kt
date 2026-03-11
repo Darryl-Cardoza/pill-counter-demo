@@ -28,8 +28,11 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.rite.pillcounting.R
 import com.rite.pillcounting.core.room.models.enums.CountType
+import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.responsiveDp
+import com.rite.pillcounting.core.utils.compose.bounceClick
 import com.rite.pillcounting.core.utils.constants.Dimens.extraLarge
 import com.rite.pillcounting.core.utils.constants.Dimens.small
+import com.rite.pillcounting.feature.history.domain.model.HistoryMode
 import com.rite.pillcounting.ui.theme.AppTheme
 
 /**
@@ -48,60 +51,51 @@ import com.rite.pillcounting.ui.theme.AppTheme
 fun FixedCountSection(
     completedFixedCount: String,
     partialFixedCount: String,
-    navController: NavController
+    navController: NavController,
+    onNavigate:()-> Unit
 ) {
     Column(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier
+            .fillMaxSize()
+            .bounceClick {
+                navigateToBarcodeScanFixedCount(navController)
+                onNavigate()
+            },
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
         Spacer(modifier = Modifier.weight(1f))
 
-        // Fixed count icon leading to ScanBarcode screen
-        Icon(
-            painter = painterResource(id = R.drawable.fixed_count),
-            contentDescription = stringResource(R.string.fixed_count),
-            tint = MaterialTheme.colorScheme.secondary,
-            modifier = Modifier
-                .size(120.dp)
-                .clickable(
-                    indication = null,
-                    interactionSource = remember { MutableInteractionSource() }
-                ) {
-                    navigateToBarcodeScanFixedCount(navController)
-                }
-        )
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            // Fixed count icon leading to ScanBarcode screen
+            Icon(
+                painter = painterResource(id = R.drawable.fixed_count),
+                contentDescription = stringResource(R.string.fixed_count),
+                tint = MaterialTheme.colorScheme.secondary,
+                modifier = Modifier.size(responsiveDp(120.dp))
+            )
 
-        Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(24.dp))
 
-        // Fixed Count title (clickable -> ScanBarcode)
-        Text(
-            text = stringResource(R.string.fixed_count),
-            style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.Normal,
-            color = MaterialTheme.colorScheme.secondary,
-            modifier = Modifier.clickable(
-                indication = null,
-                interactionSource = remember { MutableInteractionSource() }
-            ) {
-                navigateToBarcodeScanFixedCount(navController)
-            }
-        )
+            // Fixed Count title (clickable -> ScanBarcode)
+            Text(
+                text = stringResource(R.string.fixed_count),
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Normal,
+                color = MaterialTheme.colorScheme.secondary,
+            )
 
-        Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(10.dp))
 
-        // Description text (clickable -> ScanBarcode)
-        Text(
-            text = stringResource(R.string.fixed_count_desc),
-            style = MaterialTheme.typography.bodyMedium,
-            color = AppTheme.extendedColors.textColor,
-            modifier = Modifier.clickable(
-                indication = null,
-                interactionSource = remember { MutableInteractionSource() }
-            ) {
-                navigateToBarcodeScanFixedCount(navController)
-            }
-        )
+            // Description text (clickable -> ScanBarcode)
+            Text(
+                text = stringResource(R.string.fixed_count_desc),
+                style = MaterialTheme.typography.bodyMedium,
+                color = AppTheme.extendedColors.textColor,
+            )
+        }
 
         Spacer(modifier = Modifier.weight(1f))
 
@@ -113,14 +107,23 @@ fun FixedCountSection(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Completed status (static, non-clickable)
-            StatusChip(
-                text = "$completedFixedCount ${stringResource(R.string.completed)}",
-                backgroundColor = Color.Transparent,
-                textColor = MaterialTheme.colorScheme.secondary,
-                iconRes = R.drawable.tick,
-                iconTint = MaterialTheme.colorScheme.secondary
-            )
+            // Completed status
+            Box(
+                modifier = Modifier.clickable(
+                    indication = null,
+                    interactionSource = remember { MutableInteractionSource() }
+                ) {
+                    navController.navigate(Screen.History.createRoute(HistoryMode.DISPENSE))
+                }
+            ) {
+                StatusChip(
+                    text = "$completedFixedCount ${stringResource(R.string.completed)}",
+                    backgroundColor = Color.Transparent,
+                    textColor = MaterialTheme.colorScheme.secondary,
+                    iconRes = R.drawable.tick,
+                    iconTint = MaterialTheme.colorScheme.secondary
+                )
+            }
 
             // Partial status (clickable -> ResumeFixedCounts screen)
             Box(

@@ -3,14 +3,14 @@ package com.rite.pillcounting.feature.verifyPin.presentation.viewmodel
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.gson.Gson
 import com.rite.pillcounting.R
 import com.rite.pillcounting.core.models.ErrorResponse
-import com.rite.pillcounting.core.utils.logger.AppLogger
 import com.rite.pillcounting.core.utils.common.NetworkUtils
+import com.rite.pillcounting.core.utils.logger.AppLogger
 import com.rite.pillcounting.core.utils.preference.PreferenceHelper
 import com.rite.pillcounting.feature.otp.data.VerifyPinRepository
 import com.rite.pillcounting.feature.verifyPin.domain.model.VerifyPinUiState
-import com.google.gson.Gson
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -83,15 +83,17 @@ class VerifyPinViewModel @Inject constructor(
                     val data = response.data
                     val accessToken = data?.accessToken
                     val refreshToken = data?.refreshToken
+                    val isHL7Enabled = data?.user?.isHl7Enabled ?:false
                     val user = data?.user
 
-                    // ✅ Persist tokens if available
                     if (!accessToken.isNullOrBlank() && !refreshToken.isNullOrBlank()) {
                         prefs.saveTokens(accessToken, refreshToken)
+                        prefs.setHl7Enabled(isHL7Enabled)
                         logger.i("Access and refresh tokens saved securely.")
                     } else {
                         logger.w("Missing access or refresh token in response.")
                     }
+
 
                     // Log user info (safely)
                     user?.let {
@@ -131,7 +133,7 @@ class VerifyPinViewModel @Inject constructor(
                 }
 
                 when {
-                    code == 401 -> context.getString(R.string.error_unauthorized)
+                    code == 401 -> context.getString(R.string.error_invalid_otp) // because session is not created yet after verify otp session will create that's why we are showing invalid otp error
                     code == 400 -> apiMessage ?: context.getString(R.string.error_invalid_otp)
                     code in 500..599 -> context.getString(R.string.error_server_down)
                     else -> apiMessage ?: context.getString(R.string.error_unknown)

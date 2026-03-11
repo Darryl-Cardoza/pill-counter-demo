@@ -33,6 +33,7 @@ import coil.compose.rememberAsyncImagePainter
 import coil.request.ImageRequest
 import com.rite.pillcounting.R
 import com.rite.pillcounting.core.room.models.enums.CountStatus
+import com.rite.pillcounting.core.room.models.enums.CountType
 import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.toFormattedDate
 import com.rite.pillcounting.feature.history.domain.model.TxnWithDrugDto
 import com.rite.pillcounting.ui.theme.AppTheme
@@ -139,8 +140,15 @@ fun CountRow(
             Spacer(Modifier.width(12.dp))
 
             // Count value
+
+            val text = when {
+                rowData.countType == CountType.FIXED -> rowData.pillCount.toString() + " / " + rowData.targetCount.toString()
+                rowData.countType == CountType.REGULAR -> rowData.pillCount.toString()
+                else -> ""
+            }
+
             Text(
-                text = rowData.pillCount.toString(),
+                text = text,
                 fontSize = 16.sp,
                 fontWeight = FontWeight.SemiBold,
                 color = AppTheme.extendedColors.textColor,

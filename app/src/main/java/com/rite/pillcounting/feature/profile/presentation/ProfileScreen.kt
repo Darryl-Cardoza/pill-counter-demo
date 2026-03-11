@@ -153,67 +153,72 @@ fun ProfileScreen(
             }
 
             // -------------------- STATE FEEDBACK --------------------
-            when (updateUiState) {
-                is ProfileUpdateUiState.Loading -> {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(bottom = 16.dp)
-                    ) {
-                        LoadingIndicator()
-                    }
-                }
-
-                is ProfileUpdateUiState.Success -> {
-
-                    navController.popBackStack()
-
-                }
-
-                is ProfileUpdateUiState.Error -> {
-                    Text(
-                        text = (updateUiState as ProfileUpdateUiState.Error).message,
-                        color = MaterialTheme.colorScheme.error,
-                        modifier = Modifier
-                            .align(Alignment.CenterHorizontally)
-                            .padding(start = 16.dp)
-                    )
-                }
-
-                else -> {}
-            }
-
-            when (deleteUiState) {
-                is ProfileDeleteUiState.Loading -> {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(bottom = 16.dp)
-                    ) {
-                        LoadingIndicator()
-                    }
-                }
-
-                is ProfileDeleteUiState.Success -> {
-                    LaunchedEffect(Unit) {
-                        navController.navigate(AUTH_GRAPH_ROUTE) {
-                            popUpTo(0) { inclusive = true }
+                when (updateUiState) {
+                    is ProfileUpdateUiState.Loading -> {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(bottom = 16.dp)
+                        ) {
+                            LoadingIndicator()
                         }
                     }
+
+                    is ProfileUpdateUiState.Success -> {
+                        LaunchedEffect(updateUiState) {
+                            navController.navigate(Screen.Dashboard.route) {
+                                popUpTo(Screen.Dashboard.route) { inclusive = true }
+                                launchSingleTop = true
+                            }
+                            viewModel.resetUpdateState()
+                        }
+                    }
+
+
+                    is ProfileUpdateUiState.Error -> {
+                        Text(
+                            text = (updateUiState as ProfileUpdateUiState.Error).message,
+                            color = MaterialTheme.colorScheme.error,
+                            modifier = Modifier
+                                .align(Alignment.CenterHorizontally)
+                                .padding(start = 16.dp)
+                        )
+                    }
+
+                    else -> {}
                 }
 
-                is ProfileDeleteUiState.Error -> {
-                    Text(
-                        text = (deleteUiState as ProfileDeleteUiState.Error).message,
-                        color = MaterialTheme.colorScheme.error,
-                        modifier = Modifier
-                            .align(Alignment.CenterHorizontally)
-                            .padding(start = 16.dp)
-                    )
-                }
+                when (deleteUiState) {
+                    is ProfileDeleteUiState.Loading -> {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(bottom = 16.dp)
+                        ) {
+                            LoadingIndicator()
+                        }
+                    }
 
-                else -> {}
-            }
+                    is ProfileDeleteUiState.Success -> {
+                        LaunchedEffect(Unit) {
+                            navController.navigate(AUTH_GRAPH_ROUTE) {
+                                popUpTo(0) { inclusive = true }
+                            }
+                        }
+                    }
+
+                    is ProfileDeleteUiState.Error -> {
+                        Text(
+                            text = (deleteUiState as ProfileDeleteUiState.Error).message,
+                            color = MaterialTheme.colorScheme.error,
+                            modifier = Modifier
+                                .align(Alignment.CenterHorizontally)
+                                .padding(start = 16.dp)
+                        )
+                    }
+
+                    else -> {}
+                }
 
             Spacer(Modifier.weight(1f))
 
@@ -275,7 +280,8 @@ private fun ProfileTextField(
     imeAction: ImeAction = ImeAction.Next,
     error: String?,
     modifier: Modifier = Modifier,
-    readOnly: Boolean = false
+    readOnly: Boolean = false,
+    maxLength: Int? = null
 ) {
     Column(
         modifier = modifier
@@ -284,7 +290,21 @@ private fun ProfileTextField(
     ) {
         FloatingLabelTextField(
             value = value,
-            onValueChange = { if (!readOnly) onValueChange(it) }, // disable editing
+            onValueChange = {
+                if (!readOnly) {
+                    var input = it
+
+                    if (keyboardType == KeyboardType.Phone) {
+                        input = input.filter { char -> char.isDigit() }
+                    }
+
+                    maxLength?.let { length ->
+                        input = input.take(length)
+                    }
+
+                    onValueChange(input)
+                }
+            },
             label = label,
             keyboardType = keyboardType,
             imeAction = imeAction,
@@ -311,16 +331,18 @@ private fun ResponsiveProfileFields(
     val fields = listOf(
         ProfileField(
             viewModel.firstName,
-            { v -> viewModel.firstName = v },
+            { v -> viewModel.onFirstNameChanged(v) },
             R.string.first_name,
             viewModel.firstNameError
         ),
+
         ProfileField(
             viewModel.lastName,
-            { v -> viewModel.lastName = v },
+            { v -> viewModel.onLastNameChanged(v) },
             R.string.last_name,
             viewModel.lastNameError
         ),
+
         ProfileField(
             viewModel.pharmacyName,
             { v -> viewModel.pharmacyName = v },
@@ -329,9 +351,11 @@ private fun ResponsiveProfileFields(
         ),
         ProfileField(
             viewModel.phoneNumber,
-            { v -> viewModel.phoneNumber = v },
+            { v -> viewModel.onPhoneChanged(v) },
             R.string.phone_number,
-            viewModel.phoneError
+            viewModel.phoneError,
+            keyboardType = KeyboardType.Phone,
+            maxLength = 10
         ),
         ProfileField(
             viewModel.email,
@@ -344,17 +368,9 @@ private fun ResponsiveProfileFields(
             viewModel.npi,
             { v -> viewModel.npi = v },
             R.string.npi_number,
-            viewModel.npiError
+            viewModel.npiError,
+            keyboardType = KeyboardType.Number
         )
-    )
-
-    val errors = listOf(
-        viewModel.firstNameError,
-        viewModel.lastNameError,
-        viewModel.pharmacyNameError,
-        viewModel.phoneError,
-        viewModel.emailError,
-        viewModel.npiError
     )
 
     if (isLandscape) {
@@ -368,9 +384,11 @@ private fun ResponsiveProfileFields(
                     value = field1.value,
                     onValueChange = field1.onChange,
                     label = stringResource(field1.labelRes),
+                    keyboardType = field1.keyboardType,
                     error = field1.error?.let { stringResource(it) },
                     modifier = Modifier.weight(1f),
-                    readOnly = field1.readOnly
+                    readOnly = field1.readOnly,
+                    maxLength = field1.maxLength
                 )
 
                 if (i + 1 < fields.size) {
@@ -379,9 +397,11 @@ private fun ResponsiveProfileFields(
                         value = field2.value,
                         onValueChange = field2.onChange,
                         label = stringResource(field2.labelRes),
+                        keyboardType = field2.keyboardType,
                         error = field2.error?.let { stringResource(it) },
                         modifier = Modifier.weight(1f),
-                        readOnly = field2.readOnly
+                        readOnly = field2.readOnly,
+                        maxLength = field2.maxLength
                     )
                 } else {
                     Spacer(modifier = Modifier.weight(1f))
@@ -395,8 +415,10 @@ private fun ResponsiveProfileFields(
                 value = field.value,
                 onValueChange = field.onChange,
                 label = stringResource(field.labelRes),
+                keyboardType = field.keyboardType,
                 error = field.error?.let { stringResource(it) },
-                readOnly = field.readOnly
+                readOnly = field.readOnly,
+                maxLength = field.maxLength
             )
         }
     }

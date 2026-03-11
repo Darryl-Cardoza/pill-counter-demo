@@ -48,6 +48,9 @@ object OverlayUtils {
         userName: String? = null,
         userId: String? = null,
         location: String? = null,
+        ndc:String? = null,
+        count:String? = null,
+        patientId: String? = null,
         timestamp: Long = System.currentTimeMillis()
     ): Bitmap {
         // Create a mutable copy to avoid altering the original frame
@@ -124,16 +127,21 @@ object OverlayUtils {
             val cy = pts[i + 1]
             val isLast = i / 2 == detectedPills.lastIndex
 
-            val innerR = (if (isLast) 15f else 11f) * scale
-            val outerR = (if (isLast) 19f else 14f) * scale
-            val stroke = (if (isLast) 3f else 2f) * scale
+            val innerR = (if (isLast) 38f else 24f) * scale
+            val outerR = (if (isLast) 34f else 20f) * scale
+            val stroke = (if (isLast) 2f else 1f) * scale
 
             strokePaint.strokeWidth = stroke
             fillPaint.color = if (isLast)
-                Color.argb(230, 255, 255, 0)   // Yellow highlight for latest pill
+                Color.argb(160, 0, 0, 0)      // Yellow highlight for latest pill
             else
                 Color.argb(160, 0, 0, 0)       // Semi-transparent black background
 
+            textPaint.textSize = if (isLast) {
+                36f * scale   // BIG text for last pill
+            } else {
+                28f * scale   // normal text
+            }
             // Draw pill marker
             canvas.drawCircle(cx, cy, innerR, fillPaint)
             canvas.drawCircle(cx, cy, outerR, strokePaint)
@@ -148,21 +156,52 @@ object OverlayUtils {
         // Footer Metadata
         // ---------------------------------------------------------------------
 
-        val footer = buildString {
-            if (!userName.isNullOrBlank()) append("$userName ")
-            if (!userId.isNullOrBlank()) append("($userId)  ")
+        val footerLine1 = buildString {
+            if (!ndc.isNullOrBlank()) append("NDC: $ndc  ")
+            if (!count.isNullOrBlank()) append("Count: $count  ")
+            if (!patientId.isNullOrBlank()) append("Patient: $patientId")
+        }
+
+        val footerLine2 = buildString {
+            if (!userName.isNullOrBlank()) append(userName)
+            if (!userId.isNullOrBlank()) append(" ($userId)  ")
             if (!location.isNullOrBlank()) append("[$location]  ")
-            append(SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(Date(timestamp)))
+            append(
+                SimpleDateFormat(
+                    "yyyy-MM-dd HH:mm:ss",
+                    Locale.getDefault()
+                ).format(Date(timestamp))
+            )
         }
 
         val footerPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = Color.WHITE
             textSize = 22f * scale
             typeface = Typeface.MONOSPACE
+            textAlign = Paint.Align.CENTER
             setShadowLayer(4f, 0f, 0f, Color.BLACK)
         }
 
-        canvas.drawText(footer, w / 2, h - 40f * scale, footerPaint)
+        val lineHeight = footerPaint.fontMetrics.run {
+            descent - ascent
+        }
+
+        val bottomPadding = 40f * scale
+
+        canvas.drawText(
+            footerLine2,
+            w / 2,
+            h - bottomPadding,
+            footerPaint
+        )
+
+        canvas.drawText(
+            footerLine1,
+            w / 2,
+            h - bottomPadding - lineHeight,
+            footerPaint
+        )
+
 
         // ---------------------------------------------------------------------
         // Return final annotated bitmap

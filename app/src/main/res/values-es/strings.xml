@@ -73,7 +73,6 @@
     <!-- ================== PARTIAL COUNTS ================== -->
     <string name="fixed_partial_count_title">Conteos Fijos Parciales</string>
     <string name="regular_partial_count_title">Conteos Regulares Parciales</string>
-    <string name="partial_icon_description">Íconos de llenado parcial</string>
 
     <!-- ================== COMMON BUTTONS ================== -->
     <string name="redo">Rehacer</string>
@@ -126,8 +125,6 @@
     <string name="confirm_delete_profile">¿Está seguro de que desea eliminar su perfil? Esta acción no se puede deshacer.</string>
 
     <!-- ================== MENUS ================== -->
-    <string name="menu_fixed_count">Conteo Fijo</string>
-    <string name="menu_regular_count">Conteo Regular</string>
     <string name="menu_profile">Perfil</string>
     <string name="menu_history">Historial</string>
     <string name="menu_settings">Configuración</string>
@@ -156,6 +153,7 @@
     <string name="confirm_delete_message">¿Está seguro de que desea eliminar los registros de la fecha seleccionada? Esta acción no se puede deshacer.</string>
     <string name="confirm_delete_title">Confirmar Eliminación</string>
     <string name="confirm_delete_txn_detail">Are you sure you want to delete this transaction detail? This action cannot be undone.</string>
+    <string name="confirm_force_completed_txn"> Are you sure you want to force complete this transaction?</string>
 
     <!-- ================== TABLE HEADERS / LABELS ================== -->
     <string name="drug">Medicamento</string>
@@ -177,4 +175,12 @@
     <string name="suspecious_activity_text">Nuestro sistema detectó una sospechosa \'doble dosis\' desde otro dispositivo. Es hora de \nverificar con un nuevo inicio de sesión.</string>
     <string name="maintenance_text">El contador está en el mostrador del farmacéutico para una rápida revisión. ¡Volveremos pronto\ncon conteos precisos!</string>
     <string name="update_version_text">Tu versión actual ha expirado - es hora de obtener una nueva receta. ¡Actualiza ahora para \nla dosis correcta de funciones!</string>
+    <string name="session_expired">Session Expired!</string>
+
+    <!--    PillScanning Screen Constants-->
+    <string name="pill_scanning_add_button">Agregar</string>
+    <string name="pill_scanning_total_count">Recuento total</string>
+    <string name="pill_scanning_all_done">Todo hecho</string>
+
+
 </resources>

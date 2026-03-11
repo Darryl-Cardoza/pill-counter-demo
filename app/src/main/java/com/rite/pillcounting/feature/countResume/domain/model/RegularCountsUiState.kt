@@ -17,5 +17,5 @@ data class RegularCountsUiState(
     override val isMultiSelectMode: Boolean = false,
     override val selectedItems: List<CountItem> = emptyList(),
     override val partialCounts: List<CountItem> = emptyList(),
-    val regularCounts: List<CountItem> = emptyList()
+    val regularCounts: List<CountItem> = emptyList(),
 ) : ResumeUiState

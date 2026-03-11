@@ -120,6 +120,8 @@ interface PillCountTxnDao {
            txn.createdAt,
            txn.targetCount,
            txn.barcodeImage,
+           txn.isComingFromHL7,
+           txn.isNdcVerified,
            drug.drugName,
            IFNULL(SUM(details.pillCount), 0) AS totalPillCount
     FROM pill_count_txn AS txn
@@ -131,13 +133,17 @@ interface PillCountTxnDao {
     WHERE txn.isDeleted = 0
       AND txn.status = :partialStatus
       AND txn.countType = :countType
+      AND txn.localId = :userLocalId
     GROUP BY txn.txnId
-    ORDER BY txn.createdAt DESC
+    ORDER BY txn.isComingFromHL7 DESC,
+             txn.createdAt DESC
     """
     )
+
     fun observePartialByCountType(
         countType: CountType,
-        partialStatus: CountStatus = CountStatus.PARTIAL
+        partialStatus: CountStatus = CountStatus.PARTIAL,
+        userLocalId: Long
     ): Flow<List<PillCountWithDrugAndTotal>>
 
     // ───────────────────────────── Field Updates ─────────────────────────────
@@ -183,6 +189,9 @@ interface PillCountTxnDao {
         now: Long = System.currentTimeMillis()
     )
 
+    @Query("DELETE FROM pill_count_txn")
+    suspend fun deleteAllTransactions()
+
     // ─────────────────────────────── Relations ───────────────────────────────
 
     /**
@@ -195,15 +204,16 @@ interface PillCountTxnDao {
      */
     @Query(
         """
-        SELECT status AS status,
-               countType AS countType,
-               COUNT(*) AS cnt
-        FROM pill_count_txn
-        WHERE isDeleted = 0
-        GROUP BY status, countType
-        """
+    SELECT status AS status,
+           countType AS countType,
+           COUNT(*) AS cnt
+    FROM pill_count_txn
+    WHERE isDeleted = 0
+      AND localId = :userLocalId
+    GROUP BY status, countType
+    """
     )
-    fun observeDashboardCountsGrouped(): Flow<List<StatusTypeCount>>
+    fun observeDashboardCountsGrouped(userLocalId: Long): Flow<List<StatusTypeCount>>
 
     /**
      * Retrieves a detailed transaction with its associated drug and total pill count.
@@ -284,13 +294,56 @@ interface PillCountTxnDao {
     WHERE txn.createdAt >= :startOfDay
       AND txn.createdAt < :endOfDay
       AND txn.isDeleted = 0
+      AND (:type IS NULL OR txn.countType = :type)
+      AND (:status IS NULL OR txn.status = :status)
     GROUP BY txn.txnId
+    ORDER BY txn.createdAt DESC
     """
     )
     fun getTransactionsWithDrugByDate(
         startOfDay: Long,
-        endOfDay: Long
+        endOfDay: Long,
+        type: CountType?,
+        status: CountStatus?
     ): Flow<List<TxnWithDrugDto>>
+
+    @Query(
+        """
+    SELECT 
+        txn.txnId,
+        txn.countType,
+        txn.status,
+        COALESCE(SUM(details.pillCount), 0) AS pillCount,
+        drug.drugName,
+        drug.ndc,
+        txn.barcodeImage,
+        txn.createdAt,
+        txn.targetCount,
+        txn.note
+    FROM pill_count_txn AS txn
+    LEFT JOIN pill_count_txn_details AS details
+           ON txn.txnId = details.txnId 
+           AND details.isDeleted = 0
+    LEFT JOIN drug_master AS drug
+           ON txn.drugId = drug.drugId
+    WHERE txn.createdAt BETWEEN :startDate AND :endDate
+      AND txn.isDeleted = 0
+      AND txn.localId = :userLocalId
+      AND (:type IS NULL OR txn.countType = :type)
+      AND (:status IS NULL OR txn.status = :status)
+    GROUP BY txn.txnId
+    ORDER BY txn.createdAt DESC
+    """
+    )
+    fun getTransactionsForDateRange(
+        startDate: Long,
+        endDate: Long,
+        type: CountType?,
+        status: CountStatus?,
+        userLocalId: Long
+    ): Flow<List<TxnWithDrugDto>>
+
+
 
     // ─────────────────────────────── Deletes ───────────────────────────────
 
@@ -300,10 +353,22 @@ interface PillCountTxnDao {
      * @param start Start timestamp (inclusive).
      * @param end End timestamp (inclusive).
      */
-    @Query("DELETE FROM pill_count_txn WHERE createdAt BETWEEN :start AND :end")
+    @Query(
+        """
+    DELETE FROM pill_count_txn
+    WHERE createdAt >= :start
+      AND createdAt < :end
+      AND localId = :userLocalId
+      AND (:type IS NULL OR countType = :type)
+      AND (:status IS NULL OR status = :status)
+    """
+    )
     suspend fun deleteTransactionsByDate(
         start: Long,
-        end: Long
+        end: Long,
+        type: CountType?,
+        status: CountStatus?,
+        userLocalId: Long
     )
 
     /**
@@ -335,4 +400,126 @@ interface PillCountTxnDao {
      */
     @Query("DELETE FROM pill_count_txn WHERE txnId = :txnId")
     suspend fun deleteTransaction(txnId: Long)
+
+
+    /**
+     * Observe HL7 transactions that are completed but NOT synced with PMS.
+     *
+     * This Flow emits whenever:
+     * - a new HL7 txn is completed
+     * - isSynced changes
+     * - txn status changes
+     */
+    @Query(
+        """
+    SELECT *
+    FROM pill_count_txn
+    WHERE isDeleted = 0
+      AND isComingFromHL7 = 1
+      AND status = :completedStatus
+      AND (isSynced IS NULL OR isSynced = 0)
+    ORDER BY updatedAt ASC
+    """
+    )
+    fun observePendingHl7Txn(
+        completedStatus: CountStatus = CountStatus.COMPLETED
+    ): Flow<List<PillCountTxnEntity>>
+
+
+    /**
+     * One-shot fetch (non-reactive) for resend-on-connect logic.
+     */
+    @Query(
+        """
+        SELECT *
+        FROM pill_count_txn
+        WHERE isDeleted = 0
+          AND isComingFromHL7 = 1
+          AND status = :completedStatus
+          AND (isSynced IS NULL OR isSynced = 0)
+        ORDER BY updatedAt ASC
+        """
+    )
+    suspend fun getPendingHl7TxnOnce(
+        completedStatus: CountStatus = CountStatus.COMPLETED
+    ): List<PillCountTxnEntity>
+
+
+    /**
+     * Mark transaction as synced after ACK is received.
+     */
+    @Query(
+        """
+        UPDATE pill_count_txn
+        SET isSynced = 1,
+            updatedAt = :now
+        WHERE txnId = :txnId
+        """
+    )
+    suspend fun markTxnSynced(
+        txnId: Long,
+        now: Long = System.currentTimeMillis()
+    )
+
+
+    @Query(
+        """
+    UPDATE pill_count_txn
+    SET 
+        status = :status,
+        isSynced = 0,
+        updatedAt = :now
+    WHERE txnId = :txnId
+    """
+    )
+    suspend fun markCompletedAndUnsynced(
+        txnId: Long,
+        status: CountStatus,
+        now: Long = System.currentTimeMillis()
+    )
+
+    @Query(
+        """
+    SELECT txn.txnId,
+           txn.createdAt,
+           txn.targetCount,
+           txn.barcodeImage,
+           txn.isComingFromHL7,
+           txn.isNdcVerified,
+           drug.drugName,
+           IFNULL(SUM(details.pillCount), 0) AS totalPillCount
+    FROM pill_count_txn AS txn
+    LEFT JOIN drug_master AS drug 
+           ON txn.drugId = drug.drugId
+    LEFT JOIN pill_count_txn_details AS details 
+           ON txn.txnId = details.txnId 
+          AND details.isDeleted = 0
+    WHERE txn.isDeleted = 0
+      AND (txn.status = :completeStatus OR txn.status = :forceCompleteStatus)
+      AND txn.isComingFromHL7 = 1
+      AND txn.isSynced = 0
+    GROUP BY txn.txnId
+    ORDER BY txn.createdAt DESC
+    """
+    )
+    fun observeUnsyncedHl7Txn(
+        completeStatus: CountStatus = CountStatus.COMPLETED,
+        forceCompleteStatus: CountStatus = CountStatus.FORCE_COMPLETED
+    ): Flow<List<PillCountWithDrugAndTotal>>
+
+    @Query(
+        """
+    SELECT COUNT(*) 
+    FROM pill_count_txn
+    WHERE isDeleted = 0
+      AND (status = :completeStatus OR status = :forceCompleteStatus)
+      AND isSynced = 0
+      AND isComingFromHL7 = 1
+    """
+    )
+    fun getTotalCompletedTransactionCount(
+        completeStatus: CountStatus = CountStatus.COMPLETED,
+        forceCompleteStatus: CountStatus = CountStatus.FORCE_COMPLETED
+    ): Flow<Int>
+
 }

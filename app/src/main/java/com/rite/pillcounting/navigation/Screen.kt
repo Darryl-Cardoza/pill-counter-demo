@@ -3,6 +3,7 @@
 import androidx.navigation.NamedNavArgument
 import androidx.navigation.NavType
 import androidx.navigation.navArgument
+import com.rite.pillcounting.feature.history.domain.model.HistoryMode
 
 /**
  * A sealed interfaceDetail to represent all navigable screens in the app.
@@ -37,9 +38,9 @@ sealed interface Screen {
         override val route: String = "settings"
     }
 
-    data object History : Screen {
-        override val route: String = "history"
-    }
+//    data object History : Screen {
+//        override val route: String = "history"
+//    }
 
     data object HistoryDetail : Screen {
         override val route: String = "history_detail"
@@ -47,6 +48,26 @@ sealed interface Screen {
 
     data object Profile : Screen {
         override val route: String = "profile"
+    }
+
+    data object UnsyncedTransactionScreen : Screen {
+        override val route: String = "unsynced_transaction_screen"
+    }
+
+    //For dispense and regular completed transaction
+    data object History : Screen {
+
+        private const val ROUTE_PREFIX = "history"
+        const val ARG_TYPE = "type"
+
+        // old route (normal history)
+        override val route: String = "$ROUTE_PREFIX/{$ARG_TYPE}"
+
+        val navArguments: List<NamedNavArgument> = listOf(
+            navArgument(ARG_TYPE) { type = NavType.StringType }
+        )
+
+        fun createRoute(type: HistoryMode) = "$ROUTE_PREFIX/${type.name}"
     }
 
 
@@ -57,7 +78,8 @@ sealed interface Screen {
         const val ARG_REMEMBER_ME = "rememberMe"
 
         // Full route with query parameters
-        override val route: String = "$ROUTE_PREFIX?$ARG_EMAIL={$ARG_EMAIL}&$ARG_REMEMBER_ME={$ARG_REMEMBER_ME}"
+        override val route: String =
+            "$ROUTE_PREFIX?$ARG_EMAIL={$ARG_EMAIL}&$ARG_REMEMBER_ME={$ARG_REMEMBER_ME}"
 
         // List of arguments to parse from the NavBackStackEntry
         val navArguments: List<NamedNavArgument> = listOf(
@@ -127,5 +149,8 @@ sealed interface Screen {
         fun createRoute(type: String) = "$ROUTE_PREFIX/$type"
     }
 
+
 }
+
+
 

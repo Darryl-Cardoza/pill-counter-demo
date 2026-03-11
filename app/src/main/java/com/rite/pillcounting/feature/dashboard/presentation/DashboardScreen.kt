@@ -2,6 +2,7 @@ package com.rite.pillcounting.feature.dashboard.presentation
 
 import Screen
 import android.app.Activity
+import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -22,11 +23,13 @@ import androidx.navigation.NavController
 import com.rite.pillcounting.R
 import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.CommonDialog
 import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.MenuButton
+import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.showToast
 import com.rite.pillcounting.core.utils.compose.SplitResponsive
 import com.rite.pillcounting.core.utils.preference.PreferenceHelper
 import com.rite.pillcounting.feature.dashboard.presentation.compose.FixedCountSection
 import com.rite.pillcounting.feature.dashboard.presentation.compose.RegularCountSection
 import com.rite.pillcounting.feature.dashboard.presentation.viewmodel.DashboardViewModel
+import com.rite.pillcounting.navigation.AUTH_GRAPH_ROUTE
 import com.rite.pillcounting.ui.theme.AppTheme
 
 /**
@@ -49,9 +52,10 @@ import com.rite.pillcounting.ui.theme.AppTheme
 @Composable
 fun DashboardScreen(
     navController: NavController,
-    viewModel: DashboardViewModel = hiltViewModel()
+    viewModel: DashboardViewModel = hiltViewModel(),
 ) {
     var showLogoutDialog by remember { mutableStateOf(false) }
+
     val context = LocalContext.current
     val activity = context as? Activity
     val preferenceHelper = remember { PreferenceHelper(context) }
@@ -64,10 +68,28 @@ fun DashboardScreen(
     // Collect dashboard UI state reactively
     val uiState by viewModel.uiState.collectAsState()
 
-    // Navigate to Profile screen if profile is incomplete and user hasn’t opted out
+
+    // Handle navigation to Profile screen if profile is incomplete
     LaunchedEffect(uiState.navigateToProfile) {
-        if (uiState.navigateToProfile && !preferenceHelper.isDoNotAskAgain()) {
-            navController.navigate(Screen.Profile.route)
+        val isProfileChecked = preferenceHelper.isProfileChecked()
+
+        if (!isProfileChecked) {
+            if (uiState.navigateToProfile && !preferenceHelper.isDoNotAskAgain()) {
+                println("Navigating to Profile screen")
+                navController.navigate(Screen.Profile.route)
+                viewModel.resetNavigateToProfile()
+                preferenceHelper.setProfileChecked(true)
+            }
+        } else {
+            println("Profile check already completed, not navigating.")
+        }
+    }
+    LaunchedEffect(uiState.logoutUser) {
+        if (uiState.logoutUser) {
+            showToast(context, R.string.session_expired)
+            navController.navigate(AUTH_GRAPH_ROUTE) {
+                popUpTo(0) { inclusive = true }
+            }
         }
     }
 
@@ -76,23 +98,27 @@ fun DashboardScreen(
             .systemBarsPadding()
             .background(AppTheme.extendedColors.secondaryBackground)
     ) {
-        // Split screen layout: fixed counts vs regular counts
+        // Show loading indicator if user details are being fetched
+
         SplitResponsive(
             topOrLeft = {
                 FixedCountSection(
                     completedFixedCount = uiState.completedFixedCount,
                     partialFixedCount = uiState.partialFixedCount,
-                    navController = navController
+                    navController = navController,
+                    onNavigate = {viewModel.saveTxnId()}
                 )
             },
             bottomOrRight = {
                 RegularCountSection(
                     completedRegularCount = uiState.completedRegularCount,
                     partialRegularCount = uiState.partialRegularCount,
-                    navController = navController
+                    navController = navController,
+                    onNavigate = {viewModel.saveTxnId()}
                 )
-            },
+            }
         )
+
 
         // Global navigation menu button (top-right aligned)
         MenuButton(

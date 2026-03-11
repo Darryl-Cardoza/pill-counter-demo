@@ -23,5 +23,10 @@ data class ApplicationSettingsUiState(
     val appLogoUrl: String? = null,
     val appSettings: SettingsDataDto? = null,
     val isMaintenanceMode: Boolean = false,
-    val isUpdateRequired: Boolean = false
+    val isUpdateRequired: Boolean = false,
+
+
+    val isHl7Enabled: Boolean? = null,
+    val nsdBroadcastType: String? = null,
+    val nsdDiscoveryType: String? = null
 )

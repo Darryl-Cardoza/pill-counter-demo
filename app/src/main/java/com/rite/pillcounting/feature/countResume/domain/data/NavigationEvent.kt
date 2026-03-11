@@ -7,5 +7,7 @@ import com.rite.pillcounting.core.room.models.enums.CountType
  */
 sealed interface NavigationEvent {
     data class NavigateToPillCount(val countType: CountType) : NavigationEvent
+
+    data class NavigateToScanBarcode(val countType: CountType) : NavigationEvent
     data object NavigateBack : NavigationEvent
 }

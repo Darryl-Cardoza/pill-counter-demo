@@ -3,10 +3,11 @@ package com.rite.pillcounting.feature.countResume.presentation.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.rite.pillcounting.core.room.dao.PillCountTxnDao
+import com.rite.pillcounting.core.room.dao.PillCountTxnDetailsDao
 import com.rite.pillcounting.core.room.models.enums.CountStatus
 import com.rite.pillcounting.core.room.models.enums.CountType
-import com.rite.pillcounting.core.utils.preference.PreferenceHelper
 import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.toFormattedDate
+import com.rite.pillcounting.core.utils.preference.PreferenceHelper
 import com.rite.pillcounting.feature.countResume.domain.data.FixedCountsEvent
 import com.rite.pillcounting.feature.countResume.domain.data.NavigationEvent
 import com.rite.pillcounting.feature.countResume.domain.data.RegularCountsEvent
@@ -38,26 +39,26 @@ import javax.inject.Inject
 @HiltViewModel
 class CountsViewModel @Inject constructor(
     private val pillCountTxnDao: PillCountTxnDao,
-    private val preferenceHelper: PreferenceHelper
+    private val preferenceHelper: PreferenceHelper,
+    private val pillCountTxnDetailsDao: PillCountTxnDetailsDao
 ) : ViewModel() {
 
     /* ------------------------- State Flows ------------------------- */
 
     /** Backing state for fixed count transactions. */
     private val _fixedUiState = MutableStateFlow(FixedCountsUiState())
+
     /** Public immutable state for UI to observe. */
     val fixedUiState: StateFlow<FixedCountsUiState> = _fixedUiState.asStateFlow()
 
     /** Backing state for regular count transactions. */
     private val _regularUiState = MutableStateFlow(RegularCountsUiState())
+
     /** Public immutable state for UI to observe. */
     val regularUiState: StateFlow<RegularCountsUiState> = _regularUiState.asStateFlow()
 
     private val _navigationEvent = Channel<NavigationEvent>()
     val navigationEvent = _navigationEvent.receiveAsFlow()
-
-    /** Formatter for displaying human-readable dates from epoch millis. */
-
 
     init {
         observeFixedCounts()
@@ -76,6 +77,7 @@ class CountsViewModel @Inject constructor(
             FixedCountsEvent.DeleteClicked -> handleFixedDeleteClick()
             FixedCountsEvent.ToggleMultiSelectMode -> toggleFixedMultiSelectMode()
             FixedCountsEvent.CloseMultiSelectMode -> closeFixedMultiSelectMode()
+            FixedCountsEvent.SelectAllClicked -> toggleSelectAllFixedTxn()
             is FixedCountsEvent.resumeTransaction -> resumeTransaction(CountType.FIXED, event.item)
             is FixedCountsEvent.ForceCompleteTransaction -> forceCompleteTransaction(event.item)
         }
@@ -91,25 +93,79 @@ class CountsViewModel @Inject constructor(
             RegularCountsEvent.DeleteClicked -> handleRegularDeleteClick()
             RegularCountsEvent.ToggleMultiSelectMode -> toggleRegularMultiSelectMode()
             RegularCountsEvent.CloseMultiSelectMode -> closeRegularMultiSelectMode()
-            is RegularCountsEvent.resumeTransaction -> resumeTransaction(CountType.REGULAR, event.item)
+            is RegularCountsEvent.resumeTransaction -> resumeTransaction(
+                CountType.REGULAR,
+                event.item
+            )
+
             is RegularCountsEvent.ForceCompleteTransaction -> forceCompleteTransaction(event.item)
+            RegularCountsEvent.SelectAllClicked -> toggleSelectAllRegularTxn()
         }
     }
+
+
+    private fun toggleSelectAllRegularTxn() {
+        _regularUiState.update { state ->
+            val allItems = state.regularCounts
+            val allSelected = allItems.size == state.selectedItems.size && allItems.isNotEmpty()
+
+            state.copy(
+                selectedItems = if (allSelected) emptyList() else allItems
+            )
+        }
+    }
+
+
+
+    private fun toggleSelectAllFixedTxn() {
+        _fixedUiState.update { state ->
+            val allItems = state.fixedCounts
+            val allSelected = allItems.size == state.selectedItems.size && allItems.isNotEmpty()
+
+            state.copy(
+                selectedItems = if (allSelected) emptyList() else allItems
+            )
+        }
+    }
+
 
     private fun forceCompleteTransaction(item: CountItem) {
         viewModelScope.launch {
             pillCountTxnDao.updateTxnStatus(item.id, CountStatus.FORCE_COMPLETED)
+
+            val total = pillCountTxnDetailsDao.getTotalPillCountForTxn(item.id)
+            val txn = pillCountTxnDao.getById(item.id) ?: return@launch
+            if (total == 0) {
+                return@launch
+            }
+            if (txn.isComingFromHL7 == true) {
+                pillCountTxnDao.markCompletedAndUnsynced(
+                    txnId = txn.txnId,
+                    status = txn.status
+                )
+            } else {
+                pillCountTxnDao.updateTxnStatus(txn.txnId, txn.status)
+            }
         }
     }
 
+    /** Update Hl7 navigation here **/
     private fun resumeTransaction(countType: CountType, item: CountItem) {
         viewModelScope.launch {
             preferenceHelper.saveTxnId(item.id)
-            _navigationEvent.send(
-                NavigationEvent.NavigateToPillCount(
-                    countType = countType
+            if (item.isComingFromHL7 && item.isNdcVerified) {
+                _navigationEvent.send(
+                    NavigationEvent.NavigateToScanBarcode(
+                        countType = countType
+                    )
                 )
-            )
+            } else {
+                _navigationEvent.send(
+                    NavigationEvent.NavigateToPillCount(
+                        countType = countType
+                    )
+                )
+            }
         }
     }
     /* ------------------------- Fixed Counts Logic ------------------------- */
@@ -119,18 +175,20 @@ class CountsViewModel @Inject constructor(
      */
     private fun observeFixedCounts() {
         viewModelScope.launch {
-            pillCountTxnDao.observePartialByCountType(CountType.FIXED)
+            pillCountTxnDao.observePartialByCountType(CountType.FIXED, userLocalId = preferenceHelper.getLocalId())
                 .map { txns ->
                     txns.map {
-                            CountItem(
-                                id = it.txnId,
-                                name = it.drugName ?: "",
-                                pillCount = it.totalPillCount,
-                                target = it.targetCount ?: 0,
-                                barcodeImage = it.barcodeImage,
-                                date = it.createdAt.toFormattedDate()
-                            )
-                        }
+                        CountItem(
+                            id = it.txnId,
+                            name = it.drugName ?: "",
+                            pillCount = it.totalPillCount,
+                            target = it.targetCount ?: 0,
+                            barcodeImage = it.barcodeImage,
+                            date = it.createdAt.toFormattedDate(),
+                            isComingFromHL7 = it.isComingFromHL7,
+                            isNdcVerified = it.isNdcVerified
+                        )
+                    }
                 }
                 .catch { e -> e.printStackTrace() } // log & continue
                 .collect { items ->
@@ -145,7 +203,9 @@ class CountsViewModel @Inject constructor(
     private fun toggleFixedSelection(item: CountItem) {
         val selected = _fixedUiState.value.selectedItems.toMutableList()
         if (selected.contains(item)) selected.remove(item) else selected.add(item)
-        _fixedUiState.update { it.copy(selectedItems = selected) }
+        _fixedUiState.update {
+            it.copy(selectedItems = selected)
+        }
     }
 
     /**
@@ -197,18 +257,20 @@ class CountsViewModel @Inject constructor(
      */
     private fun observeRegularCounts() {
         viewModelScope.launch {
-            pillCountTxnDao.observePartialByCountType(countType = CountType.REGULAR)
+            pillCountTxnDao.observePartialByCountType(countType = CountType.REGULAR, userLocalId = preferenceHelper.getLocalId())
                 .map { txns ->
                     txns.map {
-                            CountItem(
-                                id = it.txnId,
-                                name = it.drugName ?: "",
-                                pillCount = it.totalPillCount,
-                                target = it.targetCount ?: 0,
-                                barcodeImage = it.barcodeImage,
-                                date = it.createdAt.toFormattedDate()
-                            )
-                        }
+                        CountItem(
+                            id = it.txnId,
+                            name = it.drugName ?: "",
+                            pillCount = it.totalPillCount,
+                            target = it.targetCount ?: 0,
+                            barcodeImage = it.barcodeImage,
+                            date = it.createdAt.toFormattedDate(),
+                            isComingFromHL7 = it.isComingFromHL7,
+                            isNdcVerified = it.isNdcVerified
+                        )
+                    }
                 }
                 .catch { e -> e.printStackTrace() }
                 .collect { items ->
@@ -221,10 +283,16 @@ class CountsViewModel @Inject constructor(
      * Toggle selection of a [CountItem] in Regular Counts.
      */
     private fun toggleRegularSelection(item: CountItem) {
-        val selected = _regularUiState.value.selectedItems.toMutableList()
-        if (selected.contains(item)) selected.remove(item) else selected.add(item)
-        _regularUiState.update { it.copy(selectedItems = selected) }
+        _regularUiState.update { state ->
+            val selected = state.selectedItems.toMutableList()
+
+            if (selected.contains(item)) selected.remove(item)
+            else selected.add(item)
+
+            state.copy(selectedItems = selected)
+        }
     }
+
 
     /**
      * Handle delete button click for Regular Counts.
@@ -266,10 +334,4 @@ class CountsViewModel @Inject constructor(
         _regularUiState.update { it.copy(isMultiSelectMode = false, selectedItems = emptyList()) }
     }
 
-    /**
-     * Convert epoch millis into formatted date string.
-     *
-     * @param millis Timestamp to format.
-     * @return Human-readable formatted date, or "-" if invalid.
-     */
 }

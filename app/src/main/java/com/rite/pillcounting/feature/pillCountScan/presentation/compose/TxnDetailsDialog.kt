@@ -53,6 +53,8 @@ import com.rite.pillcounting.core.utils.common.FullScreenImageDialog
 import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.CommonDialog
 import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.FilledButton
 import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.HollowButton
+import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.responsiveDp
+import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.responsiveSp
 import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.toFormattedDate
 import com.rite.pillcounting.core.utils.constants.Dimens.smallMedium
 import com.rite.pillcounting.feature.pillCountScan.domain.model.TxnDetail
@@ -141,8 +143,8 @@ fun TxnDetailDialog(
                         painter = painter,
                         contentDescription = "Captured Image",
                         modifier = Modifier
-                            .width(160.dp)
-                            .height(120.dp)
+                            .width(responsiveDp(160.dp))
+                            .height(responsiveDp(120.dp))
                             .clip(RoundedCornerShape(8.dp))
                             .clickable { showFullScreen = true },
                         contentScale = ContentScale.Crop
@@ -167,13 +169,15 @@ fun TxnDetailDialog(
                         Box(
                             contentAlignment = Alignment.Center,
                             modifier = Modifier
-                                .size(70.dp)
+                                .size(responsiveDp(70.dp))
                                 .clip(CircleShape)
                                 .background(MaterialTheme.colorScheme.secondary)
                         ) {
                             Text(
                                 text = "${details.count}",
-                                style = MaterialTheme.typography.titleMedium.copy(color = Color.White)
+                                style = MaterialTheme.typography.titleMedium.copy(color = Color.White),
+                                fontSize = responsiveSp(16.sp),
+                                fontWeight = FontWeight.Medium
                             )
                         }
                         Spacer(modifier = Modifier.height(smallMedium))
@@ -206,7 +210,7 @@ fun TxnDetailDialog(
                         color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.weight(1f)
                     )
-                    Spacer(modifier = Modifier.width(buttonSpacing))
+                    Spacer(modifier = Modifier.width(responsiveDp(buttonSpacing)))
                     FilledButton(
                         text = stringResource(R.string.ok).uppercase(),
                         onClick = onDismiss,

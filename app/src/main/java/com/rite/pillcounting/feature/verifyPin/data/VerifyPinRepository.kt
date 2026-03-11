@@ -1,12 +1,10 @@
 package com.rite.pillcounting.feature.otp.data
 
-import com.rite.pillcounting.core.utils.notification.FCMService
 import com.rite.pillcounting.feature.verifyPin.data.remote.IVerifyPinAPI
 import com.rite.pillcounting.feature.verifyPin.domain.data.IVerifyPinRepository
 import com.rite.pillcounting.feature.verifyPin.domain.model.VerifyPinRequest
 import com.rite.pillcounting.feature.verifyPin.domain.model.VerifyPinResponse
 import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
@@ -21,8 +19,7 @@ import javax.inject.Inject
  */
 class VerifyPinRepository @Inject constructor(
     private val verifyPinApi: IVerifyPinAPI,
-    private val ioDispatcher: CoroutineDispatcher,
-    private val fcmService: FCMService
+    private val ioDispatcher: CoroutineDispatcher
 ) : IVerifyPinRepository {
 
     /**
@@ -35,15 +32,10 @@ class VerifyPinRepository @Inject constructor(
     override suspend fun verifyPin(email: String, otp: String): Result<VerifyPinResponse> =
         withContext(ioDispatcher) {
             try {
-                // Fetch the latest FCM token asynchronously
-                val fcmToken =
-                    com.google.firebase.messaging.FirebaseMessaging.getInstance().token.await()
-
                 // Build the request payload
                 val request = VerifyPinRequest(
                     email = email,
-                    otp = otp,
-                    fcmToken = fcmToken
+                    otp = otp
                 )
 
                 // Make API call

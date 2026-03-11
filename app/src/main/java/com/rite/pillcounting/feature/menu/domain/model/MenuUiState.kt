@@ -9,5 +9,6 @@ data class MenuUiState(
     val fixedCompleted: Int = 0,
     val fixedPartial: Int = 0,
     val regularCompleted: Int = 0,
-    val regularPartial: Int = 0
+    val regularPartial: Int = 0,
+    val unsyncedTransactionCount: Int = 0
 )

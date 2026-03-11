@@ -11,12 +11,12 @@ import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleOwner
-import com.rite.pillcounting.core.utils.common.HelperFunctions.saveBitmapToFile
 import com.google.mlkit.vision.barcode.BarcodeScanner
 import com.google.mlkit.vision.barcode.BarcodeScannerOptions
 import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.barcode.common.Barcode
 import com.google.mlkit.vision.common.InputImage
+import com.rite.pillcounting.core.utils.common.HelperFunctions.saveBitmapToFile
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -131,7 +131,7 @@ class BarcodeAnalyzer @Inject constructor(
         // ✅ Make a safe copy immediately before MLKit processing
         val safeBitmapCopy = try {
             imageProxy.toBitmap() // small cost, but safe
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             null
         }
 
