@@ -33,6 +33,7 @@ jobs:
 
   #(Use this if Kotlin DSL is used in build.gradle.kts)
   #version_string=$(grep versionName app/build.gradle.kts | sed -E 's/.*"(.*)".*/\1/')
+
   #Else for Groovy DSL in build.gradle:
   #version_string=$(grep versionName app/build.gradle | head -1 | sed -E 's/.*"(.*)".*/\1/')
 
