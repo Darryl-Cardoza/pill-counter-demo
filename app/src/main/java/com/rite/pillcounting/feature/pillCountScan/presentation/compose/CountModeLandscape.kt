@@ -30,13 +30,14 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.rite.pillcounting.R
+import com.rite.pillcounting.core.models.StepState
+import com.rite.pillcounting.core.room.models.enums.CountType
 import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.ActionButtonPrimary
 import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.responsiveButtonHeight
 import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.responsiveDp
 import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.responsiveDpForCircularCountProgressLandscape
 import com.rite.pillcounting.feature.pillCountScan.presentation.viewmodel.PillScanningViewModel
 import com.rite.pillcounting.ui.theme.AppTheme
-
 @Composable
 fun CountModeLandscape(
     totalCount: Int,
@@ -46,153 +47,174 @@ fun CountModeLandscape(
     onAdd: () -> Unit,
     onDone: () -> Unit,
     viewModel: PillScanningViewModel,
-    drugName :String
+    drugName: String
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val stepType by viewModel.currentStep.collectAsState()
 
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .fillMaxHeight()
-            .padding(horizontal = 14.dp),
-        verticalArrangement = Arrangement.SpaceBetween
-    ) {
-        Spacer(modifier = Modifier.height(responsiveDp(30.dp)))
-        // Row: Circle + Add (center)
-        Text(
-            text = drugName,
-            color = AppTheme.extendedColors.textColor,
-            fontSize = 18.sp,
-            fontWeight = FontWeight.Medium,
-            modifier = Modifier.fillMaxWidth(),
-            textAlign = TextAlign.Center,
-            maxLines = 1
-        )
-        Box(
+    if (stepType != StepState.VIAL) {
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(responsiveDpForCircularCountProgressLandscape(160.dp)),
-            contentAlignment = Alignment.TopCenter
+                .fillMaxHeight()
+                .padding(horizontal = 14.dp),
+            verticalArrangement = Arrangement.SpaceBetween
         ) {
+            Spacer(modifier = Modifier.height(responsiveDp(30.dp)))
+            // Row: Circle + Add (center)
+            Text(
+                text = drugName,
+                color = AppTheme.extendedColors.textColor,
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Medium,
+                modifier = Modifier.fillMaxWidth(),
+                textAlign = TextAlign.Center,
+                maxLines = 1
+            )
             Box(
                 modifier = Modifier
-                    .size(responsiveDpForCircularCountProgressLandscape(160.dp)),
-                contentAlignment = Alignment.Center
+                    .fillMaxWidth()
+                    .height(responsiveDpForCircularCountProgressLandscape(160.dp)),
+                contentAlignment = Alignment.TopCenter
             ) {
-                CircularCountIndicator(
-                    count = detectedCount,
-                    viewModel = viewModel
+                Box(
+                    modifier = Modifier
+                        .size(responsiveDpForCircularCountProgressLandscape(160.dp)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularCountIndicator(
+                        count = detectedCount,
+                        viewModel = viewModel
+                    )
+                }
+
+                ActionButtonPrimary(
+                    text = if (uiState.isAddCooldown)
+                        stringResource(R.string.pill_scanning_wait_button)
+                    else
+                        stringResource(R.string.pill_scanning_add_button),
+
+                    onClick = { onAdd() },
+
+                    enabled = !uiState.isAddCooldown,
+
+                    color = if (uiState.isAddCooldown)
+                        Color.Gray
+                    else
+                        MaterialTheme.colorScheme.primary,
+
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .offset(y = (-6).dp)
+                        .height(responsiveButtonHeight(40.dp))
+                        .padding(horizontal = 14.dp),
+                    width = 80,
+                    fontSize = 15
                 )
             }
 
-            ActionButtonPrimary(
-                text = if (uiState.isAddCooldown)
-                    stringResource(R.string.pill_scanning_wait_button)
-                else
-                    stringResource(R.string.pill_scanning_add_button),
+            Spacer(modifier = Modifier.height(responsiveDp(20.dp)))
 
-                onClick = { onAdd() },
-
-                enabled = !uiState.isAddCooldown,
-
-                color = if (uiState.isAddCooldown)
-                    Color.Gray
-                else
-                    MaterialTheme.colorScheme.primary,
-
+            // Row: Total Count (left) + All Done (right)
+            Row(
                 modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .offset(y = (-6).dp)
-                    .height(responsiveButtonHeight(40.dp))
-                    .padding(horizontal = 14.dp),
-                width = 80,
-                fontSize = 15
-            )
-        }
-
-        Spacer(modifier = Modifier.height(responsiveDp(20.dp)))
-
-        // Row: Total Count (left) + All Done (right)
-        Row(
-            modifier = Modifier
-                .fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.Bottom
-        ) {
-            // LEFT total + target + label
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(top = 10.dp),
-                contentAlignment = Alignment.CenterStart
+                    .fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Bottom
             ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally
+                // LEFT total + target + label
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(top = 10.dp),
+                    contentAlignment = Alignment.CenterStart
                 ) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
 
-                    // Total Count
-                    Text(
-                        text = totalCount.toString(),
-                        color = MaterialTheme.colorScheme.primary,
-                        fontSize = 28.sp,
-                        fontWeight = FontWeight.Medium
-                    )
-
-                    Spacer(Modifier.height(4.dp))
-
-                    if (scanType == "FIXED") {
-                        // Divider with static width logic
-                        Box(
-                            modifier = Modifier
-                                .width(48.dp)
-                                .height(1.dp)
-                                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.6f))
+                        // Total Count
+                        Text(
+                            text = totalCount.toString(),
+                            color = MaterialTheme.colorScheme.primary,
+                            fontSize = 28.sp,
+                            fontWeight = FontWeight.Medium
                         )
 
                         Spacer(Modifier.height(4.dp))
+
+                        if (scanType == CountType.FIXED.toString() && stepType != StepState.CONTAINER_INITIATE) {
+                            // Divider with static width logic
+                            Box(
+                                modifier = Modifier
+                                    .width(48.dp)
+                                    .height(1.dp)
+                                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.6f))
+                            )
+
+                            Spacer(Modifier.height(4.dp))
+                            Text(
+                                text = targetCount.toString(),
+                                color = MaterialTheme.colorScheme.primary,
+                                fontSize = 20.sp,
+                                fontWeight = FontWeight.Medium
+                            )
+                        } else {
+                            Spacer(modifier = Modifier.height(responsiveDp(20.dp)))
+                        }
+
                         Text(
-                            text = targetCount.toString(),
-                            color = MaterialTheme.colorScheme.primary,
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.Medium
+                            text = stringResource(R.string.pill_scanning_total_count),
+                            color = AppTheme.extendedColors.textColor,
+                            fontSize = 15.sp
                         )
-                    } else {
-                        Spacer(modifier = Modifier.height(responsiveDp(20.dp)))
                     }
-
-                    Text(
-                        text = stringResource(R.string.pill_scanning_total_count),
-                        color = AppTheme.extendedColors.textColor,
-                        fontSize = 15.sp
-                    )
                 }
-            }
 
-            Spacer(modifier = Modifier.weight(0.51f))
-            // RIGHT done
-            Box(
-                contentAlignment = Alignment.BottomEnd,
-            ) {
-                Column(
-                    horizontalAlignment = Alignment.End,
-                    modifier = Modifier
-                        .clickable(onClick = onDone)
+                Spacer(modifier = Modifier.weight(0.51f))
+                // RIGHT done
+                Box(
+                    contentAlignment = Alignment.BottomEnd,
                 ) {
+                    Column(
+                        horizontalAlignment = Alignment.End,
+                        modifier = Modifier
+                            .clickable(onClick = onDone)
+                    ) {
 
-                    Icon(
-                        painter = painterResource(id = R.drawable.all_done),
-                        contentDescription = "All Done",
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(40.dp)
-                    )
-                    Spacer(modifier = Modifier.height(responsiveDp(20.dp)))
-                    Text(
-                        text = stringResource(R.string.pill_scanning_all_done),
-                        color = AppTheme.extendedColors.textColor,
-                        fontSize = 15.sp
-                    )
+                        Icon(
+                            painter = painterResource(id = R.drawable.all_done),
+                            contentDescription = "All Done",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(40.dp)
+                        )
+                        Spacer(modifier = Modifier.height(responsiveDp(20.dp)))
+                        Text(
+                            text = stringResource(R.string.pill_scanning_all_done),
+                            color = AppTheme.extendedColors.textColor,
+                            fontSize = 15.sp
+                        )
+                    }
                 }
             }
         }
+    } else {
+        viewModel.pausePillDetection()
+        CameraActionBar(
+
+            onRedo = {
+                viewModel.redoCaptureImage()
+            },
+
+            onCapture = {
+                viewModel.captureImage()
+            },
+
+            onDone = {
+                viewModel.saveCaptureImage()
+            }
+        )
+
     }
+
 }

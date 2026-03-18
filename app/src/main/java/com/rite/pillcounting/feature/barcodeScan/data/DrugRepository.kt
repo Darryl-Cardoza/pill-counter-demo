@@ -1,10 +1,12 @@
 package com.rite.pillcounting.feature.barcodeScan.data
 
+import com.google.gson.Gson
 import com.rite.pillcounting.core.utils.logger.AppLogger
 import com.rite.pillcounting.core.utils.preference.PreferenceHelper
 import com.rite.pillcounting.feature.barcodeScan.data.remote.IDrugAPI
 import com.rite.pillcounting.feature.barcodeScan.domain.data.IDrugRepository
 import com.rite.pillcounting.feature.barcodeScan.domain.model.DrugInfo
+import com.rite.pillcounting.feature.barcodeScan.domain.model.GetNdcRequestModel
 import retrofit2.HttpException
 import java.io.IOException
 import javax.inject.Inject
@@ -52,8 +54,8 @@ class DrugRepository @Inject constructor(
      * @param ndc National Drug Code of the drug to be fetched.
      * @return A [DrugInfo] object if the request is successful, otherwise `null`.
      */
-    override suspend fun getDrugInfoByNdc(ndc: String): DrugInfo? {
-        logger.i("Fetching drug info for NDC: '$ndc'")
+    override suspend fun getDrugInfoByNdc(getNdcRequestModel: GetNdcRequestModel): DrugInfo? {
+        logger.i("Fetching drug info for NDC: '$getNdcRequestModel'")
 
         return try {
             val token = preferenceHelper.getAccessToken()
@@ -64,21 +66,22 @@ class DrugRepository @Inject constructor(
 
             val response = api.getDrugInfoByNdc(
                 authorization = "Bearer $token",
-                ndc = ndc
+                getNdcRequestModel = getNdcRequestModel
             )
 
             val result = response.data
             if (result == null) {
-                logger.w("No result found in API response for NDC: '$ndc'")
+                logger.w("No result found in API response for NDC: '$getNdcRequestModel'")
                 null
             } else {
                 logger.i("Returning mapped DrugInfo Result -> $response")
-
                 logger.i("Returning mapped DrugInfo data -> ${response.data}")
                 DrugInfo(
-                    brandName = result.brand_name ?: "N/A",
-                    genericName = result.generic_name ?: "N/A",
-                    ndc = ndc
+                    brandName = result.scanned_ndc?.manufacturer ?: "N/A",
+                    genericName = result.scanned_ndc?.lookup_name ?: "N/A",
+                    ndc = result.scanned_ndc?.package_ndc ?: "N/A",
+                    is_ndc_equivalent = result.is_ndc_equivalent,
+                    drugType = result.scanned_ndc?.dea_schedule.toString()
                 ).also {
                     logger.i("Returning mapped DrugInfo -> $it")
                 }

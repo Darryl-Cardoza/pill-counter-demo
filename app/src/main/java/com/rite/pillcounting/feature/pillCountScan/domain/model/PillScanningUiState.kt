@@ -40,4 +40,8 @@ data class PillScanningUiState(
     val imageFrameHeight: Int = 0,
     val isAddCooldown: Boolean = false,
     val addCount: Int = 0,
+    val showDialogForControl: Boolean = false,
+    val showErrorMessage: String? = null,
+    val isHl7Txn: Boolean = false,
+    val showCountMismatchDialog: Boolean = false,
 )

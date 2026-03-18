@@ -29,6 +29,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.rite.pillcounting.R
+import com.rite.pillcounting.core.models.StepState
+import com.rite.pillcounting.core.room.models.enums.CountType
 import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.ActionButtonPrimary
 import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.responsiveButtonHeight
 import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.responsiveDp
@@ -47,127 +49,145 @@ fun CountModePortrait(
     viewModel: PillScanningViewModel
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    Row(
-        modifier = Modifier
-            .fillMaxWidth(),
-        verticalAlignment = Alignment.Bottom
-    ) {
-
-        // -------- LEFT: Total + Target --------
-        Box(
+    val stepType by viewModel.currentStep.collectAsState()
+    if (stepType != StepState.VIAL) {
+        Row(
             modifier = Modifier
-                .weight(1f)
-                .fillMaxHeight()
-                .padding(top = 10.dp, bottom = 15.dp),
-            contentAlignment = Alignment.BottomCenter
+                .fillMaxWidth(),
+            verticalAlignment = Alignment.Bottom
         ) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
+
+            // -------- LEFT: Total + Target --------
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxHeight()
+                    .padding(top = 10.dp, bottom = 15.dp),
+                contentAlignment = Alignment.BottomCenter
             ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
 
-                // Total Count
-                Text(
-                    text = totalCount.toString(),
-                    color = MaterialTheme.colorScheme.primary,
-                    fontSize = 28.sp,
-                    fontWeight = FontWeight.Medium
-                )
-
-                if (scanType == "FIXED") {
-                    Box(
-                        modifier = Modifier
-                            .width(48.dp)
-                            .height(1.dp)
-                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.6f))
-                    )
-                    Spacer(Modifier.height(4.dp))
+                    // Total Count
                     Text(
-                        text = targetCount.toString(),
+                        text = totalCount.toString(),
                         color = MaterialTheme.colorScheme.primary,
-                        fontSize = 20.sp,
+                        fontSize = 28.sp,
                         fontWeight = FontWeight.Medium
                     )
-                } else {
-                    Spacer(modifier = Modifier.height(responsiveDp(25.dp)))
+
+                    if (scanType == CountType.FIXED.toString() && stepType != StepState.CONTAINER_INITIATE) {
+                        Box(
+                            modifier = Modifier
+                                .width(48.dp)
+                                .height(1.dp)
+                                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.6f))
+                        )
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            text = targetCount.toString(),
+                            color = MaterialTheme.colorScheme.primary,
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                    } else {
+                        Spacer(modifier = Modifier.height(responsiveDp(25.dp)))
+                    }
+
+                    Text(
+                        text = stringResource(R.string.pill_scanning_total_count),
+                        color = AppTheme.extendedColors.textColor,
+                        fontSize = 15.sp
+                    )
+
+                }
+            }
+
+            // -------- CENTER: Circle + Add (merged) --------
+
+            Box(
+                modifier = Modifier
+                    .height(responsiveDpForCircularCountProgressPortrait(150.dp))
+                    .weight(1f),
+                contentAlignment = Alignment.BottomCenter
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(responsiveDpForCircularCountProgressPortrait(130.dp))
+                        .align(Alignment.TopCenter),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularCountIndicator(
+                        count = detectedCount,
+                        viewModel = viewModel
+                    )
                 }
 
+                ActionButtonPrimary(
+                    text = if (uiState.isAddCooldown)
+                        stringResource(R.string.pill_scanning_wait_button)
+                    else
+                        stringResource(R.string.pill_scanning_add_button),
+
+                    onClick = { onAdd() },
+
+                    enabled = !uiState.isAddCooldown,
+
+                    color = if (uiState.isAddCooldown)
+                        Color.Gray
+                    else
+                        MaterialTheme.colorScheme.primary,
+
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .offset(y = (-6).dp)
+                        .height(responsiveButtonHeight(40.dp))
+                        .padding(horizontal = 14.dp),
+
+                    width = 80,
+                    fontSize = 15
+                )
+            }
+//        }
+
+            // -------- RIGHT: Done --------
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxHeight()
+                    .padding(top = 18.dp, end = 8.dp, bottom = 15.dp)
+                    .clickable { onDone() },
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Bottom
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.all_done),
+                    contentDescription = "Done",
+                    tint = MaterialTheme.colorScheme.primary,
+                )
+                Spacer(modifier = Modifier.height(responsiveDp(25.dp)))
                 Text(
-                    text = stringResource(R.string.pill_scanning_total_count),
+                    text = stringResource(R.string.pill_scanning_all_done),
                     color = AppTheme.extendedColors.textColor,
                     fontSize = 15.sp
                 )
-
             }
         }
+    } else {
+        CameraActionBar(
 
-        // -------- CENTER: Circle + Add (merged) --------
+            onRedo = {
+                viewModel.redoCaptureImage()
+            },
 
-        Box(
-            modifier = Modifier
-                .height(responsiveDpForCircularCountProgressPortrait(150.dp))
-                .weight(1f),
-            contentAlignment = Alignment.BottomCenter
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(responsiveDpForCircularCountProgressPortrait(130.dp))
-                    .align(Alignment.TopCenter),
-                contentAlignment = Alignment.Center
-            ) {
-                CircularCountIndicator(
-                    count = detectedCount,
-                    viewModel = viewModel
-                )
+            onCapture = {
+                viewModel.captureImage()
+            },
+
+            onDone = {
+                viewModel.saveCaptureImage()
             }
-
-            ActionButtonPrimary(
-                text = if (uiState.isAddCooldown)
-                    stringResource(R.string.pill_scanning_wait_button)
-                else
-                    stringResource(R.string.pill_scanning_add_button),
-
-                onClick = { onAdd() },
-
-                enabled = !uiState.isAddCooldown,
-
-                color = if (uiState.isAddCooldown)
-                    Color.Gray
-                else
-                    MaterialTheme.colorScheme.primary,
-
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .offset(y = (-6).dp)
-                    .height(responsiveButtonHeight(40.dp))
-                    .padding(horizontal = 14.dp),
-
-                width = 80,
-                fontSize = 15
-            )
-        }
-//        }
-
-        // -------- RIGHT: Done --------
-        Column(
-            modifier = Modifier
-                .weight(1f)
-                .fillMaxHeight()
-                .padding(top = 18.dp, end = 8.dp, bottom = 15.dp)
-                .clickable { onDone() },
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Bottom
-        ) {
-            Icon(
-                painter = painterResource(id = R.drawable.all_done),
-                contentDescription = "Done",
-                tint = MaterialTheme.colorScheme.primary,
-            )
-            Spacer(modifier = Modifier.height(responsiveDp(25.dp)))
-            Text(
-                text = stringResource(R.string.pill_scanning_all_done),
-                color = AppTheme.extendedColors.textColor,
-                fontSize = 15.sp
-            )
-        }
+        )
     }
 }

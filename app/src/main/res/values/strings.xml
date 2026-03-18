@@ -49,6 +49,7 @@
     <string name="clear_all_local_data">Clear All Local Data</string>
     <string name="are_you_sure_you_want_to_clear_all_data">Are you sure you want to clear all data?</string>
     <string name="select_schedule_codes">Select Schedule Codes</string>
+    <string name="voice_feedback">Voice Feedback</string>
 
     <string-array name="history_options">
         <item>1 Week (Default)</item>
@@ -259,6 +260,15 @@
     <string name="pill_scanning_all_done">All Done</string>
     <string name="confirm_delete_message_on_reset_click">Are you sure you want to delete all the transaction for this current transaction.</string>
     <string name="cannot_reset_no_pills_detected">Cannot reset no pills detected transactionDetails.</string>
+    <string name="count_pills_from_the_container">Count Pills from the container</string>
+    <string name="count_prescribed_pills_quantity">Count prescribed Pills quantity</string>
+    <string name="recount_prescribed_quantity">Recount prescribed quantity</string>
+<!--    <string name="count_remaining_pills_in_the_container">Count Pills in the container</string>-->
+    <string name="capture_photo_of_counted_pills_vial">Capture photo of counted pills vial</string>
+    <string name="are_you_sure_you_want_to_complete_this_step">Are you sure you want to complete this step?</string>
+    <string name="confirm_steps_completion">Confirm Steps Completion</string>
+    <string name="the_counted_quantity_does_not_match_the_target_count">The counted quantity does not match the target count. Do you want to proceed?</string>
+    <string name="count_mismatch">Count Mismatch</string>
 
     <!--    ManualDrugEntry -->
     <string name="ndc_number">NDC Number</string>
@@ -266,9 +276,16 @@
     <string name="all_fields_are_required">All fields are required</string>
     <string name="manual_drug_info_cancel">CANCEL</string>
     <string name="manual_drug_info_ok">OK</string>
+    <string name="scan_container_qr_code">Scan container QR Code</string>
+    <string name="do_you_want_to_substitute">Do you want to substitute?</string>
+    <string name="scanned_item_is_a_generic_equivalent_to_the_specific_drug">Scanned item is a generic equivalent to \nthe specified drug</string>
+    <string name="rescan_require">Rescan Required</string>
+    <string name="the_scanned_ndc_does_not_match">The scanned NDC does not match</string>
+    <string name="substitute">Substitute</string>
 
     <!-- Unsynced Transaction-->
     <string name="unsynced_transaction">UNSYNCED TRANSACTION</string>
     <string name="sync_all">SYNC ALL</string>
+    <string name="pills_count_should_be_greater_than_target_count">Pills count should be greater than target count</string>
 
 </resources>

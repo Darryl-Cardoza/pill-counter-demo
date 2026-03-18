@@ -181,6 +181,7 @@
     <string name="pill_scanning_add_button">Agregar</string>
     <string name="pill_scanning_total_count">Recuento total</string>
     <string name="pill_scanning_all_done">Todo hecho</string>
+    <string name="pills_count_should_be_greater_than_target_count">Pills count should be greater than target count</string>
 
 
 </resources>

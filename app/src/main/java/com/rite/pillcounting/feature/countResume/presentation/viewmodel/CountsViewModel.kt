@@ -2,6 +2,7 @@ package com.rite.pillcounting.feature.countResume.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.rite.pillcounting.core.models.StepState
 import com.rite.pillcounting.core.room.dao.PillCountTxnDao
 import com.rite.pillcounting.core.room.dao.PillCountTxnDetailsDao
 import com.rite.pillcounting.core.room.models.enums.CountStatus
@@ -153,7 +154,7 @@ class CountsViewModel @Inject constructor(
     private fun resumeTransaction(countType: CountType, item: CountItem) {
         viewModelScope.launch {
             preferenceHelper.saveTxnId(item.id)
-            if (item.isComingFromHL7 && item.isNdcVerified) {
+            if (item.isComingFromHL7 && !item.isNdcVerified) {
                 _navigationEvent.send(
                     NavigationEvent.NavigateToScanBarcode(
                         countType = countType
@@ -175,7 +176,7 @@ class CountsViewModel @Inject constructor(
      */
     private fun observeFixedCounts() {
         viewModelScope.launch {
-            pillCountTxnDao.observePartialByCountType(CountType.FIXED, userLocalId = preferenceHelper.getLocalId())
+            pillCountTxnDao.observePartialByCountType(CountType.FIXED, userLocalId = preferenceHelper.getLocalId(), type = StepState.TARGET_VERIFICATION)
                 .map { txns ->
                     txns.map {
                         CountItem(
@@ -257,7 +258,7 @@ class CountsViewModel @Inject constructor(
      */
     private fun observeRegularCounts() {
         viewModelScope.launch {
-            pillCountTxnDao.observePartialByCountType(countType = CountType.REGULAR, userLocalId = preferenceHelper.getLocalId())
+            pillCountTxnDao.observePartialByCountType(countType = CountType.REGULAR, userLocalId = preferenceHelper.getLocalId(), type = StepState.TARGET_VERIFICATION)
                 .map { txns ->
                     txns.map {
                         CountItem(

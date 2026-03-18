@@ -3,6 +3,7 @@ package com.rite.pillcounting
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -162,15 +163,38 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun requestLocationPermission() {
-        val permission = Manifest.permission.ACCESS_FINE_LOCATION
+
+        val permissions = mutableListOf<String>()
+
+        // Location permission
         if (ContextCompat.checkSelfPermission(
                 this,
-                permission
+                Manifest.permission.ACCESS_FINE_LOCATION
             ) != PackageManager.PERMISSION_GRANTED
         ) {
-            ActivityCompat.requestPermissions(this, arrayOf(permission), 1001)
+            permissions.add(Manifest.permission.ACCESS_FINE_LOCATION)
+        }
+
+        // Notification permission (Android 13+)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(
+                    this,
+                    Manifest.permission.POST_NOTIFICATIONS
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
+                permissions.add(Manifest.permission.POST_NOTIFICATIONS)
+            }
+        }
+
+        if (permissions.isNotEmpty()) {
+            ActivityCompat.requestPermissions(
+                this,
+                permissions.toTypedArray(),
+                1001
+            )
         }
     }
+
     private fun handleNavigationIntent(intent: Intent) {
         val route = intent.getStringExtra("navigate_route") ?: return
 

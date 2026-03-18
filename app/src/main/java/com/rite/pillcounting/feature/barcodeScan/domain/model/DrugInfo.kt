@@ -11,5 +11,7 @@ package com.rite.pillcounting.feature.barcodeScan.domain.model
 data class DrugInfo(
     val brandName: String?,
     val genericName: String?,
-    val ndc: String
+    val ndc: String,
+    val is_ndc_equivalent: Boolean? = null,
+    val drugType : String
 )

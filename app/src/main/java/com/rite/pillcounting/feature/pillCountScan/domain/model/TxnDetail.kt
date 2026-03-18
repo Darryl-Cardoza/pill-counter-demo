@@ -1,5 +1,7 @@
 package com.rite.pillcounting.feature.pillCountScan.domain.model
 
+import com.rite.pillcounting.core.models.StepState
+
 /**
  * Represents a batch of scanned pills.
  *
@@ -15,5 +17,6 @@ data class TxnDetail(
     val batchNumber: Number = 0,
     val count: Int,
     val createdAt: Long,
-    val image: String?
+    val image: String?,
+    val type: StepState
 )
