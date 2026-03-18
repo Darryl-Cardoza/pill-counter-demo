@@ -6,6 +6,7 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
 import androidx.room.Update
+import com.rite.pillcounting.core.models.StepState
 import com.rite.pillcounting.core.room.models.PillCountTxnEntity
 import com.rite.pillcounting.core.room.models.dtos.PillCountWithDrugAndTotal
 import com.rite.pillcounting.core.room.models.dtos.StatusTypeCount
@@ -130,6 +131,7 @@ interface PillCountTxnDao {
     LEFT JOIN pill_count_txn_details AS details 
            ON txn.txnId = details.txnId 
           AND details.isDeleted = 0
+          AND details.type = :type
     WHERE txn.isDeleted = 0
       AND txn.status = :partialStatus
       AND txn.countType = :countType
@@ -143,7 +145,8 @@ interface PillCountTxnDao {
     fun observePartialByCountType(
         countType: CountType,
         partialStatus: CountStatus = CountStatus.PARTIAL,
-        userLocalId: Long
+        userLocalId: Long,
+        type: StepState
     ): Flow<List<PillCountWithDrugAndTotal>>
 
     // ───────────────────────────── Field Updates ─────────────────────────────
@@ -231,6 +234,7 @@ interface PillCountTxnDao {
     SELECT 
         pct.txnId,
         dm.drugName,
+        dm.drugId,
         dm.ndc,
         pct.targetCount,
         pct.expiry,
@@ -238,6 +242,8 @@ interface PillCountTxnDao {
         pct.note,
         pct.createdAt,
         pct.barcodeImage,
+        pct.isComingFromHL7,
+        pct.countType,
         IFNULL(SUM(pcd.pillCount), 0) AS totalPillCount
     FROM pill_count_txn AS pct
     LEFT JOIN drug_master AS dm 
@@ -313,7 +319,7 @@ interface PillCountTxnDao {
         txn.txnId,
         txn.countType,
         txn.status,
-        COALESCE(SUM(details.pillCount), 0) AS pillCount,
+        details.pillCount,  -- Fetch pillCount directly without SUM
         drug.drugName,
         drug.ndc,
         txn.barcodeImage,
@@ -324,6 +330,7 @@ interface PillCountTxnDao {
     LEFT JOIN pill_count_txn_details AS details
            ON txn.txnId = details.txnId 
            AND details.isDeleted = 0
+           AND (:stepType IS NULL OR details.type = :stepType)  -- Filter based on stepType
     LEFT JOIN drug_master AS drug
            ON txn.drugId = drug.drugId
     WHERE txn.createdAt BETWEEN :startDate AND :endDate
@@ -331,13 +338,13 @@ interface PillCountTxnDao {
       AND txn.localId = :userLocalId
       AND (:type IS NULL OR txn.countType = :type)
       AND (:status IS NULL OR txn.status = :status)
-    GROUP BY txn.txnId
     ORDER BY txn.createdAt DESC
     """
     )
     fun getTransactionsForDateRange(
         startDate: Long,
         endDate: Long,
+        stepType: StepState,  // Pass the stepType to filter
         type: CountType?,
         status: CountStatus?,
         userLocalId: Long

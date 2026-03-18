@@ -22,5 +22,6 @@ data class ScanBarcodeUiState(
     val barcodeImagePath: String? = null,
     val hl7ExpectedNdc: String? = null,
 
-    val showNdcNotMatchedDialog: Boolean = false
+    val showNdcNotFoundDialog: Boolean = false,
+    val showNdcEquivalenceDialog: Boolean = false
 )

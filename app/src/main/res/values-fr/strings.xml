@@ -182,4 +182,5 @@
     <string name="pill_scanning_add_button">Ajouter</string>
     <string name="pill_scanning_total_count">Nombre total</string>
     <string name="pill_scanning_all_done">Tout est fait</string>
+    <string name="pills_count_should_be_greater_than_target_count">Pills count should be greater than target count</string>
 </resources>

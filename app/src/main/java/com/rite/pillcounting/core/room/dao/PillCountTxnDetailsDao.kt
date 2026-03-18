@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import com.rite.pillcounting.core.models.StepState
 import com.rite.pillcounting.core.room.models.PillCountTxnDetailsEntity
 import kotlinx.coroutines.flow.Flow
 
@@ -58,11 +59,11 @@ interface PillCountTxnDetailsDao {
     @Query(
         """
         SELECT * FROM pill_count_txn_details
-        WHERE txnId = :txnId AND isDeleted = 0
+        WHERE txnId = :txnId AND type = :type AND isDeleted = 0
         ORDER BY createdAt DESC
         """
     )
-    fun observeAllForTxn(txnId: Long): Flow<List<PillCountTxnDetailsEntity>>
+    fun observeAllForTxn(txnId: Long, type: StepState): Flow<List<PillCountTxnDetailsEntity>>
 
     // ─────────────────────────────── Soft Delete ───────────────────────────────
 
@@ -81,11 +82,17 @@ interface PillCountTxnDetailsDao {
     suspend fun softDelete(id: Long, now: Long = System.currentTimeMillis())
 
     @Query(
-        "UPDATE pill_count_txn_details SET isDeleted = 1, updatedAt = :now WHERE txnId = :id"
+        """
+    UPDATE pill_count_txn_details
+    SET isDeleted = 1, updatedAt = :now
+    WHERE txnId = :id AND type = :type
+    """
     )
-    suspend fun softDeleteAllTransaction(id: Long, now: Long = System.currentTimeMillis())
+    suspend fun softDeleteAllTransaction(id: Long, now: Long = System.currentTimeMillis(),type: StepState)
 
-
+    // Delete method to remove existing VIAL records for a specific txnId
+    @Query("DELETE FROM pill_count_txn_details WHERE txnId = :txnId AND type = :type")
+    suspend fun deleteVialByTxnId(txnId: Long, type: StepState)
 
     // ─────────────────────────────── Aggregations ───────────────────────────────
 
@@ -117,4 +124,15 @@ interface PillCountTxnDetailsDao {
         """
     )
     suspend fun getAllForTxn(txnId: String): List<PillCountTxnDetailsEntity>
+
+    @Query(
+        """
+    SELECT type
+    FROM pill_count_txn_details
+    WHERE txnId = :txnId AND isDeleted = 0
+    ORDER BY createdAt DESC
+    LIMIT 1
+    """
+    )
+    suspend fun getLatestType(txnId: Long): StepState?
 }

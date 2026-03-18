@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
@@ -47,7 +48,7 @@ import com.rite.pillcounting.core.settings.presentation.viewmodel.MainActivityVi
 import com.rite.pillcounting.core.utils.common.HistoryRetention
 import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.BackButton
 import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.CommonDialog
-import com.rite.pillcounting.ui.theme.AppTheme.extendedColors
+import com.rite.pillcounting.ui.theme.AppTheme
 import com.rite.pillcounting.ui.theme.LocalExtendedColors
 
 /**
@@ -84,8 +85,8 @@ fun SettingsScreen(
     val isRequireBackCountEnable by viewModel.isRequireBackCountEnable.collectAsState()
     var showCLearAllDataConfirmDialog by remember { mutableStateOf(false) }
     val selectedSchedules by viewModel.selectedSchedules.collectAsState()
-    val isRequireAdjustReasons by viewModel.isRequireAdjustReasons.collectAsState()
-    val schedules = ScheduleCode.values().toList()
+    val schedules = ScheduleCode.entries
+    val isSoundOverrideEnable by viewModel.isSoundOverride.collectAsState()
 
     Column(
         modifier = Modifier
@@ -190,16 +191,6 @@ fun SettingsScreen(
                 },
                 checkedTrackColor = MaterialTheme.colorScheme.secondary
             )
-            HorizontalDivider(color = colorResource(R.color.border_gray).copy(alpha = 0.3f))
-
-            SettingSwitch(
-                labelRes = R.string.require_adjust_resons,
-                checked = isRequireAdjustReasons,
-                onCheckedChange = { newValue ->
-                    viewModel.toggleRequireAdjustReasonOnOff(newValue)
-                },
-                checkedTrackColor = MaterialTheme.colorScheme.secondary
-            )
 
             HorizontalDivider(color = colorResource(R.color.border_gray).copy(alpha = 0.3f))
 
@@ -245,6 +236,18 @@ fun SettingsScreen(
                 },
                 checkedTrackColor = MaterialTheme.colorScheme.secondary
             )
+
+            HorizontalDivider(color = colorResource(R.color.border_gray).copy(alpha = 0.3f))
+
+            SettingSwitch(
+                labelRes = R.string.voice_feedback,
+                checked = isSoundOverrideEnable,
+                onCheckedChange = { newValue ->
+                    viewModel.toggleSoundOverride(newValue)
+                },
+                checkedTrackColor = MaterialTheme.colorScheme.secondary
+            )
+
 
             HorizontalDivider(color = colorResource(R.color.border_gray).copy(alpha = 0.3f))
             Text(
@@ -310,13 +313,18 @@ fun ScheduleCheckBox(
     ) {
         Checkbox(
             checked = checked,
-            onCheckedChange = onCheckedChange
+            onCheckedChange = onCheckedChange,
+            colors = CheckboxDefaults.colors(
+                checkedColor = MaterialTheme.colorScheme.secondary,
+                uncheckedColor = AppTheme.extendedColors.textColor,
+                checkmarkColor = Color.White
+            )
         )
 
         Text(
             text = label,
             fontSize = 14.sp,
-            color = extendedColors.textColor,
+            color = AppTheme.extendedColors.textColor,
         )
     }
 }

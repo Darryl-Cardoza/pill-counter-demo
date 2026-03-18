@@ -18,16 +18,20 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.rite.pillcounting.R
+import com.rite.pillcounting.core.models.StepState
+import com.rite.pillcounting.core.room.models.enums.CountType
 import com.rite.pillcounting.feature.pillCountScan.domain.model.TxnDetail
+import com.rite.pillcounting.feature.pillCountScan.presentation.viewmodel.PillScanningViewModel
 import com.rite.pillcounting.ui.theme.AppTheme
 
 @Composable
@@ -37,7 +41,8 @@ fun HistoryModeLandscape(
     totalCount: Int,
     txnHistory: List<TxnDetail>,
     onDeleteTxn: (Long) -> Unit,
-    drugName : String
+    drugName : String,
+    viewModel: PillScanningViewModel
 ) {
     val latestTxnId = txnHistory.maxByOrNull { it.createdAt }?.txnDetailId
     val activeHistory = txnHistory
@@ -45,6 +50,7 @@ fun HistoryModeLandscape(
         .sortedBy { it.createdAt }
 
     val listState = rememberLazyListState()
+    val stepType by viewModel.currentStep.collectAsState()
 
     LaunchedEffect(activeHistory.size) {
         if (activeHistory.isNotEmpty()) {
@@ -103,7 +109,7 @@ fun HistoryModeLandscape(
                 fontWeight = FontWeight.Bold
             )
 
-            if (scanType == "FIXED") {
+            if (scanType == CountType.FIXED.toString() && stepType != StepState.CONTAINER_INITIATE) {
                 Spacer(Modifier.height(4.dp))
 
                 Column(modifier = Modifier.width(IntrinsicSize.Min)) {

@@ -1,6 +1,7 @@
 package com.rite.pillcounting.feature.barcodeScan.domain.data
 
 import com.rite.pillcounting.feature.barcodeScan.domain.model.DrugInfo
+import com.rite.pillcounting.feature.barcodeScan.domain.model.GetNdcRequestModel
 
 
 /**
@@ -17,5 +18,5 @@ interface IDrugRepository {
      * @return A [DrugInfo] object containing the drug's details, or null if not found.
      * @throws Exception if there is a network error or the API call fails.
      */
-    suspend fun getDrugInfoByNdc(ndc: String): DrugInfo?
+    suspend fun getDrugInfoByNdc(getNdcRequestModel: GetNdcRequestModel): DrugInfo?
 }

@@ -29,7 +29,7 @@ class PillDetectionModelLoader @Inject constructor(
     private var gpuDelegate: GpuDelegate? = null
 
     companion object {
-        private const val MODEL_FILENAME = "modelpilldetection"
+        private const val MODEL_FILENAME = "model"
         private const val TAG = "LoadModel" // Define your tag here
     }
 

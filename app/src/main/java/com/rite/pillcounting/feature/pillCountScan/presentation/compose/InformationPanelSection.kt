@@ -14,6 +14,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -29,6 +30,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.rite.pillcounting.R
+import com.rite.pillcounting.core.models.StepState
 import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.CommonDialog
 import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.showToast
 import com.rite.pillcounting.feature.pillCountScan.domain.data.PillScanningEvent
@@ -61,6 +63,7 @@ fun InformationPanelSection(
     onEvent: (PillScanningEvent) -> Unit,
     filteredPillCount: Int
 ) {
+    val stepType by viewModel.currentStep.collectAsState()
     val totalCount = uiState.txnDetailHistory.sumOf { it.count }
     var showHistory by remember { mutableStateOf(false) }
     val txnHistory = uiState.txnDetailHistory
@@ -68,9 +71,10 @@ fun InformationPanelSection(
     val drugName = uiState.drugName
     val targetCount = uiState.targetCount
     val scanType = uiState.scanType
-    val onReset = {  onEvent(PillScanningEvent.AllTransactionDetailsDeleted) }
-    val onAdd = { onEvent(PillScanningEvent.AddTransactionDetailClicked(filteredPillCount)) }
-    val onDone = { onEvent(PillScanningEvent.DoneClicked) }
+    val onReset = { onEvent(PillScanningEvent.AllTransactionDetailsDeleted(stepType)) }
+    val onAdd = { onEvent(PillScanningEvent.AddTransactionDetailClicked(filteredPillCount, stepType)) }
+    val onDone = { onEvent(PillScanningEvent.FinalDone(stepType=stepType,totalCount)) }
+
     val onDeleteTxn: (Long) -> Unit = { id ->
         onEvent(PillScanningEvent.TransactionDetailDeleted(id))
     }
@@ -87,92 +91,95 @@ fun InformationPanelSection(
             .padding(horizontal = 16.dp, vertical = 10.dp)
     ) {
 
-        if (isLandscape) {
-            // ---------------- Row 1: Reset (L) + History/Focus (R) ----------------
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                IconButton(onClick = {
-                    if (txnHistory.isEmpty()) {
-                        showDeleteConfirmationDialog = false
-                        showToast(context, R.string.cannot_reset_no_pills_detected)
-                    } else {
-                        showDeleteConfirmationDialog = true
+        if (stepType != StepState.VIAL) {
+
+            if (isLandscape) {
+                // ---------------- Row 1: Reset (L) + History/Focus (R) ----------------
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(onClick = {
+                        if (txnHistory.isEmpty()) {
+                            showDeleteConfirmationDialog = false
+                            showToast(context, R.string.cannot_reset_no_pills_detected)
+                        } else {
+                            showDeleteConfirmationDialog = true
+                        }
+                    }) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.delete),
+                            contentDescription = "Reset",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier
+                                .size(30.dp)
+                        )
                     }
-                }) {
-                    Icon(
-                        painter = painterResource(id =R.drawable.delete),
-                        contentDescription = "Reset",
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier
-                            .size(30.dp)
-                    )
+
+                    Spacer(modifier = Modifier.weight(1f))
+
+                    IconButton(onClick = onToggleHistory) {
+                        Icon(
+                            painter = painterResource(
+                                id = if (showHistory) R.drawable.scanning_foucs else R.drawable.history
+                            ),
+                            contentDescription = if (showHistory) "Focus" else "History",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier
+                                .size(30.dp)
+                        )
+
+                    }
+
                 }
+            } else {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(onClick = {
+                        if (txnHistory.isEmpty()) {
+                            showDeleteConfirmationDialog = false
+                            showToast(context, R.string.cannot_reset_no_pills_detected)
+                        } else {
+                            showDeleteConfirmationDialog = true
+                        }
+                    }) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.delete),
+                            contentDescription = "Reset",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier
+                                .size(30.dp)
 
-                Spacer(modifier = Modifier.weight(1f))
+                        )
+                    }
 
-                IconButton(onClick = onToggleHistory) {
-                    Icon(
-                        painter = painterResource(
-                            id = if (showHistory) R.drawable.scanning_foucs else R.drawable.history
-                        ),
-                        contentDescription = if (showHistory) "Focus" else "History",
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier
-                            .size(30.dp)
+                    Text(
+                        text = drugName,
+                        color = AppTheme.extendedColors.textColor,
+                        fontSize = 18.sp,
+                        modifier = Modifier.weight(1f),
+                        textAlign = TextAlign.Center,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
+
+                    IconButton(onClick = onToggleHistory) {
+                        Icon(
+                            painter = painterResource(
+                                id = if (showHistory) R.drawable.scanning_foucs else R.drawable.history
+                            ),
+                            contentDescription = if (showHistory) "Focus" else "History",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier
+                                .size(30.dp)
+                        )
+                    }
 
                 }
 
             }
-        } else {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                IconButton(onClick = {
-                    if (txnHistory.isEmpty()) {
-                        showDeleteConfirmationDialog = false
-                        showToast(context, R.string.cannot_reset_no_pills_detected)
-                    } else {
-                        showDeleteConfirmationDialog = true
-                    }
-                }) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.delete),
-                        contentDescription = "Reset",
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier
-                            .size(30.dp)
-
-                    )
-                }
-
-                Text(
-                    text = drugName,
-                    color = AppTheme.extendedColors.textColor,
-                    fontSize = 18.sp,
-                    modifier = Modifier.weight(1f),
-                    textAlign = TextAlign.Center,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-
-                IconButton(onClick = onToggleHistory) {
-                    Icon(
-                        painter = painterResource(
-                            id = if (showHistory) R.drawable.scanning_foucs else R.drawable.history
-                        ),
-                        contentDescription = if (showHistory) "Focus" else "History",
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier
-                            .size(30.dp)
-                    )
-                }
-
-            }
-
         }
 
 
@@ -187,7 +194,7 @@ fun InformationPanelSection(
                     onAdd = onAdd,
                     onDone = onDone,
                     viewModel = viewModel,
-                    drugName =drugName
+                    drugName = drugName
                 )
             } else {
                 CountModePortrait(
@@ -208,7 +215,8 @@ fun InformationPanelSection(
                     totalCount = totalCount,
                     txnHistory = txnHistory,
                     onDeleteTxn = onDeleteTxn,
-                    drugName =drugName
+                    drugName = drugName,
+                    viewModel = viewModel
                 )
             } else {
                 HistoryModePortrait(
@@ -216,7 +224,8 @@ fun InformationPanelSection(
                     targetCount = targetCount,
                     totalCount = totalCount,
                     txnHistory = txnHistory,
-                    onDeleteTxn = onDeleteTxn
+                    onDeleteTxn = onDeleteTxn,
+                    viewModel = viewModel
                 )
             }
         }

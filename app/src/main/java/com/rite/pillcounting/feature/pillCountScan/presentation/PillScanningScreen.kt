@@ -3,11 +3,13 @@ package com.rite.pillcounting.feature.pillCountScan.presentation
 import Screen
 import android.R.attr.maxHeight
 import android.R.attr.maxWidth
-import android.content.res.Configuration
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -23,7 +25,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -39,6 +40,7 @@ import com.rite.pillcounting.core.utils.common.UserInterfaceUtils
 import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.ActionButtonPrimary
 import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.BackButton
 import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.CommonDialog
+import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.showToast
 import com.rite.pillcounting.core.utils.compose.SplitResponsive
 import com.rite.pillcounting.core.utils.logger.AppLogger
 import com.rite.pillcounting.feature.pillCountScan.domain.data.NavigationEvent
@@ -46,6 +48,7 @@ import com.rite.pillcounting.feature.pillCountScan.domain.data.PillScanningEvent
 import com.rite.pillcounting.feature.pillCountScan.presentation.compose.AddNoteDialog
 import com.rite.pillcounting.feature.pillCountScan.presentation.compose.CameraPreviewSection
 import com.rite.pillcounting.feature.pillCountScan.presentation.compose.InformationPanelSection
+import com.rite.pillcounting.feature.pillCountScan.presentation.compose.StepTitleWithSpeech
 import com.rite.pillcounting.feature.pillCountScan.presentation.compose.TargetPillsCountDialog
 import com.rite.pillcounting.feature.pillCountScan.presentation.viewmodel.PillScanningViewModel
 import com.rite.pillcounting.ui.theme.AppTheme
@@ -74,13 +77,26 @@ fun PillScanningScreen(
     var previewWidth by remember { mutableStateOf<Int?>(null) }
     var previewHeight by remember { mutableStateOf<Int?>(null) }
 
+    val showConfirmationDialog = uiState.showDialogForControl
+    val showCountMismatchDialog = uiState.showCountMismatchDialog
+
     // Whenever detected pills update, push into buffer
     LaunchedEffect(uiState.detectedPills) {
         val currentCount = uiState.detectedPills.size
         lastTenDetections = (lastTenDetections + currentCount).takeLast(10)
     }
+    LaunchedEffect(uiState.showErrorMessage) {
 
-    val isLandscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
+        uiState.showErrorMessage?.let { message ->
+            showToast(context = context, message = message, duration = Toast.LENGTH_SHORT)
+
+            viewModel.clearErrorMessage()
+        }
+    }
+
+    val stepType by viewModel.currentStep.collectAsState()
+    val isSoundEnabled = viewModel.isSoundEnabled.collectAsState().value
+
     // === Toasts ===
     if (uiState.restrictAdd) {
         UserInterfaceUtils.showToast(context, stringResource(id = R.string.max_count_reached))
@@ -115,7 +131,8 @@ fun PillScanningScreen(
             },
             onSave = { note ->
                 viewModel.onEvent(PillScanningEvent.NoteSaved(note))
-            }
+            },
+            viewModel
         )
     }
 
@@ -139,10 +156,37 @@ fun PillScanningScreen(
         )
     }
 
+    if (showConfirmationDialog) {
+        CommonDialog(
+            message = stringResource(R.string.are_you_sure_you_want_to_complete_this_step),
+            title = stringResource(R.string.confirm_steps_completion),
+            confirmText = stringResource(R.string.ok),
+            cancelText = stringResource(R.string.cancel),
+            onConfirm = {
+                viewModel.moveNextStep()
+            },
+            onCancel = { viewModel.handleDismissDialog() }
+        )
+    }
+
+    if (showCountMismatchDialog) {
+        CommonDialog(
+            message = stringResource(R.string.the_counted_quantity_does_not_match_the_target_count),
+            title = stringResource(R.string.count_mismatch),
+            confirmText = stringResource(R.string.yes),
+            cancelText = stringResource(R.string.no),
+            onConfirm = {
+                viewModel.moveNextStep()
+            },
+            onCancel = { viewModel.handleDismissDialog() }
+        )
+    }
+
     // === Init & Navigation ===
     LaunchedEffect(Unit) {
+        viewModel.getDrugInfo()
         viewModel.showTxnInfo(countType)
-        viewModel.observeTxnDetailsForTxn()
+        viewModel.observeTxnDetailsForTxn(stepType)
 
         viewModel.navigationEvent.collectLatest { event ->
             when (event) {
@@ -215,25 +259,30 @@ fun PillScanningScreen(
         )
 
         if (!uiState.showIdleOverlay) {
-            BackButton(navController) {
-                navController.navigate(Screen.Dashboard.route) {
-                    popUpTo(0) { inclusive = true }
-                }
-            }
-            if (!isLandscape) {
-                Text(
-                    text = stringResource(R.string.pills_count).uppercase(Locale.ROOT),
-                    fontSize = 14.sp,
-                    fontFamily = FontFamily.Default,
-                    fontWeight = FontWeight.Normal,
-                    color = AppTheme.extendedColors.textColor,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier
-                        .padding(top = 18.dp)
-                        .fillMaxWidth()
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+
+                BackButton(
+                    navController = navController,
+                    showBox = false,
+                    onClick = {
+                        navController.navigate(Screen.Dashboard.route) {
+                            popUpTo(0)
+                            launchSingleTop = true
+                        }
+                    }
                 )
+
+                Spacer(modifier = Modifier.weight(0.3f))
+
+                StepTitleWithSpeech(stepType = stepType,  isSoundOverride = isSoundEnabled)
+
+                Spacer(modifier = Modifier.weight(1f))
             }
         }
         // === Overlay placed last → ensures it is on top ===

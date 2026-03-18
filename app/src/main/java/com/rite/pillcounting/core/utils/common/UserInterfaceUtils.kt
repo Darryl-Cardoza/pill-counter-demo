@@ -249,7 +249,8 @@ object UserInterfaceUtils {
         height: Dp = 56.dp,
         cursorColor: Color = AppTheme.extendedColors.textColor,
         keyboardType: KeyboardType = KeyboardType.Text,
-        imeAction: ImeAction = ImeAction.Done
+        imeAction: ImeAction = ImeAction.Done,
+        visualTransformation: VisualTransformation = VisualTransformation.None
     ) {
         Box(
             modifier = modifier
@@ -273,7 +274,8 @@ object UserInterfaceUtils {
                     keyboardType = keyboardType,
                     imeAction = imeAction
                 ),
-                textStyle = LocalTextStyle.current.copy(color = AppTheme.extendedColors.textColor)
+                textStyle = LocalTextStyle.current.copy(color = AppTheme.extendedColors.textColor),
+                visualTransformation = visualTransformation
             )
         }
     }
@@ -434,7 +436,8 @@ object UserInterfaceUtils {
         onConfirm: () -> Unit,
         onCancel: () -> Unit,
         title: String? = null,
-        shape: RoundedCornerShape = RoundedCornerShape(12.dp)
+        shape: RoundedCornerShape = RoundedCornerShape(12.dp),
+        isSingleButton: Boolean = false // Flag to control single button
     ) {
         AlertDialog(
             onDismissRequest = {},
@@ -463,21 +466,36 @@ object UserInterfaceUtils {
             shape = shape,
             containerColor = AppTheme.extendedColors.primaryBackground,
             confirmButton = {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(16.dp),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    HollowButton(
-                        text = cancelText.uppercase(),
-                        onClick = onCancel,
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.weight(1f)
-                    )
-                    ActionButtonPrimary(
-                        text = confirmText.uppercase(),
-                        onClick = onConfirm,
-                        modifier = Modifier.weight(1f)
-                    )
+                if (!isSingleButton) {
+                    // Show both Cancel and Confirm buttons
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(16.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        HollowButton(
+                            text = cancelText.uppercase(),
+                            onClick = onCancel,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.weight(1f)
+                        )
+                        ActionButtonPrimary(
+                            text = confirmText.uppercase(),
+                            onClick = onConfirm,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                } else {
+                    // Show only the Confirm button and center it using Box
+                    Box(
+                        modifier = Modifier.fillMaxWidth(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        ActionButtonPrimary(
+                            text = confirmText.uppercase(),
+                            onClick = onConfirm,
+                            modifier = Modifier.fillMaxWidth(0.5f)
+                        )
+                    }
                 }
             }
         )
