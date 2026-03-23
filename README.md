@@ -1,7 +1,3 @@
-Here is your README converted into the **same structured, clickable format (with redirectable Table of Contents)** as you wanted:
-
----
-
 # MobRite Pill Counting Application - Android
 
 > **An advanced Android application for pharmaceutical pill counting using AI, barcode scanning, and HL7 integration for healthcare systems.** 
