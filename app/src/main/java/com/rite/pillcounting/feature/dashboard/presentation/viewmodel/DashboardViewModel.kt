@@ -199,7 +199,8 @@ private fun UserDetail.toUserEntity(jwtUserId: String?): UserEntity {
     return UserEntity(
         userId = pk,
         email = this.profile?.email?.secure(),
-        name = this.profile?.fullName,
+        fName = this.profile?.fName,
+        lName = this.profile?.lName,
         phoneNumber = this.profile?.phoneNumber?.secure(),
         avatarUrl = this.profile?.avatarUrl,
         role = this.profile?.role?.name,

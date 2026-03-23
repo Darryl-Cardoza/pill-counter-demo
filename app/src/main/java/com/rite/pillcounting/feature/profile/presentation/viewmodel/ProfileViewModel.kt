@@ -101,10 +101,8 @@ class ProfileViewModel @Inject constructor(
             userDao.observeByLocalId(localId).collect { user ->
                 user?.let {
                     logger.i("Prefilling profile UI with user (localId=$localId, email=${it.email})")
-
-                    val parts = it.name?.trim()?.split(" ") ?: emptyList()
-                    firstName = parts.firstOrNull() ?: ""
-                    lastName = if (parts.size > 1) parts.drop(1).joinToString(" ") else ""
+                    firstName = it.fName ?: ""
+                    lastName = it.lName ?: ""
                     pharmacyName = it.pharmacyName.orEmpty()
                     phoneNumber = it.phoneNumber.plain().orEmpty()
                     email = it.email.plain().orEmpty()
@@ -168,7 +166,6 @@ class ProfileViewModel @Inject constructor(
             viewModelScope.launch {
                 _updateUiState.value = ProfileUpdateUiState.Loading
                 val request = ProfileUpdateRequest(
-                    fullName = "$firstName $lastName".trim(),
                     pharmacyName = pharmacyName,
                     phoneNumber = phoneNumber,
                     npiId = npi,
@@ -176,7 +173,9 @@ class ProfileViewModel @Inject constructor(
                     avatarUrl = "",
                     notificationsEnabled = !doNotAskAgain,
                     language = "en",
-                    timezone = "Asia/Kolkata"
+                    timezone = "Asia/Kolkata",
+                    fName = firstName.trim(),
+                    lName = lastName.trim()
                 )
 
                 repository.updateProfile(request)
@@ -189,7 +188,8 @@ class ProfileViewModel @Inject constructor(
                                 localId = localId,
                                 userId = preferenceHelper.getUserId().orEmpty(),
                                 email = email.secure(),
-                                name = "$firstName $lastName".trim(),
+                                fName = firstName.trim(),
+                                lName = lastName.trim(),
                                 phoneNumber = phoneNumber.secure(),
                                 pharmacyName = pharmacyName,
                                 npiId = npi,

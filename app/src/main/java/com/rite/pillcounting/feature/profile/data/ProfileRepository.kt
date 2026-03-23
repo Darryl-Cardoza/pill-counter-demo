@@ -41,7 +41,7 @@ class ProfileRepository @Inject constructor(
         request: ProfileUpdateRequest
     ): Result<ProfileUpdateResponse> = withContext(ioDispatcher) {
         try {
-            logger.i("Updating profile for user: ${request.fullName}")
+            logger.i("Updating profile for user: ${request.fName} ${request.lName}")
             val token = preferenceHelper.getAccessToken().orEmpty()
             val response = profileApi.updateProfile("Bearer $token", request)
             logger.i("Profile update successful.")

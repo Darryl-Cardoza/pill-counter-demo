@@ -85,7 +85,8 @@ class Hl7Repository @Inject constructor(
             drugCode = drug.ndc,
             drugName = drug.drugName ?: "",
             pharmacistId = user?.userId,
-            pharmacistName = user?.name,
+            pharmacistName = listOfNotNull(user?.fName, user?.lName)
+                .joinToString(" "),
             location = location
         )
 

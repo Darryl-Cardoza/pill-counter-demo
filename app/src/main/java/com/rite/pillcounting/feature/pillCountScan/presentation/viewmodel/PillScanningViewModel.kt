@@ -550,7 +550,8 @@ class PillScanningViewModel @Inject constructor(
                         detectedPills = filteredPills,
                         previewWidth = cameraHelper?.getPreviewWidth() ?: workingBitmap.width,
                         previewHeight = cameraHelper?.getPreviewHeight() ?: workingBitmap.height,
-                        userName = user?.name,
+                        userName = listOfNotNull(user?.fName, user?.lName)
+                            .joinToString(" "),
                         userId = user?.userId,
                         location = location,
                         timestamp = System.currentTimeMillis(),
