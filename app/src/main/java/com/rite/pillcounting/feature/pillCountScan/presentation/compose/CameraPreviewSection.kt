@@ -44,6 +44,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -56,12 +57,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.zIndex
 import androidx.core.content.ContextCompat
+import com.rite.pillcounting.core.models.StepState
+import com.rite.pillcounting.core.utils.compose.WorkflowStepper
 import com.rite.pillcounting.feature.pillCountScan.domain.model.DetectedPill
 import com.rite.pillcounting.feature.pillCountScan.presentation.logic.CameraHelper
 import com.rite.pillcounting.feature.pillCountScan.presentation.viewmodel.PillScanningViewModel
 import kotlinx.coroutines.flow.conflate
-import com.rite.pillcounting.core.models.StepState
-import com.rite.pillcounting.core.utils.compose.WorkflowStepper
 
 // =========================================================
 // ZOOM CONTROL COMPOSABLE
@@ -76,44 +77,35 @@ fun ZoomControls(
     onChange: (Float) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val secondary = Color.White
-
     BoxWithConstraints(
         modifier = modifier
             .width(220.dp)
             .rotate(-90f)
             .padding(top = 130.dp),
     ) {
-
         Column(
             horizontalAlignment = Alignment.End,
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier
+                .fillMaxWidth()
                 .padding(top = 32.dp)
         ) {
-
-            // SLIDER
             Slider(
                 value = zoom,
                 onValueChange = onChange,
                 valueRange = min..max,
                 modifier = Modifier.fillMaxWidth(),
-
                 colors = SliderDefaults.colors(
                     thumbColor = Color.Transparent,
                     activeTrackColor = Color.Transparent,
                     inactiveTrackColor = Color.Transparent
                 ),
-
-                // CIRCLE THUMB
                 thumb = {
                     Box(
                         modifier = Modifier
                             .size(24.dp)
-                            .background(secondary, CircleShape)
+                            .background(Color.White, CircleShape)
                     )
                 },
-
-                // CUSTOM TRACK
                 track = {
                     Box(
                         modifier = Modifier
@@ -148,31 +140,39 @@ fun CameraPreviewSection(
     onPreviewStarted: (() -> Unit)? = null,
     onPreviewSizeKnown: ((width: Int, height: Int) -> Unit)? = null
 ) {
-    val context = LocalContext.current
+    val context        = LocalContext.current
     val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
-    val previewView = remember { PreviewView(context) }
+    val previewView    = remember { PreviewView(context) }
 
     val cameraHelper = remember {
         CameraHelper(context, lifecycleOwner, ContextCompat.getMainExecutor(context))
     }
 
     val zoomRatio = remember { mutableFloatStateOf(1f) }
-    val minZoom = 1f
-    val maxZoom = 2f
+    val minZoom   = 1f
+    val maxZoom   = 2f
 
     var showPop by remember { mutableStateOf(false) }
-    var popKey by remember { mutableIntStateOf(0) }
+    var popKey  by remember { mutableIntStateOf(0) }
     var popText by remember { mutableStateOf("+0") }
-    val stepType by viewModel.currentStep.collectAsState()
-    val steps by viewModel.steps.collectAsState()
-    val capturedBitmap by viewModel.capturedBitmap.collectAsState()
+
+    // ── ViewModel state ───────────────────────────────────────────────────────
+    val stepType          by viewModel.currentStep.collectAsState()
+    val steps             by viewModel.steps.collectAsState()
+    val capturedBitmap    by viewModel.capturedBitmap.collectAsState()
     val showCaptureEffect by viewModel.showFlash.collectAsState()
-    // Listen to CameraHelper zoom
+
+    // ── Tray detections: rect is in ORIGINAL IMAGE PIXEL space ───────────────
+    // We collect directly from the ViewModel here so the caller (screen/fragment)
+    // does not need to pass them as a parameter — the wiring is self-contained.
+    val trayDetections by viewModel.trayDetections.collectAsState()
+
+    // ── Zoom ──────────────────────────────────────────────────────────────────
     LaunchedEffect(Unit) {
         cameraHelper.zoomFlow.collect { zoomRatio.value = it }
     }
 
-    // Start camera
+    // ── Start camera + begin collecting frames ────────────────────────────────
     LaunchedEffect(cameraHelper) {
         viewModel.attachCameraHelper(cameraHelper)
         cameraHelper.startCamera(previewView)
@@ -183,11 +183,11 @@ fun CameraPreviewSection(
             .collect { image -> onFrame(image) }
     }
 
-    // FILL_CENTER ensures it fully fills your 70% pane!
     LaunchedEffect(Unit) {
         previewView.scaleType = PreviewView.ScaleType.FILL_CENTER
     }
 
+    // ── Count pop animation ───────────────────────────────────────────────────
     LaunchedEffect(Unit) {
         viewModel.addPopEvents.collect { count ->
             popText = "+$count"
@@ -198,27 +198,24 @@ fun CameraPreviewSection(
         }
     }
 
-    // Pause/Resume
+    // ── Pause / Resume ────────────────────────────────────────────────────────
     LaunchedEffect(isCameraPaused) {
         if (isCameraPaused) cameraHelper.pauseCamera()
         else cameraHelper.resumeCamera(previewView)
     }
 
     LaunchedEffect(capturedBitmap) {
-        if (capturedBitmap == null) {
-            cameraHelper.resumeCamera(previewView)
-        }
+        if (capturedBitmap == null) cameraHelper.resumeCamera(previewView)
     }
 
     // =========================================================
     // MAIN LAYOUT
     // =========================================================
     BoxWithConstraints(modifier = modifier.fillMaxSize()) {
-
-        // This Box simply fills the available space (70% of the screen)
         Box(modifier = Modifier.fillMaxSize()) {
             if (capturedBitmap == null) {
-                // CAMERA PREVIEW
+
+                // ── CAMERA PREVIEW ────────────────────────────────────────────
                 AndroidView(
                     factory = { previewView },
                     modifier = Modifier
@@ -229,135 +226,194 @@ fun CameraPreviewSection(
                         .pointerInput(Unit) {
                             detectTransformGestures { _, _, zoom, _ ->
                                 val current = cameraHelper.getCurrentZoomRatio() ?: 1f
-                                val target = (current * zoom).coerceIn(minZoom, maxZoom)
+                                val target  = (current * zoom).coerceIn(minZoom, maxZoom)
                                 zoomRatio.floatValue = target
                                 cameraHelper.setZoom(target)
                             }
                         }
                 )
+
+                // ── COUNT POP ANIMATION ───────────────────────────────────────
                 AnimatedVisibility(
-                    visible = showPop,
-                    enter = fadeIn() +
-                            slideInVertically(initialOffsetY = { it / 2 }) +
-                            scaleIn(),
-                    exit = fadeOut() +
-                            slideOutVertically(targetOffsetY = { -it }),
+                    visible  = showPop,
+                    enter    = fadeIn() + slideInVertically(initialOffsetY = { it / 2 }) + scaleIn(),
+                    exit     = fadeOut() + slideOutVertically(targetOffsetY = { -it }),
                     modifier = Modifier
                         .align(Alignment.Center)
                         .zIndex(1f)
                 ) {
-                    key(popKey) {
-                        AddCountBubble(text = popText)
-                    }
+                    key(popKey) { AddCountBubble(text = popText) }
                 }
 
-                // PILL MARKER OVERLAY
+                // ── OVERLAY CANVAS ────────────────────────────────────────────
                 Canvas(modifier = Modifier.matchParentSize()) {
-                    val previewW = size.width
-                    val previewH = size.height
+
+                    val previewW    = size.width
+                    val previewH    = size.height
                     val isLandscape = previewW > previewH
 
-                    // Align camera frame dimensions to match the screen's orientation
-                    val actualFrameW =
-                        if (isLandscape) maxOf(imageFrameWidth, imageFrameHeight).toFloat() else minOf(
-                            imageFrameWidth,
-                            imageFrameHeight
-                        ).toFloat()
-                    val actualFrameH =
-                        if (isLandscape) minOf(imageFrameWidth, imageFrameHeight).toFloat() else maxOf(
-                            imageFrameWidth,
-                            imageFrameHeight
-                        ).toFloat()
+                    // Align frame dimensions to screen orientation
+                    val actualFrameW = if (isLandscape)
+                        maxOf(imageFrameWidth, imageFrameHeight).toFloat()
+                    else
+                        minOf(imageFrameWidth, imageFrameHeight).toFloat()
 
-                    var mapped = pills.map { it to Offset(0f, 0f) }
+                    val actualFrameH = if (isLandscape)
+                        minOf(imageFrameWidth, imageFrameHeight).toFloat()
+                    else
+                        maxOf(imageFrameWidth, imageFrameHeight).toFloat()
 
-                    // THE MATH: Calculate FILL_CENTER cropping correctly
-                    if (actualFrameW > 0f && actualFrameH > 0f) {
-                        // Find the scale applied by FILL_CENTER
-                        val scale = maxOf(previewW / actualFrameW, previewH / actualFrameH)
+                    if (actualFrameW <= 0f || actualFrameH <= 0f) return@Canvas
 
-                        val scaledW = actualFrameW * scale
-                        val scaledH = actualFrameH * scale
+                    // ── FILL_CENTER math ──────────────────────────────────────
+                    // Reproduces the exact crop/scale PreviewView applies so every
+                    // coordinate mapping stays pixel-accurate on all screen sizes.
+                    val scale   = maxOf(previewW / actualFrameW, previewH / actualFrameH)
+                    val scaledW = actualFrameW * scale
+                    val scaledH = actualFrameH * scale
+                    // offsetX / offsetY are negative when the image is cropped
+                    val offsetX = (previewW - scaledW) / 2f
+                    val offsetY = (previewH - scaledH) / 2f
 
-                        // The offsets are the parts of the image that get cropped out!
-                        val offsetX = (previewW - scaledW) / 2f
-                        val offsetY = (previewH - scaledH) / 2f
+                    // Convert an original-image PIXEL coordinate → screen pixel
+                    fun imgX(px: Float) = px * scale + offsetX
+                    fun imgY(py: Float) = py * scale + offsetY
 
-                        // Map the coordinates using the offsets
-                        mapped = pills.map { pill ->
-                            val px = (pill.x * scaledW) + offsetX
-                            val py = (pill.y * scaledH) + offsetY
-                            pill to Offset(px, py)
+                    // ─────────────────────────────────────────────────────────
+                    // 1.  TRAY BOUNDING BOXES
+                    //     trayDetection.rect values are in original image pixels
+                    //     (produced by TrayDetector.reverseLetterbox).
+                    // ─────────────────────────────────────────────────────────
+                    trayDetections.forEach { tray ->
+
+                        val sLeft   = imgX(tray.rect.left)
+                        val sTop    = imgY(tray.rect.top)
+                        val sRight  = imgX(tray.rect.right)
+                        val sBottom = imgY(tray.rect.bottom)
+                        val sWidth  = sRight  - sLeft
+                        val sHeight = sBottom - sTop
+
+                        // Skip boxes that are completely outside the viewport
+                        if (sRight <= 0f || sLeft >= previewW ||
+                            sBottom <= 0f || sTop >= previewH
+                        ) return@forEach
+
+                        // Semi-transparent green fill (~13 % opacity)
+                        drawRect(
+                            color   = Color(0x2200C853),
+                            topLeft = Offset(sLeft, sTop),
+                            size    = Size(sWidth, sHeight)
+                        )
+
+                        // Solid green border
+                        drawRect(
+                            color   = Color(0xFF00C853),
+                            topLeft = Offset(sLeft, sTop),
+                            size    = Size(sWidth, sHeight),
+                            style   = Stroke(width = 3.dp.toPx())
+                        )
+
+                        // White corner accent marks for clarity
+                        val cLen  = 20.dp.toPx()
+                        val cStroke = 4.dp.toPx()
+                        listOf(
+                            // top-left
+                            Offset(sLeft, sTop)     to Offset(sLeft + cLen, sTop),
+                            Offset(sLeft, sTop)     to Offset(sLeft, sTop + cLen),
+                            // top-right
+                            Offset(sRight, sTop)    to Offset(sRight - cLen, sTop),
+                            Offset(sRight, sTop)    to Offset(sRight, sTop + cLen),
+                            // bottom-left
+                            Offset(sLeft, sBottom)  to Offset(sLeft + cLen, sBottom),
+                            Offset(sLeft, sBottom)  to Offset(sLeft, sBottom - cLen),
+                            // bottom-right
+                            Offset(sRight, sBottom) to Offset(sRight - cLen, sBottom),
+                            Offset(sRight, sBottom) to Offset(sRight, sBottom - cLen)
+                        ).forEach { (start, end) ->
+                            drawLine(
+                                color       = Color.White,
+                                start       = start,
+                                end         = end,
+                                strokeWidth = cStroke
+                            )
                         }
                     }
 
-                    // Update count based on mapped pills
+                    // ─────────────────────────────────────────────────────────
+                    // 2.  PILL DOTS
+                    //     pill.x / pill.y are NORMALISED [0..1] relative to the
+                    //     original image frame dimensions.
+                    //     Multiply by scaledW/H (not actualFrameW/H) then shift
+                    //     by offsetX/Y — same transform as the tray boxes above.
+                    // ─────────────────────────────────────────────────────────
+                    val mapped = pills.map { pill ->
+                        val px = pill.x * scaledW + offsetX
+                        val py = pill.y * scaledH + offsetY
+                        pill to Offset(px, py)
+                    }
+
+                    // Propagate only the on-screen pills back to ViewModel
                     viewModel.updateFilteredPills(mapped.map { it.first })
                     onFilteredCountChanged(mapped.size)
 
-                    drawIntoCanvas { canvas ->
+                    drawIntoCanvas {
                         mapped.forEachIndexed { i, (_, pos) ->
+                            // Discard dots outside the visible crop area
+                            if (pos.x !in 0f..previewW || pos.y !in 0f..previewH) return@forEachIndexed
 
-                            // Prevent drawing dots that are outside the visible cropped area!
-                            if (pos.x in 0f..previewW && pos.y in 0f..previewH) {
-                                val isLast = i == mapped.lastIndex
-                                val outerRadius = 7.dp.toPx()
-                                val strokeWidth = 2.dp.toPx()
+                            val isLast      = i == mapped.lastIndex
+                            val outerRadius = 7.dp.toPx()
+                            val strokeWidth = 2.dp.toPx()
 
-                                drawCircle(
-                                    color = Color.Black.copy(alpha = 0.6f),
-                                    radius = outerRadius,
-                                    center = pos
-                                )
-
-                                drawCircle(
-                                    color = if (isLast) Color.Yellow else Color.White,
-                                    radius = outerRadius,
-                                    center = pos,
-                                    style = Stroke(width = strokeWidth)
-                                )
-                            }
+                            // Dark shadow fill for contrast
+                            drawCircle(
+                                color  = Color.Black.copy(alpha = 0.6f),
+                                radius = outerRadius,
+                                center = pos
+                            )
+                            // Coloured ring: yellow = newest detection, white = rest
+                            drawCircle(
+                                color  = if (isLast) Color.Yellow else Color.White,
+                                radius = outerRadius,
+                                center = pos,
+                                style  = Stroke(width = strokeWidth)
+                            )
                         }
                     }
                 }
 
-                // ==========================
-                // FINAL ZOOM BAR
-                // ==========================
-                if(stepType != StepState.VIAL){
+                // ── ZOOM SLIDER ───────────────────────────────────────────────
+                if (stepType != StepState.VIAL) {
                     ZoomControls(
-                        zoom = zoomRatio.floatValue,
-                        min = minZoom,
-                        max = maxZoom,
+                        zoom     = zoomRatio.floatValue,
+                        min      = minZoom,
+                        max      = maxZoom,
                         onChange = { value ->
                             val stepped = (value * 10f).toInt() / 10f
                             zoomRatio.floatValue = stepped
                             cameraHelper.setZoom(stepped)
                         },
-                        modifier = Modifier
-                            .align(Alignment.CenterEnd)
+                        modifier = Modifier.align(Alignment.CenterEnd)
                     )
                 }
+
+                // ── WORKFLOW STEPPER ──────────────────────────────────────────
                 Box(
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
                         .padding(bottom = 20.dp)
                 ) {
-                    WorkflowStepper(
-                        steps = steps,
-                        currentStep = stepType
-                    )
+                    WorkflowStepper(steps = steps, currentStep = stepType)
                 }
 
             } else {
-
+                // ── CAPTURED BITMAP VIEW ──────────────────────────────────────
                 Image(
-                    bitmap = capturedBitmap!!.asImageBitmap(),
+                    bitmap             = capturedBitmap!!.asImageBitmap(),
                     contentDescription = null,
-                    modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.FillHeight
+                    modifier           = Modifier.fillMaxSize(),
+                    contentScale       = ContentScale.FillHeight
                 )
-                // Flash Animation
                 if (showCaptureEffect) {
                     Box(
                         modifier = Modifier

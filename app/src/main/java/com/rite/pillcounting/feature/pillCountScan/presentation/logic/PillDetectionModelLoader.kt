@@ -1,11 +1,13 @@
 package com.rite.pillcounting.feature.pillCountScan.domain
 
 import android.content.Context
-import android.util.Log // Import Android Log
+import android.util.Log
 import com.rite.pillcounting.core.security.ModelDecryptor
 import com.rite.pillcounting.core.utils.logger.AppLogger
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
@@ -17,6 +19,14 @@ import java.nio.ByteBuffer
 import javax.inject.Inject
 import javax.inject.Singleton
 
+/**
+ * Holds both loaded interpreters after [PillDetectionModelLoader.getOrLoadInterpreters] completes.
+ */
+data class LoadedModels(
+    val pillInterpreter: Interpreter,
+    val trayInterpreter: Interpreter
+)
+
 @Singleton
 class PillDetectionModelLoader @Inject constructor(
     @ApplicationContext private val context: Context
@@ -24,94 +34,130 @@ class PillDetectionModelLoader @Inject constructor(
     private val logger = AppLogger("PillModelLoader")
     private val mutex = Mutex()
 
-    // The single instance of the interpreter and delegate
-    private var interpreter: Interpreter? = null
-    private var gpuDelegate: GpuDelegate? = null
+    // Singleton interpreter instances
+    private var pillInterpreter: Interpreter? = null
+    private var trayInterpreter: Interpreter? = null
+
+    // GPU delegates (one per interpreter; GPU delegate is NOT thread-safe across instances)
+    private var pillGpuDelegate: GpuDelegate? = null
+    private var trayGpuDelegate: GpuDelegate? = null
 
     companion object {
-        private const val MODEL_FILENAME = "model"
-        private const val TAG = "LoadModel" // Define your tag here
+        private const val PILL_MODEL_FILENAME = "pillcountingmodel"
+        private const val TRAY_MODEL_FILENAME = "traymodel"
+        private const val TAG = "LoadModel"
     }
 
+    // ------------------------------------------------------------------
+    // PUBLIC API
+    // ------------------------------------------------------------------
+
     /**
-     * Returns the existing interpreter or initializes a new one if it doesn't exist.
-     * Thread-safe.
+     * Returns both interpreters, loading them in parallel if not yet initialised.
+     * Thread-safe via [Mutex].
      */
-    suspend fun getOrLoadInterpreter(): Interpreter {
-        // 1. Log every time the function is called
-        Log.i(TAG, "Request received: getOrLoadInterpreter()")
+    suspend fun getOrLoadInterpreters(): LoadedModels {
+        Log.i(TAG, "getOrLoadInterpreters() called")
 
         return mutex.withLock {
-            // 2. Check if it exists and log if we are skipping initialization
-            if (interpreter != null) {
-                Log.i(TAG, "Model ALREADY loaded. Returning singleton instance.")
-                return@withLock interpreter!!
+            // Fast-path: both already loaded
+            val existingPill = pillInterpreter
+            val existingTray = trayInterpreter
+            if (existingPill != null && existingTray != null) {
+                Log.i(TAG, "Both models already loaded — returning singletons")
+                return@withLock LoadedModels(existingPill, existingTray)
             }
 
-            // 3. Log that we are actually starting the heavy work
-            Log.i(TAG, " Model NOT found. Starting initialization (Decrypt + Load)...")
-            logger.i("Initializing TensorFlow Interpreter (Singleton)...")
+            Log.i(TAG, "One or both models missing — loading now (parallel)…")
+            logger.i("Loading pill + tray models in parallel…")
 
-            return@withLock withContext(Dispatchers.IO) { // Added return@withLock
-                try {
-                    // 1. Decrypt Model
-                    val buffer = loadModelFile()
-                    val options = Interpreter.Options()
+            // Load both models concurrently on IO, then create delegates on Main
+            withContext(Dispatchers.IO) {
+                coroutineScope {
+                    val pillBufferDeferred = async { loadModelFile(PILL_MODEL_FILENAME) }
+                    val trayBufferDeferred = async { loadModelFile(TRAY_MODEL_FILENAME) }
 
-                    // 2. Setup GPU Delegate (Must be done on Main Thread usually)
-                    var createdDelegate: GpuDelegate? = null
+                    val pillBuffer = pillBufferDeferred.await()
+                    val trayBuffer = trayBufferDeferred.await()
+
+                    Log.i(TAG, "Both model buffers decrypted — setting up delegates")
+
+                    // GPU delegate setup must happen on Main thread
+                    var pillDelegate: GpuDelegate? = null
+                    var trayDelegate: GpuDelegate? = null
 
                     withContext(Dispatchers.Main) {
                         val compatList = CompatibilityList()
                         if (compatList.isDelegateSupportedOnThisDevice) {
                             try {
-                                val delegateOptions = compatList.bestOptionsForThisDevice
-                                createdDelegate = GpuDelegate(delegateOptions)
-                                options.addDelegate(createdDelegate)
-                                logger.i("GPU delegate initialized.")
-                                Log.i(TAG, "GPU Delegate created.")
+                                pillDelegate = GpuDelegate(compatList.bestOptionsForThisDevice)
+                                Log.i(TAG, "Pill GPU delegate created")
                             } catch (e: Exception) {
-                                logger.w("GPU delegate failed, falling back to CPU.", e)
-                                createdDelegate?.close()
-                                createdDelegate = null
+                                logger.w("Pill GPU delegate failed", e)
+                                pillDelegate?.close()
+                                pillDelegate = null
+                            }
+
+                            try {
+                                trayDelegate = GpuDelegate(compatList.bestOptionsForThisDevice)
+                                Log.i(TAG, "Tray GPU delegate created")
+                            } catch (e: Exception) {
+                                logger.w("Tray GPU delegate failed", e)
+                                trayDelegate?.close()
+                                trayDelegate = null
                             }
                         }
                     }
 
-                    // 3. Setup CPU Fallback
-                    if (createdDelegate == null) {
-                        options.setUseXNNPACK(true)
-                        options.numThreads =
-                            Runtime.getRuntime().availableProcessors().coerceAtMost(4)
-                        Log.i(TAG, "Using CPU fallback.")
+                    // Build pill interpreter options
+                    val pillOptions = Interpreter.Options().apply {
+                        if (pillDelegate != null) {
+                            addDelegate(pillDelegate)
+                        } else {
+                            setUseXNNPACK(true)
+                            numThreads = Runtime.getRuntime().availableProcessors().coerceAtMost(4)
+                            Log.i(TAG, "Pill model — CPU fallback")
+                        }
                     }
 
-                    // 4. Create Interpreter
-                    val newInterpreter = Interpreter(buffer, options)
+                    // Build tray interpreter options
+                    val trayOptions = Interpreter.Options().apply {
+                        if (trayDelegate != null) {
+                            addDelegate(trayDelegate)
+                        } else {
+                            setUseXNNPACK(true)
+                            numThreads = Runtime.getRuntime().availableProcessors().coerceAtMost(4)
+                            Log.i(TAG, "Tray model — CPU fallback")
+                        }
+                    }
 
-                    gpuDelegate = createdDelegate
-                    interpreter = newInterpreter
+                    val newPill = Interpreter(pillBuffer, pillOptions)
+                    val newTray = Interpreter(trayBuffer, trayOptions)
 
-                    logger.i("Interpreter initialized successfully.")
-                    // 4. Log final success
-                    Log.i(TAG, "Interpreter initialized and saved to singleton.")
+                    // Persist singletons
+                    pillGpuDelegate = pillDelegate
+                    trayGpuDelegate = trayDelegate
+                    pillInterpreter = newPill
+                    trayInterpreter = newTray
 
-                    return@withContext newInterpreter
+                    Log.i(TAG, "Both interpreters initialised successfully")
+                    logger.i("Pill + Tray interpreters ready")
 
-                } catch (e: Exception) {
-                    logger.e("Failed to initialize interpreter", e)
-                    Log.e(TAG, "Model initialization FAILED: ${e.message}")
-                    throw e
+                    LoadedModels(newPill, newTray)
                 }
             }
         }
     }
 
-    private fun loadModelFile(): ByteBuffer {
-        val encFile = File(context.filesDir, "$MODEL_FILENAME.enc")
+    // ------------------------------------------------------------------
+    // PRIVATE HELPERS
+    // ------------------------------------------------------------------
+
+    private fun loadModelFile(modelName: String): ByteBuffer {
+        val encFile = File(context.filesDir, "$modelName.enc")
 
         if (!encFile.exists()) {
-            context.assets.open("$MODEL_FILENAME.enc").use { input ->
+            context.assets.open("$modelName.enc").use { input ->
                 encFile.outputStream().use { output -> input.copyTo(output) }
             }
         }
@@ -123,12 +169,22 @@ class PillDetectionModelLoader @Inject constructor(
         }
     }
 
+    // ------------------------------------------------------------------
+    // CLEANUP
+    // ------------------------------------------------------------------
+
     fun close() {
-        interpreter?.close()
-        interpreter = null
-        gpuDelegate?.close()
-        gpuDelegate = null
-        logger.i("Model resources released.")
-        Log.i(TAG, "🗑️ Model resources released and cleared.")
+        pillInterpreter?.close()
+        trayInterpreter?.close()
+        pillGpuDelegate?.close()
+        trayGpuDelegate?.close()
+
+        pillInterpreter = null
+        trayInterpreter = null
+        pillGpuDelegate = null
+        trayGpuDelegate = null
+
+        logger.i("All model resources released")
+        Log.i(TAG, "All model resources released and cleared")
     }
 }

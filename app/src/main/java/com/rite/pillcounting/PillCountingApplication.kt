@@ -17,23 +17,21 @@ class PillCountingApplication : Application() {
     @Inject
     lateinit var modelLoader: PillDetectionModelLoader
 
-    // Create a scope that lives as long as the application process
     private val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     override fun onCreate() {
         super.onCreate()
         FirebaseApp.initializeApp(this)
 
-        // Pre-load the TensorFlow model in the background immediately
+        // Pre-load BOTH models (pill + tray) in parallel on app start.
+        // They are cached as singletons so the scanning screen gets them instantly.
         applicationScope.launch {
-            Log.i("LoadModel", "Application onCreate: Triggering background model load...")
+            Log.i("LoadModel", "App start: triggering parallel model pre-load…")
             try {
-                // This call is thread-safe thanks to the Mutex in the loader.
-                // It will decrypt the model and init the GPU delegate now.
-                modelLoader.getOrLoadInterpreter()
-                Log.i("LoadModel", "Application onCreate: Model pre-loading complete!")
+                modelLoader.getOrLoadInterpreters()
+                Log.i("LoadModel", "App start: both models pre-loaded successfully!")
             } catch (e: Exception) {
-                Log.e("LoadModel", "Application onCreate: Model pre-loading failed", e)
+                Log.e("LoadModel", "App start: model pre-load failed", e)
             }
         }
     }

@@ -38,6 +38,7 @@ import com.rite.pillcounting.feature.pillCountScan.domain.model.TxnDetail
 import com.rite.pillcounting.feature.pillCountScan.presentation.logic.CameraHelper
 import com.rite.pillcounting.feature.pillCountScan.presentation.logic.Detection
 import com.rite.pillcounting.feature.pillCountScan.presentation.logic.PillAnalyzer
+import com.rite.pillcounting.feature.pillCountScan.presentation.logic.TrayDetection
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -113,9 +114,7 @@ class PillScanningViewModel @Inject constructor(
     private val _addPopEvents = MutableSharedFlow<Int>(extraBufferCapacity = 1)
     val addPopEvents = _addPopEvents.asSharedFlow()
 
-    private val _currentStep =
-        MutableStateFlow(StepState.TARGET_VERIFICATION)
-
+    private val _currentStep = MutableStateFlow(StepState.TARGET_VERIFICATION)
     val currentStep = _currentStep.asStateFlow()
 
     private val _steps = MutableStateFlow<List<StepState>>(emptyList())
@@ -137,11 +136,13 @@ class PillScanningViewModel @Inject constructor(
     private val _txnInfo = MutableStateFlow<TxnWithDetails?>(null)
     val txnInfo: StateFlow<TxnWithDetails?> = _txnInfo
 
+    // ── NEW: expose tray detections so the UI can draw the tray boundary ──────
+    private val _trayDetections = MutableStateFlow<List<TrayDetection>>(emptyList())
+    val trayDetections: StateFlow<List<TrayDetection>> = _trayDetections.asStateFlow()
+
     private var observeTxnDetailsJob: Job? = null
 
-    private val _isSoundOverride =
-        MutableStateFlow(preferenceHelper.isSoundOverride())
-
+    private val _isSoundOverride = MutableStateFlow(preferenceHelper.isSoundOverride())
     val isSoundEnabled: StateFlow<Boolean> = _isSoundOverride.asStateFlow()
 
     companion object {
@@ -200,7 +201,8 @@ class PillScanningViewModel @Inject constructor(
                             .first()
                             .sumOf { it.pillCount ?: 0 }
 
-                        val remainingPills = countedPills - (_txnInfo.value?.targetCount ?: 0)
+                        val remainingPills =
+                            countedPills - (_txnInfo.value?.targetCount ?: 0)
 
                         _uiState.update {
                             it.copy(targetCount = remainingPills.coerceAtLeast(0))
@@ -210,7 +212,12 @@ class PillScanningViewModel @Inject constructor(
         }
     }
 
-    /** Initialize TensorFlow Lite interpreter using the Singleton Loader. */
+    /**
+     * Initialize TensorFlow Lite interpreters using the Singleton Loader.
+     *
+     * Now calls [PillDetectionModelLoader.getOrLoadInterpreters] which returns
+     * both the pill and tray interpreters loaded in parallel.
+     */
     fun initializeInterpreter(
         retryCount: Int = 1,
         viewWidth: Int,
@@ -225,30 +232,33 @@ class PillScanningViewModel @Inject constructor(
             _modelState.value = ModelState.Loading
 
             try {
-                // Fetch the singleton interpreter instance
-                val interpreter = modelLoader.getOrLoadInterpreter()
+                // ── Load both models (returns immediately if already cached) ──
+                val models = modelLoader.getOrLoadInterpreters()
 
                 val analyzer = PillAnalyzer(
-                    interpreter = interpreter,
-                ) { count, detections, bitmap, matrix, imageWidth, imageHeight ->
+                    pillInterpreter = models.pillInterpreter,
+                    trayInterpreter = models.trayInterpreter,
+                ) { count, detections, trayDetections, bitmap, matrix, imageWidth, imageHeight ->
                     processDetections(
-                        count,
-                        detections,
-                        bitmap,
-                        matrix,
-                        viewWidth,
-                        viewHeight,
-                        imageWidth,
-                        imageHeight
+                        count        = count,
+                        detections   = detections,
+                        trayDets     = trayDetections,
+                        bitmap       = bitmap,
+                        matrix       = matrix,
+                        previewWidth = viewWidth,
+                        previewHeight = viewHeight,
+                        imageWidth   = imageWidth,
+                        imageHeight  = imageHeight
                     )
                 }
 
                 _modelState.value = ModelState.Ready(analyzer)
-                logger.i("Interpreter initialized successfully (via Singleton).")
+                logger.i("Both interpreters initialized successfully (via Singleton).")
 
             } catch (e: Exception) {
                 logger.e("Interpreter init failed", e)
-                _modelState.value = ModelState.Error("Interpreter initialization failed", e)
+                _modelState.value =
+                    ModelState.Error("Interpreter initialization failed", e)
             }
         }
     }
@@ -257,10 +267,16 @@ class PillScanningViewModel @Inject constructor(
     // Frame Processing and Detection Logic
     // ------------------------------------------------------------------------
 
-    /** Handle each analyzed frame and maintain rolling detection state. */
+    /**
+     * Handle each analyzed frame and maintain rolling detection state.
+     *
+     * [trayDets] is forwarded to [_trayDetections] so [CameraPreviewSection]
+     * can draw the tray bounding box overlay.
+     */
     private fun processDetections(
         count: Int,
         detections: List<Detection>,
+        trayDets: List<TrayDetection>,
         bitmap: Bitmap,
         matrix: Matrix,
         previewWidth: Int,
@@ -280,15 +296,16 @@ class PillScanningViewModel @Inject constructor(
 
         logger.d("Frame analyzed | count=$count | scanId=$currentScanId")
 
+        // ── Publish tray detections for the UI overlay ────────────────────────
+        _trayDetections.value = trayDets
+
         // Rolling count buffer
         val buffer = ArrayDeque(_lastTenDetections.value)
         if (buffer.size >= ZERO_DETECTIONS_THRESHOLD) buffer.removeFirst()
         buffer.addLast(count)
         _lastTenDetections.value = buffer
 
-        // SIMPLIFIED MAPPING:
-        // Because the Canvas and Image are the exact same ratio,
-        // we just divide the detection centers by the original image dimensions.
+        // Map pill centres to normalised [0..1] coordinates
         updateDetectedPills(
             pills = detections.map { det ->
                 DetectedPill(
@@ -297,17 +314,21 @@ class PillScanningViewModel @Inject constructor(
                     confidence = det.confidence
                 )
             },
-            frameWidth = imageWidth,
+            frameWidth  = imageWidth,
             frameHeight = imageHeight
         )
     }
 
     /** Update the list of detected pills in UI state AND the frame dimensions. */
-    private fun updateDetectedPills(pills: List<DetectedPill>, frameWidth: Int, frameHeight: Int) {
+    private fun updateDetectedPills(
+        pills: List<DetectedPill>,
+        frameWidth: Int,
+        frameHeight: Int
+    ) {
         _uiState.update {
             it.copy(
-                detectedPills = pills,
-                imageFrameWidth = frameWidth,
+                detectedPills    = pills,
+                imageFrameWidth  = frameWidth,
                 imageFrameHeight = frameHeight
             )
         }
@@ -317,6 +338,7 @@ class PillScanningViewModel @Inject constructor(
         _lastTenDetections.value.clear()
         lastDetectedSnapshot = emptyList()
         _uiState.update { it.copy(showIdleOverlay = true, detectedPills = emptyList()) }
+        _trayDetections.value = emptyList()
         isPaused = true
         _cameraPaused.value = true
         logger.w("Camera paused due to idle timeout. Buffers cleared.")
@@ -329,7 +351,6 @@ class PillScanningViewModel @Inject constructor(
             pauseAndClearBuffers()
         }
     }
-
 
     /** Process an incoming frame from CameraX. */
     fun onFrameCaptured(image: ImageProxy) {
@@ -364,13 +385,12 @@ class PillScanningViewModel @Inject constructor(
     fun resetIdleOverlay() {
         _uiState.update { it.copy(showIdleOverlay = false) }
 
-        // Clear all idle detection memory
         _lastTenDetections.value.clear()
         lastDetectedSnapshot = emptyList()
         lastChangeTimestamp = System.currentTimeMillis()
         lastAddedScanSignature = null
+        _trayDetections.value = emptyList()
 
-        // Resume camera
         isPaused = false
         _cameraPaused.value = false
 
@@ -380,7 +400,6 @@ class PillScanningViewModel @Inject constructor(
     fun updateFilteredPills(filtered: List<DetectedPill>) {
         _uiState.update { it.copy(filteredPills = filtered) }
     }
-
 
     override fun onCleared() {
         super.onCleared()
@@ -393,7 +412,6 @@ class PillScanningViewModel @Inject constructor(
             currentFrameBitmap = null
         }
         _modelState.value = ModelState.Idle
-        // Note: We do NOT close the modelLoader here. It remains alive in the Singleton.
         logger.i("ViewModel cleared. Model remains loaded in Singleton.")
     }
 
@@ -404,32 +422,28 @@ class PillScanningViewModel @Inject constructor(
     fun onEvent(event: PillScanningEvent) {
         when (event) {
             is PillScanningEvent.AddTransactionDetailClicked -> handleAddTransaction(event)
-            is PillScanningEvent.RescanClicked -> handleRescan()
-            is PillScanningEvent.PauseClicked -> logger.i("Pause clicked.")
-            PillScanningEvent.DoneClicked -> handleDone()
-            is PillScanningEvent.NoteSaved -> handleNoteSaved(event)
-            PillScanningEvent.NoteSkip -> handleNoteSkip()
-            is PillScanningEvent.ConfirmDone -> handleConfirmDone()
-            is PillScanningEvent.CancelDone -> handleCancelDone()
-            is PillScanningEvent.TransactionDetailDeleted -> handleDeleteTransaction(event)
+            is PillScanningEvent.RescanClicked               -> handleRescan()
+            is PillScanningEvent.PauseClicked                -> logger.i("Pause clicked.")
+            PillScanningEvent.DoneClicked                    -> handleDone()
+            is PillScanningEvent.NoteSaved                   -> handleNoteSaved(event)
+            PillScanningEvent.NoteSkip                       -> handleNoteSkip()
+            is PillScanningEvent.ConfirmDone                 -> handleConfirmDone()
+            is PillScanningEvent.CancelDone                  -> handleCancelDone()
+            is PillScanningEvent.TransactionDetailDeleted    -> handleDeleteTransaction(event)
             is PillScanningEvent.AllTransactionDetailsDeleted -> handleDeleteAllTransactionDetails(
                 event
             )
 
-            is PillScanningEvent.FinalDone -> handleConfirmDialog(event)
-            is PillScanningEvent.AddVialPhotoInTxn -> handleAddVialImageInTxn(event)
+            is PillScanningEvent.FinalDone                   -> handleConfirmDialog(event)
+            is PillScanningEvent.AddVialPhotoInTxn           -> handleAddVialImageInTxn(event)
         }
     }
-
 
     private var addCooldownJob: Job? = null
 
     private fun startAddCooldown() {
-        // cancel previous if any
         addCooldownJob?.cancel()
-
         _uiState.update { it.copy(isAddCooldown = true) }
-
         addCooldownJob = viewModelScope.launch {
             delay(3000)
             _uiState.update { it.copy(isAddCooldown = false) }
@@ -439,7 +453,7 @@ class PillScanningViewModel @Inject constructor(
 
     private fun handleAddVialImageInTxn(event: PillScanningEvent.AddVialPhotoInTxn) {
         viewModelScope.launch(Dispatchers.IO) {
-            val txnId = preferenceHelper.getTxnId()
+            val txnId  = preferenceHelper.getTxnId()
             val bitmap = event.bitmap
             val filePath = try {
                 if (!bitmap.isRecycled) {
@@ -454,16 +468,15 @@ class PillScanningViewModel @Inject constructor(
                 logger.e("Failed saving bitmap", e)
                 null
             }
-            // Delete any existing VIAL image for the txnId
             pillCountTxnDetailsDao.deleteVialByTxnId(txnId, StepState.VIAL)
             pillCountTxnDetailsDao.insert(
                 PillCountTxnDetailsEntity(
-                    txnId = txnId,
-                    pillCount = 0,
-                    imagePath = filePath,
-                    createdAt = System.currentTimeMillis(),
-                    updatedAt = System.currentTimeMillis(),
-                    type = StepState.VIAL.toString()
+                    txnId      = txnId,
+                    pillCount  = 0,
+                    imagePath  = filePath,
+                    createdAt  = System.currentTimeMillis(),
+                    updatedAt  = System.currentTimeMillis(),
+                    type       = StepState.VIAL.toString()
                 )
             )
         }
@@ -483,15 +496,15 @@ class PillScanningViewModel @Inject constructor(
         val totalBatchCount = _uiState.value.txnDetailHistory
             .filter { it.type == stepType }
             .sumOf { it.count }
-        val targetCount = _uiState.value.targetCount
-        val currentCount = event.filteredCount
+        val targetCount    = _uiState.value.targetCount
+        val currentCount   = event.filteredCount
         val predictedTotal = totalBatchCount + currentCount
-        val skipRestriction = stepType in listOf(
-            StepState.CONTAINER_INITIATE
-        )
+        val skipRestriction = stepType in listOf(StepState.CONTAINER_INITIATE)
 
         if (!skipRestriction) {
-            if (_uiState.value.scanType == CountType.FIXED.toString() && predictedTotal > targetCount) {
+            if (_uiState.value.scanType == CountType.FIXED.toString() &&
+                predictedTotal > targetCount
+            ) {
                 _uiState.update { it.copy(restrictAdd = true) }
                 logger.w("Add blocked: predicted total exceeds target count.")
                 return
@@ -503,12 +516,11 @@ class PillScanningViewModel @Inject constructor(
             return
         }
         triggerAddPop(currentCount)
-        // --- Generate unique signature for current detections ---
+
         val signature = _uiState.value.detectedPills.joinToString(separator = "|") {
             "${"%.3f".format(it.x)}-${"%.3f".format(it.y)}"
         } + "|count=$currentCount"
 
-        // --- Prevent duplicate adds without new scan ---
         if (signature == lastAddedScanSignature) {
             showToast(context, context.getString(R.string.duplicate_scan_ignored))
             logger.w("Duplicate add prevented: no change in detection pattern.")
@@ -517,17 +529,16 @@ class PillScanningViewModel @Inject constructor(
 
         startAddCooldown()
 
-        lastAddClickTime = currentTime
-        lastAddedScanSignature = signature
-        logger.i("Adding transaction detail with unique signature. Count=$currentCount")
+        lastAddClickTime         = currentTime
+        lastAddedScanSignature   = signature
+        logger.i("Adding transaction detail. Count=$currentCount")
 
         viewModelScope.launch(Dispatchers.IO) {
-            val userId = preferenceHelper.getUserId().orEmpty()
-            val user = userDao.getByUserId(userId)
+            val userId   = preferenceHelper.getUserId().orEmpty()
+            val user     = userDao.getByUserId(userId)
             val location = locationProvider.getCurrentLocationAsString()
 
             val base = currentFrameBitmap
-
             if (base == null || base.isRecycled) {
                 logger.e("Base frame bitmap is null or recycled, skipping save")
                 return@launch
@@ -541,28 +552,27 @@ class PillScanningViewModel @Inject constructor(
             }
 
             val filteredPills = _uiState.value.filteredPills
-            val txnId = preferenceHelper.getTxnId()
-            val txn = pillCountTxnDao.getById(txnId)
-            val drug = drugMasterDao.getDrugById(txn?.drugId)
+            val txnId  = preferenceHelper.getTxnId()
+            val txn    = pillCountTxnDao.getById(txnId)
+            val drug   = drugMasterDao.getDrugById(txn?.drugId)
 
             val overlayBitmap = if (filteredPills.isNotEmpty()) {
                 try {
-                    // IMPORTANT: OverlayUtils should draw on and return the bitmap you pass (workingBitmap)
                     OverlayUtils.drawDetectionsOnBitmap(
-                        bitmap = workingBitmap,
+                        bitmap        = workingBitmap,
                         detectedPills = filteredPills,
-                        previewWidth = cameraHelper?.getPreviewWidth() ?: workingBitmap.width,
+                        previewWidth  = cameraHelper?.getPreviewWidth() ?: workingBitmap.width,
                         previewHeight = cameraHelper?.getPreviewHeight() ?: workingBitmap.height,
-                        userName = listOfNotNull(user?.fName, user?.lName)
+                        userName      = listOfNotNull(user?.fName, user?.lName)
                             .joinToString(" "),
-                        userId = user?.userId,
-                        location = location,
-                        timestamp = System.currentTimeMillis(),
-                        ndc = drug?.ndc,
-                        count = currentCount.toString(),
+                        userId        = user?.userId,
+                        location      = location,
+                        timestamp     = System.currentTimeMillis(),
+                        ndc           = drug?.ndc,
+                        count         = currentCount.toString(),
                     )
                 } catch (e: Exception) {
-                    logger.e("Overlay drawing failed, using working bitmap without overlay", e)
+                    logger.e("Overlay drawing failed, using bitmap without overlay", e)
                     workingBitmap
                 }
             } else {
@@ -585,12 +595,12 @@ class PillScanningViewModel @Inject constructor(
 
             pillCountTxnDetailsDao.insert(
                 PillCountTxnDetailsEntity(
-                    txnId = txnId,
+                    txnId     = txnId,
                     pillCount = currentCount,
                     imagePath = filePath,
                     createdAt = System.currentTimeMillis(),
                     updatedAt = System.currentTimeMillis(),
-                    type = stepType.toString()
+                    type      = stepType.toString()
                 )
             )
 
@@ -600,7 +610,6 @@ class PillScanningViewModel @Inject constructor(
 
             logger.i("Transaction detail saved. Count=$currentCount, File=$filePath")
         }
-
     }
 
     private fun handleRescan() {
@@ -616,7 +625,9 @@ class PillScanningViewModel @Inject constructor(
                 if (target < event.totalCount) {
                     _uiState.update { it.copy(showDialogForControl = true) }
                 } else {
-                    _uiState.update { it.copy(showErrorMessage = context.getString(R.string.pills_count_should_be_greater_than_target_count)) }
+                    _uiState.update {
+                        it.copy(showErrorMessage = context.getString(R.string.pills_count_should_be_greater_than_target_count))
+                    }
                 }
             }
 
@@ -645,13 +656,13 @@ class PillScanningViewModel @Inject constructor(
                 if (_uiState.value.targetCount == _uiState.value.txnDetailHistory.sumOf { it.count }) {
                     _uiState.update { it.copy(showDialogForControl = true) }
                 } else {
-                    _uiState.update { it.copy(showErrorMessage = context.getString(R.string.pills_count_should_be_greater_than_target_count)) }
+                    _uiState.update {
+                        it.copy(showErrorMessage = context.getString(R.string.pills_count_should_be_greater_than_target_count))
+                    }
                 }
             }
 
-            else -> {
-                _uiState.update { it.copy(showDialogForControl = true) }
-            }
+            else -> _uiState.update { it.copy(showDialogForControl = true) }
         }
     }
 
@@ -676,7 +687,9 @@ class PillScanningViewModel @Inject constructor(
                 _uiState.value.targetCount - _uiState.value.txnDetailHistory.sumOf { it.count }
             if (!_isTxnFromHl7.value && preferenceHelper.getShowNotesDialogSetting()) {
                 _uiState.update { it.copy(showNotesDialog = true) }
-            } else if (_isTxnFromHl7.value && remainingCount > 0 && _currentStep.value == StepState.CONTAINER_PENDING) {
+            } else if (_isTxnFromHl7.value && remainingCount > 0 &&
+                _currentStep.value == StepState.CONTAINER_PENDING
+            ) {
                 _uiState.update { it.copy(showNotesDialog = true) }
             } else {
                 showConfirmDialogAfterDone()
@@ -701,7 +714,7 @@ class PillScanningViewModel @Inject constructor(
         viewModelScope.launch {
             val txnId = preferenceHelper.getTxnId()
             val total = pillCountTxnDetailsDao.getTotalPillCountForTxn(txnId)
-            val txn = pillCountTxnDao.getById(txnId) ?: return@launch
+            val txn   = pillCountTxnDao.getById(txnId) ?: return@launch
             if (total == 0) {
                 _uiState.update { it.copy(showConfirmDialog = false) }
                 return@launch
@@ -711,17 +724,12 @@ class PillScanningViewModel @Inject constructor(
                     CountStatus.PARTIAL else CountStatus.COMPLETED
 
             if (txn.isComingFromHL7 == true) {
-                pillCountTxnDao.markCompletedAndUnsynced(
-                    txnId = txnId,
-                    status = status
-                )
+                pillCountTxnDao.markCompletedAndUnsynced(txnId = txnId, status = status)
             } else {
                 pillCountTxnDao.updateTxnStatus(txnId, status)
             }
 
-
             _navigationEvent.send(NavigationEvent.NavigateToDashboard)
-
             logger.i("Transaction completed. Status=$status")
         }
     }
@@ -744,7 +752,7 @@ class PillScanningViewModel @Inject constructor(
                 preferenceHelper.getTxnId(),
                 type = event.stepType
             )
-            logger.i("All Transaction details deleted. where transaction Id=${preferenceHelper.getTxnId()}")
+            logger.i("All transaction details deleted for txnId=${preferenceHelper.getTxnId()}")
         }
     }
 
@@ -786,8 +794,8 @@ class PillScanningViewModel @Inject constructor(
 
             _uiState.update {
                 it.copy(
-                    drugName = txnInfo?.drugName.orEmpty(),
-                    targetCount = txnInfo?.targetCount ?: 0,
+                    drugName             = txnInfo?.drugName.orEmpty(),
+                    targetCount          = txnInfo?.targetCount ?: 0,
                     showTargetCountDialog = shouldShowDialog
                 )
             }
@@ -799,10 +807,10 @@ class PillScanningViewModel @Inject constructor(
         viewModelScope.launch {
             val txnInfo = pillCountTxnDao.getTxnWithDetails(preferenceHelper.getTxnId())
             _txnInfo.value = txnInfo
-            val countType = txnInfo?.countType
-            val isComingFromHL7 = txnInfo?.isComingFromHL7 ?: false
-            val drugId = txnInfo?.drugId
-            val drugInfo = drugMasterDao.getDrugById(drugId)
+            val countType        = txnInfo?.countType
+            val isComingFromHL7  = txnInfo?.isComingFromHL7 ?: false
+            val drugId           = txnInfo?.drugId
+            val drugInfo         = drugMasterDao.getDrugById(drugId)
             val controlledSchedules = setOf(
                 ScheduleCode.CII,
                 ScheduleCode.CIII,
@@ -814,32 +822,30 @@ class PillScanningViewModel @Inject constructor(
             _isTxnFromHl7.value = isComingFromHL7
 
             _steps.value = when {
-                isComingFromHL7 && drugInfo?.drugType?.let { ScheduleCode.valueOf(it) } in controlledSchedules -> {
-                    buildWorkflowSteps(
-                        isFromHl7 = true,
-                        simpleFlow = false,
-                        drugType = drugInfo?.drugType.orEmpty(),
-                        countType = countType
-                    )
-                }
+                isComingFromHL7 && drugInfo?.drugType?.let {
+                    ScheduleCode.valueOf(it)
+                } in controlledSchedules -> buildWorkflowSteps(
+                    isFromHl7  = true,
+                    simpleFlow = false,
+                    drugType   = drugInfo?.drugType.orEmpty(),
+                    countType  = countType
+                )
 
-                isComingFromHL7 && drugInfo?.drugType?.let { ScheduleCode.valueOf(it) } !in controlledSchedules -> {
-                    buildWorkflowSteps(
-                        isFromHl7 = true,
-                        simpleFlow = true,
-                        drugType = drugInfo?.drugType.orEmpty(),
-                        countType = countType
-                    )
-                }
+                isComingFromHL7 && drugInfo?.drugType?.let {
+                    ScheduleCode.valueOf(it)
+                } !in controlledSchedules -> buildWorkflowSteps(
+                    isFromHl7  = true,
+                    simpleFlow = true,
+                    drugType   = drugInfo?.drugType.orEmpty(),
+                    countType  = countType
+                )
 
-                else -> {
-                    buildWorkflowSteps(
-                        isFromHl7 = false,
-                        simpleFlow = true,
-                        drugType = drugInfo?.drugType.orEmpty(),
-                        countType = countType
-                    )
-                }
+                else -> buildWorkflowSteps(
+                    isFromHl7  = false,
+                    simpleFlow = true,
+                    drugType   = drugInfo?.drugType.orEmpty(),
+                    countType  = countType
+                )
             }
 
             val latestStep = pillCountTxnDetailsDao.getLatestType(preferenceHelper.getTxnId())
@@ -873,62 +879,44 @@ class PillScanningViewModel @Inject constructor(
     }
 
     private fun triggerHaptic(context: Context) {
-
         val vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             val manager =
                 context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
             manager.defaultVibrator
         } else {
+            @Suppress("DEPRECATION")
             context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
         }
 
         if (!vibrator.hasVibrator()) return
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            vibrator.vibrate(
-                VibrationEffect.createOneShot(
-                    120,      // duration (increase if needed)
-                    255       // MAX amplitude (1–255)
-                )
-            )
+            vibrator.vibrate(VibrationEffect.createOneShot(120, 255))
         } else {
+            @Suppress("DEPRECATION")
             vibrator.vibrate(120)
         }
     }
 
     fun moveNextStep() {
-
-        val steps = _steps.value
-        if (steps.isEmpty()) {
-            handleDone()
-            return
-        }
+        val steps   = _steps.value
+        if (steps.isEmpty()) { handleDone(); return }
 
         val current = _currentStep.value
-        val index = steps.indexOf(current)
-
-        if (index == steps.lastIndex) {
-            handleDone()
-            return
-        }
+        val index   = steps.indexOf(current)
+        if (index == steps.lastIndex) { handleDone(); return }
 
         val next = steps[index + 1]
 
-        if (next == StepState.VIAL) {
-            pausePillDetection()
-        }
-
+        if (next == StepState.VIAL)              pausePillDetection()
         if (next == StepState.CONTAINER_PENDING) {
             redoCaptureImage()
             resetIdleOverlay()
-            _uiState.update {
-                it.copy(targetCount = _txnInfo.value?.targetCount ?: 0)
-            }
+            _uiState.update { it.copy(targetCount = _txnInfo.value?.targetCount ?: 0) }
         }
 
         _currentStep.value = next
         _uiState.update { it.copy(showDialogForControl = false) }
-
         observeTxnDetailsForTxn(next)
     }
 
@@ -940,26 +928,15 @@ class PillScanningViewModel @Inject constructor(
     ): List<StepState> {
 
         if (!isFromHl7 && countType?.equals(CountType.FIXED) == true) {
-            return listOf(
-                StepState.SCAN,
-                StepState.TARGET_VERIFICATION,
-                StepState.VIAL
-            )
+            return listOf(StepState.SCAN, StepState.TARGET_VERIFICATION, StepState.VIAL)
         }
 
         if (!isFromHl7 && countType?.equals(CountType.REGULAR) == true) {
-            return listOf(
-                StepState.SCAN,
-                StepState.TARGET_VERIFICATION
-            )
+            return listOf(StepState.SCAN, StepState.TARGET_VERIFICATION)
         }
 
         if (isFromHl7 && simpleFlow) {
-            return listOf(
-                StepState.SCAN,
-                StepState.TARGET_VERIFICATION,
-                StepState.VIAL
-            )
+            return listOf(StepState.SCAN, StepState.TARGET_VERIFICATION, StepState.VIAL)
         }
 
         val steps = mutableListOf(
@@ -968,22 +945,15 @@ class PillScanningViewModel @Inject constructor(
             StepState.TARGET_VERIFICATION
         )
 
-        //Below code is for ControlDrug Steps
-        val controlDrugTypes = preferenceHelper.getControlDrugTypes()
+        val controlDrugTypes  = preferenceHelper.getControlDrugTypes()
+        val shouldDoubleCount = preferenceHelper.isRequireDoubleCountEnabled() &&
+                controlDrugTypes.contains(drugType)
 
-        val shouldDoubleCount =
-            preferenceHelper.isRequireDoubleCountEnabled() &&
-                    controlDrugTypes.contains(drugType)
-
-        if (shouldDoubleCount) {
-            steps.add(StepState.TARGET_REVERIFICATION)
-        }
+        if (shouldDoubleCount) steps.add(StepState.TARGET_REVERIFICATION)
 
         steps.add(StepState.VIAL)
 
-        if (preferenceHelper.isRequireBackCountEnabled()) {
-            steps.add(StepState.CONTAINER_PENDING)
-        }
+        if (preferenceHelper.isRequireBackCountEnabled()) steps.add(StepState.CONTAINER_PENDING)
 
         return steps
     }
@@ -994,21 +964,12 @@ class PillScanningViewModel @Inject constructor(
             delay(1300)
             _showFlash.value = false
         }
-
-        cameraHelper?.captureImage { bitmap ->
-            _capturedBitmap.value = bitmap
-        }
+        cameraHelper?.captureImage { bitmap -> _capturedBitmap.value = bitmap }
     }
 
-    fun redoCaptureImage() {
-        _capturedBitmap.value = null
-    }
+    fun redoCaptureImage() { _capturedBitmap.value = null }
 
-    fun saveCaptureImage() {
-        _capturedBitmap.value?.let {
-            processCapturedImage(it)
-        }
-    }
+    fun saveCaptureImage() { _capturedBitmap.value?.let { processCapturedImage(it) } }
 
     private fun processCapturedImage(bitmap: Bitmap) {
         onEvent(PillScanningEvent.AddVialPhotoInTxn(0, bitmap))
@@ -1019,6 +980,6 @@ class PillScanningViewModel @Inject constructor(
     fun pausePillDetection() {
         isPaused = true
         _uiState.update { it.copy(detectedPills = emptyList()) }
+        _trayDetections.value = emptyList()
     }
-
 }
