@@ -287,5 +287,16 @@
     <string name="unsynced_transaction">UNSYNCED TRANSACTION</string>
     <string name="sync_all">SYNC ALL</string>
     <string name="pills_count_should_be_greater_than_target_count">Pills count should be greater than target count</string>
+    <string name="pill_count">PILL COUNT</string>
+    <string name="initial_stock_bottle_count">INITIAL STOCK BOTTLE COUNT</string>
+    <string name="substitute_drug_details">SUBSTITUTE DRUG DETAILS</string>
+    <string name="dispense_drug_details">DISPENSE DRUG DETAILS</string>
+    <string name="pill_recount">PILL RECOUNT</string>
+    <string name="vial_capture">DISPENSED VIAL</string>
+    <string name="remaining_stock_bottle_count">REMAINING STOCK BOTTLE COUNT</string>
+    <string name="notes">NOTES</string>
+    <string name="subtituted_drug">Substituted Drug</string>
+    <string name="total_re_count">TOTAL RECOUNT</string>
+    <string name="no_batches_recorded">No batches recorded</string>
 
 </resources>

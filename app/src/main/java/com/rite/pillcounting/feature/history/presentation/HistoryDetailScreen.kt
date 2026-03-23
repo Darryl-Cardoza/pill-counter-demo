@@ -30,6 +30,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.FileProvider
@@ -78,7 +79,9 @@ fun HistoryDetailScreen(
             BackButton(navController = navController)
 
             Text(
-                text = uiState.txnInfo?.drugName ?: "",
+                text = uiState.txnInfo?.drugName?.uppercase() ?: "",
+                overflow = TextOverflow.Ellipsis,
+                maxLines = 1,
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Medium,
                 color = AppTheme.extendedColors.textColor,
@@ -111,22 +114,21 @@ fun HistoryDetailScreen(
                 Icon(
                     painter = painterResource(id = R.drawable.pdf),
                     contentDescription = "Export PDF",
-                    tint = MaterialTheme.colorScheme.secondary,
+                    tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.padding(end = 10.dp)
 
                 )
             }
 
         }
-        uiState.txnInfo
         DrugInfoSection(
             ndc = uiState.txnInfo?.ndc ?: "",
+            drugName = uiState.txnInfo?.drugName ?: "",
             expiry = uiState.txnInfo?.expiry ?: "",
             lotNo = uiState.txnInfo?.lotNo ?: "",
             date = uiState.txnInfo?.createdAt?.toDateString() ?: "",
             time = uiState.txnInfo?.createdAt?.toTimeString() ?: "",
             note = uiState.txnInfo?.note ?: "",
-            totalPillCount = uiState.txnInfo?.totalPillCount.toString(),
             barcodeImage = uiState.txnInfo?.barcodeImage,
             targetCount = uiState.txnInfo?.targetCount,
             transactionDetails = uiState.txnInfo?.txnDetails ?: emptyList(),
@@ -135,7 +137,9 @@ fun HistoryDetailScreen(
             },
             onOk = {
                 navController.popBackStack()
-            }
+            },
+            isFromHl7 = uiState.txnInfo?.isComingFromHL7 ?: false,
+            isEquivalence = uiState.txnInfo?.equivalence ?: "false"
         )
 
         if (showDeleteConfirmDialog) {

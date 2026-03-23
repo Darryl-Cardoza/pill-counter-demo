@@ -236,6 +236,7 @@ interface PillCountTxnDao {
         dm.drugName,
         dm.drugId,
         dm.ndc,
+        dm.equivalence,
         pct.targetCount,
         pct.expiry,
         pct.lotNo,
@@ -319,7 +320,7 @@ interface PillCountTxnDao {
         txn.txnId,
         txn.countType,
         txn.status,
-        details.pillCount,  -- Fetch pillCount directly without SUM
+        COALESCE(SUM(details.pillCount), 0) AS pillCount,
         drug.drugName,
         drug.ndc,
         txn.barcodeImage,
@@ -328,9 +329,9 @@ interface PillCountTxnDao {
         txn.note
     FROM pill_count_txn AS txn
     LEFT JOIN pill_count_txn_details AS details
-           ON txn.txnId = details.txnId 
+           ON txn.txnId = details.txnId
            AND details.isDeleted = 0
-           AND (:stepType IS NULL OR details.type = :stepType)  -- Filter based on stepType
+           AND (:stepType IS NULL OR details.type = :stepType)
     LEFT JOIN drug_master AS drug
            ON txn.drugId = drug.drugId
     WHERE txn.createdAt BETWEEN :startDate AND :endDate
@@ -338,18 +339,27 @@ interface PillCountTxnDao {
       AND txn.localId = :userLocalId
       AND (:type IS NULL OR txn.countType = :type)
       AND (:status IS NULL OR txn.status = :status)
+    GROUP BY
+        txn.txnId,
+        txn.countType,
+        txn.status,
+        drug.drugName,
+        drug.ndc,
+        txn.barcodeImage,
+        txn.createdAt,
+        txn.targetCount,
+        txn.note
     ORDER BY txn.createdAt DESC
     """
     )
     fun getTransactionsForDateRange(
         startDate: Long,
         endDate: Long,
-        stepType: StepState,  // Pass the stepType to filter
+        stepType: StepState?,
         type: CountType?,
         status: CountStatus?,
         userLocalId: Long
     ): Flow<List<TxnWithDrugDto>>
-
 
 
     // ─────────────────────────────── Deletes ───────────────────────────────

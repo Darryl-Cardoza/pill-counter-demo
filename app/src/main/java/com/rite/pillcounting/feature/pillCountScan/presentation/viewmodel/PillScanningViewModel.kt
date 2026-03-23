@@ -412,7 +412,10 @@ class PillScanningViewModel @Inject constructor(
             is PillScanningEvent.ConfirmDone -> handleConfirmDone()
             is PillScanningEvent.CancelDone -> handleCancelDone()
             is PillScanningEvent.TransactionDetailDeleted -> handleDeleteTransaction(event)
-            is PillScanningEvent.AllTransactionDetailsDeleted -> handleDeleteAllTransactionDetails(event)
+            is PillScanningEvent.AllTransactionDetailsDeleted -> handleDeleteAllTransactionDetails(
+                event
+            )
+
             is PillScanningEvent.FinalDone -> handleConfirmDialog(event)
             is PillScanningEvent.AddVialPhotoInTxn -> handleAddVialImageInTxn(event)
         }
@@ -618,7 +621,8 @@ class PillScanningViewModel @Inject constructor(
             }
 
             StepState.CONTAINER_PENDING -> {
-                val remainingCount = _uiState.value.targetCount - _uiState.value.txnDetailHistory.sumOf { it.count }
+                val remainingCount =
+                    _uiState.value.targetCount - _uiState.value.txnDetailHistory.sumOf { it.count }
                 if (remainingCount > 0) {
                     _uiState.update { it.copy(showCountMismatchDialog = true) }
                 } else {
@@ -626,7 +630,18 @@ class PillScanningViewModel @Inject constructor(
                 }
             }
 
-            StepState.TARGET_VERIFICATION, StepState.TARGET_REVERIFICATION -> {
+            StepState.TARGET_VERIFICATION -> {
+                if (_txnInfo.value?.countType == CountType.FIXED && _uiState.value.targetCount == _uiState.value.txnDetailHistory.sumOf { it.count }) {
+                    _uiState.update { it.copy(showDialogForControl = true) }
+                } else if (_txnInfo.value?.countType == CountType.REGULAR) {
+                    handleDone()
+                } else {
+                    _uiState.update { it.copy(showErrorMessage = context.getString(R.string.pills_count_should_be_greater_than_target_count)) }
+                }
+            }
+
+
+            StepState.TARGET_REVERIFICATION -> {
                 if (_uiState.value.targetCount == _uiState.value.txnDetailHistory.sumOf { it.count }) {
                     _uiState.update { it.copy(showDialogForControl = true) }
                 } else {
@@ -661,7 +676,7 @@ class PillScanningViewModel @Inject constructor(
                 _uiState.value.targetCount - _uiState.value.txnDetailHistory.sumOf { it.count }
             if (!_isTxnFromHl7.value && preferenceHelper.getShowNotesDialogSetting()) {
                 _uiState.update { it.copy(showNotesDialog = true) }
-            } else if (_isTxnFromHl7.value && remainingCount > 0 && _currentStep.value== StepState.CONTAINER_PENDING) {
+            } else if (_isTxnFromHl7.value && remainingCount > 0 && _currentStep.value == StepState.CONTAINER_PENDING) {
                 _uiState.update { it.copy(showNotesDialog = true) }
             } else {
                 showConfirmDialogAfterDone()
@@ -788,7 +803,13 @@ class PillScanningViewModel @Inject constructor(
             val isComingFromHL7 = txnInfo?.isComingFromHL7 ?: false
             val drugId = txnInfo?.drugId
             val drugInfo = drugMasterDao.getDrugById(drugId)
-            val controlledSchedules = setOf(ScheduleCode.CII, ScheduleCode.CIII, ScheduleCode.CIV, ScheduleCode.CV, ScheduleCode.CVI)
+            val controlledSchedules = setOf(
+                ScheduleCode.CII,
+                ScheduleCode.CIII,
+                ScheduleCode.CIV,
+                ScheduleCode.CV,
+                ScheduleCode.CVI
+            )
 
             _isTxnFromHl7.value = isComingFromHL7
 
