@@ -29,6 +29,7 @@ import com.rite.pillcounting.core.utils.preference.PreferenceHelper
 import com.rite.pillcounting.feature.dashboard.presentation.compose.FixedCountSection
 import com.rite.pillcounting.feature.dashboard.presentation.compose.RegularCountSection
 import com.rite.pillcounting.feature.dashboard.presentation.viewmodel.DashboardViewModel
+import com.rite.pillcounting.feature.dashboard.presentation.viewmodel.PmsConnectionButton
 import com.rite.pillcounting.navigation.AUTH_GRAPH_ROUTE
 import com.rite.pillcounting.ui.theme.AppTheme
 
@@ -67,7 +68,7 @@ fun DashboardScreen(
 
     // Collect dashboard UI state reactively
     val uiState by viewModel.uiState.collectAsState()
-
+    val connected by viewModel.isConnected.collectAsState()
 
     // Handle navigation to Profile screen if profile is incomplete
     LaunchedEffect(uiState.navigateToProfile) {
@@ -98,7 +99,15 @@ fun DashboardScreen(
             .systemBarsPadding()
             .background(AppTheme.extendedColors.secondaryBackground)
     ) {
+
         // Show loading indicator if user details are being fetched
+        if(viewModel.isHl7Enabled()) {
+            PmsConnectionButton(
+                modifier = Modifier.align(Alignment.TopStart),
+                isPmsConnected = connected,
+            )
+        }
+
 
         SplitResponsive(
             topOrLeft = {

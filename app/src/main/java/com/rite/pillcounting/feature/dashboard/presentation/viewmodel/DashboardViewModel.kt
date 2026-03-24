@@ -1,20 +1,36 @@
 package com.rite.pillcounting.feature.dashboard.presentation.viewmodel
 
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.rite.pillcounting.R
 import com.rite.pillcounting.core.room.dao.PillCountTxnDao
 import com.rite.pillcounting.core.room.dao.UserDao
 import com.rite.pillcounting.core.room.models.UserEntity
 import com.rite.pillcounting.core.utils.common.HelperFunctions.mapCounts
 import com.rite.pillcounting.core.utils.common.HelperFunctions.secure
+import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.responsiveDp
+import com.rite.pillcounting.core.utils.constants.Dimens.extraSmall
+import com.rite.pillcounting.core.utils.constants.Dimens.small
 import com.rite.pillcounting.core.utils.logger.AppLogger
 import com.rite.pillcounting.core.utils.preference.PreferenceHelper
 import com.rite.pillcounting.feature.dashboard.domain.data.IUserDetailRepository
 import com.rite.pillcounting.feature.dashboard.domain.model.DashboardUiState
 import com.rite.pillcounting.feature.dashboard.domain.model.UserDetail
+import com.rite.pillcounting.feature.hl7.core.Hl7EventHandler
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -43,7 +59,9 @@ class DashboardViewModel @Inject constructor(
     private val userDetailRepository: IUserDetailRepository,
     private val preferenceHelper: PreferenceHelper,
     private val userDao: UserDao,
-    private val pillCountTxnDao: PillCountTxnDao
+    private val pillCountTxnDao: PillCountTxnDao,
+    private val hl7EventHandler: Hl7EventHandler
+
 ) : ViewModel() {
 
     /** Logger instance for this ViewModel. */
@@ -54,6 +72,7 @@ class DashboardViewModel @Inject constructor(
 
     /** Public immutable UI state exposed to the UI layer. */
     val uiState = _uiState.asStateFlow()
+    val isConnected: StateFlow<Boolean> = hl7EventHandler.connectionState
 
     init {
         logger.i("DashboardViewModel initialized.")
@@ -62,6 +81,10 @@ class DashboardViewModel @Inject constructor(
             observeDashboardCounts()
         }
         fetchUserDetail()
+    }
+
+    fun isHl7Enabled(): Boolean{
+        return preferenceHelper.isHl7Enabled()
     }
 
     /**
@@ -186,8 +209,30 @@ class DashboardViewModel @Inject constructor(
     fun saveTxnId() {
         preferenceHelper.saveTxnId(0)
     }
+
+
 }
 
+@Composable
+fun PmsConnectionButton(
+    modifier: Modifier = Modifier,
+    backIcon: Int = R.drawable.pms_connection_icon,
+    isPmsConnected: Boolean,
+) {
+    IconButton(
+        onClick = {},
+        modifier = modifier
+            .padding(small)
+            .size(responsiveDp(50.dp))
+    ) {
+        Icon(
+            painter = painterResource(id = backIcon),
+            contentDescription = "Menu",
+            tint = if(isPmsConnected) MaterialTheme.colorScheme.primary else Color.Gray,
+            modifier = Modifier.padding(extraSmall)
+        )
+    }
+}
 /* ───────────────────────────── Mappers ───────────────────────────── */
 
 /**

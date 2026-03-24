@@ -5,6 +5,8 @@ import com.rite.pillcounting.core.hl7.core.Hl7EventListener
 import com.rite.pillcounting.core.utils.logger.AppLogger
 import com.rite.pillcounting.feature.hl7.data.repository.Hl7Repository
 import com.rite.pillcounting.feature.hl7.notification.Hl7Notifier
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import org.rite.hl7.hl7.domain.model.CompleteHL7Message
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -28,7 +30,8 @@ class Hl7EventHandler @Inject constructor(
 
 
     private val logger = AppLogger("HL7EventHandler")
-
+    private val _connectionState = MutableStateFlow(false)
+    val connectionState: StateFlow<Boolean> = _connectionState
 
     /**
      * Called when a new HL7 message is received from PMS.
@@ -138,6 +141,7 @@ class Hl7EventHandler @Inject constructor(
      */
     override fun onClientConnected(host: String, port: Int) {
         logger.i("HL7 client connected | $host:$port")
+        _connectionState.value = true
         hl7Repository.resendPendingHl7Transactions()
         notifier.show(
             title = "Device Connected",
@@ -153,6 +157,7 @@ class Hl7EventHandler @Inject constructor(
      */
     override fun onClientDisconnected() {
         logger.w("HL7 client disconnected")
+        _connectionState.value = false
     }
 
     /**
