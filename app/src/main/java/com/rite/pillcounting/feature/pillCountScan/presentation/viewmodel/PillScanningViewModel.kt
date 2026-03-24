@@ -857,6 +857,9 @@ class PillScanningViewModel @Inject constructor(
             }
 
             _currentStep.value = resolvedStep
+            if(resolvedStep== StepState.VIAL){
+                pausePillDetection()
+            }
             observeTxnDetailsForTxn(resolvedStep)
         }
     }
