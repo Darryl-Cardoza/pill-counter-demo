@@ -85,32 +85,14 @@ object OverlayUtils {
         }
 
         // ---------------------------------------------------------------------
-        // Reverse Mapping (Preview → Bitmap)
+        // Mapping (Normalized [0, 1] → Bitmap Dimensions)
         // ---------------------------------------------------------------------
 
-        val srcW = w
-        val srcH = h
-        val scaleToView = max(previewWidth / srcW, previewHeight / srcH)
-        val scaledW = srcW * scaleToView
-        val scaledH = srcH * scaleToView
-        val dx = (previewWidth - scaledW) / 2f
-        val dy = (previewHeight - scaledH) / 2f
-
-        // Build inverse transform for mapping from preview coordinates to bitmap coordinates
-        val inverseTransform = Matrix().apply {
-            postTranslate(-dx, -dy)
-            postScale(1f / scaleToView, 1f / scaleToView)
-        }
-
-        // Prepare coordinate array for mapping
         val pts = FloatArray(detectedPills.size * 2)
         detectedPills.forEachIndexed { i, pill ->
-            pts[i * 2] = pill.x * previewWidth
-            pts[i * 2 + 1] = pill.y * previewHeight
+            pts[i * 2] = pill.x * w
+            pts[i * 2 + 1] = pill.y * h
         }
-
-        // Apply transformation
-        inverseTransform.mapPoints(pts)
 
         // Clamp mapped coordinates to ensure on-canvas safety
         for (i in pts.indices step 2) {

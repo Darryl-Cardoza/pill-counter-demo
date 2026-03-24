@@ -34,7 +34,7 @@ class PillAnalyzer(
 
     fun analyze(imageProxy: ImageProxy) {
         val overallStart = System.currentTimeMillis()
-        var letterboxedBitmap: Bitmap? = null
+        var trackingBitmap: Bitmap? = null
 
         logger.i(
             "Frame — ${imageProxy.width}×${imageProxy.height} " +
@@ -43,8 +43,8 @@ class PillAnalyzer(
 
         try {
             // ── STEP 1: Pre-process ───────────────────────────────────────────
-            val (inputBuffer, bitmap640) = ImagePreprocessor.preprocess(imageProxy)
-            letterboxedBitmap = bitmap640
+            val (inputBuffer, bitmap640, originalBitmap) = ImagePreprocessor.preprocess(imageProxy)
+            trackingBitmap = originalBitmap
 
             val scaleInfo = Letterbox.currentScaleInfo
                 ?: throw IllegalStateException("Letterbox.currentScaleInfo missing after preprocess")
@@ -81,8 +81,9 @@ class PillAnalyzer(
                 logger.i("[Tray] No tray detected — skipping pill inference")
                 onResult(
                     0, emptyList(), emptyList(),
-                    bitmap640, Matrix(), originalWidth, originalHeight
+                    originalBitmap, Matrix(), originalWidth, originalHeight
                 )
+                bitmap640.recycle()
                 return
             }
 
@@ -139,15 +140,17 @@ class PillAnalyzer(
                 pillsInTray.size,
                 pillsInTray,
                 trayDetections,
-                bitmap640,
+                originalBitmap,
                 Matrix(),
                 originalWidth,
                 originalHeight
             )
+            
+            bitmap640.recycle()
 
         } catch (e: Exception) {
             logger.e("[PillAnalyzer] Frame failed", e)
-            letterboxedBitmap?.recycle()
+            trackingBitmap?.recycle()
         } finally {
             imageProxy.close()
         }
