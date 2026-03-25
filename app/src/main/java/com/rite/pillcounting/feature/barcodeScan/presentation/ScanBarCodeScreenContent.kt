@@ -20,7 +20,6 @@ import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -30,14 +29,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleEventObserver
-import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.navigation.NavController
 import com.rite.pillcounting.core.models.StepState
 import com.rite.pillcounting.core.utils.common.BarcodeDecoder
 import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.BackButton
 import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.responsiveDp
+import com.rite.pillcounting.core.utils.common.navigateSafely
 import com.rite.pillcounting.core.utils.compose.SplitResponsive
 import com.rite.pillcounting.feature.barcodeScan.domain.data.ScanBarcodeEvent
 import com.rite.pillcounting.feature.barcodeScan.domain.model.ScanBarcodeUiState
@@ -62,21 +59,8 @@ fun ScanBarCodeScreenContent(
     analyzer: BarcodeAnalyzer,
     viewModel: ScanBarcodeViewModel = hiltViewModel(),
 ) {
-    val lifecycleOwner = LocalLifecycleOwner.current
+
     val isSoundEnabled = viewModel.isSoundEnabled.collectAsState().value
-    // Automatically pause/resume camera based on lifecycle
-    DisposableEffect(lifecycleOwner) {
-        val observer = LifecycleEventObserver { _, event ->
-            when (event) {
-                Lifecycle.Event.ON_RESUME -> analyzer.resume()
-                Lifecycle.Event.ON_PAUSE -> analyzer.pause()
-                Lifecycle.Event.ON_DESTROY -> analyzer.destroy()
-                else -> Unit
-            }
-        }
-        lifecycleOwner.lifecycle.addObserver(observer)
-        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
-    }
 
     Box(
         modifier = Modifier
@@ -117,7 +101,12 @@ fun ScanBarCodeScreenContent(
                 ManualDrugInfo(
                     viewModel = viewModel,
                     onConfirm = { drugName, ndc -> viewModel.addManualDrug(drugName, ndc) },
-                    onDismiss = { navController.popBackStack() },
+                    onDismiss = {
+                        analyzer.pause()
+                        navController.navigateSafely(
+                            Screen.Dashboard.route
+                        )
+                    },
                 )
             },
             landscapeRatio = 0.65f to 0.35f,
@@ -135,10 +124,10 @@ fun ScanBarCodeScreenContent(
                 navController = navController,
                 showBox = false,
                 onClick = {
-                    navController.navigate(Screen.Dashboard.route) {
-                        popUpTo(0)
-                        launchSingleTop = true
-                    }
+                    analyzer.pause()
+                    navController.navigateSafely(
+                        Screen.Dashboard.route
+                    )
                 }
             )
 

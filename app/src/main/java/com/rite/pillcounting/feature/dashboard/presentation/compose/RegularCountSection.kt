@@ -29,6 +29,7 @@ import androidx.navigation.NavController
 import com.rite.pillcounting.R
 import com.rite.pillcounting.core.room.models.enums.CountType
 import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.responsiveDp
+import com.rite.pillcounting.core.utils.common.navigateSafely
 import com.rite.pillcounting.core.utils.compose.bounceClick
 import com.rite.pillcounting.core.utils.constants.Dimens.extraLarge
 import com.rite.pillcounting.core.utils.constants.Dimens.small
@@ -114,7 +115,9 @@ fun RegularCountSection(
                     indication = null,
                     interactionSource = remember { MutableInteractionSource() }
                 ) {
-                    navController.navigate(Screen.History.createRoute(HistoryMode.REGULAR))
+                    navController.navigateSafely(
+                        Screen.History.createRoute(HistoryMode.REGULAR)
+                    )
                 }
             ) {
                 StatusChip(
@@ -133,7 +136,10 @@ fun RegularCountSection(
                     interactionSource = remember { MutableInteractionSource() }
                 ) {
                     if (partialRegularCount.toInt() > 0)
-                        navController.navigate(Screen.ResumeRegularCounts.createRoute(CountType.REGULAR.toString()))
+                        navController.navigateSafely(
+                            Screen.ResumeRegularCounts.createRoute(CountType.REGULAR.toString())
+                        )
+
                 }
             ) {
                 StatusChip(

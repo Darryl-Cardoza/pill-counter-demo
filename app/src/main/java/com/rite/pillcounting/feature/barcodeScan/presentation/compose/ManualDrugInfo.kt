@@ -69,7 +69,7 @@ fun ManualDrugInfo(
         if (viewModel.drugName.isBlank() || viewModel.ndc.isBlank()) {
             errorMessage = R.string.all_fields_are_required
         } else {
-            onConfirm( viewModel.drugName.trim(),  viewModel.ndc.trim())
+            onConfirm(viewModel.drugName.trim(), viewModel.ndc.trim())
         }
     }
 
@@ -137,7 +137,7 @@ fun ManualDrugInfo(
                     imeAction = ImeAction.Next,
                     visualTransformation = NdcVisualTransformation(),
                     modifier = Modifier
-                        .weight(0.78f)
+                        .fillMaxWidth()
                         .height(responsiveDp(45.dp))
                 )
 
@@ -152,13 +152,13 @@ fun ManualDrugInfo(
                 )
                 Spacer(Modifier.height(10.dp))
                 AppTextField(
-                    value =  viewModel.drugName,
-                    onValueChange = {  viewModel.drugName = it; errorMessage = 0 },
+                    value = viewModel.drugName,
+                    onValueChange = { viewModel.drugName = it; errorMessage = 0 },
                     keyboardType = KeyboardType.Text,
                     imeAction = ImeAction.Done,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(48.dp)
+                        .height(responsiveDp(45.dp))
                 )
 
                 Spacer(Modifier.height(14.dp))
@@ -173,7 +173,7 @@ fun ManualDrugInfo(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     HollowButton(
-                        text = "CANCEL",
+                        text = stringResource(R.string.manual_drug_info_cancel),
                         onClick = onDismiss,
                         color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier
@@ -183,7 +183,7 @@ fun ManualDrugInfo(
                     )
 
                     ActionButtonPrimary(
-                        text = "OK",
+                        text = stringResource(R.string.manual_drug_info_ok),
                         onClick = ::handleOk,
                         modifier = Modifier
                             .weight(1f)
@@ -248,8 +248,8 @@ fun ManualDrugInfo(
                     )
 
                     AppTextField(
-                        value =  viewModel.drugName,
-                        onValueChange = {  viewModel.drugName = it; errorMessage = 0 },
+                        value = viewModel.drugName,
+                        onValueChange = { viewModel.drugName = it; errorMessage = 0 },
                         keyboardType = KeyboardType.Text,
                         imeAction = ImeAction.Done,
                         modifier = Modifier
