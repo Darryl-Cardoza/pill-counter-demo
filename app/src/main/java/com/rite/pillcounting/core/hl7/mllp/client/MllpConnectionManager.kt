@@ -1,7 +1,6 @@
 package com.rite.pillcounting.core.hl7.mllp.client
 
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -46,7 +45,6 @@ class MllpConnectionManager(
     @Volatile
     private var state: ConnectionState = ConnectionState.Disconnected
 
-    fun getState(): ConnectionState = state
     fun isConnected(): Boolean = state == ConnectionState.Connected
 
     suspend fun connect(ip: String, port: Int) {
@@ -136,7 +134,7 @@ class MllpConnectionManager(
         // Cancel previous reader if any
         readerJob?.cancel()
 
-        // ✅ Start passive reader — this is what detects disconnect reliably
+        // Start passive reader — this is what detects disconnect reliably
         readerJob = client.startPassiveReader(
             scope = scope,
             onMessageReceived = { /*

@@ -2,7 +2,6 @@ package com.rite.pillcounting.feature.dashboard.presentation
 
 import Screen
 import android.app.Activity
-import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -23,13 +22,13 @@ import androidx.navigation.NavController
 import com.rite.pillcounting.R
 import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.CommonDialog
 import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.MenuButton
+import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.PmsConnectionIcon
 import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.showToast
 import com.rite.pillcounting.core.utils.compose.SplitResponsive
 import com.rite.pillcounting.core.utils.preference.PreferenceHelper
 import com.rite.pillcounting.feature.dashboard.presentation.compose.FixedCountSection
 import com.rite.pillcounting.feature.dashboard.presentation.compose.RegularCountSection
 import com.rite.pillcounting.feature.dashboard.presentation.viewmodel.DashboardViewModel
-import com.rite.pillcounting.feature.dashboard.presentation.viewmodel.PmsConnectionButton
 import com.rite.pillcounting.navigation.AUTH_GRAPH_ROUTE
 import com.rite.pillcounting.ui.theme.AppTheme
 
@@ -102,7 +101,7 @@ fun DashboardScreen(
 
         // Show loading indicator if user details are being fetched
         if(viewModel.isHl7Enabled()) {
-            PmsConnectionButton(
+            PmsConnectionIcon(
                 modifier = Modifier.align(Alignment.TopStart),
                 isPmsConnected = connected,
             )

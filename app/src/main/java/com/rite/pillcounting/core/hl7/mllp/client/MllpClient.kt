@@ -23,7 +23,6 @@ class MllpClient(
         private const val EB: Byte = 0x1C
         private const val CR: Byte = 0x0D
         private const val READ_TIMEOUT_MS = 0        // 0 = infinite (server pushes to us)
-        private const val CONNECT_TIMEOUT_MS = 10_000
     }
 
     private var socket: SSLSocket? = null

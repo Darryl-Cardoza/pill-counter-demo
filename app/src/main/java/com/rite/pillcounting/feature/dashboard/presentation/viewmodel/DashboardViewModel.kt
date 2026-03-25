@@ -1,26 +1,13 @@
 package com.rite.pillcounting.feature.dashboard.presentation.viewmodel
 
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.unit.dp
+
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.rite.pillcounting.R
 import com.rite.pillcounting.core.room.dao.PillCountTxnDao
 import com.rite.pillcounting.core.room.dao.UserDao
 import com.rite.pillcounting.core.room.models.UserEntity
 import com.rite.pillcounting.core.utils.common.HelperFunctions.mapCounts
 import com.rite.pillcounting.core.utils.common.HelperFunctions.secure
-import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.responsiveDp
-import com.rite.pillcounting.core.utils.constants.Dimens.extraSmall
-import com.rite.pillcounting.core.utils.constants.Dimens.small
 import com.rite.pillcounting.core.utils.logger.AppLogger
 import com.rite.pillcounting.core.utils.preference.PreferenceHelper
 import com.rite.pillcounting.feature.dashboard.domain.data.IUserDetailRepository
@@ -213,26 +200,6 @@ class DashboardViewModel @Inject constructor(
 
 }
 
-@Composable
-fun PmsConnectionButton(
-    modifier: Modifier = Modifier,
-    backIcon: Int = R.drawable.pms_connection_icon,
-    isPmsConnected: Boolean,
-) {
-    IconButton(
-        onClick = {},
-        modifier = modifier
-            .padding(small)
-            .size(responsiveDp(50.dp))
-    ) {
-        Icon(
-            painter = painterResource(id = backIcon),
-            contentDescription = "Menu",
-            tint = if(isPmsConnected) MaterialTheme.colorScheme.primary else Color.Gray,
-            modifier = Modifier.padding(extraSmall)
-        )
-    }
-}
 /* ───────────────────────────── Mappers ───────────────────────────── */
 
 /**

@@ -28,9 +28,7 @@ import com.rite.pillcounting.core.hl7.mllp.tls.TlsSocketFactory
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import org.rite.hl7.hl7.AckDecision
 import org.rite.hl7.hl7.domain.model.CompleteHL7Message
 
@@ -302,7 +300,7 @@ class HL7Service : Service() {
                 val host = info.host.hostAddress ?: return@launch
                 val port = info.port
 
-                // ✅ Prevent duplicate connect
+                // Prevent duplicate connect
                 if (lastConnectedHost == "$host:$port" && clientManager.isConnected()) {
                     return@launch
                 }
