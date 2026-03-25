@@ -5,6 +5,7 @@ import androidx.camera.core.ExperimentalGetImage
 import androidx.camera.view.PreviewView
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -12,7 +13,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
 import com.rite.pillcounting.feature.barcodeScan.presentation.FocusAnimationOverlay
 import com.rite.pillcounting.feature.barcodeScan.presentation.analyzer.BarcodeAnalyzer
-
 @OptIn(ExperimentalGetImage::class)
 @Composable
 fun ScannerView(
@@ -25,16 +25,13 @@ fun ScannerView(
     val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
     val context = LocalContext.current
 
-    // Remember a single instance of PreviewView across recompositions
     val previewView = remember {
         PreviewView(context).apply {
-            implementationMode = PreviewView.ImplementationMode.COMPATIBLE
+            implementationMode = PreviewView.ImplementationMode.PERFORMANCE
         }
     }
 
-    // Initialize camera and analyzer when the view enters composition
-    LaunchedEffect(lifecycleOwner) {
-        analyzer.stop()
+    DisposableEffect(lifecycleOwner, previewView) {
         analyzer.start(
             previewView = previewView,
             lifecycleOwner = lifecycleOwner,
@@ -42,9 +39,12 @@ fun ScannerView(
             onBarcodeDetected = onBarcodeScanned,
             onError = onError
         )
+
+        onDispose {
+            analyzer.stop()
+        }
     }
 
-    // Pause / Resume logic driven by isActive state
     LaunchedEffect(isActive) {
         if (isActive) {
             analyzer.resume()
@@ -53,10 +53,10 @@ fun ScannerView(
         }
     }
 
-    // Render the camera preview
     AndroidView(
         modifier = Modifier.fillMaxSize(),
-        factory = { previewView },
+        factory = { previewView }
     )
+
     FocusAnimationOverlay()
 }
