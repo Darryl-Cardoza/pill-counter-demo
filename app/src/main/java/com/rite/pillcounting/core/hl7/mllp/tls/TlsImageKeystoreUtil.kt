@@ -1,6 +1,11 @@
 package com.rite.pillcounting.core.hl7.imageWebService
 
 import android.content.Context
+import android.util.Log
+import org.bouncycastle.asn1.x500.X500Name
+import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter
+import org.bouncycastle.cert.jcajce.JcaX509v3CertificateBuilder
+import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
@@ -8,87 +13,123 @@ import java.math.BigInteger
 import java.security.KeyPairGenerator
 import java.security.KeyStore
 import java.security.MessageDigest
-import java.security.cert.X509Certificate
-import java.util.*
-import javax.security.auth.x500.X500Principal
-import org.bouncycastle.cert.jcajce.JcaX509v3CertificateBuilder
-import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter
-import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder
-import org.bouncycastle.jce.provider.BouncyCastleProvider
-import java.security.Security
+import java.security.SecureRandom
+import java.util.Calendar
+import java.util.Date
 
 object TlsImageKeystoreUtil {
 
-    private const val FILE_NAME = "image_https.p12"
-    private const val PASSWORD = "changeit"
-    private const val ALIAS = "image_https"
-    private const val VALID_YEARS = 10
+    private const val TAG = "TlsImageKeystoreUtil"
+    private const val KEY_ALIAS = "image_server_tls"
+    private const val KEYSTORE_FILE = "image_server.p12"
 
-    init {
-        if (Security.getProvider(BouncyCastleProvider.PROVIDER_NAME) == null) {
-            Security.addProvider(BouncyCastleProvider())
+    // Internal password — never exposed outside this object
+    private const val KEYSTORE_PASSWORD = "img_tls_internal"
+
+    // ----------------------------------------------------------------
+    // Public API
+    // ----------------------------------------------------------------
+
+    /** Returns alias used when storing the key entry */
+    fun alias(): String = KEY_ALIAS
+
+    /** Returns password as CharArray (required by KeyManagerFactory) */
+    fun password(): CharArray = KEYSTORE_PASSWORD.toCharArray()
+
+    /**
+     * Ensures the PKCS12 keystore file exists on disk.
+     * Creates a new self-signed cert if not found.
+     * Returns the loaded KeyStore ready for use in SSLContext.
+     */
+    fun ensureKeystore(context: Context): KeyStore {
+        val file = keystoreFile(context)
+
+        return if (file.exists()) {
+            Log.d(TAG, "Loading existing keystore from disk")
+            loadFromDisk(file)
+        } else {
+            Log.d(TAG, "No keystore found — generating new self-signed cert")
+            val ks = generateAndSave(file)
+            ks
         }
     }
 
-    fun ensureKeystore(context: Context): KeyStore {
-        val file = File(context.filesDir, FILE_NAME)
+    /**
+     * Returns the SHA-256 fingerprint of the certificate.
+     * Clients can use this for trust-on-first-use (TOFU) pinning.
+     */
+    fun fingerprint(context: Context): String {
+        return try {
+            val ks = ensureKeystore(context)
+            val cert = ks.getCertificate(KEY_ALIAS)
+            val digest = MessageDigest.getInstance("SHA-256")
+                .digest(cert.encoded)
+            digest.joinToString(":") { "%02X".format(it) }
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to get fingerprint", e)
+            "UNKNOWN"
+        }
+    }
+
+    // ----------------------------------------------------------------
+    // Private helpers
+    // ----------------------------------------------------------------
+
+    private fun keystoreFile(context: Context): File =
+        File(context.filesDir, KEYSTORE_FILE)
+
+    private fun loadFromDisk(file: File): KeyStore {
         val ks = KeyStore.getInstance("PKCS12")
-
-        if (file.exists()) {
-            FileInputStream(file).use {
-                ks.load(it, PASSWORD.toCharArray())
-            }
-            return ks
+        FileInputStream(file).use { fis ->
+            ks.load(fis, KEYSTORE_PASSWORD.toCharArray())
         }
-
-        ks.load(null, null)
-
-        val keyGen = KeyPairGenerator.getInstance("RSA")
-        keyGen.initialize(2048)
-        val keyPair = keyGen.generateKeyPair()
-
-        val now = Date()
-        val until = Calendar.getInstance().apply {
-            time = now
-            add(Calendar.YEAR, VALID_YEARS)
-        }.time
-
-        val cert = JcaX509v3CertificateBuilder(
-            X500Principal("CN=AndroidImageServer"),
-            BigInteger.valueOf(System.currentTimeMillis()),
-            now,
-            until,
-            X500Principal("CN=AndroidImageServer"),
-            keyPair.public
-        ).build(
-            JcaContentSignerBuilder("SHA256withRSA")
-                .build(keyPair.private)
-        ).let {
-            JcaX509CertificateConverter().getCertificate(it)
-        }
-
-        ks.setKeyEntry(
-            ALIAS,
-            keyPair.private,
-            PASSWORD.toCharArray(),
-            arrayOf(cert)
-        )
-
-        FileOutputStream(file).use {
-            ks.store(it, PASSWORD.toCharArray())
-        }
-
         return ks
     }
 
-    fun password(): CharArray = PASSWORD.toCharArray()
-    fun alias(): String = ALIAS
+    private fun generateAndSave(file: File): KeyStore {
+        // 1. Generate RSA key pair in software (no AndroidKeyStore)
+        val keyPairGen = KeyPairGenerator.getInstance("RSA")
+        keyPairGen.initialize(2048, SecureRandom())
+        val keyPair = keyPairGen.generateKeyPair()
 
-    fun fingerprint(context: Context): String {
-        val ks = ensureKeystore(context)
-        val cert = ks.getCertificate(ALIAS) as X509Certificate
-        val md = MessageDigest.getInstance("SHA-256")
-        return md.digest(cert.encoded)
-            .joinToString(":") { "%02X".format(it) }
+        // 2. Build self-signed X.509 certificate via BouncyCastle
+        val now = Date()
+        val expiry = Calendar.getInstance()
+            .apply { add(Calendar.YEAR, 10) }.time
+
+        val subject = X500Name("CN=PillCounter Image Server")
+
+        val certBuilder = JcaX509v3CertificateBuilder(
+            subject,                                    // issuer (self-signed = same as subject)
+            BigInteger.valueOf(SecureRandom().nextLong().coerceAtLeast(1)),
+            now,
+            expiry,
+            subject,                                    // subject
+            keyPair.public
+        )
+
+        val signer = JcaContentSignerBuilder("SHA256withRSA")
+            .build(keyPair.private)
+
+        val cert = JcaX509CertificateConverter()
+            .getCertificate(certBuilder.build(signer))
+
+        // 3. Store in PKCS12 keystore
+        val ks = KeyStore.getInstance("PKCS12")
+        ks.load(null, null)
+        ks.setKeyEntry(
+            KEY_ALIAS,
+            keyPair.private,
+            KEYSTORE_PASSWORD.toCharArray(),
+            arrayOf(cert)
+        )
+
+        // 4. Persist to disk so cert fingerprint stays stable across restarts
+        FileOutputStream(file).use { fos ->
+            ks.store(fos, KEYSTORE_PASSWORD.toCharArray())
+        }
+
+        Log.i(TAG, "New self-signed cert generated and saved")
+        return ks
     }
 }
