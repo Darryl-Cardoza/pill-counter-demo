@@ -138,7 +138,7 @@ fun ManualDrugInfo(
                     visualTransformation = NdcVisualTransformation(),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(48.dp)
+                        .height(responsiveDp(45.dp))
                 )
 
                 Spacer(Modifier.height(20.dp))
@@ -158,7 +158,7 @@ fun ManualDrugInfo(
                     imeAction = ImeAction.Done,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(48.dp)
+                        .height(responsiveDp(45.dp))
                 )
 
                 Spacer(Modifier.height(14.dp))
