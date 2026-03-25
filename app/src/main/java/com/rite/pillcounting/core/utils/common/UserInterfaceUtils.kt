@@ -830,6 +830,29 @@ object UserInterfaceUtils {
         }
     }
 
+    /** A PMS icon button that shows pms connection status. */
+
+    @Composable
+    fun PmsConnectionIcon(
+        modifier: Modifier = Modifier,
+        icon: Int = R.drawable.pms_connection_icon,
+        isPmsConnected: Boolean,
+    ) {
+        IconButton(
+            onClick = {},
+            modifier = modifier
+                .padding(small)
+                .size(responsiveDp(50.dp))
+        ) {
+            Icon(
+                painter = painterResource(id = icon),
+                contentDescription = "Menu",
+                tint = if(isPmsConnected) MaterialTheme.colorScheme.primary else Color.Gray,
+                modifier = Modifier.padding(extraSmall)
+            )
+        }
+    }
+
     /** A customizable OTP input field with multiple boxes, auto-focus, and optional password masking. */
     @Composable
     fun OTPTextField(
@@ -1075,5 +1098,7 @@ object UserInterfaceUtils {
         }
         return (baseSp.value * scale).sp
     }
+
+
 
 }
