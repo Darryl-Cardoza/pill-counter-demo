@@ -193,12 +193,6 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.7.0")
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.7.0")
 
-//    implementation("io.ktor:ktor-server-core:2.3.12")
-//    implementation("io.ktor:ktor-server-netty:2.3.12") {
-//        exclude(group = "io.projectreactor", module = "blockhound")
-//    }
-
-
     implementation("org.json:json:20230227")
 
     // Bouncy Castle for TLS Keystore generation
