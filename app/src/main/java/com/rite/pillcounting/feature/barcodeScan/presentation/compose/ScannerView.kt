@@ -39,9 +39,7 @@ fun ScannerView(
             onBarcodeDetected = onBarcodeScanned,
             onError = onError
         )
-
         onDispose {
-            analyzer.stop()
         }
     }
 
