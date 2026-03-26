@@ -178,7 +178,10 @@ fun PillScanningScreen(
             onConfirm = {
                 viewModel.moveNextStep()
             },
-            onCancel = { viewModel.handleDismissDialog() }
+            onCancel = {
+                viewModel.resetIdleOverlay()
+                viewModel.handleDismissDialog()
+            }
         )
     }
 

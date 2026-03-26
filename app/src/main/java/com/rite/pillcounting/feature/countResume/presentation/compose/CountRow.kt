@@ -184,7 +184,7 @@ fun CountRow(
 
             }
 
-            Spacer(modifier = Modifier.width(5.dp))
+            Spacer(modifier = Modifier.width(extraSmall))
 
             // ---------------- Quantity ----------------
             val displayText = when (countType) {
@@ -199,7 +199,7 @@ fun CountRow(
             )
 
 
-            Spacer(modifier = Modifier.width(medium))
+            Spacer(modifier = Modifier.width(small))
 
             // ---------------- Resume Action ----------------
             if (!multiSelectMode) {
