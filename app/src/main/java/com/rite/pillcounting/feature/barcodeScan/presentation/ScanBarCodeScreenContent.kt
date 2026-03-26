@@ -102,7 +102,7 @@ fun ScanBarCodeScreenContent(
                     viewModel = viewModel,
                     onConfirm = { drugName, ndc -> viewModel.addManualDrug(drugName, ndc) },
                     onDismiss = {
-                        analyzer.pause()
+                        analyzer.stop()
                         navController.navigateSafely(
                             Screen.Dashboard.route
                         )

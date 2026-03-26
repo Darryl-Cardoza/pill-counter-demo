@@ -150,6 +150,7 @@ fun CountRow(
             Spacer(modifier = Modifier.width(12.dp))
 
             // ---------------- Item Details ----------------
+            // ---------------- Item Details ----------------
             Column(
                 modifier = Modifier.weight(1f)
             ) {
@@ -162,26 +163,31 @@ fun CountRow(
                     overflow = TextOverflow.Ellipsis
                 )
 
-                Row {
+                // FIXED: Use fillMaxWidth + wrapContentHeight, and constrain PMS with shrink behavior
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     Text(
                         text = item.date,
                         fontSize = 12.sp,
                         color = AppTheme.extendedColors.textColor,
                         maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f, fill = false) // shrinks date before PMS wraps
                     )
 
                     if (item.isComingFromHL7) {
                         Spacer(modifier = Modifier.width(8.dp))
-
                         Text(
                             text = stringResource(R.string.pms),
                             fontSize = 12.sp,
-                            color = MaterialTheme.colorScheme.primary
+                            color = MaterialTheme.colorScheme.primary,
+                            maxLines = 1,          // FIXED: force single line
+                            softWrap = false       // FIXED: prevent character-level wrapping
                         )
                     }
                 }
-
             }
 
             Spacer(modifier = Modifier.width(extraSmall))

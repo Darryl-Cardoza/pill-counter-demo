@@ -190,7 +190,6 @@ fun PillScanningScreen(
         viewModel.getDrugInfo()
         viewModel.showTxnInfo(countType)
         viewModel.observeTxnDetailsForTxn(stepType)
-
         viewModel.navigationEvent.collectLatest { event ->
             when (event) {
                 is NavigationEvent.NavigateToDashboard -> {
