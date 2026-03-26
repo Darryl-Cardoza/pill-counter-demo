@@ -150,7 +150,6 @@ fun CountRow(
             Spacer(modifier = Modifier.width(12.dp))
 
             // ---------------- Item Details ----------------
-            // ---------------- Item Details ----------------
             Column(
                 modifier = Modifier.weight(1f)
             ) {
