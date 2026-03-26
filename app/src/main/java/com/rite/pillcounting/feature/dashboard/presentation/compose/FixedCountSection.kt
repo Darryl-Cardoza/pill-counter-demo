@@ -29,6 +29,7 @@ import androidx.navigation.NavController
 import com.rite.pillcounting.R
 import com.rite.pillcounting.core.room.models.enums.CountType
 import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.responsiveDp
+import com.rite.pillcounting.core.utils.common.navigateSafely
 import com.rite.pillcounting.core.utils.compose.bounceClick
 import com.rite.pillcounting.core.utils.constants.Dimens.extraLarge
 import com.rite.pillcounting.core.utils.constants.Dimens.small
@@ -110,12 +111,11 @@ fun FixedCountSection(
             // Completed status
             Box(
                 modifier = Modifier.clickable(
-                    indication = null,
-                    interactionSource = remember { MutableInteractionSource() }
-                ) {
-                    navController.navigate(Screen.History.createRoute(HistoryMode.DISPENSE))
-                }
-            ) {
+                indication = null, interactionSource = remember { MutableInteractionSource() }) {
+                navController.navigateSafely(
+                    Screen.History.createRoute(HistoryMode.DISPENSE)
+                )
+            }) {
                 StatusChip(
                     text = "$completedFixedCount ${stringResource(R.string.completed)}",
                     backgroundColor = Color.Transparent,
@@ -128,12 +128,11 @@ fun FixedCountSection(
             // Partial status (clickable -> ResumeFixedCounts screen)
             Box(
                 modifier = Modifier.clickable(
-                    indication = null,
-                    interactionSource = remember { MutableInteractionSource() }
-                ) {
-                    navController.navigate(Screen.ResumeFixedCounts.createRoute(CountType.FIXED.toString()))
-                }
-            ) {
+                indication = null, interactionSource = remember { MutableInteractionSource() }) {
+                navController.navigateSafely(
+                    Screen.ResumeFixedCounts.createRoute(CountType.FIXED.toString())
+                )
+            }) {
                 StatusChip(
                     text = "$partialFixedCount ${stringResource(R.string.partial)}",
                     backgroundColor = AppTheme.extendedColors.statusChipBackgroundOnSecondary,
