@@ -41,7 +41,6 @@ import coil.request.ImageRequest
 import com.rite.pillcounting.R
 import com.rite.pillcounting.core.room.models.enums.CountType
 import com.rite.pillcounting.core.utils.constants.Dimens.extraSmall
-import com.rite.pillcounting.core.utils.constants.Dimens.medium
 import com.rite.pillcounting.core.utils.constants.Dimens.small
 import com.rite.pillcounting.core.utils.constants.Dimens.xxLarge
 import com.rite.pillcounting.feature.countResume.domain.model.CountItem
