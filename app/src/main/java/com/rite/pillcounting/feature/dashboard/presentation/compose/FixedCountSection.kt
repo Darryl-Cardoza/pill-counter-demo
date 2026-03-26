@@ -52,7 +52,7 @@ fun FixedCountSection(
     completedFixedCount: String,
     partialFixedCount: String,
     navController: NavController,
-    onNavigate:()-> Unit
+    onNavigate: () -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -131,8 +131,7 @@ fun FixedCountSection(
                     indication = null,
                     interactionSource = remember { MutableInteractionSource() }
                 ) {
-                    if (partialFixedCount.toInt() > 0)
-                        navController.navigate(Screen.ResumeFixedCounts.createRoute(CountType.FIXED.toString()))
+                    navController.navigate(Screen.ResumeFixedCounts.createRoute(CountType.FIXED.toString()))
                 }
             ) {
                 StatusChip(

@@ -135,10 +135,9 @@ fun RegularCountSection(
                     indication = null,
                     interactionSource = remember { MutableInteractionSource() }
                 ) {
-                    if (partialRegularCount.toInt() > 0)
-                        navController.navigateSafely(
-                            Screen.ResumeRegularCounts.createRoute(CountType.REGULAR.toString())
-                        )
+                    navController.navigateSafely(
+                        Screen.ResumeRegularCounts.createRoute(CountType.REGULAR.toString())
+                    )
 
                 }
             ) {
