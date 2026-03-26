@@ -13,6 +13,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
 import com.rite.pillcounting.feature.barcodeScan.presentation.FocusAnimationOverlay
 import com.rite.pillcounting.feature.barcodeScan.presentation.analyzer.BarcodeAnalyzer
+
 @OptIn(ExperimentalGetImage::class)
 @Composable
 fun ScannerView(

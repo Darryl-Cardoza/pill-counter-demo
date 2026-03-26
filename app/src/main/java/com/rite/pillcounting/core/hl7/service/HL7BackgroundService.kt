@@ -25,6 +25,7 @@ import com.rite.pillcounting.core.hl7.mllp.nsd.NsdHelper
 import com.rite.pillcounting.core.hl7.mllp.nsd.NetworkIpMonitor
 import com.rite.pillcounting.core.hl7.mllp.server.MllpServer
 import com.rite.pillcounting.core.hl7.mllp.tls.TlsSocketFactory
+import com.rite.pillcounting.core.utils.logger.AppLogger
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -77,7 +78,7 @@ class HL7Service : Service() {
     private var serverStarted = false
     @Volatile
     private var lastConnectedHost: String? = null
-
+    private val logger = AppLogger("HL7backgroundService")
 
     /** Binder to expose service instance to clients */
     private val binder = LocalBinder()
@@ -321,6 +322,7 @@ class HL7Service : Service() {
 
     private fun handleIncomingMessage(raw: String): AckDecision {
         return try {
+            logger.i("HL7 message before parsing | msgId=${raw} ")
             val message = parser.parse(raw)
             val key = message.generateMessageIdempotencyKey()
 

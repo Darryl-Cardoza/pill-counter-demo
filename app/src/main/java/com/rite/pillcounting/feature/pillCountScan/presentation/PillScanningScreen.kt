@@ -178,7 +178,10 @@ fun PillScanningScreen(
             onConfirm = {
                 viewModel.moveNextStep()
             },
-            onCancel = { viewModel.handleDismissDialog() }
+            onCancel = {
+                viewModel.resetIdleOverlay()
+                viewModel.handleDismissDialog()
+            }
         )
     }
 
@@ -187,7 +190,6 @@ fun PillScanningScreen(
         viewModel.getDrugInfo()
         viewModel.showTxnInfo(countType)
         viewModel.observeTxnDetailsForTxn(stepType)
-
         viewModel.navigationEvent.collectLatest { event ->
             when (event) {
                 is NavigationEvent.NavigateToDashboard -> {
