@@ -39,7 +39,7 @@ jobs:
 
   # CI for PRs and branch pushes
   ci:
-    uses: Rite-Technologies-23/ops-rite-android-pipeline/.github/workflows/push.yml@main
+    uses: Darryl-Cardoza/reusable-repo-android/.github/workflows/push.yml@main
     needs: extract-version
     with:
       java_version: "17"
@@ -51,10 +51,14 @@ jobs:
       run_tests: false
       run_coverage: false
       run_static_analysis: false
+      run_android_lint: true
+      gradle_working_directory: "."
+      lint_source_path: ".github/config/lint.xml"
+      lint_target_path: "lint.xml"
 
   # CD for version tags
   cd:
-    uses: Rite-Technologies-23/ops-rite-android-pipeline/.github/workflows/release.yml@main
+    uses: Darryl-Cardoza/reusable-repo-android/.github/workflows/release.yml@main
     if: github.event_name == 'pull-request' && github.ref == 'refs/heads/main'
     needs: [ extract-version, ci ]
     with:

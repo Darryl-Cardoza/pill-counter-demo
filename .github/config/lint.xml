@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<lint>
+
+    <!-- =========================
+         API / Compatibility
+         ========================= -->
+    <issue id="NewApi" severity="fatal" />
+    <issue id="InlinedApi" severity="fatal" />
+    <issue id="ObsoleteSdkInt" severity="fatal" />
+    <issue id="UnusedAttribute" severity="error" />
+
+    <!-- =========================
+         Manifest / Security
+         ========================= -->
+    <issue id="ExportedActivity" severity="fatal" />
+    <issue id="ExportedService" severity="fatal" />
+    <issue id="ExportedReceiver" severity="fatal" />
+    <issue id="ExportedContentProvider" severity="fatal" />
+
+    <issue id="GrantAllUris" severity="fatal" />
+    <issue id="ProtectedPermissions" severity="fatal" />
+    <issue id="UnsafeProtectedBroadcastReceiver" severity="fatal" />
+    <issue id="WorldReadableFiles" severity="fatal" />
+    <issue id="WorldWriteableFiles" severity="fatal" />
+    <issue id="SecureRandom" severity="fatal" />
+
+    <!-- =========================
+         Correctness / Stability
+         ========================= -->
+    <issue id="HandlerLeak" severity="fatal" />
+    <issue id="StaticFieldLeak" severity="fatal" />
+    <issue id="ParcelClassLoader" severity="fatal" />
+    <issue id="Recycle" severity="fatal" />
+
+    <issue id="NotifyDataSetChanged" severity="error" />
+    <issue id="CommitTransaction" severity="error" />
+    <issue id="FragmentTagUsage" severity="error" />
+
+    <!-- =========================
+         Performance
+         ========================= -->
+    <issue id="UseSparseArrays" severity="error" />
+    <issue id="Overdraw" severity="error" />
+    <issue id="ObsoleteLayoutParam" severity="error" />
+    <issue id="UselessParent" severity="error" />
+    <issue id="UnusedResources" severity="error" />
+
+    <!-- =========================
+         Accessibility / UX
+         ========================= -->
+    <issue id="ContentDescription" severity="fatal" />
+    <issue id="LabelFor" severity="error" />
+    <issue id="SpeakableTextPresentCheck" severity="error" />
+    <issue id="ClickableViewAccessibility" severity="error" />
+
+    <!-- =========================
+         Internationalization / RTL
+         ========================= -->
+    <issue id="HardcodedText" severity="error" />
+    <issue id="RtlHardcoded" severity="error" />
+    <issue id="RtlCompat" severity="error" />
+    <issue id="RtlEnabled" severity="error" />
+
+    <!-- =========================
+         Resource / XML hygiene
+         ========================= -->
+    <issue id="MissingTranslation" severity="error" />
+    <issue id="ExtraTranslation" severity="error" />
+    <issue id="DuplicateIds" severity="fatal" />
+    <issue id="NestedWeights" severity="error" />
+
+    <!-- =========================
+         Ignored cosmetic noise
+         ========================= -->
+    <issue id="TypographyQuotes" severity="ignore" />
+    <issue id="TypographyFractions" severity="ignore" />
+    <issue id="TypographyDashes" severity="ignore" />
+    <issue id="Typos" severity="ignore" />
+
+</lint>
