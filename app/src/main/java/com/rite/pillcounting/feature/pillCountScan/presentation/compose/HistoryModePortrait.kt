@@ -14,6 +14,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -21,7 +23,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.rite.pillcounting.R
+import com.rite.pillcounting.core.models.StepState
+import com.rite.pillcounting.core.room.models.enums.CountType
 import com.rite.pillcounting.feature.pillCountScan.domain.model.TxnDetail
+import com.rite.pillcounting.feature.pillCountScan.presentation.viewmodel.PillScanningViewModel
 import com.rite.pillcounting.ui.theme.AppTheme
 
 @Composable
@@ -30,7 +35,8 @@ fun HistoryModePortrait(
     targetCount: Int,
     totalCount: Int,
     txnHistory: List<TxnDetail>,
-    onDeleteTxn: (Long) -> Unit
+    onDeleteTxn: (Long) -> Unit,
+    viewModel: PillScanningViewModel
 ) {
     val latestTxnId = txnHistory
         .maxByOrNull { it.createdAt }
@@ -41,6 +47,7 @@ fun HistoryModePortrait(
         .sortedBy { it.createdAt }
 
     val listState = rememberLazyListState()
+    val stepType by viewModel.currentStep.collectAsState()
 
     LaunchedEffect(activeHistory.size) {
         if (activeHistory.isNotEmpty()) {
@@ -93,16 +100,17 @@ fun HistoryModePortrait(
             Row() {
                 Text(
                     text = "$totalCount",
-                    color =  MaterialTheme.colorScheme.primary,
+                    color = MaterialTheme.colorScheme.primary,
                     fontSize = 22.sp,
                     fontWeight = FontWeight.Bold
                 )
-                if (scanType == "FIXED")
+                if (scanType == CountType.FIXED.toString() && stepType != StepState.CONTAINER_INITIATE) {
                     Text(
                         text = "/$targetCount",
                         color = MaterialTheme.colorScheme.primary,
                         fontSize = 18.sp
                     )
+                }
             }
         }
     }

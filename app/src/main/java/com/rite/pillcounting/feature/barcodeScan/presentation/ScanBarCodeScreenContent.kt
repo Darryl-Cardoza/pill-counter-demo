@@ -1,5 +1,6 @@
 package com.rite.pillcounting.feature.barcodeScan.presentation
 
+import Screen
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -9,32 +10,31 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBarsPadding
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleEventObserver
-import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.navigation.NavController
-import com.rite.pillcounting.R
+import com.rite.pillcounting.core.models.StepState
 import com.rite.pillcounting.core.utils.common.BarcodeDecoder
 import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.BackButton
 import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.responsiveDp
+import com.rite.pillcounting.core.utils.common.navigateSafely
 import com.rite.pillcounting.core.utils.compose.SplitResponsive
 import com.rite.pillcounting.feature.barcodeScan.domain.data.ScanBarcodeEvent
 import com.rite.pillcounting.feature.barcodeScan.domain.model.ScanBarcodeUiState
@@ -42,6 +42,7 @@ import com.rite.pillcounting.feature.barcodeScan.presentation.analyzer.BarcodeAn
 import com.rite.pillcounting.feature.barcodeScan.presentation.compose.ManualDrugInfo
 import com.rite.pillcounting.feature.barcodeScan.presentation.compose.ScannerView
 import com.rite.pillcounting.feature.barcodeScan.presentation.viewmodel.ScanBarcodeViewModel
+import com.rite.pillcounting.feature.pillCountScan.presentation.compose.StepTitleWithSpeech
 import com.rite.pillcounting.ui.theme.AppTheme
 
 /**
@@ -58,21 +59,8 @@ fun ScanBarCodeScreenContent(
     analyzer: BarcodeAnalyzer,
     viewModel: ScanBarcodeViewModel = hiltViewModel(),
 ) {
-    val lifecycleOwner = LocalLifecycleOwner.current
 
-    // Automatically pause/resume camera based on lifecycle
-    DisposableEffect(lifecycleOwner) {
-        val observer = LifecycleEventObserver { _, event ->
-            when (event) {
-                Lifecycle.Event.ON_RESUME -> analyzer.resume()
-                Lifecycle.Event.ON_PAUSE -> analyzer.pause()
-                Lifecycle.Event.ON_DESTROY -> analyzer.destroy()
-                else -> Unit
-            }
-        }
-        lifecycleOwner.lifecycle.addObserver(observer)
-        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
-    }
+    val isSoundEnabled = viewModel.isSoundEnabled.collectAsState().value
 
     Box(
         modifier = Modifier
@@ -113,13 +101,45 @@ fun ScanBarCodeScreenContent(
                 ManualDrugInfo(
                     viewModel = viewModel,
                     onConfirm = { drugName, ndc -> viewModel.addManualDrug(drugName, ndc) },
-                    onDismiss = { navController.popBackStack() },
+                    onDismiss = {
+                        analyzer.stop()
+                        navController.navigateSafely(
+                            Screen.Dashboard.route
+                        )
+                    },
                 )
             },
             landscapeRatio = 0.65f to 0.35f,
             portraitRatio = 0.70f to 0.30f
         )
-        BackButton(navController, showBox = false)
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+
+            BackButton(
+                navController = navController,
+                showBox = false,
+                onClick = {
+                    analyzer.pause()
+                    navController.navigateSafely(
+                        Screen.Dashboard.route
+                    )
+                }
+            )
+
+            Spacer(modifier = Modifier.weight(0.3f))
+
+            StepTitleWithSpeech(stepType = StepState.SCAN, isSoundOverride = isSoundEnabled)
+
+            Spacer(modifier = Modifier.weight(1f))
+        }
+        if (uiState.isLoading) {
+            CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+        }
     }
 
 }
@@ -160,29 +180,5 @@ fun FocusAnimationOverlay() {
                     shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp)
                 )
         )
-
-        Box(
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .padding(bottom = 20.dp)
-                .background(
-                    brush = Brush.horizontalGradient(
-                        colors = listOf(
-                            AppTheme.extendedColors.primaryBackground,
-                            AppTheme.extendedColors.secondaryBackground
-                        ),
-                        startX = 0f,
-                        endX = Float.POSITIVE_INFINITY
-                    ),
-                    shape = androidx.compose.foundation.shape.RoundedCornerShape(50.dp)
-                )
-                .padding(horizontal = 20.dp, vertical = 10.dp)
-        ) {
-            Text(
-                text = stringResource(R.string.scan_code),
-                color = AppTheme.extendedColors.textColor,
-                fontSize = 16.sp,
-            )
-        }
     }
 }

@@ -1,5 +1,6 @@
 package com.rite.pillcounting.feature.history.data
 
+import com.rite.pillcounting.core.models.StepState
 import com.rite.pillcounting.core.room.dao.PillCountTxnDao
 import com.rite.pillcounting.core.room.models.enums.CountStatus
 import com.rite.pillcounting.core.room.models.enums.CountType
@@ -60,6 +61,7 @@ class HistoryRepository @Inject constructor(
         return dao.getTransactionsForDateRange(
             startDate = startMillis,
             endDate = endMillis,
+            stepType = StepState.TARGET_VERIFICATION,
             type = type,
             status = status,
             userLocalId = userLocalId

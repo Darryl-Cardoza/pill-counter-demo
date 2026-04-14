@@ -34,6 +34,8 @@ import coil.request.ImageRequest
 import com.rite.pillcounting.R
 import com.rite.pillcounting.core.room.models.enums.CountStatus
 import com.rite.pillcounting.core.room.models.enums.CountType
+import com.rite.pillcounting.core.utils.common.DateFormats
+import com.rite.pillcounting.core.utils.common.formatDateToUSFormat
 import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.toFormattedDate
 import com.rite.pillcounting.feature.history.domain.model.TxnWithDrugDto
 import com.rite.pillcounting.ui.theme.AppTheme
@@ -51,6 +53,7 @@ fun CountRow(
     rowData: TxnWithDrugDto,
     onTxnClick: () -> Unit
 ) {
+    val date =rowData.createdAt.toFormattedDate()
     Column {
         Row(
             modifier = Modifier
@@ -114,7 +117,7 @@ fun CountRow(
                     color = AppTheme.extendedColors.textColor
                 )
                 Text(
-                    text = rowData.createdAt.toFormattedDate(),
+                    text = formatDateToUSFormat(date, outputPattern = DateFormats.MM_DD_YYYY_HH_MM_A),
                     fontSize = 12.sp,
                     color = AppTheme.extendedColors.textColor
                 )

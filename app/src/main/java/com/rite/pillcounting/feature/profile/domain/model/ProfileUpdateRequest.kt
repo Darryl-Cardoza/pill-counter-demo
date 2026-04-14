@@ -5,7 +5,8 @@ import com.squareup.moshi.JsonClass
 
 @JsonClass(generateAdapter = true)
 data class ProfileUpdateRequest(
-    @Json(name = "full_name") val fullName: String,
+    @Json(name = "fname") val fName: String,
+    @Json(name = "lname") val lName: String,
     @Json(name = "pharmacy_name") val pharmacyName: String,
     @Json(name = "phone_number") val phoneNumber: String,
     @Json(name = "npi_id") val npiId: String,

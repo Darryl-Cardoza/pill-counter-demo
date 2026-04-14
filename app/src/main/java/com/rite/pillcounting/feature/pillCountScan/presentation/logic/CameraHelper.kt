@@ -2,11 +2,14 @@ package com.rite.pillcounting.feature.pillCountScan.presentation.logic
 
 import android.content.Context
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.graphics.Matrix
 import android.util.Size
 import androidx.camera.core.Camera
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.FocusMeteringAction
 import androidx.camera.core.ImageAnalysis
+import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageProxy
 import androidx.camera.core.Preview
 import androidx.camera.core.TorchState
@@ -48,7 +51,7 @@ class CameraHelper(
 
     private val _frameChannel = Channel<ImageProxy>(Channel.CONFLATED)
     val frameFlow = _frameChannel.receiveAsFlow()
-
+    private var imageCapture: ImageCapture? = null
     // ---------------------------------------------------------
     // CAMERA STATE + ZOOM FLOW
     // ---------------------------------------------------------
@@ -118,6 +121,10 @@ class CameraHelper(
                         }
                     }
 
+                imageCapture = ImageCapture.Builder()
+                    .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
+                    .build()
+
                 val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
 
                 cameraProvider.unbindAll()
@@ -125,7 +132,8 @@ class CameraHelper(
                     lifecycleOwner,
                     cameraSelector,
                     preview,
-                    imageAnalysis
+                    imageAnalysis,
+                    imageCapture
                 )
 
                 observeCameraState()
@@ -259,7 +267,9 @@ class CameraHelper(
         try {
             val provider = cameraProviderFuture.get()
             provider.unbindAll()
-        } catch (_: Exception) { }
+        } catch (_: Exception) {
+            logger.i("Failed to pause camera")
+        }
 
         preview = null
         imageAnalysis = null
@@ -283,36 +293,48 @@ class CameraHelper(
     fun getPreviewHeight(): Int = previewView?.height ?: 640
 
     fun imageProxyToBitmap(image: ImageProxy): Bitmap {
-        val yBuffer = image.planes[0].buffer
-        val uBuffer = image.planes[1].buffer
-        val vBuffer = image.planes[2].buffer
 
-        val ySize = yBuffer.remaining()
-        val uSize = uBuffer.remaining()
-        val vSize = vBuffer.remaining()
+        val buffer = image.planes[0].buffer
+        val bytes = ByteArray(buffer.remaining())
+        buffer.get(bytes)
 
-        val nv21 = ByteArray(ySize + uSize + vSize)
+        val bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
 
-        yBuffer.get(nv21, 0, ySize)
-        vBuffer.get(nv21, ySize, vSize)
-        uBuffer.get(nv21, ySize + vSize, uSize)
+        val rotationDegrees = image.imageInfo.rotationDegrees
 
-        val yuv = android.graphics.YuvImage(
-            nv21,
-            android.graphics.ImageFormat.NV21,
-            image.width, image.height,
-            null
+        if (rotationDegrees == 0) return bitmap
+
+        val matrix = Matrix()
+        matrix.postRotate(rotationDegrees.toFloat())
+
+        return Bitmap.createBitmap(
+            bitmap,
+            0,
+            0,
+            bitmap.width,
+            bitmap.height,
+            matrix,
+            true
+        )
+    }
+
+    fun captureImage(onCaptured: (Bitmap) -> Unit) {
+
+        val imageCapture = imageCapture ?: return
+
+        imageCapture.takePicture(
+            executor,
+            object : ImageCapture.OnImageCapturedCallback() {
+
+                override fun onCaptureSuccess(image: ImageProxy) {
+
+                    val bitmap = imageProxyToBitmap(image)
+                    onCaptured(bitmap)
+
+                    image.close()
+                }
+            }
         )
 
-        val out = java.io.ByteArrayOutputStream()
-        yuv.compressToJpeg(
-            android.graphics.Rect(0, 0, image.width, image.height),
-            60,
-            out
-        )
-
-        return android.graphics.BitmapFactory.decodeByteArray(
-            out.toByteArray(), 0, out.size()
-        )
     }
 }

@@ -13,12 +13,14 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.rite.pillcounting.R
 import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.CommonDialog
-import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.showToast
 import com.rite.pillcounting.feature.barcodeScan.domain.data.NavigationEvent
+import com.rite.pillcounting.feature.barcodeScan.domain.data.ScanBarcodeEvent
 import com.rite.pillcounting.feature.barcodeScan.presentation.viewmodel.ScanBarcodeViewModel
 
 /**
@@ -35,6 +37,8 @@ fun ScanBarCodeScreen(
     viewModel: ScanBarcodeViewModel = hiltViewModel(),
 ) {
     val context = LocalContext.current
+    // Collect the UI state from the ViewModel in a lifecycle-aware manner.
+    val uiState by viewModel.uiState.collectAsState()
     var hasCameraPermission by remember {
         mutableStateOf(
             ContextCompat.checkSelfPermission(
@@ -80,17 +84,30 @@ fun ScanBarCodeScreen(
         }
     }
 
-    // Collect the UI state from the ViewModel in a lifecycle-aware manner.
-    val uiState by viewModel.uiState.collectAsState()
-
-    if (uiState.showNdcNotMatchedDialog) {
+    if (uiState.showNdcNotFoundDialog) {
         CommonDialog(
-            title = "Medication Mismatch",
-            message = "The scanned NDC does not match the prescription received \nPlease verify the drug and scan again.",
-            confirmText = "Rescan",
-            cancelText = "Cancel",
+            title = stringResource(R.string.rescan_require),
+            message = stringResource(R.string.the_scanned_ndc_does_not_match),
+            confirmText = stringResource(R.string.rescane),
+            cancelText = "",
             onConfirm = {
-                viewModel.resumeScanning()
+                viewModel.hideNdcNotMatchedDialog()
+            },
+            onCancel = {},
+            isSingleButton = true
+        )
+
+    }
+
+    if (uiState.showNdcEquivalenceDialog) {
+        CommonDialog(
+            title = stringResource(R.string.scan_container_qr_code),
+            message = stringResource(R.string.scanned_item_is_a_generic_equivalent_to_the_specific_drug),
+
+            confirmText = stringResource(R.string.substitute),
+            cancelText = stringResource(R.string.cancel),
+            onConfirm = {
+                viewModel.onEvent(ScanBarcodeEvent.StartCount())
             },
             onCancel = {
                 viewModel.hideNdcNotMatchedDialog()

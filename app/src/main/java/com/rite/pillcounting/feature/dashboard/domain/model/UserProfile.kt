@@ -8,7 +8,8 @@ import com.squareup.moshi.JsonClass
  */
 @JsonClass(generateAdapter = true)
 data class UserProfile(
-    @Json(name = "full_name") val fullName: String? = null,
+    @Json(name = "lname") val lName: String? = null,
+    @Json(name = "fname") val fName: String? = null,
     @Json(name = "email") val email: String? = null,
     @Json(name = "phone_number") val phoneNumber: String? = null,
     @Json(name = "avatar_url") val avatarUrl: String? = null,

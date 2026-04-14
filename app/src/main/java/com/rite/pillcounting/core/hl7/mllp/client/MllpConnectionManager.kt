@@ -1,7 +1,7 @@
 package com.rite.pillcounting.core.hl7.mllp.client
 
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
@@ -17,20 +17,35 @@ import java.io.IOException
  * - Safe shutdown
  * - Connection state tracking
  */
-class MllpConnectionManager(
-    private val client: MllpClient
-) {
 
+
+class MllpConnectionManager(
+    private val client: MllpClient,
+    private val scope: CoroutineScope,
+    private val onFirstConnected: (() -> Unit)? = null,
+    private val onConnected: (() -> Unit)? = null,
+    private val onDisconnected: (() -> Unit)? = null
+) {
+    companion object {
+        private const val SEND_RETRIES = 2
+        private const val RETRY_DELAY_MS = 3_000L
+        private const val MAX_RETRY_DELAY_MS = 30_000L  // cap backoff at 30s
+        private const val RECONNECT_CHECK_MS = 15_000L
+    }
+
+    private val mutex = Mutex()
     private var ip: String = ""
     private var port: Int = 0
-    private val mutex = Mutex()
     private var isShutdown = false
+    private var hasEverConnected = false
 
-    companion object {
-        private const val CONNECT_RETRIES = 3
-        private const val SEND_RETRIES = 2
-        private const val RETRY_DELAY_MS = 2000L
-    }
+    private var readerJob: Job? = null       // passive reader — detects disconnect
+    private var reconnectJob: Job? = null
+
+    @Volatile
+    private var state: ConnectionState = ConnectionState.Disconnected
+
+    fun isConnected(): Boolean = state == ConnectionState.Connected
 
     suspend fun connect(ip: String, port: Int) {
         mutex.withLock {
@@ -42,21 +57,13 @@ class MllpConnectionManager(
     }
 
     suspend fun send(message: String): String {
-        if (isShutdown) {
-            throw IOException("Connection manager is shutdown")
-        }
-
+        if (isShutdown) throw IOException("Shutdown")
         repeat(SEND_RETRIES) { attempt ->
             try {
-                if (!client.isConnected()) {
-                    retryConnect()
-                }
-
-                val ack = client.send(message)
-
-                return ack
-
+                if (!isConnected()) retryConnect()
+                return client.send(message)
             } catch (e: Exception) {
+                handleSendFailure()
                 if (attempt == SEND_RETRIES - 1) throw e
                 retryConnect()
             }
@@ -64,65 +71,91 @@ class MllpConnectionManager(
         error("Unreachable")
     }
 
-
-    fun isConnected(): Boolean = !isShutdown && client.isConnected()
+    fun startContinuousReconnect() {
+        reconnectJob?.cancel()
+        reconnectJob = scope.launch {
+            while (!isShutdown) {
+                if (state == ConnectionState.Disconnected && ip.isNotEmpty()) {
+                    try { retryConnect() } catch (_: Exception) {}
+                }
+                delay(RECONNECT_CHECK_MS)
+            }
+        }
+    }
 
     fun shutdown() {
-        CoroutineScope(Dispatchers.IO).launch {
-            mutex.withLock {
-                isShutdown = true
-                client.close()
-            }
+        isShutdown = true
+        readerJob?.cancel()
+        reconnectJob?.cancel()
+        scope.launch { client.close() }
+        updateState(ConnectionState.Disconnected)
+    }
+
+    // ── Private ──────────────────────────────────────────────────────────────
+
+    private fun updateState(newState: ConnectionState) {
+        if (state == newState) return
+        state = newState
+        when (newState) {
+            ConnectionState.Connected -> onConnected?.invoke()
+            ConnectionState.Disconnected -> onDisconnected?.invoke()
+            else -> {}
         }
     }
 
     private suspend fun retryConnect() {
-        if (isShutdown) {
-            throw IOException("Connection manager is shutdown")
-        }
+        if (isShutdown || ip.isEmpty()) return
+        updateState(ConnectionState.Connecting)
 
-        repeat(CONNECT_RETRIES) { attempt ->
+        var attempt = 0
+        while (!isShutdown) {
             try {
                 client.connect(ip, port)
-                return
-            } catch (e: Exception) {
-                if (attempt < CONNECT_RETRIES - 1) {
-                    delay(RETRY_DELAY_MS * (attempt + 1))
-                } else {
-                    throw IOException("Unable to connect to $ip:$port after $CONNECT_RETRIES attempts", e)
+                onConnectionEstablished()
+                return  // success
+            } catch (_: Exception) {
+                attempt++
+                // Exponential backoff capped at 30s
+                val delay = minOf(RETRY_DELAY_MS * attempt, MAX_RETRY_DELAY_MS)
+                updateState(ConnectionState.Disconnected)
+                delay(delay)
+            }
+        }
+    }
+
+    private fun onConnectionEstablished() {
+        updateState(ConnectionState.Connected)
+
+        if (!hasEverConnected) {
+            hasEverConnected = true
+            onFirstConnected?.invoke()
+        }
+
+        // Cancel previous reader if any
+        readerJob?.cancel()
+
+        // Start passive reader — this is what detects disconnect reliably
+        readerJob = client.startPassiveReader(
+            scope = scope,
+            onMessageReceived = { /*
+                Server-pushed messages land here if PMS sends unsolicited.
+                For request-response (dispense/inventory), send() handles it.
+                You can leave this empty or log it.
+            */ },
+            onDisconnected = {
+                if (!isShutdown) {
+                    // Fires immediately when PMS drops connection
+                    updateState(ConnectionState.Disconnected)
+                    scope.launch { client.close() }
+                    // reconnectJob loop will pick this up within RECONNECT_CHECK_MS
                 }
             }
-        }
+        )
     }
 
-
-    private fun validateAck(ackRaw: String) {
-        // Fast safety check
-        require(ackRaw.contains("|ACK|")) {
-            "Invalid ACK message"
-        }
-
-        val msaLine = ackRaw
-            .lines()
-            .firstOrNull { it.startsWith("MSA|") }
-            ?: error("ACK missing MSA segment")
-
-        val fields = msaLine.split("|")
-        val ackCode = fields.getOrNull(1)
-            ?: error("ACK missing code")
-
-        val originalMessageId = fields.getOrNull(2)
-
-        when (ackCode) {
-            "AA" -> {
-            }
-            "AE", "AR" -> {
-                throw IOException("HL7 NACK received ($ackCode) for messageId=$originalMessageId")
-            }
-            else -> {
-                throw IOException("Unknown ACK code: $ackCode")
-            }
-        }
+    private fun handleSendFailure() {
+        updateState(ConnectionState.Disconnected)
+        readerJob?.cancel()
+        scope.launch { client.close() }
     }
-
 }

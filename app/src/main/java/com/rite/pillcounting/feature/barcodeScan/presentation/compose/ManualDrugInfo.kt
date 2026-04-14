@@ -30,6 +30,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.rite.pillcounting.R
+import com.rite.pillcounting.core.utils.common.NdcVisualTransformation
 import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.ActionButtonPrimary
 import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.AppTextField
 import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.HollowButton
@@ -68,7 +69,7 @@ fun ManualDrugInfo(
         if (viewModel.drugName.isBlank() || viewModel.ndc.isBlank()) {
             errorMessage = R.string.all_fields_are_required
         } else {
-            onConfirm( viewModel.drugName.trim(),  viewModel.ndc.trim())
+            onConfirm(viewModel.drugName.trim(), viewModel.ndc.trim())
         }
     }
 
@@ -127,13 +128,17 @@ fun ManualDrugInfo(
                 )
                 Spacer(Modifier.height(10.dp))
                 AppTextField(
-                    value =  viewModel.ndc,
-                    onValueChange = {  viewModel.ndc = it; errorMessage = 0 }, // clear error on typing
+                    value = viewModel.ndc,
+                    onValueChange = {
+                        viewModel.ndc = it.filter(Char::isDigit).take(11)
+                        errorMessage = 0
+                    },
                     keyboardType = KeyboardType.Number,
                     imeAction = ImeAction.Next,
+                    visualTransformation = NdcVisualTransformation(),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(48.dp)
+                        .height(responsiveDp(45.dp))
                 )
 
                 Spacer(Modifier.height(20.dp))
@@ -147,13 +152,13 @@ fun ManualDrugInfo(
                 )
                 Spacer(Modifier.height(10.dp))
                 AppTextField(
-                    value =  viewModel.drugName,
-                    onValueChange = {  viewModel.drugName = it; errorMessage = 0 },
+                    value = viewModel.drugName,
+                    onValueChange = { viewModel.drugName = it; errorMessage = 0 },
                     keyboardType = KeyboardType.Text,
                     imeAction = ImeAction.Done,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(48.dp)
+                        .height(responsiveDp(45.dp))
                 )
 
                 Spacer(Modifier.height(14.dp))
@@ -168,7 +173,7 @@ fun ManualDrugInfo(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     HollowButton(
-                        text = "CANCEL",
+                        text = stringResource(R.string.manual_drug_info_cancel),
                         onClick = onDismiss,
                         color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier
@@ -178,7 +183,7 @@ fun ManualDrugInfo(
                     )
 
                     ActionButtonPrimary(
-                        text = "OK",
+                        text = stringResource(R.string.manual_drug_info_ok),
                         onClick = ::handleOk,
                         modifier = Modifier
                             .weight(1f)
@@ -212,12 +217,15 @@ fun ManualDrugInfo(
                         fontWeight = FontWeight.Normal,
                         modifier = Modifier.weight(0.42f)
                     )
-
                     AppTextField(
-                        value =  viewModel.ndc,
-                        onValueChange = {  viewModel.ndc = it; errorMessage = 0 },
+                        value = viewModel.ndc,
+                        onValueChange = {
+                            viewModel.ndc = it.filter(Char::isDigit).take(11)
+                            errorMessage = 0
+                        },
                         keyboardType = KeyboardType.Number,
                         imeAction = ImeAction.Next,
+                        visualTransformation = NdcVisualTransformation(),
                         modifier = Modifier
                             .weight(0.78f)
                             .height(responsiveDp(45.dp))
@@ -240,8 +248,8 @@ fun ManualDrugInfo(
                     )
 
                     AppTextField(
-                        value =  viewModel.drugName,
-                        onValueChange = {  viewModel.drugName = it; errorMessage = 0 },
+                        value = viewModel.drugName,
+                        onValueChange = { viewModel.drugName = it; errorMessage = 0 },
                         keyboardType = KeyboardType.Text,
                         imeAction = ImeAction.Done,
                         modifier = Modifier

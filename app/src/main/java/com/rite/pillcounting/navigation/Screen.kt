@@ -129,10 +129,6 @@ sealed interface Screen {
 
         override val route: String = "$ROUTE_PREFIX/{$ARG_TYPE}"
 
-        val navArguments: List<NamedNavArgument> = listOf(
-            navArgument(ARG_TYPE) { type = NavType.StringType }
-        )
-
         fun createRoute(type: String) = "$ROUTE_PREFIX/$type"
     }
 
@@ -141,10 +137,6 @@ sealed interface Screen {
         const val ARG_TYPE = "type"
 
         override val route: String = "$ROUTE_PREFIX/{$ARG_TYPE}"
-
-        val navArguments: List<NamedNavArgument> = listOf(
-            navArgument(ARG_TYPE) { type = NavType.StringType }
-        )
 
         fun createRoute(type: String) = "$ROUTE_PREFIX/$type"
     }

@@ -66,8 +66,8 @@ class BarcodeAnalyzer @Inject constructor(
         onError: (Exception) -> Unit
     ) {
         if (isActive.get()) {
-            Log.w(TAG, "Analyzer already running.")
-            return
+            Log.w(TAG, "Analyzer already running. Rebinding camera.")
+            stop()
         }
         isActive.set(true)
         hasScannedOnce.set(false)

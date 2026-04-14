@@ -85,7 +85,8 @@ class Hl7Repository @Inject constructor(
             drugCode = drug.ndc,
             drugName = drug.drugName ?: "",
             pharmacistId = user?.userId,
-            pharmacistName = user?.name,
+            pharmacistName = listOfNotNull(user?.fName, user?.lName)
+                .joinToString(" "),
             location = location
         )
 
@@ -154,15 +155,12 @@ class Hl7Repository @Inject constructor(
         message: CompleteHL7Message
     ) {
         val medication = message.medications.first()
-        val component = message.components.firstOrNull()
 
-        val ndc =
-            component?.ndcOrComponentCode
-                ?: medication.drugCode
 
-        val drugName =
-            component?.componentName
-                ?: medication.drugName
+        val ndc = medication.drugCode.trim()
+
+        val drugName = medication.drugName
+
 
         val targetCount =
             medication.requestedQty?.toIntOrNull()
@@ -242,13 +240,6 @@ class Hl7Repository @Inject constructor(
             else -> null
         }
     }
-
-
-    fun observePendingTransactions():   Flow<List<PillCountTxnEntity>> {
-        return pillCountTxnDao.observePendingHl7Txn()
-    }
-
-
 
     private fun observePendingHl7Transactions() {
         scope.launch {

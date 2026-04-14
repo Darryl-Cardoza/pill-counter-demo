@@ -1,6 +1,7 @@
 package com.rite.pillcounting.feature.countResume.presentation.compose
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -121,23 +122,37 @@ fun <E : ResumeEvent> PartialListPanel(
 
         Spacer(modifier = Modifier.height(25.dp))
 
-        LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-            contentPadding = PaddingValues(bottom = 16.dp)
-        ) {
-            items(filteredItems, key = { it.id }) { item ->
-                CountRow(
-                    item = item,
-                    multiSelectMode = isMultiSelectMode,
-                    isSelected = selectedItems.contains(item),
-                    countType = countType,
-                    onSelectChange = { onEvent(eventFactory.selectItem(item)) },
-                    onMoreClick = {
-                        pendingItem = item
-                        showMoreDialog = true
-                    }
+        if (filteredItems.isEmpty()) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = stringResource(R.string.no_data_found),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = AppTheme.extendedColors.textColor
                 )
+            }
+        } else {
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                contentPadding = PaddingValues(bottom = 16.dp)
+            ) {
+                items(filteredItems, key = { it.id }) { item ->
+                    CountRow(
+                        item = item,
+                        multiSelectMode = isMultiSelectMode,
+                        isSelected = selectedItems.contains(item),
+                        countType = countType,
+                        onSelectChange = { onEvent(eventFactory.selectItem(item)) },
+                        onMoreClick = {
+                            pendingItem = item
+                            showMoreDialog = true
+                        }
+                    )
+                }
             }
         }
     }

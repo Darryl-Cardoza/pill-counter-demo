@@ -6,11 +6,23 @@ import androidx.camera.core.ImageProxy
 import com.rite.pillcounting.core.utils.logger.AppLogger
 import org.tensorflow.lite.Interpreter
 
+/**
+ * Runs the dual-model pipeline on every camera frame:
+ *
+ *   1. Pre-process  — letterbox camera frame to 640×640
+ *   2. Tray model   — segmentation → per-tray boolean pixel masks
+ *   3. Pill model   — detection    → pill bounding boxes
+ *   4. Filter       — keep pills whose centre pixel is inside any tray mask
+ *                     (mirrors Python: tray_mask[cy][cx] > 0.5)
+ *   5. Callback     — emit filtered pills + tray detections to the UI
+ */
 class PillAnalyzer(
-    private val interpreter: Interpreter,
-    private val onPillCountUpdated: (
+    private val pillInterpreter: Interpreter,
+    private val trayInterpreter: Interpreter,
+    private val onResult: (
         pillCount: Int,
-        detections: List<Detection>,
+        pills: List<Detection>,
+        trayRects: List<TrayDetection>,
         debugBitmap: Bitmap,
         transformMatrix: Matrix,
         imageWidth: Int,
@@ -22,153 +34,123 @@ class PillAnalyzer(
 
     fun analyze(imageProxy: ImageProxy) {
         val overallStart = System.currentTimeMillis()
-        var letterboxedBitmap: Bitmap? = null
+        var trackingBitmap: Bitmap? = null
 
         logger.i(
-            """
-            [PillAnalyzer] Frame received
-            Camera image size = ${imageProxy.width} x ${imageProxy.height}
-            Rotation          = ${imageProxy.imageInfo.rotationDegrees}
-            """.trimIndent()
+            "Frame — ${imageProxy.width}×${imageProxy.height} " +
+                    "rot=${imageProxy.imageInfo.rotationDegrees}"
         )
 
         try {
-            // --------------------------------------------------
-            // STEP 1: PREPROCESS
-            // --------------------------------------------------
-            val preprocessStart = System.currentTimeMillis()
+            // ── STEP 1: Pre-process ───────────────────────────────────────────
+            val (inputBuffer, bitmap640, originalBitmap) = ImagePreprocessor.preprocess(imageProxy)
+            trackingBitmap = originalBitmap
 
-            val (inputBuffer, bitmap640) =
-                ImagePreprocessor.preprocess(imageProxy)
+            val scaleInfo = Letterbox.currentScaleInfo
+                ?: throw IllegalStateException("Letterbox.currentScaleInfo missing after preprocess")
 
-            letterboxedBitmap = bitmap640
+            // Original camera frame dimensions (before letterboxing)
+            val originalWidth  = imageProxy.width
+            val originalHeight = imageProxy.height
 
-            Letterbox.currentScaleInfo?.let {
-                logger.i(
-                    """
-                    [Letterbox]
-                    scale = ${it.scale}
-                    padX  = ${it.padX}
-                    padY  = ${it.padY}
-                    input = ${it.inputSize}x${it.inputSize}
-                    """.trimIndent()
+            logger.i(
+                "[Letterbox] scale=${scaleInfo.scale} " +
+                        "padX=${scaleInfo.padX} padY=${scaleInfo.padY} " +
+                        "original=${originalWidth}x${originalHeight}"
+            )
+
+            // ── STEP 2: Tray segmentation ─────────────────────────────────────
+            val trayStart = System.currentTimeMillis()
+
+            val trayDetections = TrayDetector.detect(
+                interpreter    = trayInterpreter,
+                bitmap         = bitmap640,
+                scaleInfo      = scaleInfo,
+                originalWidth  = originalWidth,
+                originalHeight = originalHeight
+            )
+
+            logger.i(
+                "[Tray] ${trayDetections.size} tray(s) | " +
+                        "${System.currentTimeMillis() - trayStart} ms"
+            )
+
+            // No tray visible → report zero pills, but still emit tray list
+            // (empty) so the UI clears its overlay cleanly.
+            if (trayDetections.isEmpty()) {
+                logger.i("[Tray] No tray detected — skipping pill inference")
+                onResult(
+                    0, emptyList(), emptyList(),
+                    originalBitmap, Matrix(), originalWidth, originalHeight
                 )
+                bitmap640.recycle()
+                return
             }
 
-            logger.i(
-                """
-                [Preprocess]
-                Time   = ${System.currentTimeMillis() - preprocessStart} ms
-                Bitmap = ${bitmap640.width} x ${bitmap640.height}
-                """.trimIndent()
-            )
+            // ── STEP 3: Pill detection ────────────────────────────────────────
+            val pillStart = System.currentTimeMillis()
 
-            // --------------------------------------------------
-            // STEP 2: MODEL INFERENCE
-            // --------------------------------------------------
-            val inferStart = System.currentTimeMillis()
+            val outputShape = pillInterpreter.getOutputTensor(0).shape()
+            val output = Array(1) { Array(outputShape[1]) { FloatArray(outputShape[2]) } }
+            pillInterpreter.run(inputBuffer, output)
 
-            val outputShape = interpreter.getOutputTensor(0).shape()
-            logger.i(
-                """
-               [Model]
-                Output tensor shape = ${outputShape.contentToString()}
-                """.trimIndent()
-            )
+            logger.i("[Pill inference] ${System.currentTimeMillis() - pillStart} ms")
 
-            val output =
-                Array(1) { Array(outputShape[1]) { FloatArray(outputShape[2]) } }
-
-            interpreter.run(inputBuffer, output)
-
-            logger.i(
-                " [Inference] Time = ${System.currentTimeMillis() - inferStart} ms"
-            )
-
-            // --------------------------------------------------
-            // STEP 3: SPLIT OUTPUT
-            // --------------------------------------------------
-            val raw = output[0]
+            // Decode transposed YOLO layout [1, 5, N]
+            val raw        = output[0]
             val numAnchors = raw[0].size
-            logger.i(" [Decode] Raw predictions count = ${raw.size}")
 
             val coords = Array(numAnchors) { FloatArray(4) }
-            val conf = Array(numAnchors) { FloatArray(1) }
-
-            raw.take(5).forEachIndexed { i, row ->
-                logger.d(
-                    "Raw[$i] cx=${row[0]}, cy=${row[1]}, w=${row[2]}, h=${row[3]}, conf=${row[4]}"
-                )
-            }
+            val conf   = Array(numAnchors) { FloatArray(1) }
 
             for (i in 0 until numAnchors) {
-                coords[i][0] = raw[0][i] // cx
+                coords[i][0] = raw[0][i] // cx (normalised)
                 coords[i][1] = raw[1][i] // cy
                 coords[i][2] = raw[2][i] // w
                 coords[i][3] = raw[3][i] // h
-                conf[i][0] = raw[4][i] // confidence
+                conf[i][0]   = raw[4][i] // confidence
             }
 
-            // --------------------------------------------------
-            // STEP 4: POSTPROCESS
-            // --------------------------------------------------
-            val postStart = System.currentTimeMillis()
-
-            val scaleInfo = Letterbox.currentScaleInfo
-                ?: throw IllegalStateException("Letterbox scale info missing")
-
-            val detections = Postprocessor.decode(
-                coords = coords,
-                conf = conf,
+            val allPills = Postprocessor.decode(
+                coords        = coords,
+                conf          = conf,
                 confThreshold = 0.70f,
-                scale = scaleInfo.scale,
-                padX = scaleInfo.padX,
-                padY = scaleInfo.padY
+                scale         = scaleInfo.scale,
+                padX          = scaleInfo.padX,
+                padY          = scaleInfo.padY
             )
+
+            // ── STEP 4: NMS ───────────────────────────────────────────────────
+            val pillsAfterNms = NMS.run(allPills, iouThreshold = 0.80f)
+
+            val pillsInTray = pillsAfterNms.filter { pill ->
+                val cx = pill.rect.centerX().toInt()
+                val cy = pill.rect.centerY().toInt()
+                trayDetections.any { tray -> tray.containsPoint(cx, cy) }
+            }
 
             logger.i(
-                """
-                 [Postprocess]
-                Time            = ${System.currentTimeMillis() - postStart} ms
-                Final detections = ${detections.size}
-                """.trimIndent()
+                "[Filter] ${pillsAfterNms.size} pills → " +
+                        "${pillsInTray.size} inside tray | " +
+                        "total=${System.currentTimeMillis() - overallStart} ms"
             )
 
-            // -----------------------------------------------------
-            // STEP 5: NMS (same as iOS)
-            // -----------------------------------------------------
-            val finalDetections = NMS.run(
-                detections = detections,
-                iouThreshold = 0.80f
-            )
-
-            logger.i(
-                " [NMS] final = ${finalDetections.size}"
-            )
-
-            // --------------------------------------------------
-            // STEP 6: CALLBACK
-            // --------------------------------------------------
-            logger.i(
-                """
-               [Result]
-                FINAL COUNT = ${detections.size}
-                Total frame time = ${System.currentTimeMillis() - overallStart} ms
-                """.trimIndent()
-            )
-
-            onPillCountUpdated(
-                finalDetections.size,
-                finalDetections,
-                letterboxedBitmap,
+            // ── STEP 5: Callback ──────────────────────────────────────────────
+            onResult(
+                pillsInTray.size,
+                pillsInTray,
+                trayDetections,
+                originalBitmap,
                 Matrix(),
-                imageProxy.width,
-                imageProxy.height
+                originalWidth,
+                originalHeight
             )
+            
+            bitmap640.recycle()
 
         } catch (e: Exception) {
-            logger.e(" [PillAnalyzer] Frame analysis failed", e)
-            letterboxedBitmap?.recycle()
+            logger.e("[PillAnalyzer] Frame failed", e)
+            trackingBitmap?.recycle()
         } finally {
             imageProxy.close()
         }

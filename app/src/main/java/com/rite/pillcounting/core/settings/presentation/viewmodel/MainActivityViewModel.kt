@@ -78,17 +78,16 @@ class MainActivityViewModel @Inject constructor(
     private val _isRequireBackCountEnable = MutableStateFlow(preferenceHelper.isRequireBackCountEnabled())
     val isRequireBackCountEnable: StateFlow<Boolean> = _isRequireBackCountEnable
 
-    private val _isRequireDoubleCountEnable = MutableStateFlow(preferenceHelper.isRequireBackCountEnabled())
+    private val _isRequireDoubleCountEnable = MutableStateFlow(preferenceHelper.isRequireDoubleCountEnabled())
     val isRequireDoubleCountEnable: StateFlow<Boolean> = _isRequireDoubleCountEnable
 
-    private val _isRequireAdjustReasons = MutableStateFlow(preferenceHelper.isRequireAdjustReasonEnable())
-    val isRequireAdjustReasons: StateFlow<Boolean> = _isRequireAdjustReasons
-
-
     private val _selectedSchedules =
-        MutableStateFlow(ScheduleCode.values().toSet())
-    val selectedSchedules: StateFlow<Set<ScheduleCode>> =
-        _selectedSchedules
+        MutableStateFlow(loadSchedulesFromPrefs())
+
+    val selectedSchedules: StateFlow<Set<ScheduleCode>> = _selectedSchedules
+
+    private val _isSoundOverride = MutableStateFlow(preferenceHelper.isSoundOverride())
+    val isSoundOverride: StateFlow<Boolean> = _isSoundOverride
 
     init {
         // Load cached/fallback theme instantly
@@ -402,18 +401,40 @@ class MainActivityViewModel @Inject constructor(
     }
 
     fun toggleSchedule(code: ScheduleCode) {
-        _selectedSchedules.value = _selectedSchedules.value.toMutableSet().apply {
+        val updated = _selectedSchedules.value.toMutableSet().apply {
             if (contains(code)) remove(code) else add(code)
         }
+
+        _selectedSchedules.value = updated
+
+        preferenceHelper.setControlDrugTypes(
+            updated.map { it.name }.toSet()
+        )
     }
 
-    fun isScheduleSelected(code: ScheduleCode): Boolean {
-        return _selectedSchedules.value.contains(code)
+    private fun loadSchedulesFromPrefs(): Set<ScheduleCode> {
+        val stored = preferenceHelper.getControlDrugTypes()
+
+        if (stored.isEmpty()) {
+            val defaults = ScheduleCode.entries.toSet()
+
+            // Persist defaults so rest of the app reads them
+            preferenceHelper.setControlDrugTypes(
+                defaults.map { it.name }.toSet()
+            )
+
+            return defaults
+        }
+
+        return stored.mapNotNull {
+            runCatching { ScheduleCode.valueOf(it) }.getOrNull()
+        }.toSet()
     }
 
-    fun toggleRequireAdjustReasonOnOff(newValue: Boolean) {
-        preferenceHelper.setRequireAdjustReasonEnable(newValue)
-        _isRequireAdjustReasons.value = newValue
+
+    fun toggleSoundOverride(newValue: Boolean) {
+        preferenceHelper.setSoundOverride(newValue)
+        _isSoundOverride.value = newValue
     }
 
 }

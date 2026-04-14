@@ -78,7 +78,8 @@ private const val KEY_SOUND = "key_pill_count_sound_enabled"
 private const val KEY_HAPTIC = "key_pill_count_haptic_enabled"
 private const val KEY_REQUIRE_BACK_COUNT = "key_require_back_count"
 private const val KEY_REQUIRE_DOUBLE_COUNT = "key_require_double_count"
-private const val KEY_REQUIRE_ADJUST_REASONS = "key_require_adjust_reasons"
+private const val KEY_CONTROL_DRUG_TYPES="key_control_drug_types"
+private const val KEY_SOUND_OVERRIDE="key_sound_override"
 
 
 @Singleton
@@ -472,14 +473,25 @@ class PreferenceHelper @Inject constructor(
         return enabled
     }
 
-    fun setRequireAdjustReasonEnable(enabled: Boolean) {
-        val enabled = prefs.edit().putBoolean(KEY_REQUIRE_ADJUST_REASONS, enabled).apply()
-        logger.i("setRequireAdjustReasonEnable : $enabled")
+    fun setControlDrugTypes(controlDrugTypes: Set<String>) {
+        prefs.edit { putStringSet(KEY_CONTROL_DRUG_TYPES, controlDrugTypes) }
+        logger.i("setControlDrugTypes : ${controlDrugTypes.joinToString(",")}")
     }
 
-    fun isRequireAdjustReasonEnable(): Boolean {
-        val enabled = prefs.getBoolean(KEY_REQUIRE_ADJUST_REASONS, true)
-        logger.d("isRequireAdjustReasonEnable : $enabled")
+    fun getControlDrugTypes(): Set<String> {
+        val types = prefs.getStringSet(KEY_CONTROL_DRUG_TYPES, emptySet()) ?: emptySet()
+        logger.d("getControlDrugTypes : ${types.joinToString(",")}")
+        return types
+    }
+
+    fun setSoundOverride(enabled: Boolean){
+        val enabled = prefs.edit().putBoolean(KEY_SOUND_OVERRIDE, enabled).apply()
+        logger.i("setSoundOverride : $enabled")
+    }
+
+    fun isSoundOverride():Boolean{
+        val enabled = prefs.getBoolean(KEY_SOUND_OVERRIDE, true)
+        logger.i("isSoundOverride : $enabled")
         return enabled
     }
 

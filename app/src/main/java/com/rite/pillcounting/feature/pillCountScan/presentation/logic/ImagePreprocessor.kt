@@ -11,14 +11,14 @@ object ImagePreprocessor {
 
     fun preprocess(
         image: ImageProxy
-    ): Pair<ByteBuffer, Bitmap> {
+    ): Triple<ByteBuffer, Bitmap, Bitmap> {
 
         val bitmap = image.toBitmap()
         val letterboxed = Letterbox.preprocess(bitmap, INPUT_SIZE)
 
         val buffer = bitmapToFloatBuffer(letterboxed)
 
-        return buffer to letterboxed
+        return Triple(buffer, letterboxed, bitmap)
     }
 
     private fun bitmapToFloatBuffer(bitmap: Bitmap): ByteBuffer {

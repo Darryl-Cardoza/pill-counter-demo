@@ -23,6 +23,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -45,17 +46,22 @@ import com.rite.pillcounting.core.utils.constants.Dimens.medium
 import com.rite.pillcounting.core.utils.constants.Dimens.small
 import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.ActionButtonPrimary
 import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.HollowButton
+import com.rite.pillcounting.feature.pillCountScan.presentation.viewmodel.PillScanningViewModel
 import com.rite.pillcounting.ui.theme.AppTheme
 
 
 @Composable
 fun AddNoteDialog(
-    onDismiss: () -> Unit, onSkip: () -> Unit, onSave: (String) -> Unit
+    onDismiss: () -> Unit,
+    onSkip: () -> Unit,
+    onSave: (String) -> Unit,
+    viewModel: PillScanningViewModel
 ) {
     var noteText by rememberSaveable { mutableStateOf("") }
     var showError by remember { mutableStateOf(false) }
     val configuration = LocalConfiguration.current
     val screenWidth = configuration.screenWidthDp.dp
+    val isTxnFromHl7 = viewModel.isTxnFromHl7.collectAsState().value
 
     // Adjust width based on orientation
     val dialogWidth = if (configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) {
@@ -147,12 +153,14 @@ fun AddNoteDialog(
                         .padding(horizontal = 20.dp),
                     horizontalArrangement = Arrangement.Center
                 ) {
-                    HollowButton(
-                        text = stringResource(R.string.skip).uppercase(),
-                        onClick = onSkip,
-                        color = MaterialTheme.colorScheme.primary,
-                    )
-                    Spacer(modifier = Modifier.width(medium))
+                    if (!isTxnFromHl7) {
+                        HollowButton(
+                            text = stringResource(R.string.skip).uppercase(),
+                            onClick = onSkip,
+                            color = MaterialTheme.colorScheme.primary,
+                        )
+                        Spacer(modifier = Modifier.width(medium))
+                    }
                     ActionButtonPrimary(
                         text = stringResource(R.string.save).uppercase(),
                         onClick = {

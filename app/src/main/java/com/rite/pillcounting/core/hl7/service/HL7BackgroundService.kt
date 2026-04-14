@@ -25,12 +25,11 @@ import com.rite.pillcounting.core.hl7.mllp.nsd.NsdHelper
 import com.rite.pillcounting.core.hl7.mllp.nsd.NetworkIpMonitor
 import com.rite.pillcounting.core.hl7.mllp.server.MllpServer
 import com.rite.pillcounting.core.hl7.mllp.tls.TlsSocketFactory
+import com.rite.pillcounting.core.utils.logger.AppLogger
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import org.rite.hl7.hl7.AckDecision
 import org.rite.hl7.hl7.domain.model.CompleteHL7Message
 
@@ -76,8 +75,10 @@ class HL7Service : Service() {
     private var listener: Hl7EventListener? = null
 
     private lateinit var imageServer: ImageWebServer
-
-
+    private var serverStarted = false
+    @Volatile
+    private var lastConnectedHost: String? = null
+    private val logger = AppLogger("HL7backgroundService")
 
     /** Binder to expose service instance to clients */
     private val binder = LocalBinder()
@@ -108,47 +109,25 @@ class HL7Service : Service() {
     }
 
     private fun startServiceInternal() {
-        startImageServer()
         initializeCoreComponents()
-        startMllpServer()
-        initNetworkMonitoring(this@HL7Service)
+        startDiscoveryAndConnect()
     }
 
-//    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-//        intent?.let { loadConfigFromIntent(it) }
-//
-//        Log.i(TAG, "Service starting with config: $config")
-//
-//        startForeground(NOTIFICATION_ID, buildNotification())
-//        startImageServer()
-//        initializeCoreComponents()
-//        startMllpServer()
-//        initNetworkMonitoring(this)
-//
-//        return START_STICKY
-//    }
-//
-//    override fun onDestroy() {
-//        Log.i(TAG, "Service destroying")
-//
-//        runBlocking {
-//            try {
-//                server.stop()
-//                Log.d(TAG, "MLLP server stopped")
-//            } catch (e: Exception) {
-//                Log.e(TAG, "Error stopping server", e)
-//            }
-//        }
-//
-//        clientManager.shutdown()
-//        nsdHelper.shutdown()
-//        serviceScope.cancel()
-//        networkIpMonitor.stop()
-//        nsdHelper.shutdown()
-//        imageServer.stop()
-//        super.onDestroy()
-//        listener?.onServiceStopped()
-//    }
+    private fun startDiscoveryAndConnect() {
+        discoverPmsAndConnect()
+    }
+
+    private fun onPmsFirstConnected() {
+        if (serverStarted) return
+        serverStarted = true
+        startMllpServer()
+        startNsdBroadcast()
+        startImageServer()
+        initNetworkMonitoring(this@HL7Service)
+        listener?.onServerStarted(config.serverPort)
+    }
+
+
 
     override fun onDestroy() {
         Log.i(TAG, "Service destroying")
@@ -212,14 +191,34 @@ class HL7Service : Service() {
 
         val tlsFactory = TlsSocketFactory()
         val client = MllpClient(tlsFactory)
-        clientManager = MllpConnectionManager(client)
+
+        clientManager = MllpConnectionManager(
+            client = client,
+            scope = serviceScope,
+
+            onFirstConnected = {
+                serviceScope.launch(Dispatchers.Main) {
+                    onPmsFirstConnected()
+                }
+            },
+
+            onConnected = {
+                Log.i(TAG, "PMS CONNECTED")
+                listener?.onClientConnected("PMS", 0)
+            },
+
+            onDisconnected = {
+                listener?.onClientDisconnected()
+            }
+        )
+
+        clientManager.startContinuousReconnect()
 
         Log.d(TAG, "Core components initialized")
     }
 
 
     private fun initNetworkMonitoring(context: Context) {
-
         networkIpMonitor = NetworkIpMonitor(
             context = context,
 
@@ -238,13 +237,10 @@ class HL7Service : Service() {
                 rebroadcastNsd()
             }
         )
-
         networkIpMonitor.start()
     }
 
-
     /* -------------------- SERVER -------------------- */
-
     private fun startMllpServer() {
         server = MllpServer(
             port = config.serverPort,
@@ -301,27 +297,32 @@ class HL7Service : Service() {
 
         nsdHelper.discover(config.nsdDiscoveryType) { info ->
             serviceScope.launch {
+
+                val host = info.host.hostAddress ?: return@launch
+                val port = info.port
+
+                // Prevent duplicate connect
+                if (lastConnectedHost == "$host:$port" && clientManager.isConnected()) {
+                    return@launch
+                }
+
+                lastConnectedHost = "$host:$port"
+
+                listener?.onNsdServiceFound(info.serviceName, host, port)
+
                 try {
-                    val host = info.host.hostAddress
-                    val port = info.port
-                    if (host != null) {
-                        listener?.onNsdServiceFound(info.serviceName, host, port)
-                        clientManager.connect(host, port)
-                        listener?.onClientConnected(host, port)
-                    }
-                    Log.e(TAG, "PMS connection establish")
+                    clientManager.connect(host, port)
                 } catch (e: Exception) {
-                    Log.e(TAG, "PMS connection failed", e)
-                    listener?.onError("CLIENT_CONNECT", e)
+                    Log.e(TAG, "Connect failed", e)
                 }
             }
         }
     }
-
     /* -------------------- MESSAGE HANDLING -------------------- */
 
     private fun handleIncomingMessage(raw: String): AckDecision {
         return try {
+            logger.i("HL7 message before parsing | msgId=${raw} ")
             val message = parser.parse(raw)
             val key = message.generateMessageIdempotencyKey()
 
@@ -394,5 +395,4 @@ class HL7Service : Service() {
         val ip = NetworkUtils.getLocalIpAddress()
         Log.i(TAG, "Image server running at https://$ip:8443/images/{fileName}")
     }
-
 }

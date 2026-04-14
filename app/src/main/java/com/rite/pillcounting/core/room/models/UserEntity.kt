@@ -33,7 +33,8 @@ import com.rite.pillcounting.core.security.models.SecureString
         val email: SecureString? = null,
 
         /** Full name of the user. */
-        val name: String? = null,
+        val fName: String? = null,
+        val lName: String? = null,
 
         /** Contact phone number. */
         @field:TypeConverters(SecureStringConverter::class)

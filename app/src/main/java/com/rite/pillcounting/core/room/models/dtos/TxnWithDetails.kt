@@ -1,11 +1,15 @@
 package com.rite.pillcounting.core.room.models.dtos
 
 import androidx.room.Relation
+import com.rite.pillcounting.core.models.StepState
 import com.rite.pillcounting.core.room.models.PillCountTxnDetailsEntity
+import com.rite.pillcounting.core.room.models.enums.CountType
 
 data class TxnWithDetails(
     val txnId: Long,
     val drugName: String?,
+    val drugId: Long,
+    val equivalence: String?,
     val ndc: String?,
     val targetCount: Int?,
     val expiry: String?,
@@ -14,17 +18,20 @@ data class TxnWithDetails(
     val createdAt: Long,
     val barcodeImage: String?,
     val totalPillCount: Int,
+    val countType: CountType,
     @Relation(
         parentColumn = "txnId",
         entityColumn = "txnId",
         entity = PillCountTxnDetailsEntity::class,
-        projection = ["txnId", "pillCount", "imagePath"]
+        projection = ["txnId", "pillCount", "imagePath","type"]
     )
-    val txnDetails: List<TxnDetailInfo>
+    val txnDetails: List<TxnDetailInfo>,
+    val isComingFromHL7 : Boolean
 )
 
 data class TxnDetailInfo(
     val txnId: Long?,
     val pillCount: Int?,
-    val imagePath: String?
+    val imagePath: String?,
+    val type: StepState?,
 )

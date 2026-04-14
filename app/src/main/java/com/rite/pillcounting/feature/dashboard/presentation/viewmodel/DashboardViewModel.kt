@@ -1,5 +1,6 @@
 package com.rite.pillcounting.feature.dashboard.presentation.viewmodel
 
+
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.rite.pillcounting.core.room.dao.PillCountTxnDao
@@ -12,9 +13,11 @@ import com.rite.pillcounting.core.utils.preference.PreferenceHelper
 import com.rite.pillcounting.feature.dashboard.domain.data.IUserDetailRepository
 import com.rite.pillcounting.feature.dashboard.domain.model.DashboardUiState
 import com.rite.pillcounting.feature.dashboard.domain.model.UserDetail
+import com.rite.pillcounting.feature.hl7.core.Hl7EventHandler
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -43,7 +46,9 @@ class DashboardViewModel @Inject constructor(
     private val userDetailRepository: IUserDetailRepository,
     private val preferenceHelper: PreferenceHelper,
     private val userDao: UserDao,
-    private val pillCountTxnDao: PillCountTxnDao
+    private val pillCountTxnDao: PillCountTxnDao,
+    private val hl7EventHandler: Hl7EventHandler
+
 ) : ViewModel() {
 
     /** Logger instance for this ViewModel. */
@@ -54,6 +59,7 @@ class DashboardViewModel @Inject constructor(
 
     /** Public immutable UI state exposed to the UI layer. */
     val uiState = _uiState.asStateFlow()
+    val isConnected: StateFlow<Boolean> = hl7EventHandler.connectionState
 
     init {
         logger.i("DashboardViewModel initialized.")
@@ -62,6 +68,10 @@ class DashboardViewModel @Inject constructor(
             observeDashboardCounts()
         }
         fetchUserDetail()
+    }
+
+    fun isHl7Enabled(): Boolean{
+        return preferenceHelper.isHl7Enabled()
     }
 
     /**
@@ -186,6 +196,8 @@ class DashboardViewModel @Inject constructor(
     fun saveTxnId() {
         preferenceHelper.saveTxnId(0)
     }
+
+
 }
 
 /* ───────────────────────────── Mappers ───────────────────────────── */
@@ -199,7 +211,8 @@ private fun UserDetail.toUserEntity(jwtUserId: String?): UserEntity {
     return UserEntity(
         userId = pk,
         email = this.profile?.email?.secure(),
-        name = this.profile?.fullName,
+        fName = this.profile?.fName,
+        lName = this.profile?.lName,
         phoneNumber = this.profile?.phoneNumber?.secure(),
         avatarUrl = this.profile?.avatarUrl,
         role = this.profile?.role?.name,

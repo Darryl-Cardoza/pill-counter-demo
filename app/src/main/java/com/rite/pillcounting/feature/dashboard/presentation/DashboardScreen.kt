@@ -2,7 +2,6 @@ package com.rite.pillcounting.feature.dashboard.presentation
 
 import Screen
 import android.app.Activity
-import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -23,6 +22,7 @@ import androidx.navigation.NavController
 import com.rite.pillcounting.R
 import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.CommonDialog
 import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.MenuButton
+import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.PmsConnectionIcon
 import com.rite.pillcounting.core.utils.common.UserInterfaceUtils.showToast
 import com.rite.pillcounting.core.utils.compose.SplitResponsive
 import com.rite.pillcounting.core.utils.preference.PreferenceHelper
@@ -67,7 +67,7 @@ fun DashboardScreen(
 
     // Collect dashboard UI state reactively
     val uiState by viewModel.uiState.collectAsState()
-
+    val connected by viewModel.isConnected.collectAsState()
 
     // Handle navigation to Profile screen if profile is incomplete
     LaunchedEffect(uiState.navigateToProfile) {
@@ -98,7 +98,15 @@ fun DashboardScreen(
             .systemBarsPadding()
             .background(AppTheme.extendedColors.secondaryBackground)
     ) {
+
         // Show loading indicator if user details are being fetched
+        if(viewModel.isHl7Enabled()) {
+            PmsConnectionIcon(
+                modifier = Modifier.align(Alignment.TopStart),
+                isPmsConnected = connected,
+            )
+        }
+
 
         SplitResponsive(
             topOrLeft = {
